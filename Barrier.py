@@ -3,7 +3,7 @@ def Barrier_BS(S0,K,r,q,sigma,T,H,Right,knock,dir):
     from scipy.stats import norm
     from numpy import exp, log, sqrt
 
-
+    # assertion
     assert H<=K, "For 'down and in' option, H should be less than K."
 
     d1 = (log(S0/K) + (r-q+(sigma**2)/2)*T)/(sigma*sqrt(T))
