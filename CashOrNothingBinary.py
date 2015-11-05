@@ -33,7 +33,7 @@ def pxBS(right, S, K, T, vol, r, q=0.0):
     right = right.lower()
 
     # Calculate d1
-    d1 = ((log(S/K)) + ((r - q + vol**2 / 2) * T)) / (vol * sqrt(T))
+    d1 = ((log(S/K)) + (r - q + vol**2 / 2) * T) / (vol * sqrt(T))
 
     # Calculate the discount (for an asset-or-nothing binary option)
     discount = S * exp(-q * T)
@@ -49,11 +49,13 @@ def pxBS(right, S, K, T, vol, r, q=0.0):
     return price
 
 
-# Test cases are not recommended for now - most online calculators that I've found have errors in their formulae
-# # Test cases - checked against http://investexcel.net/excel-binary-options/
+# Test cases
+#   checked against http://www.math.drexel.edu/~pg/fin/VanillaCalculator.html (which I think is wrong for puts)
+#   and http://investexcel.net/excel-binary-options/
 print(pxBS('call', 100, 100, 1, .2,  .05,  0))
-print(pxBS('put',  100, 100, 1, .2,  .05,  0))
-print(pxBS('call', 100, 100, 1,  2,   .5, .1))
-print(pxBS('put',  100, 100, 1,  2,   .5, .1))
-print(pxBS('call', 100, 110, 10, .2, .05,  0))
-print(pxBS('put',  100, 110, 10, .2, .05,  0))
+assert pxBS('call', 100, 100, 1, .2,  .05,  0) == 53.23248155
+assert pxBS('put',  100, 100, 1, .2,  .05,  0) == 41.8904609
+assert pxBS('call', 100, 100, 1,  2,   .5, .1) == 12.84967947
+assert pxBS('put',  100, 100, 1,  2,   .5, .1) == 47.8033865
+assert pxBS('call', 100, 110, 10, .2, .05,  0) == 38.02315498
+assert pxBS('put',  100, 110, 10, .2, .05,  0) == 22.62991099
