@@ -3,7 +3,8 @@ __author__ = 'pjgranahan'
 
 def pxBS(right, S, K, T, vol, r, q=0.0):
     """
-    pxBS computes the price of a Binary option using the Black-Scholes model, given the parameters.
+    pxBS computes the price of 1 unit of cash in a Cash or Nothing Binary option
+    using the Black-Scholes model, given the parameters.
 
     From https://en.wikipedia.org/wiki/Binary_option:
         In finance, a binary option is a type of option in which the payoff can take only two possible outcomes,
@@ -32,30 +33,35 @@ def pxBS(right, S, K, T, vol, r, q=0.0):
     # Convert right to lower case
     right = right.lower()
 
-    # Calculate d1
+    # Calculate d1 and d2
     d1 = ((log(S/K)) + (r - q + vol**2 / 2) * T) / (vol * sqrt(T))
+    d2 = d1 - (vol * sqrt(T))
 
-    # Calculate the discount (for an asset-or-nothing binary option)
-    discount = S * exp(-q * T)
+    # Calculate the discount (for a cash-or-nothing binary option)
+    discount = exp(-r * T)
 
-    # Multiply d1 by -1 for put rights
+    # Multiply d2 by -1 for put rights
     if right == "put":
-        d1 *= -1
+        d2 *= -1
 
     # Compute the price, and round it to 8 places
-    price = discount * norm.cdf(d1)
+    price = discount * norm.cdf(d2)
     price = round(price, 8)
 
     return price
 
 
-# Test cases
-#   checked against http://www.math.drexel.edu/~pg/fin/VanillaCalculator.html (which I think is wrong for puts)
-#   and http://investexcel.net/excel-binary-options/
-print(pxBS('call', 100, 100, 1, .2,  .05,  0))
-assert pxBS('call', 100, 100, 1, .2,  .05,  0) == 53.23248155
-assert pxBS('put',  100, 100, 1, .2,  .05,  0) == 41.8904609
-assert pxBS('call', 100, 100, 1,  2,   .5, .1) == 12.84967947
-assert pxBS('put',  100, 100, 1,  2,   .5, .1) == 47.8033865
-assert pxBS('call', 100, 110, 10, .2, .05,  0) == 38.02315498
-assert pxBS('put',  100, 110, 10, .2, .05,  0) == 22.62991099
+# Test cases - checked against http://investexcel.net/excel-binary-options/
+# assert pxBS('call', 100, 100, 1, .2,  .05,  0) == round(0.5323248155, 8)
+# assert pxBS('put',  100, 100, 1, .2,  .05,  0) == round(0.418904609, 8)
+# assert pxBS('call', 100, 100, 1,  2,   .5, .1) == round(0.1284967947, 8)
+# assert pxBS('put',  100, 100, 1,  2,   .5, .1) == round(0.478033865, 8)
+# assert pxBS('call', 100, 110, 10, .2, .05,  0) == round(0.3802315498, 8)
+# assert pxBS('put',  100, 110, 10, .2, .05,  0) == round(0.2262991099, 8)
+# Or, to print the test cases:
+# print(pxBS('call', 100, 100, 1, .2,  .05,  0))
+# print(pxBS('put',  100, 100, 1, .2,  .05,  0))
+# print(pxBS('call', 100, 100, 1,  2,   .5, .1))
+# print(pxBS('put',  100, 100, 1,  2,   .5, .1))
+# print(pxBS('call', 100, 110, 10, .2, .05,  0))
+# print(pxBS('put',  100, 110, 10, .2, .05,  0))

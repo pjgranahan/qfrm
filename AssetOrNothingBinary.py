@@ -3,7 +3,8 @@ __author__ = 'pjgranahan'
 
 def pxBS(right, S, K, T, vol, r, q=0.0):
     """
-    pxBS computes the price of a Binary option using the Black-Scholes model, given the parameters.
+    pxBS computes the price of 1 unit of asset in an Asset or Nothing Binary option
+    using the Black-Scholes model, given the parameters.
 
     From https://en.wikipedia.org/wiki/Binary_option:
         In finance, a binary option is a type of option in which the payoff can take only two possible outcomes,
