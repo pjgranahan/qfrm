@@ -25,12 +25,32 @@ def pxBS(right, S, K, T, vol, r, q=0.0):
     :return: Value of the Binary option according to the Black-Scholes model.
     """
 
+    # Explicit imports
+    from math import log, exp, sqrt
+    from scipy.stats import norm
+
     # Convert right to lower case
     right = right.lower()
 
+    # Calculate d1
+    d1 = ((log(S/K)) + (r - q + vol**2 / 2) * T) / (vol * sqrt(T))
+
+    # Calculate the discount (for an asset-or-nothing binary option)
+    discount = S * exp(-q * T)
+
+    # Multiply d1 by -1 for put rights
+    if right == "put":
+        d1 *= -1
+
+    # Compute the price, and round it to 8 places
+    price = discount * norm.cdf(d1)
+    price = round(price, 8)
+
+    return price
 
 
 # Test cases - checked against http://www.math.drexel.edu/~pg/fin/VanillaCalculator.html to 8 places
+print(pxBS('call', 100, 100, 1, .2,  .05,  0))
 assert pxBS('call', 100, 100, 1, .2,  .05,  0) == 0.53232483
 assert pxBS('put',  100, 100, 1, .2,  .05,  0) == -0.53232483
 assert pxBS('call', 100, 100, 1,  2,   .5, .1) == 0.12849676
