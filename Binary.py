@@ -27,3 +27,13 @@ def pxBS(right, S, K, T, vol, r, q=0.0):
 
     # Convert right to lower case
     right = right.lower()
+
+
+
+# Test cases - checked against http://www.math.drexel.edu/~pg/fin/VanillaCalculator.html to 8 places
+assert pxBS('call', 100, 100, 1, .2,  .05,  0) == 0.53232483
+assert pxBS('put',  100, 100, 1, .2,  .05,  0) == -0.53232483
+assert pxBS('call', 100, 100, 1,  2,   .5, .1) == 0.12849676
+assert pxBS('put',  100, 100, 1,  2,   .5, .1) == -0.12849676
+assert pxBS('call', 100, 110, 10, .2, .05,  0) == 0.38023151
+assert pxBS('put',  100, 110, 10, .2, .05,  0) == -0.38023151
