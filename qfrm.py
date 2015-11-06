@@ -287,18 +287,27 @@ class OptionSeries:
         :rtype:    __main__.OptionSeries
         """
         if clone is None:
-            self.ref, self.K, self.T, self.desc = ref, K, T, desc
-            self.signCP = 1 if right.lower() == 'call' else -1 if right.lower() == 'put' else 0  # 0 for other rights
-        else:                 # copy specs from another class
-            [setattr(self, v, getattr(clone, v)) for v in vars(clone)]
+            self.ref, self.K, self.T, self.desc, self.right = ref, K, T, desc, right
+        else:
+            self.clone = clone  # copy over all properties of option being cloned
 
-    @property   # Allows setting a read-only property accessible as OptionSeries().right
-    def right(self):
+    def get_right(self):
         """ Returns option's right as a string.
         :return: 'call', 'put', or 'other'
         :rtype: str
         """
-        return 'call' if self.signCP == 1 else 'put' if self.signCP == -1 else 'other'
+        # return 'call' if self._signCP == 1 else 'put' if self._signCP == -1 else 'other'
+        return self._right
+
+    def set_right(self, right='put'):
+        self._right = right.lower()
+        self._signCP = 1 if self._right == 'call' else -1 if self._right == 'put' else 0  # 0 for other rights
+        return self
+
+    right = property(get_right, set_right, None, 'option\'s right (str): call or put')
+
+    @property
+    def signCP(self): return self._signCP
 
     @property
     def style(self):
