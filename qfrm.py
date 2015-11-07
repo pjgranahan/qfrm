@@ -228,7 +228,8 @@ class Stock:
     .. sectionauthor:: Oleg Melnikov
     Sets parameters of an equity stock share: S0, vol, ticker, dividend yield, curr, tkr ...
     """
-    def __init__(self, S0=50, vol=.3, q=0, curr=None, tkr=None, desc=None):
+    # def __init__(self, S0=50, vol=.3, q=0, curr=None, tkr=None, desc=None):
+    def __init__(self, S0=None, vol=None, q=0, curr=None, tkr=None, desc=None):
         """ Class object constructor.
         :param S0: stock price today ( or at the time of evaluation), positive number. Used in pricing options.
         :type S0:  float
@@ -466,7 +467,7 @@ class OptionValuation(OptionSeries):
 
 
     """
-    def __init__(self, rf_r=.05, frf_r=0, seed0=None, *args, **kwargs):
+    def __init__(self, rf_r=None, frf_r=0, seed0=None, *args, **kwargs):
         """ Constructor simply saves all identified arguments and passes others to the base (parent) class, OptionSeries.
 
         It also calculates net_r, the rate used in computing growth factor a (p.452) for options with dividends and foreign risk free rates.
@@ -611,4 +612,23 @@ class OptionValuation(OptionSeries):
 
 
     @property
-    def net_r(self): return self.rf_r - self.ref.q - self.frf_r   # calculate RFR net of yield and foreign RFR
+    def net_r(self):
+        """
+        :return: net value of interest rate used to price this option
+        :rtype: float
+
+        :Example:
+
+        >>> o = OptionValuation(rf_r=0.05); vars(o)
+        >>> vars(o.update(rf_r=0.04))
+        >>> vars(o.update(ref=Stock(q=0.01)))
+        >>> o.net_r
+
+        """
+        try: q = 0 if self.ref.q is None else self.ref.q
+        except: q = 0
+
+        frf_r = 0 if self.frf_r is None else self.frf_r
+        rf_r = 0 if self.rf_r is None else self.rf_r
+
+        return rf_r - q - frf_r   # calculate RFR net of yield and foreign RFR
