@@ -263,7 +263,8 @@ class OptionSeries:
         http://stackoverflow.com/questions/6535832/python-inherit-the-superclass-init
         http://stackoverflow.com/questions/285061/how-do-you-programmatically-set-an-attribute-in-python
     """
-    def __init__(self, ref=Stock(S0=50, vol=.3), right='put', K=52, T=2, clone=None, desc={}):
+    # def __init__(self, ref=Stock(S0=50, vol=.3), right='put', K=52, T=2, clone=None, desc={}):
+    def __init__(self, ref=None, right=None, K=None, T=None, clone=None, desc=None):
         """ Constructor.
 
         If clone object is supplied, its specs are used.
@@ -286,10 +287,44 @@ class OptionSeries:
         :return:   __init__() method always implicitly returns self, i.e. a reference to this object
         :rtype:    __main__.OptionSeries
         """
-        if clone is None:
-            self.ref, self.K, self.T, self.desc, self.right = ref, K, T, desc, right
-        else:
-            self.clone = clone  # copy over all properties of option being cloned
+        self.update(ref=ref, right=right, K=K, T=T, clone=clone, desc=desc)
+        # if clone is None:
+        #     self.ref, self.K, self.T, self.desc, self.right = ref, K, T, desc, right
+        # else:
+        #     self.clone = clone  # copy over all properties of option being cloned
+
+    def update(self, **kwargs):
+        """
+
+        :param kwargs:
+        :return:
+
+        :Example:
+
+        >>> o = OptionSeries(ref=Stock(S0=50, vol=.3), right='put', K=52, T=2).update(K=53)
+        >>> vars(o)
+        >>> o = OptionSeries(clone=o, K=54).update(right='call')
+        >>> vars(o)
+
+        """
+        if 'clone' in kwargs:
+            self.clone = kwargs['clone']
+            del kwargs['clone']
+
+        # self.__dict__.update(kwargs)
+        # if kwargs is not None: [setattr(self, a, kwargs[a]) for a in kwargs]
+        for k, v in kwargs.items():
+            if v is not None: setattr(self, k, v)
+
+        # for kwarg in kwargs:
+        #     if kwarg != 'clone':
+        #         self[kwarg] = kwargs[kwarg]
+
+        # self.clone = clone  # copy over all properties of option being cloned
+        # if ref is not None: self.ref = ref
+        # if K is not None: self.K = K
+        # self.ref, self.K, self.T, self.desc, self.right = ref, K, T, desc, right
+        return self
 
     def get_right(self):
         """ Returns option's right as a string.
@@ -300,8 +335,9 @@ class OptionSeries:
         return self._right
 
     def set_right(self, right='put'):
-        self._right = right.lower()
-        self._signCP = 1 if self._right == 'call' else -1 if self._right == 'put' else 0  # 0 for other rights
+        if right is not None:
+            self._right = right.lower()
+            self._signCP = 1 if self._right == 'call' else -1 if self._right == 'put' else 0  # 0 for other rights
         return self
 
     right = property(get_right, set_right, None, 'option\'s right (str): call or put')
@@ -398,6 +434,30 @@ class OptionSeries:
                 s = s.replace(',',', ').replace('\n', ',').replace(': ', ':').replace('  ',' ')
         return s
 
+    @property
+    def clone(self):  return self
+
+    @clone.setter
+    def clone(self, clone=None):
+        """
+
+        :param clone:
+        :return:
+
+        :Example:
+
+        >>> o = OptionSeries(); o.right='call'
+        >>> OptionSeries(clone=o).right
+        >>> OptionSeries(clone=OptionSeries().set_right('call')).right
+
+        """
+        # copy specs from supplied object
+        if clone is not None:
+            [setattr(self, v, getattr(clone, v)) for v in vars(clone)]
+            # self.__dict__.update(vars(clone))   # don't use. fails to call set_right()
+
+
+
 
 class OptionValuation(OptionSeries):
     """ Adds interest rates and some methods shared by subclasses.
@@ -405,25 +465,32 @@ class OptionValuation(OptionSeries):
     The class inherits from a simpler class that describes an option.
 
     """
-    def __init__(self, r=.05, rf=0, *args, **kwargs):
+    def __init__(self, rf_r=.05, frf_r=0, seed0=None, *args, **kwargs):
         """ Constructor simply saves all identified arguments and passes others to the base (parent) class, OptionSeries.
 
         It also calculates net_r, the rate used in computing growth factor a (p.452) for options with dividends and foreign risk free rates.
 
-        :param r:  risk free rate. Required, unless clone object supplies it (see OptionSeries constructor). number in (0,1) interval
-        :type r:   float
-        :param rf: foreign risk free rate. Similar to r.
-        :type rf: float
+        :param rf_r:  risk free rate. Required, unless clone object supplies it (see OptionSeries constructor). number in (0,1) interval
+        :type rf_r:   float
+        :param frf_r: foreign risk free rate.
+        :type frf_r: float
+        :param seed0: None or positive integer to seed random number generator (RNG).
+        :type seed0: int, None
         :param args: arguments to be passed to base class constructor.
         :type args: see base class for types of its arguments
         :param kwargs: keyword arguments to be passed to base class constructor.
         :type kwargs: see base class for types of its arguments
         :return:   __init__() method always implicitly returns self, i.e. a reference to this object
         :rtype:    __main__.OptionValuation
+
+        :Example:
+
+        >>> o = OptionValuation(frf_r=.01); o.net_r
+        >>> o.frf_r = .02; o.net_r
+
         """
-        self.r, self.rf = r, rf
+        self.rf_r, self.frf_r, self.seed0 = rf_r, frf_r, seed0
         super().__init__(*args, **kwargs)  # pass remaining arguments to base (parent) class
-        self.net_r = r - self.ref.q - rf  # calculate RFR net of yield and foreign RFR
 
     def LT_params(self, nsteps=2):
         """ Calculates a collection of specs/parameters needed for lattice tree pricing.
@@ -468,36 +535,9 @@ class OptionValuation(OptionSeries):
         par['d'] = 1 / par['u']
         par['a'] = exp(self.net_r * par['dt'])   # growth factor, p.452
         par['p'] = (par['a'] - par['d']) / (par['u'] - par['d'])
-        par['df_T'] = exp(-self.r * self.T) #exp(-self.r * self.T)
-        par['df_dt'] = exp(-self.r * par['dt'])
-        # par['nsteps'] = (nsteps,)
+        par['df_T'] = exp(-self.rf_r * self.T)
+        par['df_dt'] = exp(-self.rf_r * par['dt'])
         return par
-
-    @property
-    def BS_params(self):
-        """ Calculates a collection of specs/parameters needed for BSM pricing.
-
-        :return: collection of components of BSM formula, i.e. d1, d2, N(d1), N(d2)
-        :rtype:  dict
-
-        :Example:
-
-        >>> OptionValuation(ref=Stock(S0=42, vol=.2), right='call', K=40, T=.5, r=.1).BS_params
-        {'Nd1': 0.77913129094266897,
-         'Nd2': 0.73494603684590853,
-         'd1': 0.7692626281060315,
-         'd2': 0.627841271868722}
-         >>> American(ref=Stock(S0=50, vol=.3), right='put', K=52, T=2, r=.05, desc={'note':'$7.42840, Hull p.288'}).BS_params
-         {'Nd1': 0.63885135045054053,
-         'Nd2': 0.47254500437809299,
-         'd1': 0.3553901873059548,
-         'd2': -0.06887388140597372}
-        """
-        from math import log, sqrt
-        from scipy.stats import norm
-        d1 = ((log(self.ref.S0 / self.K) + (self.r + 0.5 * self.ref.vol ** 2) * self.T) / (self.ref.vol * sqrt(self.T)))
-        d2 = d1 - self.ref.vol * sqrt(self.T)
-        return {'d1':d1, 'd2':d2, 'Nd1':norm.cdf(d1), 'Nd2':norm.cdf(d2)}
 
     def pxLT(self, nsteps=2, return_tree=False):
         """ Calls _pxLT() method (defined differently by each class) to price this option.
@@ -567,3 +607,7 @@ class OptionValuation(OptionSeries):
         if vs is not None: vs.plot_px_convergence(nsteps_max=nsteps_max, ax=ax)
         plt.tight_layout()
         plt.show()
+
+
+    @property
+    def net_r(self): return self.rf_r - self.ref.q - self.frf_r   # calculate RFR net of yield and foreign RFR

@@ -1,4 +1,6 @@
 from qfrm import *
+
+
 class European(OptionValuation):
     """ European option class.
     Inherits all methods and properties of OptionValuation class.
@@ -16,12 +18,29 @@ class European(OptionValuation):
 
         :Example:
 
-
+        >>> European().pxBS
+        >>> stk = Stock(S0=42, vol=.20)
+        >>> European(ref=stk, right='put', K=40, T=.5, r=.1).pxBS   # .81, p.339
+        >>> European(ref=stk, right='call', K=40, T=.5, r=.1).pxBS   # 4.76, p.339
+        >>> European(ref=stk, right='call', K=40, T=.5, r=.1).pxBS    # 4.7594223928715316
+        >>> European(ref=stk, right='put', K=40, T=.5, r=.1).pxBS    # 0.80859937290009043
         """
-        from math import exp
-        _ = self.BS_params
-        c = (self.ref.S0 * _['Nd1'] - self.K * exp(-self.r * self.T) * _['Nd2'])
-        return c if self.right == 'call' else c - self.ref.S0 + exp(-self.r * self.T) * self.K
+        # from scipy.stats import norm
+        from numpy.random import normal, seed
+        from math import sqrt, exp, log
+
+        seed(self.seed0);         N, _ = normal, self
+        d1 = (log(_.ref.S0 / _.K) + (_.rf_r + _.ref.vol ** 2 / 2.) * _.T)/(_.ref.vol * sqrt(_.T))
+        d2 = d1 - _.ref.vol * sqrt(_.T)
+        px = _.signCP * (_.ref.S0 * exp(-_.ref.q * _.T) * N(_.signCP * d1) - _.K * exp(-_.rf_r * _.T) * N(_.signCP * d2))
+        self.d1, self.d2, self.pxBS = d1, d2, pxBS
+        # type('OptionPrice', (object,), {'d1':d1, 'd2':d2, 'px':px})
+        return pxBS
+
+        # from math import exp
+        # _ = self.BS_params
+        # c = (self.ref.S0 * _['Nd1'] - self.K * exp(-self.r * self.T) * _['Nd2'])
+        # return c if self.right == 'call' else c - self.ref.S0 + exp(-self.r * self.T) * self.K
 
     def _pxLT(self, nsteps=3, return_tree=False):
         """ Option valuation via binomial (lattice) tree
@@ -29,12 +48,18 @@ class European(OptionValuation):
         This method is not called directly. Instead, OptionValuation calls it via (vectorized) method pxLT()
         See Ch. 13 for numerous examples and theory.
 
+        .. sectionauthor:: Oleg Melnikov
+
         :param nsteps: number of time steps in the tree
         :type nsteps: int
         :param return_tree: indicates whether a full tree needs to be returned
         :type return_tree: bool
         :return: option price or a chronological tree of stock and option prices
         :rtype:  float|tuple of tuples
+
+        .. seealso::
+
+        Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
 
         :Example:
 
@@ -44,15 +69,13 @@ class European(OptionValuation):
         >>> a.pxLT(2)
         53.394716374961348
         >>> a.pxLT((2,20,200))
-        (7.42840190270483, 7.5113077715410839, 7.4772083289361388)
-        >>> a.pxLT(2, return_tree=True)
-        (((27.44058, 50.0, 91.10594), (24.55942, 2.0, 0.0)),    # stock and option values for step 2
-        ((37.04091, 67.49294), (14.95909, 0.9327)),             # stock and option values for step 1
-        ((50.0,), (7.4284,)))                                   # stock and option values for step 0 (now)
+        (53.394716374961348, 56.40278872645991, 56.324021659469274)
+        >>> a.pxLT(2, return_tree=True)  # stock and option values for step 2 (expiry), 1, 0 (now)
+        (((663.17191000000003, 810.0, 989.33623), (0.0, 10.0, 189.33623)),
+        ((732.91831000000002, 895.18844000000001), (5.0623199999999997, 100.66143)),
+        ((810.0,), (53.39472,)))
         """
-        # http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
-        # def pxLT_(nsteps):
-        from numpy import cumsum, log, arange, insert, exp, sqrt, sum, maximum, vectorize
+        from numpy import cumsum, log, arange, insert, exp, sqrt, sum, maximum
 
         _ = self.LT_params(nsteps)
         S = self.ref.S0 * _['d'] ** arange(nsteps, -1, -1) * _['u'] ** arange(0, nsteps + 1)
