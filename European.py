@@ -5,7 +5,6 @@ class European(OptionValuation):
     """ European option class.
     Inherits all methods and properties of OptionValuation class.
     """
-    @property
     def pxBS(self):
         """ Option valuation via BSM.
 
@@ -18,29 +17,24 @@ class European(OptionValuation):
 
         :Example:
 
-        >>> European().pxBS
-        >>> stk = Stock(S0=42, vol=.20)
-        >>> European(ref=stk, right='put', K=40, T=.5, r=.1).pxBS   # .81, p.339
-        >>> European(ref=stk, right='call', K=40, T=.5, r=.1).pxBS   # 4.76, p.339
-        >>> European(ref=stk, right='call', K=40, T=.5, r=.1).pxBS    # 4.7594223928715316
-        >>> European(ref=stk, right='put', K=40, T=.5, r=.1).pxBS    # 0.80859937290009043
+        >>> s = Stock(S0=42, vol=.20)
+        >>> European(ref=s, right='put', K=40, T=.5, rf_r=.1).pxBS().px   # .81, p.339
+        >>> European(ref=s, right='call', K=40, T=.5, rf_r=.1).pxBS()   # 4.76, p.339
+        >>> European(ref=s, right='call', K=40, T=.5, rf_r=.1).pxBS()    # 4.7594223928715316
+        >>> European(ref=s, right='put', K=40, T=.5, rf_r=.1).pxBS()    # 0.80859937290009043
         """
-        # from scipy.stats import norm
-        from numpy.random import normal, seed
+        from scipy.stats import norm
         from math import sqrt, exp, log
 
-        seed(self.seed0);         N, _ = normal, self
+        _ = self
         d1 = (log(_.ref.S0 / _.K) + (_.rf_r + _.ref.vol ** 2 / 2.) * _.T)/(_.ref.vol * sqrt(_.T))
         d2 = d1 - _.ref.vol * sqrt(_.T)
-        px = _.signCP * (_.ref.S0 * exp(-_.ref.q * _.T) * N(_.signCP * d1) - _.K * exp(-_.rf_r * _.T) * N(_.signCP * d2))
-        self.d1, self.d2, self.pxBS = d1, d2, pxBS
-        # type('OptionPrice', (object,), {'d1':d1, 'd2':d2, 'px':px})
-        return pxBS
+        px = _.signCP * (
+            _.ref.S0 * exp(-_.ref.q * _.T) * norm(_.signCP * d1)
+            - _.K * exp(-_.rf_r * _.T) * norm(_.signCP * d2))
 
-        # from math import exp
-        # _ = self.BS_params
-        # c = (self.ref.S0 * _['Nd1'] - self.K * exp(-self.r * self.T) * _['Nd2'])
-        # return c if self.right == 'call' else c - self.ref.S0 + exp(-self.r * self.T) * self.K
+        self._pxBS = type('pxBS', (object,),  {'d1':d1, 'd2':d2, 'px':px})  # save params as object pxBS
+        return self._pxBS
 
     def _pxLT(self, nsteps=3, return_tree=False):
         """ Option valuation via binomial (lattice) tree
