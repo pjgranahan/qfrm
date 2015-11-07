@@ -464,6 +464,7 @@ class OptionValuation(OptionSeries):
 
     The class inherits from a simpler class that describes an option.
 
+
     """
     def __init__(self, rf_r=.05, frf_r=0, seed0=None, *args, **kwargs):
         """ Constructor simply saves all identified arguments and passes others to the base (parent) class, OptionSeries.
