@@ -415,25 +415,56 @@ class OptionSeries:
             pprint:   alternative formatting module
         """
         o = self
-        s = str(o.K) + ' ' + str(o.T) + 'yr ' + type(o).__name__ + ' ' + str(o.right)  # option series name
+        s = str(o.K) + ' ' + str(o.T) + 'yr ' + self.style + ' ' + str(o.right)  # option series name
 
         if complexity == 1:
-            r = rf = q = vol = ''
-            if hasattr(o, 'ref'):  # check if attribute (variable) exists in this object
+            rf_r = frf_r = q = vol = ''
+            if hasattr(o, 'ref'):  # cif reference object is specified, read its parameters
                 if hasattr(o.ref, 'S0'): S0 = (',S0=' + str(o.ref.S0))
                 if hasattr(o.ref, 'q'): q = (',q=' + str(o.ref.q))
                 if hasattr(o.ref, 'vol'): vol = (',vol=' + str(o.ref.vol))
                 vol = (',vol=' + str(o.ref.vol)) if getattr(o.ref, 'vol', 0)!=0 else ''
-            if hasattr(o, 'rf'): rf = (',rf=' + str(o.rf))
-            if hasattr(o, 'r'): r = (',r=' + str(o.r))
-            s += S0 + vol + r + q + rf
+            if hasattr(o, 'frf_r'): frf_r = (',frf_r=' + str(o.frf_r))
+            if hasattr(o, 'rf_r'): rf_r = (',rf_r=' + str(o.rf_r))
+            s += S0 + vol + rf_r + q + frf_r
 
         if complexity in (2, 3,):
             from yaml import dump
-            s = dump(o, default_flow_style=False).replace('!!python/object:__main__.','')
+            s = dump(o, default_flow_style=False).replace('!!python/','').replace('object:__main__.','')
             if complexity == 2:
                 s = s.replace(',',', ').replace('\n', ',').replace(': ', ':').replace('  ',' ')
         return s
+
+    def __repr__(self):
+        """ Called by the repr() built-in function to compute the “official” string representation of an object.
+
+        :return: full list of object properties
+        :rtype: str
+
+        .. seealso::
+            http://stackoverflow.com/questions/1436703/difference-between-str-and-repr-in-python
+            https://docs.python.org/2/reference/datamodel.html#object.__repr__
+            http://stackoverflow.com/questions/1984162/purpose-of-pythons-repr
+
+        """
+        return self.spec2str(complexity=2)
+
+    def __str__(self):
+        """ Called by str(object) and the built-in functions format() and print()
+        to compute the “informal” or nicely printable string representation of an object.
+
+        :return: full list of object properties
+        :rtype: str
+        """
+        return self.spec2str(complexity=3)
+
+    @property
+    def style(self):
+        """
+        :return: option style
+        :rtype: str
+        """
+        return type(self).__name__
 
     @property
     def clone(self):  return self
@@ -456,7 +487,6 @@ class OptionSeries:
         if clone is not None:
             [setattr(self, v, getattr(clone, v)) for v in vars(clone)]
             # self.__dict__.update(vars(clone))   # don't use. fails to call set_right()
-
 
 
 
@@ -609,7 +639,6 @@ class OptionValuation(OptionSeries):
         if vs is not None: vs.plot_px_convergence(nsteps_max=nsteps_max, ax=ax)
         plt.tight_layout()
         plt.show()
-
 
     @property
     def net_r(self):

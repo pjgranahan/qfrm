@@ -5,23 +5,27 @@ class European(OptionValuation):
     """ European option class.
     Inherits all methods and properties of OptionValuation class.
     """
-    def pxBS(self):
+    def calc_BS(self):
         """ Option valuation via BSM.
 
         Use BS_params method to draw computed parameters.
         They are also used by other exotic options.
-        It's basically a one-liner.
 
         :return: price of a put or call European option
         :rtype: float
 
         :Example:
 
+        >>> from qfrm import *
         >>> s = Stock(S0=42, vol=.20)
-        >>> European(ref=s, right='put', K=40, T=.5, rf_r=.1).pxBS().px   # .81, p.339
-        >>> European(ref=s, right='call', K=40, T=.5, rf_r=.1).pxBS()   # 4.76, p.339
-        >>> European(ref=s, right='call', K=40, T=.5, rf_r=.1).pxBS()    # 4.7594223928715316
-        >>> European(ref=s, right='put', K=40, T=.5, rf_r=.1).pxBS()    # 0.80859937290009043
+        >>> o = European(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @$0.81, put @$4.76, Hull p.339')
+        >>> o.show
+        >>> (o.calc_BS().px, o.BS.d1, o.BS.d2)      # object saves key interim calculations to self
+        >>> (o.update(right='call').calc_BS().px, o.BS.d1, o.BS.d2)  # change option object to a put
+
+        >>> o = European(clone=o, K=41, desc='Ex. of cloning a new option from old, but with a new strike.')
+        >>> (o.calc_BS().px, o.BS.d1, o.BS.d2)
+
         """
         from scipy.stats import norm
         from math import sqrt, exp, log
@@ -30,11 +34,11 @@ class European(OptionValuation):
         d1 = (log(_.ref.S0 / _.K) + (_.rf_r + _.ref.vol ** 2 / 2.) * _.T)/(_.ref.vol * sqrt(_.T))
         d2 = d1 - _.ref.vol * sqrt(_.T)
         px = _.signCP * (
-            _.ref.S0 * exp(-_.ref.q * _.T) * norm(_.signCP * d1)
-            - _.K * exp(-_.rf_r * _.T) * norm(_.signCP * d2))
+            _.ref.S0 * exp(-_.ref.q * _.T) * norm.cdf(_.signCP * d1)
+            - _.K * exp(-_.rf_r * _.T) * norm.cdf(_.signCP * d2))
 
-        self._pxBS = type('pxBS', (object,),  {'d1':d1, 'd2':d2, 'px':px})  # save params as object pxBS
-        return self._pxBS
+        self.BS = type('BS', (object,),  {'px':px, 'd1':d1, 'd2':d2})  # save params as object pxBS
+        return self.BS
 
     def _pxLT(self, nsteps=3, return_tree=False):
         """ Option valuation via binomial (lattice) tree
@@ -87,3 +91,14 @@ class European(OptionValuation):
             tmp = csl[nsteps] - csl - csl[::-1] + log(_['p'])*arange(nsteps+1) + log(1-_['p'])*arange(nsteps+1)[::-1]
             out = (_['df_T'] * sum(exp(tmp) * tuple(O)))
         return out
+
+
+from qfrm import *
+s = Stock(S0=42, vol=.20)
+o = European(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @$0.81, put @$4.76, Hull p.339')
+
+o.style
+o.__str__()
+repr(o)
+str(o)
+print(o)
