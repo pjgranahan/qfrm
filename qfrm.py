@@ -308,6 +308,8 @@ class OptionSeries:
         >>> vars(o)
 
         """
+        self.reset()   # delete old calculations, before updating parameters
+
         if 'clone' in kwargs:
             self.clone = kwargs['clone']
             del kwargs['clone']
@@ -430,7 +432,7 @@ class OptionSeries:
 
         if complexity in (2, 3,):
             from yaml import dump
-            s = dump(o, default_flow_style=False).replace('!!python/','').replace('object:__main__.','')
+            s = dump(o, default_flow_style=False).replace('!!python/object:','').replace('__main__.','')
             if complexity == 2:
                 s = s.replace(',',', ').replace('\n', ',').replace(': ', ':').replace('  ',' ')
         return s
@@ -488,6 +490,14 @@ class OptionSeries:
             [setattr(self, v, getattr(clone, v)) for v in vars(clone)]
             # self.__dict__.update(vars(clone))   # don't use. fails to call set_right()
 
+    def reset(self):
+        """ Remove calculated attributes.
+
+        :return:
+        :rtype:
+        """
+        if not getattr(self, 'px', None) is None: del self.px
+        return self
 
 
 class OptionValuation(OptionSeries):
@@ -661,3 +671,17 @@ class OptionValuation(OptionSeries):
         rf_r = 0 if self.rf_r is None else self.rf_r
 
         return rf_r - q - frf_r   # calculate RFR net of yield and foreign RFR
+
+
+class Price:
+    """ Object for storing calculated price
+
+    Use this object to store the price, methods and any intermediate results in your option object.
+    """
+    px = None  # use float data type
+    method = None  # 'BS', 'LT', 'MC', 'FD'
+    sub_method = None   # indicate specifics about pricing method. Ex: 'LSM' or 'naive' for MC pricing of American
+
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            if v is not None:  setattr(self, k, v)

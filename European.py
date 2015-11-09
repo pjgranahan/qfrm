@@ -1,6 +1,5 @@
 from qfrm import *
 
-
 class European(OptionValuation):
     """ European option class.
     Inherits all methods and properties of OptionValuation class.
@@ -16,10 +15,10 @@ class European(OptionValuation):
 
         :Example:
 
-        >>> from qfrm import *
         >>> s = Stock(S0=42, vol=.20)
-        >>> o = European(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @$0.81, put @$4.76, Hull p.339')
-        >>> o.show
+        >>> o = European(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @0.81, put @4.76, Hull p.339')
+        >>> o.calc_BS().px
+        >>> print(o)
         >>> (o.calc_BS().px, o.BS.d1, o.BS.d2)      # object saves key interim calculations to self
         >>> (o.update(right='call').calc_BS().px, o.BS.d1, o.BS.d2)  # change option object to a put
 
@@ -37,8 +36,11 @@ class European(OptionValuation):
             _.ref.S0 * exp(-_.ref.q * _.T) * norm.cdf(_.signCP * d1)
             - _.K * exp(-_.rf_r * _.T) * norm.cdf(_.signCP * d2))
 
-        self.BS = type('BS', (object,),  {'px':px, 'd1':d1, 'd2':d2})  # save params as object pxBS
-        return self.BS
+        # self.BS = type('BS', (object,),  {'px':float(px), 'd1':d1, 'd2':d2})  # save params as object pxBS
+        # self.BS1 = {'px':px, 'd1':d1, 'd2':d2}  # save params as object pxBS
+        # self.BS = BS(); self.BS.px=float(px); self.BS.d1=d1; self.BS.d2=d2
+        self.px = Price(px=float(px), d1=d1, d2=d2, method='BS', desc='')
+        return self.px
 
     def _pxLT(self, nsteps=3, return_tree=False):
         """ Option valuation via binomial (lattice) tree
@@ -93,12 +95,12 @@ class European(OptionValuation):
         return out
 
 
-from qfrm import *
-s = Stock(S0=42, vol=.20)
-o = European(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @$0.81, put @$4.76, Hull p.339')
-
-o.style
-o.__str__()
-repr(o)
-str(o)
-print(o)
+# from qfrm import *
+# s = Stock(S0=42, vol=.20)
+# o = European(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @$0.81, put @$4.76, Hull p.339')
+#
+# o.style
+# o.__str__()
+# repr(o)
+# str(o)
+# print(o)
