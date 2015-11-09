@@ -63,6 +63,12 @@ class European(OptionValuation):
 
         >>> s = Stock(S0=810, vol=.2, q=.02)
         >>> o = European(ref=s, right='call', K=800, T=.5, rf_r=.05, desc='53.39, Hull p.291')
+        >>> o.calc_LT(3).px.px  # option price from a 3-step tree (that's 2 time intervals)
+        59.867529937506426
+        >>> o.calc_LT(2, True).px.opt_tree
+        (((663.17191000000003, 810.0, 989.33623), (0.0, 10.0, 189.33623)),
+        ((732.91831000000002, 895.18844000000001), (5.0623199999999997, 100.66143)),
+        ((810.0,), (53.39472,)))
         >>> o.calc_LT(2)
         European
         K: 800
@@ -91,31 +97,33 @@ class European(OptionValuation):
           vol: 0.2
         rf_r: 0.05
         seed0: null
-        >>> o.calc_LT(2, True).px.tree
-        (((663.17191000000003, 810.0, 989.33623), (0.0, 10.0, 189.33623)),
-        ((732.91831000000002, 895.18844000000001), (5.0623199999999997, 100.66143)),
-        ((810.0,), (53.39472,)))
-        >>> o.calc_LT(3).px.px  # option price from a 3-step tree (that's 2 time intervals)
-        59.867529937506426
         """
         from numpy import cumsum, log, arange, insert, exp, sqrt, sum, maximum
 
         _ = self.LT_specs(nsteps)
         S = self.ref.S0 * _['d'] ** arange(nsteps, -1, -1) * _['u'] ** arange(0, nsteps + 1)
         O = maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
-        tree = ((S, O),) if save_tree else None
+        S_tree, O_tree = None, None
+        # tree = ((S, O),) if save_tree else None
 
         if save_tree:
+            S_tree = (tuple([float(s) for s in S]),)
+            O_tree = (tuple([float(o) for o in O]),)
+
             for i in range(nsteps, 0, -1):
                 O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
                 S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
-                tree = tree + ((S, O),)
-            out = tree[len(tree) - 1][1][0]
-            tree = Util.round(tree, to_tuple=True)
+                # tree = tree + ((S, O),)
+                S_tree = (tuple([float(s) for s in S]),) + S_tree
+                O_tree = (tuple([float(o) for o in O]),) + O_tree
+
+            out = O_tree[0][0]
+            # tree = Util.round(tree, to_tuple=True)
         else:
             csl = insert(cumsum(log(arange(nsteps)+1)), 0, 0)         # logs avoid overflow & truncation
             tmp = csl[nsteps] - csl - csl[::-1] + log(_['p'])*arange(nsteps+1) + log(1-_['p'])*arange(nsteps+1)[::-1]
             out = (_['df_T'] * sum(exp(tmp) * tuple(O)))
 
-        self.px = Price(px=float(out), LT_specs=_, method='LT', tree=tree, sub_method='binomial tree; Hull Ch.13')
+        self.px = Price(px=float(out), method='LT', sub_method='binomial tree; Hull Ch.13',
+                        LT_specs=_, ref_tree=S_tree, opt_tree=O_tree)
         return self

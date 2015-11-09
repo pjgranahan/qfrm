@@ -201,7 +201,7 @@ class Util():
             return type(x)(Util.round(y, prec) for y in x)
 
     @staticmethod
-    def to_tuple(a):
+    def to_tuple(a, leaf_as_float=False):
         """
         Recursively converts a iterable (and arrays) to tuple.
         :param a: variable to be converted to tuple
@@ -217,10 +217,8 @@ class Util():
         .. seealso::
             http://stackoverflow.com/questions/10016352/convert-numpy-array-to-tuple
         """
-        try:
-            return tuple((Util.to_tuple(i)) for i in a)
-        except TypeError:
-            return a
+        try:  return tuple((Util.to_tuple(i)) for i in a)
+        except TypeError: return float(a) if leaf_as_float else a
 
 
 class Stock:
@@ -443,7 +441,8 @@ class OptionSeries:
 
         from yaml import dump
 
-        s = dump(_, default_flow_style=not new_line).replace('!!python/object:','').replace('__main__.','')
+        s = dump(_, default_flow_style=not new_line).replace('!!python/object:','').replace('!!python/tuple','')
+        s = s.replace('__main__.','')
         if not new_line:  s = s.replace(',',', ').replace('\n', ',').replace(': ', ':').replace('  ',' ')
         return s
 
