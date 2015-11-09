@@ -10,20 +10,17 @@ class European(OptionValuation):
         Use BS_params method to draw computed parameters.
         They are also used by other exotic options.
 
-        :return: price of a put or call European option
-        :rtype: float
+        :return: self
+        :rtype: European
 
         :Example:
 
         >>> s = Stock(S0=42, vol=.20)
         >>> o = European(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @0.81, put @4.76, Hull p.339')
-        >>> o.calc_BS().px
-        >>> print(o)
-        >>> (o.calc_BS().px, o.BS.d1, o.BS.d2)      # object saves key interim calculations to self
-        >>> (o.update(right='call').calc_BS().px, o.BS.d1, o.BS.d2)  # change option object to a put
-
-        >>> o = European(clone=o, K=41, desc='Ex. of cloning a new option from old, but with a new strike.')
-        >>> (o.calc_BS().px, o.BS.d1, o.BS.d2)
+        >>> o.calc_BS()      # saves interim results to self and prints out BS price. Equivalent to repr(o)
+        >>> (o.px.px, o.px.d1, o.px.d2, o.px.method)  # alternative way to retrieve attributes
+        >>> o.update(right='call').calc_BS()  # change option object to a put
+        >>> print(European(clone=o, K=41, desc='Ex. copy params to new option, but with a new strike.').calc_BS())
 
         """
         from scipy.stats import norm
@@ -32,15 +29,17 @@ class European(OptionValuation):
         _ = self
         d1 = (log(_.ref.S0 / _.K) + (_.rf_r + _.ref.vol ** 2 / 2.) * _.T)/(_.ref.vol * sqrt(_.T))
         d2 = d1 - _.ref.vol * sqrt(_.T)
-        px = _.signCP * (
-            _.ref.S0 * exp(-_.ref.q * _.T) * norm.cdf(_.signCP * d1)
-            - _.K * exp(-_.rf_r * _.T) * norm.cdf(_.signCP * d2))
 
-        # self.BS = type('BS', (object,),  {'px':float(px), 'd1':d1, 'd2':d2})  # save params as object pxBS
-        # self.BS1 = {'px':px, 'd1':d1, 'd2':d2}  # save params as object pxBS
-        # self.BS = BS(); self.BS.px=float(px); self.BS.d1=d1; self.BS.d2=d2
-        self.px = Price(px=float(px), d1=d1, d2=d2, method='BS', desc='')
-        return self.px
+        call_px = float(_.ref.S0 * exp(-_.ref.q * _.T) * norm.cdf(d1) - _.K * exp(-_.rf_r * _.T) * norm.cdf(d2))
+        put_px = float(- _.ref.S0 * exp(-_.ref.q * _.T) * norm.cdf(-d1) + _.K * exp(-_.rf_r * _.T) * norm.cdf(-d2))
+        px = call_px if _.signCP == 1 else put_px if _.signCP == -1 else None
+
+        # px = _.signCP * (
+        #     _.ref.S0 * exp(-_.ref.q * _.T) * norm.cdf(_.signCP * d1)
+        #     - _.K * exp(-_.rf_r * _.T) * norm.cdf(_.signCP * d2))
+
+        self.px = Price(px=px, call_px=call_px, put_px=put_px, d1=d1, d2=d2, method='BS', sub_method='standard; Hull p.335')
+        return self
 
     def _pxLT(self, nsteps=3, return_tree=False):
         """ Option valuation via binomial (lattice) tree
@@ -94,13 +93,3 @@ class European(OptionValuation):
             out = (_['df_T'] * sum(exp(tmp) * tuple(O)))
         return out
 
-
-# from qfrm import *
-# s = Stock(S0=42, vol=.20)
-# o = European(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @$0.81, put @$4.76, Hull p.339')
-#
-# o.style
-# o.__str__()
-# repr(o)
-# str(o)
-# print(o)

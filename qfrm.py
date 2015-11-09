@@ -264,7 +264,6 @@ class OptionSeries:
         http://stackoverflow.com/questions/6535832/python-inherit-the-superclass-init
         http://stackoverflow.com/questions/285061/how-do-you-programmatically-set-an-attribute-in-python
     """
-    # def __init__(self, ref=Stock(S0=50, vol=.3), right='put', K=52, T=2, clone=None, desc={}):
     def __init__(self, ref=None, right=None, K=None, T=None, clone=None, desc=None):
         """ Constructor.
 
@@ -289,10 +288,6 @@ class OptionSeries:
         :rtype:    __main__.OptionSeries
         """
         self.update(ref=ref, right=right, K=K, T=T, clone=clone, desc=desc)
-        # if clone is None:
-        #     self.ref, self.K, self.T, self.desc, self.right = ref, K, T, desc, right
-        # else:
-        #     self.clone = clone  # copy over all properties of option being cloned
 
     def update(self, **kwargs):
         """
@@ -303,9 +298,8 @@ class OptionSeries:
         :Example:
 
         >>> o = OptionSeries(ref=Stock(S0=50, vol=.3), right='put', K=52, T=2).update(K=53)
-        >>> vars(o)
-        >>> o = OptionSeries(clone=o, K=54).update(right='call')
-        >>> vars(o)
+        >>> o
+        >>> OptionSeries(clone=o, K=54).update(right='call')
 
         """
         self.reset()   # delete old calculations, before updating parameters
@@ -314,19 +308,9 @@ class OptionSeries:
             self.clone = kwargs['clone']
             del kwargs['clone']
 
-        # self.__dict__.update(kwargs)
-        # if kwargs is not None: [setattr(self, a, kwargs[a]) for a in kwargs]
         for k, v in kwargs.items():
             if v is not None: setattr(self, k, v)
 
-        # for kwarg in kwargs:
-        #     if kwarg != 'clone':
-        #         self[kwarg] = kwargs[kwarg]
-
-        # self.clone = clone  # copy over all properties of option being cloned
-        # if ref is not None: self.ref = ref
-        # if K is not None: self.K = K
-        # self.ref, self.K, self.T, self.desc, self.right = ref, K, T, desc, right
         return self
 
     def get_right(self):
@@ -334,7 +318,6 @@ class OptionSeries:
         :return: 'call', 'put', or 'other'
         :rtype: str
         """
-        # return 'call' if self._signCP == 1 else 'put' if self._signCP == -1 else 'other'
         return self._right
 
     def set_right(self, right='put'):
@@ -370,71 +353,98 @@ class OptionSeries:
         else:
             return None
 
-    def spec2str(self, complexity=0):
-        """ Returns a formatted string containing option specifications
-        :param complexity: indicate level of detail and formatting to include in returned string
-            0: return series name, including option style (European, American, ...)
-            1: return option series, RFR r, foreign RFR rf, volatility, dividend yield q
-            2: return all internal option variables (recursively applied to ref object)
-            3: same as 2, but indented accordingly and formatted vertically
+    @property
+    def series(self):
+        """ Compiles an option series name, including option style (European, American, ...)
 
-        For complexity 2 & 3, yaml.dump does most of the work. 0 is an easy concatenation. 1 draws from ref object.
-        :type complexity: int
+        :return: option series name
+        :rtype: str
+
+        :Example:
+
+            >>> OptionSeries(ref=Stock(S0=50, vol=0.3), K=51, right='call').series
+            '51 call'
+            >>> OptionSeries(ref=Stock(S0=50, vol=0.3, tkr='IBM'), K=51, right='call').series
+            'IBM 51 call'
+            >>> OptionSeries(ref=Stock(S0=50, vol=0.3, tkr='IBM'), K=51, T=2, right='call').series
+            'IBM 51 2yr call'
+        """
+        try: tkr = self.ref.tkr + ' '
+        except: tkr=''
+
+        K = '' if getattr(self, 'K', None) is None else str(self.K) + ' '
+        T = '' if getattr(self, 'T', None) is None else str(self.T) + 'yr '
+        style = '' if self.style in ['OptionSeries', 'OptionValuation'] else self.style + ' '
+        right = '' if getattr(self, 'right', None) is None else str(self.right) + ' '
+
+        return (tkr + K + T + style + str(right)).rstrip()  # strip trailing spaces
+
+    @property
+    def specs(self):
+        """ Compile option series, RFR, foreign RFR, volatility, dividend yield
+
+        :return: option pricing specifications, including interest rates, volatility, ...
+        :rtype: str
+
+        :Example:
+
+            >>> OptionSeries(ref=Stock(S0=50, vol=0.3), K=51, right='call').specs
+            '51 call,S0=50,vol=0.3,q=0'
+            >>> OptionSeries(ref=Stock(S0=50, vol=0.3, tkr='IBM'), K=51, right='call').specs
+            'IBM 51 call,S0=50,vol=0.3,q=0'
+            >>> OptionSeries(ref=Stock(S0=50, vol=0.3), K=51, T=2, right='call', desc='some option').specs
+            '51 2yr call,S0=50,vol=0.3,q=0'
+        """
+        _ = self
+
+        rf_r = frf_r = q = vol = ''
+        if hasattr(_, 'ref'):  # if reference object is specified, read its parameters
+            if hasattr(_.ref, 'S0'): S0 = (',S0=' + str(_.ref.S0))
+            if hasattr(_.ref, 'q'): q = (',q=' + str(_.ref.q))
+            if hasattr(_.ref, 'vol'): vol = (',vol=' + str(_.ref.vol))
+            vol = (',vol=' + str(_.ref.vol)) if getattr(_.ref, 'vol', 0)!=0 else ''
+        if hasattr(_, 'frf_r'): frf_r = (',frf_r=' + str(_.frf_r))
+        if hasattr(_, 'rf_r'): rf_r = (',rf_r=' + str(_.rf_r))
+
+        return self.series + S0 + vol + rf_r + q + frf_r
+
+    def full_spec(self, new_line=False):
+        """ Returns a formatted string containing all variables of this class (recursively)
+
+        :param new_line: whether include new line symbol '\n' or not
+        :type new_line: bool
         :return: formatted string with option specifications
         :rtype:  str
 
         :Example:
 
-        >>> o = American(ref=Stock(S0=50, vol=.3), right='put', K=52, T=2, r=.05, desc={'note':'$7.42840, Hull p.288'})
-        >>> o.spec2str(0)
-        '52 2yr American put'
-        >>> o.spec2str(1)
-        '52 2yr American put,S0=50,vol=0.3,r=0.05,q=0,rf=0'
-        >>> o.spec2str(2)
-        'American,K:52,T:2,desc:, note:$7.42840, Hull p.288,net_r:0.05,r:0.05,ref:Stock, S0:50, curr:null, desc:null, q:0, tkr:null, vol:0.3,rf:0,signCP:-1,'
-        >>> print(o.spec2str(3))
-        American
-        K: 52
-        T: 2
-        desc:
-          note: $7.42840, Hull p.288
-        net_r: 0.05
-        r: 0.05
-        ref: Stock
-          S0: 50
-          curr: null
-          desc: null
-          q: 0
-          tkr: null
-          vol: 0.3
-        rf: 0
-        signCP: -1
+        >>> OptionSeries(ref=Stock(S0=50, vol=0.3), K=51, right='call').full_spec(False)
+        'OptionSeries,K:51,_right:call,_signCP:1,ref:Stock, S0:50, curr:null, desc:null, q:0, tkr:null, vol:0.3,'
+        >>> print(OptionSeries(ref=Stock(S0=50, vol=0.3, tkr='IBM', curr='USD'), K=51, right='call').full_spec(True))
+            OptionSeries
+            K: 51
+            _right: call
+            _signCP: 1
+            ref: Stock
+              S0: 50
+              curr: USD
+              desc: null
+              q: 0
+              tkr: IBM
+              vol: 0.3
 
         .. seealso::
             docs.python.org/3.4/library/pprint.html
             stackoverflow.com/questions/3229419/pretty-printing-nested-dictionaries-in-python
             dpinte.wordpress.com/2008/10/31/pyaml-dump-option
-            pprint:   alternative formatting module
+            Alternative serialization(formatting): pprint, pickle
         """
-        o = self
-        s = str(o.K) + ' ' + str(o.T) + 'yr ' + self.style + ' ' + str(o.right)  # option series name
+        _ = self
 
-        if complexity == 1:
-            rf_r = frf_r = q = vol = ''
-            if hasattr(o, 'ref'):  # cif reference object is specified, read its parameters
-                if hasattr(o.ref, 'S0'): S0 = (',S0=' + str(o.ref.S0))
-                if hasattr(o.ref, 'q'): q = (',q=' + str(o.ref.q))
-                if hasattr(o.ref, 'vol'): vol = (',vol=' + str(o.ref.vol))
-                vol = (',vol=' + str(o.ref.vol)) if getattr(o.ref, 'vol', 0)!=0 else ''
-            if hasattr(o, 'frf_r'): frf_r = (',frf_r=' + str(o.frf_r))
-            if hasattr(o, 'rf_r'): rf_r = (',rf_r=' + str(o.rf_r))
-            s += S0 + vol + rf_r + q + frf_r
+        from yaml import dump
 
-        if complexity in (2, 3,):
-            from yaml import dump
-            s = dump(o, default_flow_style=False).replace('!!python/object:','').replace('__main__.','')
-            if complexity == 2:
-                s = s.replace(',',', ').replace('\n', ',').replace(': ', ':').replace('  ',' ')
+        s = dump(_, default_flow_style=False).replace('!!python/object:','').replace('__main__.','')
+        if not new_line:  s = s.replace(',',', ').replace('\n', ',').replace(': ', ':').replace('  ',' ')
         return s
 
     def __repr__(self):
@@ -448,8 +458,14 @@ class OptionSeries:
             https://docs.python.org/2/reference/datamodel.html#object.__repr__
             http://stackoverflow.com/questions/1984162/purpose-of-pythons-repr
 
+        :Exmaple:
+
+        >>> o = OptionSeries(ref=Stock(S0=50,vol=.03))
+        >>> repr(o)
+        >>> o   # equivalent to print(repr(o))
+
         """
-        return self.spec2str(complexity=2)
+        return self.full_spec(new_line=True)
 
     def __str__(self):
         """ Called by str(object) and the built-in functions format() and print()
@@ -457,12 +473,20 @@ class OptionSeries:
 
         :return: full list of object properties
         :rtype: str
+
+        :Example:
+
+        >>> o = OptionSeries(ref=Stock(S0=50,vol=.03))
+        >>> str(o)
+        >>> print(str(o))
+
         """
-        return self.spec2str(complexity=3)
+        return self.full_spec(new_line=True)
 
     @property
     def style(self):
-        """
+        """ Retrieve option object name.
+
         :return: option style
         :rtype: str
         """
@@ -488,10 +512,9 @@ class OptionSeries:
         # copy specs from supplied object
         if clone is not None:
             [setattr(self, v, getattr(clone, v)) for v in vars(clone)]
-            # self.__dict__.update(vars(clone))   # don't use. fails to call set_right()
 
     def reset(self):
-        """ Remove calculated attributes.
+        """ Delete calculated attributes.
 
         :return:
         :rtype:
@@ -504,8 +527,6 @@ class OptionValuation(OptionSeries):
     """ Adds interest rates and some methods shared by subclasses.
 
     The class inherits from a simpler class that describes an option.
-
-
     """
     def __init__(self, rf_r=None, frf_r=0, seed0=None, *args, **kwargs):
         """ Constructor simply saves all identified arguments and passes others to the base (parent) class, OptionSeries.
@@ -527,8 +548,7 @@ class OptionValuation(OptionSeries):
 
         :Example:
 
-        >>> o = OptionValuation(frf_r=.01); o.net_r
-        >>> o.frf_r = .02; o.net_r
+        >>> OptionValuation(ref=Stock(S0=50), rf_r=.05, frf_r=.01)
 
         """
         self.rf_r, self.frf_r, self.seed0 = rf_r, frf_r, seed0
@@ -659,8 +679,8 @@ class OptionValuation(OptionSeries):
         :Example:
 
         >>> o = OptionValuation(rf_r=0.05); vars(o)
-        >>> vars(o.update(rf_r=0.04))
-        >>> vars(o.update(ref=Stock(q=0.01)))
+        >>> o.update(rf_r=0.04)
+        >>> o.update(ref=Stock(q=0.01))
         >>> o.net_r
 
         """
