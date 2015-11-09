@@ -443,7 +443,7 @@ class OptionSeries:
 
         from yaml import dump
 
-        s = dump(_, default_flow_style=False).replace('!!python/object:','').replace('__main__.','')
+        s = dump(_, default_flow_style=not new_line).replace('!!python/object:','').replace('__main__.','')
         if not new_line:  s = s.replace(',',', ').replace('\n', ',').replace(': ', ':').replace('  ',' ')
         return s
 
@@ -554,7 +554,7 @@ class OptionValuation(OptionSeries):
         self.rf_r, self.frf_r, self.seed0 = rf_r, frf_r, seed0
         super().__init__(*args, **kwargs)  # pass remaining arguments to base (parent) class
 
-    def LT_params(self, nsteps=2):
+    def LT_specs(self, nsteps=2):
         """ Calculates a collection of specs/parameters needed for lattice tree pricing.
 
         Parameters returned:
@@ -573,7 +573,7 @@ class OptionValuation(OptionSeries):
 
         :Example:
 
-        >>> OptionValuation(ref=Stock(S0=42, vol=.2), right='call', K=40, T=.5, r=.1).LT_params(2)
+        >>> OptionValuation(ref=Stock(S0=42, vol=.2), right='call', K=40, T=.5, rf_r=.1).LT_specs(2)
         {'a': 1.0253151205244289,
          'd': 0.9048374180359595,
          'df_T': 0.951229424500714,
@@ -581,7 +581,8 @@ class OptionValuation(OptionSeries):
          'dt': 0.25,
          'p': 0.60138570166548,
          'u': 1.1051709180756477}
-         >>> American(ref=Stock(S0=50, vol=.3), right='put', K=52, T=2, r=.05, desc={'note':'$7.42840, Hull p.288'}).LT_params(3)
+         >>> s = Stock(S0=50, vol=.3)
+         >>> OptionValuation(ref=s,right='put', K=52, T=2, rf_r=.05, desc={'Hull p.288'}).LT_specs(3)
         {'a': 1.033895113513574,
          'd': 0.7827444773247475,
          'df_T': 0.9048374180359595,
@@ -592,45 +593,16 @@ class OptionValuation(OptionSeries):
         """
         assert isinstance(nsteps, int), 'nsteps must be an integer, >2'
         from math import exp, sqrt
-        par = {'dt': self.T / nsteps}
-        par['u'] = exp(self.ref.vol * sqrt(par['dt']))
-        par['d'] = 1 / par['u']
-        par['a'] = exp(self.net_r * par['dt'])   # growth factor, p.452
-        par['p'] = (par['a'] - par['d']) / (par['u'] - par['d'])
-        par['df_T'] = exp(-self.rf_r * self.T)
-        par['df_dt'] = exp(-self.rf_r * par['dt'])
-        return par
 
-    def pxLT(self, nsteps=2, return_tree=False):
-        """ Calls _pxLT() method (defined differently by each class) to price this option.
+        sp = {'dt': self.T / nsteps}
+        sp['u'] = exp(self.ref.vol * sqrt(sp['dt']))
+        sp['d'] = 1 / sp['u']
+        sp['a'] = exp(self.net_r * sp['dt'])   # growth factor, p.452
+        sp['p'] = (sp['a'] - sp['d']) / (sp['u'] - sp['d'])
+        sp['df_T'] = exp(-self.rf_r * self.T)
+        sp['df_dt'] = exp(-self.rf_r * sp['dt'])
 
-        This method does not do the valuation.
-        It's purpose is to vectorize over nsteps argument only, so that this common feature is not redundantly computed by each child class.
-        If nsteps is a tuple, then return_tree is disabled for performance.
-
-        :param nsteps:  number of steps for a binomial tree computation. Or, a tuple of numbers of steps. Required.
-        :type nsteps:  int|tuple
-        :param return_tree: indicates whether lattice tree (tuple of tuples ordered by time steps) must be returned. Required.
-        :type return_tree: bool
-        :return:  either a single LT price or a tuple of them (if nsteps is a tuple).
-        :rtype:   float|tuple of floats|tuple of tuples
-
-        :Example:
-
-        >>> a = American(ref=Stock(S0=50, vol=.3), right='put', K=52, T=2, r=.05, desc={'note':'$7.42840, Hull p.288'})
-        >>> a.pxLT(2)  # price American option with a 2-step binomial(lattice) tree
-        7.42840190270483
-        >>> a.pxLT((2,20,200))  # price American option with LT model using 2, 20, and 200 steps (vectorized I/O)
-        (7.42840190270483, 7.5113077715410839, 7.4772083289361388)
-        >>> a.pxLT(2, return_tree=True)
-        (((27.44058, 50.0, 91.10594), (24.55942, 2.0, 0.0)),    # stock and option values for step 2
-        ((37.04091, 67.49294), (14.95909, 0.9327)),             # stock and option values for step 1
-        ((50.0,), (7.4284,)))                                   # stock and option values for step 0 (now)
-        """
-        if Util.is_iterable(nsteps):
-            return Util.demote((self._pxLT(nsteps=n, return_tree=False) for n in nsteps))
-        else:
-            return self._pxLT(nsteps=nsteps, return_tree=return_tree)
+        return sp
 
     def plot_px_convergence(self, nsteps_max=200, ax=None, vs=None):
         """ Plots convergence of an option price for different nsteps values.
@@ -653,7 +625,7 @@ class OptionValuation(OptionSeries):
 
         :Example:
 
-        >>> a = American(ref=Stock(S0=50, vol=.3), right='put', K=52, T=2, r=.05, desc={'note':'$7.42840, Hull p.288'})
+        >>> a = American(ref=Stock(S0=50, vol=.3), right='put', K=52, T=2, rf_r=.05, desc={'note':'$7.42840, Hull p.288'})
         >>> e = European(clone=a)
         >>> a.plot_px_convergence(nsteps_max=200, vs=e)
         """
@@ -705,3 +677,4 @@ class Price:
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
             if v is not None:  setattr(self, k, v)
+
