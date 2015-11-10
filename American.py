@@ -102,26 +102,22 @@ class American(OptionValuation):
 
         S = self.ref.S0 * _['d'] ** arange(n, -1, -1) * _['u'] ** arange(0, n + 1)  # terminal stock prices
         O = maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
-        # tree = ((S, O),)
+
         S_tree = (tuple([float(s) for s in S]),)  # use tuples of floats (instead of numpy.float)
         O_tree = (tuple([float(o) for o in O]),)
-        # tree = ([float(s) for s in S], [float(o) for o in O],)
 
         for i in range(n, 0, -1):
             O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
             S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
             Payout = maximum(self.signCP * (S - self.K), 0)   # payout at time step i-1 (moving backward in time)
             O = maximum(O, Payout)
-            # tree = tree + ((S, O),)
+
             S_tree = (tuple([float(s) for s in S]),) + S_tree
             O_tree = (tuple([float(o) for o in O]),) + O_tree
-            # tree = tree + ([float(s) for s in S], [float(o) for o in O],)
 
         self.px_spec.add(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
                         LT_specs=_, ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
 
-        # self.px_spec = PriceSpec(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
-        #                 LT_specs=_, ref_tree = S_tree if save_tree else None, opt_tree = O_tree if save_tree else None)
         return self
 
     def _calc_BS(self):

@@ -182,7 +182,7 @@ class European(OptionValuation):
 
         return self
 
-    def _calc_MC(self, nsteps=3, npaths=4, keep_hist=False):
+    def _calc_MC(self):
         """ Internal function for option valuation.
 
         Returns
@@ -198,7 +198,7 @@ class European(OptionValuation):
         """
         return self
 
-    def _calc_FD(self, nsteps=3, npaths=4, keep_hist=False):
+    def _calc_FD(self):
         """ Internal function for option valuation.
 
         Returns
