@@ -16,9 +16,9 @@ class American(OptionValuation):
         :Example:
         >>> s = Stock(S0=50, vol=.3)
         >>> o = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc='7.42840, Hull p.288')
-        >>> o.calc_LT(2, False).px.px
+        >>> o.calc_LT(2, False).px_spec.px
         7.42840190270483
-        >>> o.calc_LT(2, True).px.ref_tree
+        >>> o.calc_LT(2, True).px_spec.ref_tree
         >>> o
 
         """
@@ -43,12 +43,11 @@ class American(OptionValuation):
             # tree = tree + ([float(s) for s in S], [float(o) for o in O],)
 
         # self.px = Price(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13', LT_specs=_, tree=Util.to_tuple(tree, leaf_as_float=True) if save_tree else None)
-        self.px = Price(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
+        self.px_spec = PriceSpec(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
                         LT_specs=_, ref_tree = S_tree if save_tree else None, opt_tree = O_tree if save_tree else None)
         return self
 
-    @property
-    def pxBS(self):
+    def calc_BS(self):
         """ Currently not implemented.
 
         There is a way to approximate American option's price via BSM. We'll cover it in later chapters.
@@ -56,9 +55,10 @@ class American(OptionValuation):
         :return: price for an American option estimated with BSM and other parameters.
         :rtype: None
         """
-        pass
+        self.px_spec = PriceSpec(px=None, desc='Not yet implemented. TODO');     return self
 
+    def calc_MC(self):
+        self.px_spec = PriceSpec(px=None, desc='Not yet implemented. TODO');     return self
 
-s = Stock(S0=50, vol=.3)
-o = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc='7.42840, Hull p.288')
-o.calc_LT(2, True).px.px
+    def calc_FD(self):
+        self.px_spec = PriceSpec(px=None, desc='Not yet implemented. TODO');     return self

@@ -18,7 +18,7 @@ class European(OptionValuation):
         >>> s = Stock(S0=42, vol=.20)
         >>> o = European(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @0.81, put @4.76, Hull p.339')
         >>> o.calc_BS()      # saves interim results to self and prints out BS price. Equivalent to repr(o)
-        >>> (o.px.px, o.px.d1, o.px.d2, o.px.method)  # alternative way to retrieve attributes
+        >>> (o.px_spec.px, o.px_spec.d1, o.px_spec.d2, o.px_spec.method)  # alternative way to retrieve attributes
         >>> o.update(right='call').calc_BS()  # change option object to a put
         >>> print(European(clone=o, K=41, desc='Ex. copy params to new option, but with a new strike.').calc_BS())
 
@@ -37,7 +37,7 @@ class European(OptionValuation):
         px_put = float(- _.ref.S0 * exp(-_.ref.q * _.T) * norm.cdf(-d1) + _.K * exp(-_.rf_r * _.T) * norm.cdf(-d2))
         px = px_call if _.signCP == 1 else px_put if _.signCP == -1 else None
 
-        self.px = Price(px=px, px_call=px_call, px_put=px_put, d1=d1, d2=d2, method='BS', sub_method='standard; Hull p.335')
+        self.px_spec = PriceSpec(px=px, px_call=px_call, px_put=px_put, d1=d1, d2=d2, method='BS', sub_method='standard; Hull p.335')
         return self
 
     def calc_LT(self, nsteps=3, save_tree=False):
@@ -63,9 +63,9 @@ class European(OptionValuation):
 
         >>> s = Stock(S0=810, vol=.2, q=.02)
         >>> o = European(ref=s, right='call', K=800, T=.5, rf_r=.05, desc='53.39, Hull p.291')
-        >>> o.calc_LT(3).px.px  # option price from a 3-step tree (that's 2 time intervals)
+        >>> o.calc_LT(3).px_spec.px  # option price from a 3-step tree (that's 2 time intervals)
         59.867529937506426
-        >>> o.calc_LT(2, True).px.opt_tree
+        >>> o.calc_LT(2, True).px_spec.opt_tree
         (((663.17191000000003, 810.0, 989.33623), (0.0, 10.0, 189.33623)),
         ((732.91831000000002, 895.18844000000001), (5.0623199999999997, 100.66143)),
         ((810.0,), (53.39472,)))
@@ -124,6 +124,12 @@ class European(OptionValuation):
             tmp = csl[nsteps] - csl - csl[::-1] + log(_['p'])*arange(nsteps+1) + log(1-_['p'])*arange(nsteps+1)[::-1]
             out = (_['df_T'] * sum(exp(tmp) * tuple(O)))
 
-        self.px = Price(px=float(out), method='LT', sub_method='binomial tree; Hull Ch.13',
+        self.px_spec = PriceSpec(px=float(out), method='LT', sub_method='binomial tree; Hull Ch.13',
                         LT_specs=_, ref_tree=S_tree, opt_tree=O_tree)
         return self
+
+    def calc_MC(self):
+        self.px_spec = PriceSpec(px=None, desc='Not yet implemented. TODO');     return self
+
+    def calc_FD(self):
+        self.px_spec = PriceSpec(px=None, desc='Not yet implemented. TODO');     return self

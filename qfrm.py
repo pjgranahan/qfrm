@@ -603,7 +603,7 @@ class OptionValuation(OptionSeries):
 
         return sp
 
-    def plot_px_convergence(self, nsteps_max=200, ax=None, vs=None):
+    def plot_px_convergence(self, nsteps_max=50, ax=None, vs=None):
         """ Plots convergence of an option price for different nsteps values.
 
         If vs object is provided, its plot is added, i.e. call vs.plot_px_convergence(...) to add a plot of the benchmark option.
@@ -617,29 +617,63 @@ class OptionValuation(OptionSeries):
         :type nsteps_max: int
         :param ax:  Optional plot object on which to plot the data.
         :type ax:   matplotlib.axes._subplots.AxesSubplot
-        :param vs:  any child of OptionValuation, i.e. European, American,...
+        :param vs:  another option object (i.e. subclass of OptionValuation such as European, American,...)
         :type vs:   object
         :return:    plot the price convergence.
         :rtype:     None
 
+        .. seealso::
+            http://stackoverflow.com/questions/510972/getting-the-class-name-of-an-instance-in-python
+
         :Example:
 
-        >>> a = American(ref=Stock(S0=50, vol=.3), right='put', K=52, T=2, rf_r=.05, desc={'note':'$7.42840, Hull p.288'})
+        >>> from American import *; from European import *
+        >>> s = Stock(S0=50, vol=.3)
+        >>> a = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc={'$7.42840, Hull p.288'})
         >>> e = European(clone=a)
-        >>> a.plot_px_convergence(nsteps_max=200, vs=e)
+        >>> a.plot_px_convergence(nsteps_max=50, vs=e)
+
         """
-        # http://stackoverflow.com/questions/510972/getting-the-class-name-of-an-instance-in-python
         import matplotlib.pyplot as plt
         from pandas import DataFrame, Series
 
-        if ax is None: fig, ax = plt.subplots()  # (nrows=1, ncols=1)
-        DataFrame({'LT price for ' + self.spec2str(1): (self.pxLT(range(1, nsteps_max))),
-                   'BS price for ' + self.spec2str(1): (self.pxBS)})\
-            .plot(ax=ax, grid=True, title='Option price convergence with number of steps')
+        if ax is None: fig, ax = plt.subplots()
+        if 'fig' in locals():
+            def onresize(event):  plt.tight_layout()
+            cid = fig.canvas.mpl_connect('resize_event', onresize)  # tighten layout on resize event
+
+        LT_prices = [self.calc_LT(n).px_spec.px for n in range(1, nsteps_max + 1)]
+
+        DataFrame({'LT price for ' + self.specs: LT_prices,
+                   'BS price for ' + self.specs: self.calc_BS().px_spec.px}) \
+            .plot(ax=ax, grid=1, title='Option price convergence with number of steps')
 
         if vs is not None: vs.plot_px_convergence(nsteps_max=nsteps_max, ax=ax)
-        plt.tight_layout()
-        plt.show()
+
+        plt.tight_layout();         plt.show()
+
+    def plot(self):
+        """ Plot multiple subplots
+
+        .. seealso::
+
+        :Example:
+
+        >>> from American import *; from European import *
+        >>> s = Stock(S0=50, vol=.3)
+        >>> a = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc={'$7.42840, Hull p.288'})
+        >>> e = European(clone=a)
+        >>> a.plot()
+
+        """
+        import matplotlib.pyplot as plt
+
+        fig, ax = plt.subplots()
+        def onresize(event):  plt.tight_layout()
+        cid = fig.canvas.mpl_connect('resize_event', onresize)  # tighten layout on resize event
+
+        self.plot_px_convergence(nsteps_max=50, ax=ax)
+        plt.tight_layout();         plt.show()
 
     @property
     def net_r(self):
@@ -651,8 +685,24 @@ class OptionValuation(OptionSeries):
 
         >>> o = OptionValuation(rf_r=0.05); vars(o)
         >>> o.update(rf_r=0.04)
+            OptionValuation
+            frf_r: 0
+            rf_r: 0.04
+            seed0: null
         >>> o.update(ref=Stock(q=0.01))
+            OptionValuation
+            frf_r: 0
+            ref: Stock
+              S0: null
+              curr: null
+              desc: null
+              q: 0.01
+              tkr: null
+              vol: null
+            rf_r: 0.04
+            seed0: null
         >>> o.net_r
+            0.03
 
         """
         try: q = 0 if self.ref.q is None else self.ref.q
@@ -664,7 +714,7 @@ class OptionValuation(OptionSeries):
         return rf_r - q - frf_r   # calculate RFR net of yield and foreign RFR
 
 
-class Price:
+class PriceSpec:
     """ Object for storing calculated price
 
     Use this object to store the price, methods and any intermediate results in your option object.
@@ -677,3 +727,73 @@ class Price:
         for k, v in kwargs.items():
             if v is not None:  setattr(self, k, v)
 
+#
+#
+# ###############################################################################
+# class American(OptionValuation):
+#     def calc_LT(self, nsteps, save_tree=False):
+#         """  Computes option price via binomial (lattice) tree.
+#
+#         This method is not called directly. Instead, OptionValuation calls it via (vectorized) method pxLT()
+#
+#         :param nsteps: number of time steps for which to build a tree
+#         :type nsteps:  int
+#         :param save_tree: indicates whether to return the full tree with stock and option prices.
+#         :type save_tree: bool
+#         :return:  option price, if return_tree is False, or a full tree, if return_tree is True.
+#         :rtype:  float | tuple of tuples
+#
+#         :Example:
+#         >>> s = Stock(S0=50, vol=.3)
+#         >>> o = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc='7.42840, Hull p.288')
+#         >>> o.calc_LT(2, False).px_spec.px
+#         7.42840190270483
+#         >>> o.calc_LT(2, True).px_spec.ref_tree
+#         >>> o
+#
+#         """
+#         from numpy import arange, maximum, log, exp, sqrt
+#
+#         _ = self.LT_specs(nsteps)
+#         S = self.ref.S0 * _['d'] ** arange(nsteps, -1, -1) * _['u'] ** arange(0, nsteps + 1)  # terminal stock prices
+#         O = maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
+#         # tree = ((S, O),)
+#         S_tree = (tuple([float(s) for s in S]),)  # use tuples of floats (instead of numpy.float)
+#         O_tree = (tuple([float(o) for o in O]),)
+#         # tree = ([float(s) for s in S], [float(o) for o in O],)
+#
+#         for i in range(nsteps, 0, -1):
+#             O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
+#             S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
+#             Payout = maximum(self.signCP * (S - self.K), 0)   # payout at time step i-1 (moving backward in time)
+#             O = maximum(O, Payout)
+#             # tree = tree + ((S, O),)
+#             S_tree = (tuple([float(s) for s in S]),) + S_tree
+#             O_tree = (tuple([float(o) for o in O]),) + O_tree
+#             # tree = tree + ([float(s) for s in S], [float(o) for o in O],)
+#
+#         # self.px = Price(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13', LT_specs=_, tree=Util.to_tuple(tree, leaf_as_float=True) if save_tree else None)
+#         self.px_spec = PriceSpec(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
+#                         LT_specs=_, ref_tree = S_tree if save_tree else None, opt_tree = O_tree if save_tree else None)
+#         return self
+#
+#     def calc_BS(self):
+#         """ Currently not implemented.
+#
+#         There is a way to approximate American option's price via BSM. We'll cover it in later chapters.
+#
+#         :return: price for an American option estimated with BSM and other parameters.
+#         :rtype: None
+#         """
+#         self.px_spec = PriceSpec(px=None, desc='Not yet implemented. TODO');     return self
+#
+#     def calc_MC(self):
+#         self.px_spec = PriceSpec(px=None, desc='Not yet implemented. TODO');        return self
+#
+#     def calc_FD(self):
+#         self.px_spec = PriceSpec(px=None, desc='Not yet implemented. TODO');         return self
+#
+# ###############################################################################
+# s = Stock(S0=50, vol=.3)
+# a = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc={'$7.42840, Hull p.288'})
+# a.plot_px_convergence(nsteps_max=50)
