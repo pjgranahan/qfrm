@@ -55,10 +55,13 @@ class American(OptionValuation):
         :return: price for an American option estimated with BSM and other parameters.
         :rtype: None
         """
-        self.px_spec = PriceSpec(px=None, desc='Not yet implemented. TODO');     return self
+        # self.px_spec = PriceSpec(px=None, desc='Not yet implemented. TODO');     return self
+        return self
 
     def calc_MC(self):
-        self.px_spec = PriceSpec(px=None, desc='Not yet implemented. TODO');     return self
+        # self.px_spec = PriceSpec(px=None, desc='Not yet implemented. TODO');     return self
+        return self
 
     def calc_FD(self):
-        self.px_spec = PriceSpec(px=None, desc='Not yet implemented. TODO');     return self
+        # self.px_spec = PriceSpec(px=None, desc='Not yet implemented. TODO');     return self
+        return self

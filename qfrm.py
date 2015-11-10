@@ -221,6 +221,20 @@ class Util():
         except TypeError: return float(a) if leaf_as_float else a
 
 
+class PriceSpec:
+    """ Object for storing calculated price and related specifications.
+
+    Use this object to store the price, methods and any intermediate results in your option object.
+    """
+    px = None  # use float data type
+    method = None  # 'BS', 'LT', 'MC', 'FD'
+    sub_method = None   # indicate specifics about pricing method. Ex: 'LSM' or 'naive' for MC pricing of American
+
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            if v is not None:  setattr(self, k, v)
+
+
 class Stock:
     """ Class representing an underlying instrument.
     .. sectionauthor:: Oleg Melnikov
@@ -518,7 +532,8 @@ class OptionSeries:
         :return:
         :rtype:
         """
-        if not getattr(self, 'px', None) is None: del self.px
+        # if not getattr(self, 'px_spec', None) is None: del self.px_spec
+        self.px_spec = PriceSpec(px=None)
         return self
 
 
@@ -552,6 +567,7 @@ class OptionValuation(OptionSeries):
         """
         self.rf_r, self.frf_r, self.seed0 = rf_r, frf_r, seed0
         super().__init__(*args, **kwargs)  # pass remaining arguments to base (parent) class
+        self.reset()
 
     def LT_specs(self, nsteps=2):
         """ Calculates a collection of specs/parameters needed for lattice tree pricing.
@@ -662,7 +678,6 @@ class OptionValuation(OptionSeries):
         >>> from American import *; from European import *
         >>> s = Stock(S0=50, vol=.3)
         >>> a = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc={'$7.42840, Hull p.288'})
-        >>> e = European(clone=a)
         >>> a.plot()
 
         """
@@ -714,16 +729,4 @@ class OptionValuation(OptionSeries):
         return rf_r - q - frf_r   # calculate RFR net of yield and foreign RFR
 
 
-class PriceSpec:
-    """ Object for storing calculated price
-
-    Use this object to store the price, methods and any intermediate results in your option object.
-    """
-    px = None  # use float data type
-    method = None  # 'BS', 'LT', 'MC', 'FD'
-    sub_method = None   # indicate specifics about pricing method. Ex: 'LSM' or 'naive' for MC pricing of American
-
-    def __init__(self, **kwargs):
-        for k, v in kwargs.items():
-            if v is not None:  setattr(self, k, v)
 
