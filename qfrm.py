@@ -231,8 +231,14 @@ class PriceSpec:
     sub_method = None   # indicate specifics about pricing method. Ex: 'LSM' or 'naive' for MC pricing of American
 
     def __init__(self, **kwargs):
+        # for k, v in kwargs.items():
+        #     if v is not None:  setattr(self, k, v)
+        self.add(**kwargs)
+
+    def add(self, **kwargs):
         for k, v in kwargs.items():
             if v is not None:  setattr(self, k, v)
+        return self
 
 
 class Stock:
@@ -727,7 +733,4 @@ class OptionValuation(OptionSeries):
         rf_r = 0 if self.rf_r is None else self.rf_r
 
         return rf_r - q - frf_r   # calculate RFR net of yield and foreign RFR
-
-
-
 

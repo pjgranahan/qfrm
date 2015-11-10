@@ -4,7 +4,33 @@ class European(OptionValuation):
     """ European option class.
     Inherits all methods and properties of OptionValuation class.
     """
-    def calc_BS(self):
+
+    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
+        """
+
+        Parameters
+        ----------
+        method :
+        sub_method :
+        nsteps :
+        npaths :
+        keep_hist :
+
+        Returns
+        -------
+
+        """
+        # self.nsteps
+        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
+        return getattr(self, '_calc_' + method.upper())()
+
+        # return {'BS':_calc_BS, 'LT':_calc_LT, 'MC':_calc_MC, 'FD':_calc_FD}[method]()
+        # if method.upper() == 'BS': return self._calc_BS()
+        # if method.upper() == 'LT': return self._calc_LT(nsteps=nsteps, keep_hist=keep_hist)
+        # if method.upper() == 'MC': return self._calc_MC(nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
+        # if method.upper() == 'FD': return self._calc_FD(nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
+
+    def _calc_BS(self):
         """ Option valuation via BSM.
 
         Use BS_params method to draw computed parameters.
@@ -37,10 +63,11 @@ class European(OptionValuation):
         px_put = float(- _.ref.S0 * exp(-_.ref.q * _.T) * norm.cdf(-d1) + _.K * exp(-_.rf_r * _.T) * norm.cdf(-d2))
         px = px_call if _.signCP == 1 else px_put if _.signCP == -1 else None
 
-        self.px_spec = PriceSpec(px=px, px_call=px_call, px_put=px_put, d1=d1, d2=d2, method='BS', sub_method='standard; Hull p.335')
+        self.px_spec.add(px=px, sub_method='standard; Hull p.335', px_call=px_call, px_put=px_put, d1=d1, d2=d2)
+        # self.px_spec = PriceSpec(px=px, method='BS', sub_method='standard; Hull p.335', px_call=px_call, px_put=px_put, d1=d1, d2=d2)
         return self
 
-    def calc_LT(self, nsteps=3, save_tree=False):
+    def _calc_LT(self, nsteps=3, keep_hist=False):
         """ Option valuation via binomial (lattice) tree
 
         This method is not called directly. Instead, OptionValuation calls it via (vectorized) method pxLT()
@@ -63,13 +90,13 @@ class European(OptionValuation):
 
         >>> s = Stock(S0=810, vol=.2, q=.02)
         >>> o = European(ref=s, right='call', K=800, T=.5, rf_r=.05, desc='53.39, Hull p.291')
-        >>> o.calc_LT(3).px_spec.px  # option price from a 3-step tree (that's 2 time intervals)
+        >>> o._calc_LT(3).px_spec.px  # option price from a 3-step tree (that's 2 time intervals)
         59.867529937506426
-        >>> o.calc_LT(2, True).px_spec.opt_tree
+        >>> o._calc_LT(2, keep_hist=True).px_spec.opt_tree
         (((663.17191000000003, 810.0, 989.33623), (0.0, 10.0, 189.33623)),
         ((732.91831000000002, 895.18844000000001), (5.0623199999999997, 100.66143)),
         ((810.0,), (53.39472,)))
-        >>> o.calc_LT(2)
+        >>> o._calc_LT(2)
         European
         K: 800
         T: 0.5
@@ -106,7 +133,7 @@ class European(OptionValuation):
         S_tree, O_tree = None, None
         # tree = ((S, O),) if save_tree else None
 
-        if save_tree:
+        if keep_hist:
             S_tree = (tuple([float(s) for s in S]),)
             O_tree = (tuple([float(o) for o in O]),)
 
@@ -128,10 +155,16 @@ class European(OptionValuation):
                         LT_specs=_, ref_tree=S_tree, opt_tree=O_tree)
         return self
 
-    def calc_MC(self):
+    def _calc_MC(self, nsteps=3, npaths=4, keep_hist=False):
         return self
 
-    def calc_FD(self):
+    def _calc_FD(self, nsteps=3, npaths=4, keep_hist=False):
         return self
 
-    
+s = Stock(S0=42, vol=.20)
+o = European(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @0.81, put @4.76, Hull p.339')
+o.calc_px(method='BS')      # saves interim results to self and prints out BS price. Equivalent to repr(o)
+(o.px_spec.px, o.px_spec.d1, o.px_spec.d2, o.px_spec.method)  # alternative way to retrieve attributes
+o.update(right='call').calc_px()  # change option object to a put
+print(European(clone=o, K=41, desc='Ex. copy params to new option, but with a new strike.').calc_px(method='BS'))
+
