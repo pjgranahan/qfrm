@@ -7,7 +7,12 @@ class European(OptionValuation):
     """
 
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
-        """
+        """ Wrapper function that calls appropriate valuation method.
+
+        User passes parameters to calc_px, which saves them to local PriceSpec object
+        and calls specific pricing function (_calc_BS,...).
+        This makes significantly less docstrings to write, since user is not interfacing pricing functions,
+        but a wrapper function calc_px().
 
         Parameters
         ----------
@@ -34,7 +39,8 @@ class European(OptionValuation):
 
         >>> s = Stock(S0=42, vol=.20)
         >>> o = European(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @0.81, put @4.76, Hull p.339')
-        >>> o.calc_px(method='BS').px_spec      # saves interim results to self and prints out BS price. Equivalent to repr(o)
+
+        >>> o.calc_px(method='BS').px_spec   # save interim results to self.px_spec. Equivalent to repr(o)
         qfrm.PriceSpec
         d1: 0.7692626281060315
         d2: 0.627841271868722
@@ -171,8 +177,9 @@ class European(OptionValuation):
             tmp = csl[n] - csl - csl[::-1] + log(_['p']) * arange(n + 1) + log(1 - _['p']) * arange(n + 1)[::-1]
             out = (_['df_T'] * sum(exp(tmp) * tuple(O)))
 
-        self.px_spec = PriceSpec(px=float(out), method='LT', sub_method='binomial tree; Hull Ch.13',
-                        LT_specs=_, ref_tree=S_tree, opt_tree=O_tree)
+        self.px_spec.add(px=float(out), sub_method='binomial tree; Hull Ch.135',
+                         LT_specs=_, ref_tree=S_tree, opt_tree=O_tree)
+
         return self
 
     def _calc_MC(self, nsteps=3, npaths=4, keep_hist=False):
