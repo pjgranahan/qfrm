@@ -240,6 +240,14 @@ class PriceSpec:
             if v is not None:  setattr(self, k, v)
         return self
 
+    def __repr__(self):
+        from yaml import dump
+
+        s = dump(self, default_flow_style=0).replace('!!python/object:','').replace('!!python/tuple','')
+        s = s.replace('__main__.','')
+        # if not new_line:  s = s.replace(',',', ').replace('\n', ',').replace(': ', ':').replace('  ',' ')
+        return s
+
 
 class Stock:
     """ Class representing an underlying instrument.
