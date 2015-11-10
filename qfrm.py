@@ -669,7 +669,7 @@ class OptionValuation(OptionSeries):
         import matplotlib.pyplot as plt
 
         fig, ax = plt.subplots()
-        def onresize(event):  plt.tight_layout()
+        def onresize(event):  fig.tight_layout()
         cid = fig.canvas.mpl_connect('resize_event', onresize)  # tighten layout on resize event
 
         self.plot_px_convergence(nsteps_max=50, ax=ax)
