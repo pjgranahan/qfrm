@@ -9,14 +9,6 @@ class Asian(OptionValuation):
     Inherits all methods and properties of OptionValuation class.
     """
 
-    def __init__(self,q=0.0,*args,**kwargs):
-
-
-        super().__init__(*args,**kwargs)
-        self.q = q
-
-
-
 
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
@@ -50,8 +42,8 @@ class Asian(OptionValuation):
 
         Examples
 
-        >>> s = Stock(S0=30, vol=.3)
-        >>> o = Asian(q=.02,ref=s, right='call', K=29, T=1., rf_r=.08, desc='Example from Internet')
+        >>> s = Stock(S0=30, vol=.3, q = .02)
+        >>> o = Asian(ref=s, right='call', K=29, T=1., rf_r=.08, desc='Example from Internet')
         >>> o.calc_px()
         >>> print(o.px_spec)
 
@@ -104,7 +96,7 @@ class Asian(OptionValuation):
             T       =   float(self.T)
             vol     =   float(self.ref.vol)
             r       =   float(self.rf_r)
-            q       =   float(self.q)
+            q       =   float(self.ref.q)
 
 
         except:
@@ -171,6 +163,4 @@ class Asian(OptionValuation):
         """
 
         return self
-
-
 
