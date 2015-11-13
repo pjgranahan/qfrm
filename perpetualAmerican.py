@@ -36,47 +36,30 @@ class PerpetualAmerican(OptionValuation):
         Examples
         -------
 
-        >>> s = Stock(S0=50, vol=.3)
-        >>> o = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc='7.42840, Hull p.288')
+        >>> s = Stock(S0=50, vol=.3, q=0.01)
+        >>> o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.08)
 
-        >>> o.calc_px(method='LT', nsteps=2, keep_hist=True).px_spec.px
-        7.42840190270483
+        >>> print(o.calc_px(method='BS'))
+        37.190676833752335
 
-        >>> o.px_spec.ref_tree
-        ((50.000000000000014,),
-         (37.0409110340859, 67.49294037880017),
-         (27.440581804701324, 50.00000000000001, 91.10594001952546))
-
-        >>> o.calc_px(method='LT', nsteps=2, keep_hist=False)
-        American
-        K: 52
-        T: 2
-        _right: put
-        _signCP: -1
-        desc: 7.42840, Hull p.288
+        >>> print(repr(o))
+        PerpetualAmerican
+        K: 50
+        T: 1
+        _right: call
+        _signCP: 1
         frf_r: 0
         px_spec: qfrm.PriceSpec
-          LT_specs:
-            a: 1.0512710963760241
-            d: 0.7408182206817179
-            df_T: 0.9048374180359595
-            df_dt: 0.951229424500714
-            dt: 1.0
-            p: 0.5097408651817704
-            u: 1.3498588075760032
-          keep_hist: false
-          method: LT
-          nsteps: 2
-          px: 7.42840190270483
-          sub_method: binomial tree; Hull Ch.13
+        keep_hist: false
+        method: BS
         ref: qfrm.Stock
-          S0: 50
-          curr: null
-          desc: null
-          q: 0
-          tkr: null
-          vol: 0.3
-        rf_r: 0.05
+        S0: 50
+        curr: null
+        desc: null
+        q: 0.01
+        tkr: null
+        vol: 0.3
+        rf_r: 0.08
         seed0: null
 
         """
@@ -179,8 +162,4 @@ class PerpetualAmerican(OptionValuation):
 
         return self
 
-
-s = Stock(S0=50, vol=0.3, q=0.01)
-o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.08)
-print(o.calc_px(method='BS'))  # save interim results to self.px_spec. Equivalent to repr(o)
 
