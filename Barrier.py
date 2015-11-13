@@ -73,14 +73,14 @@ def Barrier_BS(S0,K,r,q,sigma,T,H,Right,knock,dir):
             else:
                 return(pdi)
 
-
+'''
 #print(Barrier_BS(50,40,0.01,0.03,0.15,1,60,'call','down','in'))
 Barrier_BS(50,40,0.01,0.03,0.15,0.5,60,'call','up','in')
 Barrier_BS(60,40,0.01,0.03,0.15,0.75,30,'put','up','in')
 Barrier_BS(50,30,0.01,0.03,0.15,10,60,'put','down','out')
 Barrier_BS(90,100,0.05,0.45,0.15,3,72,'call','up','out')
 Barrier_BS(100,80,0.1,0.15,0.2,5,60,'put','down','out')
-
+'''
 
 
 from qfrm import *
@@ -92,6 +92,30 @@ class Barrier(OptionValuation):
     """
 
     def __init__(self, H = 10., knock = 'down', dir = 'out', *args, **kwargs):
+
+        """ Constructor for Barrier class
+
+        Passes additional arguments to OptionValuation class
+
+        Parameters
+        ----------
+        H : int
+                The barrier used to price the barrier option
+        knock : string
+                'down' or 'up'
+        dir : string
+                'in' or 'out'
+        *args, **kwargs: varies
+                arguments required by the constructor of OptionValuation class
+
+
+        Returns
+        -------
+        self : Barrier
+
+        .. sectionauthor:: Scott Morgan
+
+       """
 
         self.H = H
         self.knock = knock
@@ -119,86 +143,13 @@ class Barrier(OptionValuation):
 
         Returns
         -------
-        self : European
+        self : Barrier
 
-        .. sectionauthor:: Oleg Melnikov
+        .. sectionauthor:: Scott Morgan
 
-        Notes
-        -----
+       """
 
-        Examples
-        -------
 
-        >>> s = Stock(S0=42, vol=.20)
-        >>> o = European(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @0.81, put @4.76, Hull p.339')
-
-        >>> o.calc_px(method='BS').px_spec   # save interim results to self.px_spec. Equivalent to repr(o)
-        qfrm.PriceSpec
-        d1: 0.7692626281060315
-        d2: 0.627841271868722
-        keep_hist: false
-        method: BS
-        px: 0.8085993729000922
-        px_call: 4.759422392871532
-        px_put: 0.8085993729000922
-        sub_method: standard; Hull p.335
-
-        >>> (o.px_spec.px, o.px_spec.d1, o.px_spec.d2, o.px_spec.method)  # alternative attribute access
-        (0.8085993729000922, 0.7692626281060315, 0.627841271868722, 'BS')
-
-        >>> o.update(right='call').calc_px().px_spec.px  # change option object to a put
-        4.759422392871532
-
-        >>> European(clone=o, K=41, desc='Ex. copy params; new strike.').calc_px(method='LT').px_spec.px
-        4.2270039114413125
-
-        >>> s = Stock(S0=810, vol=.2, q=.02)
-        >>> o = European(ref=s, right='call', K=800, T=.5, rf_r=.05, desc='53.39, Hull p.291')
-        >>> o.calc_px(method='LT', nsteps=3, keep_hist=True).px_spec.px  # option price from a 3-step tree (that's 2 time intervals)
-        59.867529937506426
-
-        >>> o.px_spec.ref_tree  # prints reference tree
-        ((810.0,),
-         (746.4917680871579, 878.9112325795882),
-         (687.9629133603595, 810.0, 953.6851293266307),
-         (634.0230266330457, 746.491768087158, 878.9112325795882, 1034.8204598880159))
-
-        >>> o.calc_px(method='LT', nsteps=2, keep_hist=True).px_spec.opt_tree
-        ((53.39471637496134,),
-         (5.062315192620067, 100.66143225703827),
-         (0.0, 10.0, 189.3362341097378))
-
-        >>> o.calc_px(method='LT', nsteps=2)
-        European
-        K: 800
-        T: 0.5
-        _right: call
-        _signCP: 1
-        desc: 53.39, Hull p.291
-        frf_r: 0
-        px_spec: qfrm.PriceSpec
-          LT_specs:
-            a: 1.0075281954445339
-            d: 0.9048374180359595
-            df_T: 0.9753099120283326
-            df_dt: 0.9875778004938814
-            dt: 0.25
-            p: 0.5125991278953855
-            u: 1.1051709180756477
-          method: LT
-          px: 53.39471637496135
-          sub_method: binomial tree; Hull Ch.13
-        ref: qfrm.Stock
-          S0: 810
-          curr: null
-          desc: null
-          q: 0.02
-          tkr: null
-          vol: 0.2
-        rf_r: 0.05
-        seed0: null
-
-        """
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
         return getattr(self, '_calc_' + method.upper())()
 
@@ -207,9 +158,9 @@ class Barrier(OptionValuation):
 
         Returns
         -------
-        self: European
+        self: Barrier
 
-        .. sectionauthor:: Oleg Melnikov
+        .. sectionauthor::
 
         """
 
@@ -229,8 +180,56 @@ class Barrier(OptionValuation):
         In-Out Parity: http://www.iam.uni-bonn.de/people/ankirchner/lectures/OP_WS1314/OP_chap_nine.pdf
         Verify Examples: http://www.fintools.com/resources/online-calculators/exotics-calculators/exoticscalc-barrier/
 
-        
 
+        Examples
+        -------
+
+        >>> s = Stock(S0=95., vol=.25, q=.00)
+        >>> o = Barrier(H=90.,knock='down',dir='in',ref=s, right='put', K=100., T=1., rf_r=.1, desc='down and in put')
+        >>> print(o.calc_px(method='LT', nsteps=1050, keep_hist=False).px_spec.px)
+        >>> print(o.px_spec)
+
+        7.104101924957116
+
+        qfrm.PriceSpec
+        LT_specs:
+          a: 1.0000952426305294
+          d: 0.9923145180146982
+          df_T: 0.9048374180359595
+          df_dt: 0.9999047664397653
+          dt: 0.0009523809523809524
+          p: 0.5042435843778115
+          u: 1.0077450060900832
+        keep_hist: false
+        method: LT
+        nsteps: 1050
+        px: 7.104101924957116
+        sub_method: in out parity
+
+
+        >>> s = Stock(S0=95., vol=.25, q=.00)
+        >>> o = Barrier(H=87.,knock='down',dir='out',ref=s, right='call', K=100., T=2., rf_r=.1, desc='down and out call')
+        >>> print(o.calc_px(method='LT', nsteps=1050, keep_hist=False).px_spec.px)
+
+        11.549805549495334
+
+        >>> s = Stock(S0=95., vol=.25, q=.00)
+        >>> o = Barrier(H=105.,knock='up',dir='out',ref=s, right='put', K=100., T=2., rf_r=.1, desc='up and out put')
+        >>> print(o.calc_px(method='LT', nsteps=1050, keep_hist=False).px_spec.px)
+
+        3.2607593764427434
+
+        >>> s = Stock(S0=95., vol=.25, q=.00)
+        >>> o = Barrier(H=105.,knock='up',dir='in',ref=s, right='call', K=100., T=2., rf_r=.1, desc='up and in call')
+        >>> print(o.calc_px(method='LT', nsteps=1050, keep_hist=False).px_spec.px)
+
+        20.037733657756565
+
+        >>> s = Stock(S0=95., vol=.25, q=.00)
+        >>> o = Barrier(H=105.,knock='up',dir='in',ref=s, right='call', K=100., T=2., rf_r=.1, desc='up and in call')
+        >>> print(o.calc_px(method='LT', nsteps=10, keep_hist=False).px_spec.px)
+
+        20.040606033552542
 
         """
 
@@ -327,13 +326,13 @@ class Barrier(OptionValuation):
 
         Returns
         -------
-        self: European
+        self: Barrier
 
         .. sectionauthor::
 
         Notes
         -----
-        Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
+
 
         """
         return self
@@ -343,22 +342,10 @@ class Barrier(OptionValuation):
 
         Returns
         -------
-        self: European
+        self: Barrier
 
         .. sectionauthor::
 
         """
         return self
 
-#print(Barrier_BS(95,100.,0.01,0.03,0.15,1.,60,'call','down','out'))
-#print(Barrier_BS(S0 = 95.,K = 100.,r=.1,q=.00,sigma=.25,T=1.,H=90.,Right='call',knock='down',dir='out'))
-#print(Barrier_BS(50,30,0.01,0.03,0.15,10,60,'put','up','out'))
-#Barrier_BS(90,100,0.05,0.45,0.15,3,72,'call','up','out')
-
-#S0=95, K = 100, σ = 25%, T = 1 year, r = 10%, barrier = 90.
-
-s = Stock(S0=95., vol=.25, q=.00)
-o = Barrier(H=90.,knock='down',dir='in',ref=s, right='put', K=100., T=1., rf_r=.1, desc='53.39, Hull p.291')
-print(o.calc_px(method='LT', nsteps=1050, keep_hist=True).px_spec.px)  # option price from a 3-step tree (that's 2 time intervals)
-#o = Barrier(H=92.,knock='up',dir='out',ref=s, right='put', K=100., T=1., rf_r=.1, desc='53.39, Hull p.291')
-#print(o.calc_px(method='LT', nsteps=2000, keep_hist=True).px_spec.px)  # option price from a 3-step tree (that's 2 time intervals)
