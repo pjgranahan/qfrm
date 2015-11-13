@@ -74,7 +74,7 @@ def Barrier_BS(S0,K,r,q,sigma,T,H,Right,knock,dir):
                 return(pdi)
 
 
-print(Barrier_BS(50,40,0.01,0.03,0.15,1,60,'call','down','in'))
+#print(Barrier_BS(50,40,0.01,0.03,0.15,1,60,'call','down','in'))
 Barrier_BS(50,40,0.01,0.03,0.15,0.5,60,'call','up','in')
 Barrier_BS(60,40,0.01,0.03,0.15,0.75,30,'put','up','in')
 Barrier_BS(50,30,0.01,0.03,0.15,10,60,'put','down','out')
@@ -91,9 +91,11 @@ class Barrier(OptionValuation):
     Inherits all methods and properties of OptionValuation class.
     """
 
-    def __init__(self, H = 10., *args, **kwargs):
+    def __init__(self, H = 10., knock = 'down', dir = 'out', *args, **kwargs):
 
         self.H = H
+        self.knock = knock
+        self.dir = dir
         super().__init__(*args,**kwargs)
 
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
@@ -218,46 +220,24 @@ class Barrier(OptionValuation):
 
         Returns
         -------
-        self: European
+        self: Barrier
 
-        .. sectionauthor:: Oleg Melnikov
+        .. sectionauthor:: Scott Morgan
 
         .. note::
-        Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
+        Binomial Trees for Barrier Options:   http://homepage.ntu.edu.tw/~jryanwang/course/Financial%20Computation%20or%20Financial%20Engineering%20(graduate%20level)/FE_Ch08%20Barrier%20Option.pdf
+        In-Out Parity: http://www.iam.uni-bonn.de/people/ankirchner/lectures/OP_WS1314/OP_chap_nine.pdf
+        Verify Examples: http://www.fintools.com/resources/online-calculators/exotics-calculators/exoticscalc-barrier/
+
+        
+
 
         """
-        '''
-        from numpy import cumsum, log, arange, insert, exp, sqrt, sum, maximum
 
-        n = getattr(self.px_spec, 'nsteps', 3)
-        _ = self.LT_specs(n)
-
-        S = self.ref.S0 * _['d'] ** arange(n, -1, -1) * _['u'] ** arange(0, n + 1)
-        O = maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
-        S_tree, O_tree = None, None
-
-        if getattr(self.px_spec, 'keep_hist', False):
-            S_tree = (tuple([float(s) for s in S]),)
-            O_tree = (tuple([float(o) for o in O]),)
-
-            for i in range(n, 0, -1):
-                O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
-                S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
-
-                S_tree = (tuple([float(s) for s in S]),) + S_tree
-                O_tree = (tuple([float(o) for o in O]),) + O_tree
-
-            out = O_tree[0][0]
-        else:
-            csl = insert(cumsum(log(arange(n) + 1)), 0, 0)         # logs avoid overflow & truncation
-            tmp = csl[n] - csl - csl[::-1] + log(_['p']) * arange(n + 1) + log(1 - _['p']) * arange(n + 1)[::-1]
-            out = (_['df_T'] * sum(exp(tmp) * tuple(O)))
-
-        self.px_spec.add(px=float(out), sub_method='binomial tree; Hull Ch.135',
-                         LT_specs=_, ref_tree=S_tree, opt_tree=O_tree)
-
-        return self
-        '''
+        if self.knock == 'down':
+            s = 1
+        elif self.knock == 'up':
+            s = -1
 
         from numpy import arange, maximum, log, exp, sqrt, minimum
 
@@ -266,15 +246,11 @@ class Barrier(OptionValuation):
         _ = self.LT_specs(n)
 
         S = self.ref.S0 * _['d'] ** arange(n, -1, -1) * _['u'] ** arange(0, n + 1)  # terminal stock prices
-        S2 = maximum(S - self.H,0)
-        S2 = minimum(S2,1)
-        print(sum(S2))
+        S2 = maximum(s*(S - self.H),0) # Find where crossed the barrier
+        S2 = minimum(S2,1)  # 0 when across the barrier, 1 otherwise
         O = maximum(self.signCP * (S - self.K), 0)
-        print(sum(O))
         O = O * S2        # terminal option payouts
         # tree = ((S, O),)
-        print(O)
-        print(sum(O))
         S_tree = (tuple([float(s) for s in S]),)  # use tuples of floats (instead of numpy.float)
         O_tree = (tuple([float(o) for o in O]),)
         # tree = ([float(s) for s in S], [float(o) for o in O],)
@@ -282,20 +258,67 @@ class Barrier(OptionValuation):
         for i in range(n, 0, -1):
             O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
             S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
-            S2 = maximum(S - self.H,0)
+            S2 = maximum(s*(S - self.H),0)
             S2 = minimum(S2,1)
-            #Barriers = maximum(1000000*(self.H - S), 0)  # payout at time step i-1 (moving backward in time)
             O = O * S2
-            # tree = tree + ((S, O),)
             S_tree = (tuple([float(s) for s in S]),) + S_tree
             O_tree = (tuple([float(o) for o in O]),) + O_tree
-            # tree = tree + ([float(s) for s in S], [float(o) for o in O],)
 
-        self.px_spec.add(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
-                        LT_specs=_, ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
+        out_px = float(Util.demote(O))
 
         # self.px_spec = PriceSpec(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
         #                 LT_specs=_, ref_tree = S_tree if save_tree else None, opt_tree = O_tree if save_tree else None)
+
+        if self.dir == 'out':
+
+            self.px_spec.add(px=out_px, method='LT', sub_method='binomial tree; biased',
+                        LT_specs=_, ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
+
+            return self
+
+
+        from sympy import binomial
+        from math import ceil, floor
+
+        k = int(ceil(log(self.K/(self.ref.S0*_['d']**n))/log(_['u']/_['d'])))
+        h = int(floor(log(self.H/(self.ref.S0*_['d']**n))/log(_['u']/_['d'])))
+        l = list(map(lambda j: binomial(n,n-2*h+j)*(_['p']**j)*((1-_['p'])**(n-j))*(self.ref.S0*(_['u']**j)*(_['d']**(n-j))-self.K),range(k,n+1)))
+        down_in_call = exp(-self.rf_r*self.T)*sum(l)
+
+
+
+        if self.dir == 'in' and self.right == 'call' and self.knock == 'down':
+            self.px_spec.add(px=down_in_call, method='LT', sub_method='combinatorial',
+                        LT_specs=_, ref_tree = None, opt_tree =  None)
+
+        elif self.dir == 'in' and self.right == 'call' and self.knock == 'up':
+
+            from European import European
+            o = European(ref=self.ref, right='call', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
+            call_px = o.calc_px(method='BS').px_spec.px   # save interim results to self.px_spec. Equivalent to repr(o)
+            in_px = call_px - out_px
+            self.px_spec.add(px=in_px, method='LT', sub_method='in out parity',
+                        LT_specs=_, ref_tree = None, opt_tree =  None)
+
+
+        elif self.dir == 'in' and self.right == 'put' and self.knock == 'up':
+
+            from European import European
+            o = European(ref=self.ref, right='put', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
+            put_px = o.calc_px(method='BS').px_spec.px   # save interim results to self.px_spec. Equivalent to repr(o)
+            in_px = put_px - out_px
+            self.px_spec.add(px=in_px, method='LT', sub_method='in out parity',
+                        LT_specs=_, ref_tree = None, opt_tree =  None)
+
+        elif self.dir == 'in' and self.right == 'put' and self.knock == 'down':
+
+            from European import European
+            o = European(ref=self.ref, right='put', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
+            put_px = o.calc_px(method='BS').px_spec.px   # save interim results to self.px_spec. Equivalent to repr(o)
+            in_px = put_px - out_px
+            self.px_spec.add(px=in_px, method='LT', sub_method='in out parity',
+                        LT_specs=_, ref_tree = None, opt_tree =  None)
+
         return self
 
 
@@ -327,12 +350,15 @@ class Barrier(OptionValuation):
         """
         return self
 
-print(Barrier_BS(50,40,0.01,0.03,0.15,1,60,'call','down','up'))
-print(Barrier_BS(50,30,0.01,0.03,0.15,10,60,'put','up','out'))
-Barrier_BS(90,100,0.05,0.45,0.15,3,72,'call','up','out')
+#print(Barrier_BS(95,100.,0.01,0.03,0.15,1.,60,'call','down','out'))
+#print(Barrier_BS(S0 = 95.,K = 100.,r=.1,q=.00,sigma=.25,T=1.,H=90.,Right='call',knock='down',dir='out'))
+#print(Barrier_BS(50,30,0.01,0.03,0.15,10,60,'put','up','out'))
+#Barrier_BS(90,100,0.05,0.45,0.15,3,72,'call','up','out')
 
 #S0=95, K = 100, σ = 25%, T = 1 year, r = 10%, barrier = 90.
 
 s = Stock(S0=95., vol=.25, q=.00)
-o = Barrier(H=90.,ref=s, right='put', K=100., T=1., rf_r=.1, desc='53.39, Hull p.291')
-print(o.calc_px(method='LT', nsteps=4000, keep_hist=True).px_spec.px)  # option price from a 3-step tree (that's 2 time intervals)
+o = Barrier(H=90.,knock='down',dir='in',ref=s, right='put', K=100., T=1., rf_r=.1, desc='53.39, Hull p.291')
+print(o.calc_px(method='LT', nsteps=1050, keep_hist=True).px_spec.px)  # option price from a 3-step tree (that's 2 time intervals)
+#o = Barrier(H=92.,knock='up',dir='out',ref=s, right='put', K=100., T=1., rf_r=.1, desc='53.39, Hull p.291')
+#print(o.calc_px(method='LT', nsteps=2000, keep_hist=True).px_spec.px)  # option price from a 3-step tree (that's 2 time intervals)
