@@ -1,68 +1,165 @@
-__author__ = 'Tianyi Yao'
+from qfrm import *
 
-def pxBS(right='call', S=50., K=50., vol=0.3, r=0.08, q=0.01):
-    """ pricing perpetual American option using Black-Scholes model
-    :param right: call or put
-    :type right: string
-    :param S: current price of a stock underlying
-    :type S: float
-    :param K: strike price of the option
-    :type K: float
-    :param vol: volatility of the underlying
-    :type vol: float
-    :param r: risk free interest rate, cc, annualized
-    :type r: float
-    :param q: dividend
-    :type q: float
-    :return: option price
-    :rtype: float
+class PerpetualAmerican(OptionValuation):
+    """ perpetual American option class.
 
-
-
-    :Example:
-    >>> pxBS() #the default value
-    37.190676833752335
-    >>> pxBS('put',S=30.,K=30.,vol=0.25,r=0.05,q=0.01)
-    5.837758667830096
+    Inherits all methods and properties of OptionValuation class.
     """
 
-    #verify the inputs meet the requirement
-    try:
-        S, K, vol, r, q=float(S), float(K), float(vol), float(r), float(q)
+    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
+        """ Wrapper function that calls appropriate valuation method.
 
-    except:
-        print('Input value error. S, K, vol, r, q should all be floats')
-
-    assert right in ['call','put'], 'right should be either put or call'
-    assert vol>=0, 'vol should be >=0'
-    assert K>=0, 'K should be >=0'
-    assert r>=0, 'r should be >=0'
-    assert q>0, 'q should be >0, q=0 will give an alpha1 of infinity'
+        User passes parameters to calc_px, which saves them to local PriceSpec object
+        and calls specific pricing function
 
 
-    #import external libraries
-    from math import sqrt
+        Parameters
+        ----------
+        method : str
+                Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
+        nsteps : int
+                LT, MC, FD methods require number of times steps
+        npaths : int
+                MC, FD methods require number of simulation paths
+        keep_hist : bool
+                If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
 
-    #compute parameters required in the pricing
-    w=r-q-((vol**2)/2.)
-    alpha1=(-w+sqrt((w**2)+2*(vol**2)*r))/(vol**2)
-    H1=K*(alpha1/(alpha1-1))
-    alpha2=(w+sqrt((w**2)+2*(vol**2)*r))/(vol**2)
-    H2=K*(alpha2/(alpha2+1))
+        Returns
+        -------
+        self : PerpetualAmerican
 
-    #price the perpetual American option
-    if right=='call':
-        if S<H1:
-            return (K/(alpha1-1))*((((alpha1-1)/alpha1)*(S/K))**alpha1)
-        elif S>H1:
-            return S-K
+        .. sectionauthor:: Tianyi Yao
+
+        Notes
+        -----
+
+        Examples
+        -------
+
+        >>> s = Stock(S0=50, vol=.3, q=0.01)
+        >>> o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.08)
+
+        >>> print(o.calc_px(method='BS'))
+        37.190676833752335
+
+        >>> print(repr(o))
+        PerpetualAmerican
+        K: 50
+        T: 1
+        _right: call
+        _signCP: 1
+        frf_r: 0
+        px_spec: qfrm.PriceSpec
+        keep_hist: false
+        method: BS
+        ref: qfrm.Stock
+        S0: 50
+        curr: null
+        desc: null
+        q: 0.01
+        tkr: null
+        vol: 0.3
+        rf_r: 0.08
+        seed0: null
+
+        """
+        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
+        return getattr(self, '_calc_' + method.upper())()
+
+
+
+    def _calc_BS(self):
+
+        """ Internal function for option valuation.
+
+        Returns
+        -------
+        self: PerpetualAmerican
+
+        .. sectionauthor:: Tianyi Yao
+
+        Note
+        ----
+
+        """
+        _ = self
+
+        try:
+            _.T == None
+        except TypeError:
+            _.T = None
+
+        assert _.ref.q > 0, 'q should be >0, q=0 will give an alpha1 of infinity'
+
+
+
+        from math import sqrt
+
+        w = _.rf_r - _.ref.q - ((_.ref.vol ** 2) / 2.)
+        alpha1 = (-w + sqrt((w ** 2) + 2 * (_.ref.vol ** 2) * _.rf_r)) / (_.ref.vol ** 2)
+        H1 = _.K * (alpha1 / (alpha1 - 1))
+        alpha2 = (w + sqrt((w ** 2) + 2 * (_.ref.vol ** 2) * _.rf_r)) / (_.ref.vol ** 2)
+        H2 = _.K * (alpha2 / (alpha2 + 1))
+
+        #price the perpetual American option
+        if _.signCP == 1:
+            if _.ref.S0 < H1:
+                return (_.K / (alpha1 - 1)) * ((((alpha1 - 1) / alpha1) * (_.ref.S0 / _.K)) ** alpha1)
+            elif _.ref.S0 > H1:
+                return _.ref.S0 - _.K
+            else:
+                print('The option cannot be priced')
         else:
-            print('The option cannot be priced')
-    else:
-        if S>H2:
-            return (K/(alpha2+1))*((((alpha2+1)/alpha2)*(S/K))**(-alpha2))
-        elif S<H2:
-            return K-S
-        else:
-            print('The option cannot be priced ')
+            if _.ref.S0 > H2:
+                return (_.K / (alpha2 + 1)) * ((((alpha2 + 1) / alpha2) * (_.ref.S0 / _.K)) ** ( -alpha2 ))
+            elif _.ref.S0 < H2:
+                return _.K - _.ref.S0
+            else:
+                print('The option cannot be priced ')
+        return self
+
+    def _calc_LT(self):
+        """ Internal function for option valuation.
+
+        Returns
+        -------
+        self: PerpetualAmerican
+
+        .. sectionauthor::
+
+        """
+
+        return self
+
+    def _calc_MC(self):
+        """ Internal function for option valuation.
+
+        Returns
+        -------
+        self: PerpetualAmerican
+
+        .. sectionauthor::
+
+        Note
+        ----
+
+        """
+        return self
+
+    def _calc_FD(self):
+        """ Internal function for option valuation.
+
+        Returns
+        -------
+        self: PerpetualAmerican
+
+        .. sectionauthor::
+
+        Note
+        ----
+
+        """
+
+        return self
+
 
