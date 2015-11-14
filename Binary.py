@@ -8,7 +8,7 @@ class Binary(OptionValuation):
     Inherits all methods and properties of OptionValuation class.
     """
 
-    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
+    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, payout_type="asset_or_nothing", Q=0.0):
         """ Wrapper function that calls appropriate valuation method.
 
         User passes parameters to calc_px, which saves them to local PriceSpec object
@@ -26,6 +26,10 @@ class Binary(OptionValuation):
                 MC, FD methods require number of simulation paths
         keep_hist : bool
                 If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
+        payout_type : str
+                Required. Indicates whether the binary option is: "asset_or_nothing", "cash_or_nothing"
+        Q : float
+                Required if payout_type is "cash_or_nothing". Used in pricing a cash or nothing binary option.
 
         Returns
         -------
@@ -51,31 +55,65 @@ class Binary(OptionValuation):
         Examples
         -------
 
-        >>> s = Stock(S0=42, vol=.20)
-        >>> o = Binary(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @0.81, put @4.76, Hull p.339')
+        Use the Black-Scholes model to price an asset-or-nothing binary option
 
-        >>> o.calc_px(method='BS').px_spec   # save interim results to self.px_spec. Equivalent to repr(o)
+        >>> s = Stock(S0=42, vol=.20)
+        >>> o = Binary(ref=s, right='put', K=40, T=.5, rf_r=.1)
+        >>> o.calc_px(method='BS', payout_type="asset_or_nothing").px_spec
         qfrm.PriceSpec
+        Q: 0.0
         d1: 0.7692626281060315
         d2: 0.627841271868722
         keep_hist: false
         method: BS
-        px: 0.8085993729000922
-        px_call: 4.759422392871532
-        px_put: 0.8085993729000922
-        sub_method: standard; Hull p.335
+        payout_type: asset_or_nothing
+        px: 9.276485780407903
+        px_call: 32.7235142195921
+        px_put: 9.276485780407903
+        sub_method: asset_or_nothing
+        <BLANKLINE>
 
-        >>> (o.px_spec.px, o.px_spec.d1, o.px_spec.d2, o.px_spec.method)  # alternative attribute access
-        (0.8085993729000922, 0.7692626281060315, 0.627841271868722, 'BS')
+        Access the attributes in other ways
 
-        >>> o.update(right='call').calc_px().px_spec.px  # change option object to a put
-        4.759422392871532
+        >>> o.px_spec.px, o.px_spec.d1, o.px_spec.d2, o.px_spec.method, o.px_spec.sub_method
+        (9.276485780407903, 0.7692626281060315, 0.627841271868722, 'BS', 'asset_or_nothing')
 
-        >>> European(clone=o, K=41, desc='Ex. copy params; new strike.').calc_px(method='LT').px_spec.px
-        4.2270039114413125
+        Change the option to be a call
+
+        >>> o.update(right='call').calc_px().px_spec.px
+        32.7235142195921
+
+        Use the Black-Scholes model to price a cash-or-nothing binary option
+
+        >>> s = Stock(S0=50, vol=.3)
+        >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05)
+        >>> o.calc_px(method='BS', payout_type="cash_or_nothing", Q=1000).px_spec
+        qfrm.PriceSpec
+        Q: 1000
+        d1: 0.9737886891259003
+        d2: 0.5495246204139719
+        keep_hist: false
+        method: BS
+        payout_type: cash_or_nothing
+        px: 641.2377052315655
+        px_call: 641.2377052315655
+        px_put: 263.59971280439396
+        sub_method: cash_or_nothing
+        <BLANKLINE>
+
+        Access the attributes in other ways
+
+        >>> o.px_spec.px, o.px_spec.d1, o.px_spec.d2, o.px_spec.method, o.px_spec.sub_method
+        (641.2377052315655, 0.9737886891259003, 0.5495246204139719, 'BS', 'cash_or_nothing')
+
+        Change the option to be a put
+
+        >>> o.update(right='put').calc_px().px_spec.px
+        8.2540367580782
 
         """
-        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
+        self.px_spec = PriceSpec(method=method, sub_method=payout_type, nsteps=nsteps, npaths=npaths,
+                                 keep_hist=keep_hist, payout_type=payout_type, Q=Q)
         return getattr(self, '_calc_' + method.upper())()
 
     def _calc_BS(self):
@@ -89,16 +127,24 @@ class Binary(OptionValuation):
 
         """
 
+        # Get additional pricing parameters that were provided
+        payout_type = getattr(self.px_spec, 'payout_type')
+        Q = getattr(self.px_spec, 'Q')
+
+        # Convert the payout_type to lower case
+        payout_type = payout_type.lower()
+
         # Explicit imports
         from math import log, exp, sqrt
         from scipy.stats import norm
 
         # Calculate d1 and d2
-        d1 = ((log(self.ref.S0/self.K)) + ((self.rf_r - self.ref.q + self.ref.vol**2 / 2) * self.T)) / (self.ref.vol * sqrt(self.T))
+        d1 = ((log(self.ref.S0 / self.K)) + ((self.rf_r - self.ref.q + self.ref.vol ** 2 / 2) * self.T)) / (
+            self.ref.vol * sqrt(self.T))
         d2 = d1 - (self.ref.vol * sqrt(self.T))
 
         # Price the asset-or-nothing binary option
-        if isinstance(self.ref, Stock):
+        if payout_type == "asset_or_nothing":
             # Calculate the discount
             discount = self.ref.S0 * exp(-self.ref.q * self.T)
 
@@ -106,30 +152,24 @@ class Binary(OptionValuation):
             px_call = discount * norm.cdf(d1)
             px_put = discount * norm.cdf(-d1)
 
-            # Store the type of binary option we priced
-            sub_method = "asset-or-nothing"
-
         # Price the cash-or-nothing binary option
-        elif isinstance(self.ref, Cash):
+        elif payout_type == "cash_or_nothing":
             # Calculate the discount
-            discount = exp(-self.rf_r * self.T)
+            discount = Q * exp(-self.rf_r * self.T)
 
             # Compute the put and call price
             px_call = discount * norm.cdf(d2)
             px_put = discount * norm.cdf(-d2)
 
-            # Store the type of binary option we priced
-            sub_method = "cash-or-nothing"
-
         # The underlying is unknown
         else:
-            raise "Unknown underlying for binary option."
+            raise "Unknown payout_type for binary option."
 
         # Store the correct price for the given right
         px = px_call if self.signCP == 1 else px_put if self.signCP == -1 else None
 
         # Record the price
-        self.px_spec.add(px=px, method='BS', sub_method=sub_method, px_call=px_call, px_put=px_put, d1=d1, d2=d2)
+        self.px_spec.add(px=float(px), px_call=float(px_call), px_put=float(px_put), d1=d1, d2=d2, Q=Q)
 
         return self
 
@@ -175,28 +215,3 @@ class Binary(OptionValuation):
 
         """
         return self
-
-
-
-# Test cases - checked against http://investexcel.net/excel-binary-options/
-assert pxBS('cash', 'call', 100, 100, 1, .2,  .05,  0) == round(0.5323248155, 8)
-assert pxBS('cash', 'put',  100, 100, 1, .2,  .05,  0) == round(0.418904609, 8)
-assert pxBS('cash', 'call', 100, 100, 1,  2,   .5, .1) == round(0.1284967947, 8)
-assert pxBS('cash', 'put',  100, 100, 1,  2,   .5, .1) == round(0.478033865, 8)
-assert pxBS('cash', 'call', 100, 110, 10, .2, .05,  0) == round(0.3802315498, 8)
-assert pxBS('cash', 'put',  100, 110, 10, .2, .05,  0) == round(0.2262991099, 8)
-# Or, to print the test cases:
-print(pxBS('cash', 'call', 100, 100, 1, .2,  .05,  0))
-print(pxBS('cash', 'put',  100, 100, 1, .2,  .05,  0))
-print(pxBS('cash', 'call', 100, 100, 1,  2,   .5, .1))
-print(pxBS('cash', 'put',  100, 100, 1,  2,   .5, .1))
-print(pxBS('cash', 'call', 100, 110, 10, .2, .05,  0))
-print(pxBS('cash', 'put',  100, 110, 10, .2, .05,  0))
-# Test cases are not recommended for now - most online calculators that I've found have errors in their formulae
-# # Test cases - checked against http://investexcel.net/excel-binary-options/
-print(pxBS('asset', 'call', 100, 100, 1, .2,  .05,  0))
-print(pxBS('asset', 'put',  100, 100, 1, .2,  .05,  0))
-print(pxBS('asset', 'call', 100, 100, 1,  2,   .5, .1))
-print(pxBS('asset', 'put',  100, 100, 1,  2,   .5, .1))
-print(pxBS('asset', 'call', 100, 110, 10, .2, .05,  0))
-print(pxBS('asset', 'put',  100, 110, 10, .2, .05,  0))
