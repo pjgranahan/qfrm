@@ -1,4 +1,169 @@
-__author__ = 'pjgranahan'
+from qfrm import *
+
+
+class Binary(OptionValuation):
+    """
+    Binary option class.
+
+    Inherits all methods and properties of OptionValuation class.
+    """
+
+    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
+        """ Wrapper function that calls appropriate valuation method.
+
+        User passes parameters to calc_px, which saves them to local PriceSpec object
+        and calls specific pricing function (_calc_BS,...).
+        This makes significantly less docstrings to write, since user is not interfacing pricing functions,
+        but a wrapper function calc_px().
+
+        Parameters
+        ----------
+        method : str
+                Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
+        nsteps : int
+                LT, MC, FD methods require number of times steps
+        npaths : int
+                MC, FD methods require number of simulation paths
+        keep_hist : bool
+                If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
+
+        Returns
+        -------
+        self : Binary
+
+        .. sectionauthor:: Patrick Granahan
+
+        Notes
+        -----
+
+        Examples
+        -------
+
+        >>> s = Stock(S0=42, vol=.20)
+        >>> o = European(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @0.81, put @4.76, Hull p.339')
+
+        >>> o.calc_px(method='BS').px_spec   # save interim results to self.px_spec. Equivalent to repr(o)
+        qfrm.PriceSpec
+        d1: 0.7692626281060315
+        d2: 0.627841271868722
+        keep_hist: false
+        method: BS
+        px: 0.8085993729000922
+        px_call: 4.759422392871532
+        px_put: 0.8085993729000922
+        sub_method: standard; Hull p.335
+
+        >>> (o.px_spec.px, o.px_spec.d1, o.px_spec.d2, o.px_spec.method)  # alternative attribute access
+        (0.8085993729000922, 0.7692626281060315, 0.627841271868722, 'BS')
+
+        >>> o.update(right='call').calc_px().px_spec.px  # change option object to a put
+        4.759422392871532
+
+        >>> European(clone=o, K=41, desc='Ex. copy params; new strike.').calc_px(method='LT').px_spec.px
+        4.2270039114413125
+
+        """
+        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
+        return getattr(self, '_calc_' + method.upper())()
+
+    def _calc_BS(self):
+        """ Internal function for option valuation.
+
+        Returns
+        -------
+        self: Binary
+
+        .. sectionauthor:: Patrick Granahan
+
+        """
+
+        # Explicit imports
+        from math import log, exp, sqrt
+        from scipy.stats import norm
+
+        # Calculate d1 and d2
+        d1 = ((log(self.ref.S0/self.K)) + ((self.rf_r - self.ref.q + self.ref.vol**2 / 2) * self.T)) / (self.ref.vol * sqrt(self.T))
+        d2 = d1 - (self.ref.vol * sqrt(self.T))
+
+        # Price the asset-or-nothing binary option
+        if type(self.ref) is Stock:
+            # Calculate the discount
+            discount = self.ref.S0 * exp(-self.ref.q * self.T)
+
+            # Compute the put and call price
+            px_call = discount * norm.cdf(d1)
+            px_put = discount * norm.cdf(-d1)
+
+            # Store the type of binary option we priced
+            sub_method = "asset-or-nothing"
+
+        # Price the cash-or-nothing binary option
+        elif type(self.ref) is Cash:
+            # Calculate the discount
+            discount = exp(-self.rf_r * self.T)
+
+            # Compute the put and call price
+            px_call = discount * norm.cdf(d2)
+            px_put = discount * norm.cdf(-d2)
+
+            # Store the type of binary option we priced
+            sub_method = "cash-or-nothing"
+
+        # The underlying is unknown
+        else:
+            raise "Unknown underlying for binary option."
+
+        # Store the correct price for the given right
+        px = px_call if self.signCP == 1 else px_put if self.signCP == -1 else None
+
+        # Record the price
+        self.px_spec.add(px=px, method='BS', sub_method=sub_method, px_call=px_call, px_put=px_put, d1=d1, d2=d2)
+
+        return self
+
+    def _calc_LT(self):
+        """ Internal function for option valuation.
+
+        Returns
+        -------
+        self: Binary
+
+        .. sectionauthor::
+
+        .. note::
+        Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
+
+        """
+        return self
+
+    def _calc_MC(self, nsteps=3, npaths=4, keep_hist=False):
+        """ Internal function for option valuation.
+
+        Returns
+        -------
+        self: Binary
+
+        .. sectionauthor::
+
+        Notes
+        -----
+        Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
+
+        """
+        return self
+
+    def _calc_FD(self, nsteps=3, npaths=4, keep_hist=False):
+        """ Internal function for option valuation.
+
+        Returns
+        -------
+        self: Binary
+
+        .. sectionauthor::
+
+        """
+        return self
+
 
 
 def pxBS(underlying, right, S, K, T, vol, r, q=0.0):
@@ -27,53 +192,7 @@ def pxBS(underlying, right, S, K, T, vol, r, q=0.0):
     :return: Value of the Binary option according to the Black-Scholes model.
     """
 
-    # Explicit imports
-    from math import log, exp, sqrt
-    from scipy.stats import norm
 
-    # Convert right and underlying to lower case
-    right = right.lower()
-    underlying = underlying.lower()
-
-    # Calculate d1
-    d1 = ((log(S/K)) + ((r - q + vol**2 / 2) * T)) / (vol * sqrt(T))
-
-    # Price the asset-or-nothing binary option
-    if underlying == "asset":
-        # Calculate the discount (for an asset-or-nothing binary option)
-        discount = S * exp(-q * T)
-
-        # Multiply d1 by -1 for put rights
-        if right == "put":
-            d1 *= -1
-
-        # Compute the price, and round it to 8 places
-        price = discount * norm.cdf(d1)
-        price = round(price, 8)
-
-        return price
-
-    # Price the cash-or-nothing binary option
-    if underlying == "cash":
-        # Calculate d2 if we will need it
-        d2 = d1 - (vol * sqrt(T))
-
-        # Calculate the discount
-        discount = exp(-r * T)
-
-        # Multiply d2 by -1 for put rights
-        if right == "put":
-            d2 *= -1
-
-        # Compute the price, and round it to 8 places
-        price = discount * norm.cdf(d2)
-        price = round(price, 8)
-
-        return price
-
-    # The underlying is unknown
-    else:
-        raise "Unknown underlying for binary option"
 
 # Test cases - checked against http://investexcel.net/excel-binary-options/
 assert pxBS('cash', 'call', 100, 100, 1, .2,  .05,  0) == round(0.5323248155, 8)
