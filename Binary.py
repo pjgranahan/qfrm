@@ -111,6 +111,15 @@ class Binary(OptionValuation):
         >>> o.update(right='put').calc_px().px_spec.px
         8.2540367580782
 
+        Example of option price development (BS method) with increasing maturities
+
+        >>> from pandas import Series
+        >>> expiries = range(1,11)
+        >>> O = Series([o.update(T=t).calc_px(method='BS', payout_type="cash_or_nothing", Q=1000).px_spec.px for t in expiries], expiries)
+        >>> O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at ...>
+        >>> import matplotlib.pyplot as plt
+        >>> plt.show()
         """
         self.px_spec = PriceSpec(method=method, sub_method=payout_type, nsteps=nsteps, npaths=npaths,
                                  keep_hist=keep_hist, payout_type=payout_type, Q=Q)
