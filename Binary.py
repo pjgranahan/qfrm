@@ -35,12 +35,24 @@ class Binary(OptionValuation):
 
         Notes
         -----
+        In finance, a binary option is a type of option in which the payoff can take only two possible outcomes,
+        either some fixed monetary amount (or a precise predefined quantity or units of some asset) or nothing at all
+        (in contrast to ordinary financial options that typically have a continuous spectrum of payoff)...
+
+        For example, a purchase is made of a binary cash-or-nothing call option on XYZ Corp's stock struck at $100
+        with a binary payoff of $1,000. Then, if at the future maturity date, often referred to as an expiry date, the
+        stock is trading at above $100, $1,000 is received. If the stock is trading below $100, no money is received.
+        And if the stock is trading at $100, the money is returned to the purchaser. [1]
+
+        References
+        ----------
+        [1] https://en.wikipedia.org/wiki/Binary_option
 
         Examples
         -------
 
         >>> s = Stock(S0=42, vol=.20)
-        >>> o = European(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @0.81, put @4.76, Hull p.339')
+        >>> o = Binary(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @0.81, put @4.76, Hull p.339')
 
         >>> o.calc_px(method='BS').px_spec   # save interim results to self.px_spec. Equivalent to repr(o)
         qfrm.PriceSpec
@@ -86,7 +98,7 @@ class Binary(OptionValuation):
         d2 = d1 - (self.ref.vol * sqrt(self.T))
 
         # Price the asset-or-nothing binary option
-        if type(self.ref) is Stock:
+        if isinstance(self.ref, Stock):
             # Calculate the discount
             discount = self.ref.S0 * exp(-self.ref.q * self.T)
 
@@ -98,7 +110,7 @@ class Binary(OptionValuation):
             sub_method = "asset-or-nothing"
 
         # Price the cash-or-nothing binary option
-        elif type(self.ref) is Cash:
+        elif isinstance(self.ref, Cash):
             # Calculate the discount
             discount = exp(-self.rf_r * self.T)
 
@@ -163,34 +175,6 @@ class Binary(OptionValuation):
 
         """
         return self
-
-
-
-def pxBS(underlying, right, S, K, T, vol, r, q=0.0):
-    """
-    pxBS computes the price of 1 unit of cash in a Cash or Nothing Binary option,
-    or the price of 1 unit of asset in an Asset or Nothing Binary option,
-    using the Black-Scholes model given the parameters.
-
-    From https://en.wikipedia.org/wiki/Binary_option:
-        In finance, a binary option is a type of option in which the payoff can take only two possible outcomes,
-        either some fixed monetary amount (or a precise predefined quantity or units of some asset) or nothing at all
-        (in contrast to ordinary financial options that typically have a continuous spectrum of payoff)...
-
-        For example, a purchase is made of a binary cash-or-nothing call option on XYZ Corp's stock struck at $100
-        with a binary payoff of $1,000. Then, if at the future maturity date, often referred to as an expiry date, the
-        stock is trading at above $100, $1,000 is received. If the stock is trading below $100, no money is received.
-        And if the stock is trading at $100, the money is returned to the purchaser.
-
-    :param right: "Call" or "Put" (case-insensitive).
-    :param S: Price of the underlying instrument.
-    :param K: Strike price.
-    :param T: Time until expiry of the option (annualized).
-    :param vol: Volatility.
-    :param r: Risk free rate of return, continuously compounded and annualized.
-    :param q: Dividend yield of the underlying, continuously compounded and annualized.
-    :return: Value of the Binary option according to the Black-Scholes model.
-    """
 
 
 
