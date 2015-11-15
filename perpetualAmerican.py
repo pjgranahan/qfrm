@@ -82,26 +82,31 @@ class PerpetualAmerican(OptionValuation):
         ----
 
         """
+
+        #Get parameters
         _ = self
 
+        #Make sure no time to maturity is specified as this option has no expiry
         try:
             _.T == None
         except TypeError:
             _.T = None
 
+        #Check the validity of value of dividend
         assert _.ref.q > 0, 'q should be >0, q=0 will give an alpha1 of infinity'
 
 
-
+        #Explicit imports
         from math import sqrt
 
+        #Compute parameters and barrier threshold
         w = _.rf_r - _.ref.q - ((_.ref.vol ** 2) / 2.)
         alpha1 = (-w + sqrt((w ** 2) + 2 * (_.ref.vol ** 2) * _.rf_r)) / (_.ref.vol ** 2)
         H1 = _.K * (alpha1 / (alpha1 - 1))
         alpha2 = (w + sqrt((w ** 2) + 2 * (_.ref.vol ** 2) * _.rf_r)) / (_.ref.vol ** 2)
         H2 = _.K * (alpha2 / (alpha2 + 1))
 
-        #price the perpetual American option
+        #price the perpetual American call option
         if _.signCP == 1:
             if _.ref.S0 < H1:
                 return (_.K / (alpha1 - 1)) * ((((alpha1 - 1) / alpha1) * (_.ref.S0 / _.K)) ** alpha1)
@@ -109,6 +114,7 @@ class PerpetualAmerican(OptionValuation):
                 return _.ref.S0 - _.K
             else:
                 print('The option cannot be priced')
+        #price the perpetual American put option
         else:
             if _.ref.S0 > H2:
                 return (_.K / (alpha2 + 1)) * ((((alpha2 + 1) / alpha2) * (_.ref.S0 / _.K)) ** ( -alpha2 ))
