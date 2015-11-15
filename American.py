@@ -475,8 +475,7 @@ class OptionSeries:
         return s
 
     def __repr__(self):
-        """ Called by the repr() built-in function to compute the “official” string representation of an object.
-
+        """
         :return: full list of object properties
         :rtype: str
 
@@ -495,9 +494,7 @@ class OptionSeries:
         return self.full_spec(new_line=True)
 
     def __str__(self):
-        """ Called by str(object) and the built-in functions format() and print()
-        to compute the “informal” or nicely printable string representation of an object.
-
+        """
         :return: full list of object properties
         :rtype: str
 
@@ -657,11 +654,6 @@ class OptionValuation(OptionSeries):
 
         :Example:
 
-        >>> from American import *; from European import *
-        >>> s = Stock(S0=50, vol=.3)
-        >>> a = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc={'$7.42840, Hull p.288'})
-        >>> e = European(clone=a)
-        >>> a.plot_px_convergence(nsteps_max=50, vs=e)
 
         """
         import matplotlib.pyplot as plt
@@ -689,10 +681,6 @@ class OptionValuation(OptionSeries):
 
         :Example:
 
-        >>> from American import *; from European import *
-        >>> s = Stock(S0=50, vol=.3)
-        >>> a = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc={'$7.42840, Hull p.288'})
-        >>> a.plot()
 
         """
         import matplotlib.pyplot as plt
@@ -741,6 +729,150 @@ class OptionValuation(OptionSeries):
         rf_r = 0 if self.rf_r is None else self.rf_r
 
         return rf_r - q - frf_r   # calculate RFR net of yield and foreign RFR
+
+
+class European(OptionValuation):
+    """ European option class.
+    Inherits all methods and properties of OptionValuation class.
+    """
+
+    @property
+    def BS_params(self):
+        """ Calculates a collection of specs/parameters needed for BSM pricing.
+
+        :return: collection of components of BSM formula, i.e. d1, d2, N(d1), N(d2)
+        :rtype:  dict
+
+        :Example:
+
+        >>> OptionValuation(ref=Stock(S0=42, vol=.2), right='call', K=40, T=.5, r=.1).BS_params
+        {'Nd1': 0.77913129094266897,
+         'Nd2': 0.73494603684590853,
+         'd1': 0.7692626281060315,
+         'd2': 0.627841271868722}
+         >>> American(ref=Stock(S0=50, vol=.3), right='put', K=52, T=2, r=.05, desc={'note':'$7.42840, Hull p.288'}).BS_params
+         {'Nd1': 0.63885135045054053,
+         'Nd2': 0.47254500437809299,
+         'd1': 0.3553901873059548,
+         'd2': -0.06887388140597372}
+        """
+        from math import log, sqrt
+        from scipy.stats import norm
+        d1 = ((log(self.ref.S0 / self.K) + (self.rf_r + 0.5 * self.ref.vol ** 2) * self.T) / (self.ref.vol * sqrt(self.T)))
+        d2 = d1 - self.ref.vol * sqrt(self.T)
+        return {'d1': d1, 'd2': d2, 'Nd1': norm.cdf(d1), 'Nd2': norm.cdf(d2)}
+
+    @property
+    def pxBS(self):
+        """ Option valuation via BSM.
+
+        Use BS_params method to draw computed parameters.
+        They are also used by other exotic options.
+        It's basically a one-liner.
+
+        :return: price of a put or call European option
+        :rtype: float
+        """
+        from math import exp
+        _ = self.BS_params
+        c = (self.ref.S0 * _['Nd1'] - self.K * exp(-self.rf_r * self.T) * _['Nd2'])
+        return c if self.right == 'call' else c - self.ref.S0 + exp(-self.rf_r * self.T) * self.K
+
+
+    def LT_params(self, nsteps=2):
+        """ Calculates a collection of specs/parameters needed for lattice tree pricing.
+
+        Parameters returned:
+            dt: time interval between consequtive two time steps
+            u: stock price up move factor
+            d: stock price down move factor
+            a: growth factor, p.452
+            p: probability of up move over one time interval dt
+            df_T: discount factor over full time interval dt, i.e. per life of an option
+            df_dt: discount factor over one time interval dt, i.e. per step
+
+        :param nsteps: number of steps in a tree, positive number. Required.
+        :type nsteps:  int
+        :return:       LT specs
+        :rtype:         dict
+
+        :Example:
+
+        >>> OptionValuation(ref=Stock(S0=42, vol=.2), right='call', K=40, T=.5, r=.1).LT_params(2)
+        {'a': 1.0253151205244289,
+         'd': 0.9048374180359595,
+         'df_T': 0.951229424500714,
+         'df_dt': 0.9753099120283326,
+         'dt': 0.25,
+         'p': 0.60138570166548,
+         'u': 1.1051709180756477}
+         >>> American(ref=Stock(S0=50, vol=.3), right='put', K=52, T=2, r=.05, desc={'note':'$7.42840, Hull p.288'}).LT_params(3)
+        {'a': 1.033895113513574,
+         'd': 0.7827444773247475,
+         'df_T': 0.9048374180359595,
+         'df_dt': 0.9672161004820059,
+         'dt': 0.6666666666666666,
+         'p': 0.5075681589595774,
+         'u': 1.2775561233185384}
+        """
+        assert isinstance(nsteps, int), 'nsteps must be an integer, >2'
+        from math import exp, sqrt
+        par = {'dt': self.T / nsteps}
+        par['u'] = exp(self.ref.vol * sqrt(par['dt']))
+        par['d'] = 1 / par['u']
+        par['a'] = exp(self.net_r * par['dt'])   # growth factor, p.452
+        par['p'] = (par['a'] - par['d']) / (par['u'] - par['d'])
+        par['df_T'] = exp(-self.rf_r * self.T) #exp(-self.r * self.T)
+        par['df_dt'] = exp(-self.rf_r * par['dt'])
+        # par['nsteps'] = (nsteps,)
+        return par
+
+
+    def pxLT(self, nsteps=3, return_tree=False):
+        """ Option valuation via binomial (lattice) tree
+
+        This method is not called directly. Instead, OptionValuation calls it via (vectorized) method pxLT()
+        See Ch. 13 for numerous examples and theory.
+
+        :param nsteps: number of time steps in the tree
+        :type nsteps: int
+        :param return_tree: indicates whether a full tree needs to be returned
+        :type return_tree: bool
+        :return: option price or a chronological tree of stock and option prices
+        :rtype:  float|tuple of tuples
+
+        :Example:
+
+        >>> a = American(ref=Stock(S0=50, vol=.3), right='put', K=52, T=2, r=.05, desc={'note':'$7.42840, Hull p.288'})
+        >>> a.pxLT(2)
+        7.42840190270483
+        >>> a.pxLT((2,20,200))
+        (7.42840190270483, 7.5113077715410839, 7.4772083289361388)
+        >>> a.pxLT(2, return_tree=True)
+        (((27.44058, 50.0, 91.10594), (24.55942, 2.0, 0.0)),    # stock and option values for step 2
+        ((37.04091, 67.49294), (14.95909, 0.9327)),             # stock and option values for step 1
+        ((50.0,), (7.4284,)))                                   # stock and option values for step 0 (now)
+        """
+        # http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
+        # def pxLT_(nsteps):
+        from numpy import cumsum, log, arange, insert, exp, sqrt, sum, maximum, vectorize
+
+        _ = self.LT_params(nsteps)
+        S = self.ref.S0 * _['d'] ** arange(nsteps, -1, -1) * _['u'] ** arange(0, nsteps + 1)
+        O = maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
+        tree = ((S, O),)
+
+        if return_tree:
+            for i in range(nsteps, 0, -1):
+                O = _['df_dt'] * ((1 - _['p']) * O[:i] + (_['p']) * O[1:])  #prior option prices (@time step=i-1)
+                S = _['d'] * S[1:i + 1]                   # prior stock prices (@time step=i-1)
+                tree = tree + ((S, O),)
+            out = Util.round(tree, to_tuple=True)
+        else:
+            csl = insert(cumsum(log(arange(nsteps) + 1)), 0, 0)         # logs avoid overflow & truncation
+            tmp = csl[nsteps] - csl - csl[::-1] + log(_['p']) * arange(nsteps + 1) + log(1 - _['p']) * arange(nsteps+1)[::-1]
+            out = (_['df_T'] * sum(exp(tmp) * tuple(O)))
+        return out
 
 
 class American(OptionValuation):
@@ -874,12 +1006,63 @@ class American(OptionValuation):
         -------
         self: American
 
-        .. sectionauthor:: Oleg Melnikov
+        .. sectionauthor:: Andrew Weatherly
 
         Note
         ----
 
+        Formulae:
+        http://aeconf.com/articles/may2007/aef080111.pdf (put)
+        https://en.wikipedia.org/wiki/Black%27s_approximation (call)
+
+        Example:
+        >>> s = Stock(S0=30, vol=.3)
+        >>> o = American(ref=s, right='call', K=30, T=1., rf_r=.08, desc='Example from Internet')
+        >>> o.calc_px(method='BS')
+        >>> print(o.px_spec)
+
         """
+
+        from math import exp
+        from numpy import linspace
+        if self.right == 'call' and self.ref.q != 0:
+            #Black's approximations outlined on pg. 346
+            #Dividend paying stocks assume semi-annual payments
+            if self.T > .5:
+                dividend_val1 = sum([self.ref.q * self.ref.S0 * exp(-self.rf_r * i) for i in linspace(.5, self.T - .5,
+                                    self.T * 2 - .5)])
+                dividend_val2 = sum([self.ref.q * self.ref.S0 * exp(-self.rf_r * i) for i in linspace(.5, self.T - 1,
+                                    self.T * 2 - 1)])
+            else:
+                dividend_val1 = 0
+                dividend_val2 = 0
+            first_val = European(ref=Stock(S0=self.ref.S0 - dividend_val1, vol=self.ref.vol, q=self.ref.q), right=self.right,
+                                 K=self.K, rf_r=self.rf_r, T=self.T).pxBS
+            second_val = European(ref=Stock(S0=self.ref.S0 - dividend_val2, vol=self.ref.vol, q=self.ref.q),
+                                  right=self.right, K=self.K, rf_r=self.rf_r, T=self.T - .5).pxBS
+            self.px_spec.add(px=float(max([first_val, second_val])), method='BSM', sub_method='Black\'s Approximation')
+        elif self.right == 'call':
+            #American call is worth the same as European call if there are no dividends
+            self.px_spec.add(px=float(European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right, K=self.K,
+                                               rf_r=self.rf_r, T=self.T).pxBS), method='BSM', sub_method='Geometric')
+        elif self.ref.q != 0:
+            # I wasn't able to find a good approximation for American Put BSM w/ dividends so I'm using 200 and 201
+            # time step LT and taking the average. This is effectively the Antithetic Variable technique found on pg. 476 due
+            # to the oscillating nature of binomial tree
+            f_a = (American(ref=Stock(S0=self.ref.S0, vol=self.ref.vol, q=self.ref.q), right=self.right,
+                            K=self.K, rf_r=self.rf_r, T=self.T).calc_px(method='LT', nsteps=200).px_spec.px
+                   + American(ref=Stock(S0=self.ref.S0, vol=self.ref.vol, q=self.ref.q), right=self.right, K=self.K,
+                              rf_r=self.rf_r, T=self.T).calc_px(method='LT', nsteps=201).px_spec.px) / 2
+            self.px_spec.add(px=float(f_a), method='BSM', sub_method='Antithetic Variable')
+        else:
+            #Control Variate technique outlined on pg.463
+            f_a = American(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right,
+                           K=self.K, rf_r=self.rf_r, T=self.T).calc_px(method='LT', nsteps=100).px_spec.px
+            f_bsm = European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right,
+                             K=self.K, rf_r=self.rf_r, T=self.T).pxBS
+            f_e = European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right,
+                           K=self.K, rf_r=self.rf_r, T=self.T).pxLT(100)
+            self.px_spec.add(px=float(f_a + (f_bsm - f_e)), method='BSM', sub_method='Control Variate')
         return self
 
     def _calc_MC(self):
@@ -913,3 +1096,7 @@ class American(OptionValuation):
 
         return self
 
+s = Stock(S0=30, vol=.3)
+o = American(ref=s, right='call', K=30, T=1., rf_r=.08, desc='Example from Internet')
+o.calc_px(method='BS')
+print(o.px_spec)

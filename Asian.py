@@ -476,7 +476,8 @@ class OptionSeries:
         return s
 
     def __repr__(self):
-        """ Called by the repr() built-in function to compute the “official” string representation of an object.
+        """
+
 
         :return: full list of object properties
         :rtype: str
@@ -496,8 +497,7 @@ class OptionSeries:
         return self.full_spec(new_line=True)
 
     def __str__(self):
-        """ Called by str(object) and the built-in functions format() and print()
-        to compute the “informal” or nicely printable string representation of an object.
+        """
 
         :return: full list of object properties
         :rtype: str
@@ -741,10 +741,12 @@ class Asian(OptionValuation):
     Inherits all methods and properties of OptionValuation class.
     """
 
+
     def __init__(self,q=0.0,*args,**kwargs):
 
         super().__init__(*args,**kwargs)
         self.q = q
+
 
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
@@ -774,12 +776,13 @@ class Asian(OptionValuation):
         Notes
         -----
 
-        Verification of Example: http://investexcel.net/asian-options-excel/
+        Verification of First Example: http://investexcel.net/asian-options-excel/
 
         Examples
+        -------
 
-        >>> s = Stock(S0=30, vol=.3)
-        >>> o = Asian(q=.02,ref=s, right='call', K=29, T=1., rf_r=.08, desc='Example from Internet')
+        >>> s = Stock(S0=30, vol=.3, q = .02)
+        >>> o = Asian(ref=s, right='call', K=29, T=1., rf_r=.08, desc='Example from Internet')
         >>> o.calc_px()
         >>> print(o.px_spec)
 
@@ -789,7 +792,52 @@ class Asian(OptionValuation):
             px: 2.777361112923389
             sub_method: Geometric
 
-        -------
+        >>> s = Stock(S0=30, vol=.3, q = .02)
+        >>> o = Asian(ref=s, right='put', K=29, T=1., rf_r=.08, desc='Example from Internet')
+        >>> o.calc_px()
+        >>> print(o.px_spec)
+
+            qfrm.PriceSpec
+            keep_hist: false
+            method: BSM
+            px: 1.2240784465431602
+            sub_method: Geometric
+
+        >>> s = Stock(S0=30, vol=.3, q = .02)
+        >>> o = Asian(ref=s, right='put', K=30., T=1., rf_r=.08, desc='Example from Internet')
+        >>> o.calc_px()
+        >>> print(o.px_spec)
+
+            qfrm.PriceSpec
+            keep_hist: false
+            method: BSM
+            px: 1.6341047993229445
+            sub_method: Geometric
+
+        >>> s = Stock(S0=20, vol=.3, q = .00)
+        >>> o = Asian(ref=s, right='put', K=21., T=1., rf_r=.08, desc='Example from Internet')
+        >>> o.calc_px()
+        >>> print(o.px_spec)
+
+            qfrm.PriceSpec
+            keep_hist: false
+            method: BSM
+            px: 1.489497403315955
+            sub_method: Geometric
+
+        >>> s = Stock(S0=20, vol=.3, q = .00)
+        >>> o = Asian(ref=s, right='put', K=21., T=2., rf_r=.08, desc='Example from Internet')
+        >>> o.calc_px()
+        >>> print(o.px_spec)
+
+            qfrm.PriceSpec
+            keep_hist: false
+            method: BSM
+            px: 1.6162118076748948
+            sub_method: Geometric
+
+
+
 
        """
 
