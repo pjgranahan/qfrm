@@ -1,88 +1,3 @@
-def Barrier_BS(S0,K,r,q,sigma,T,H,Right,knock,dir):
-
-    from scipy.stats import norm
-    from numpy import exp, log, sqrt
-
-    # Compute Parameters
-    d1 = (log(S0/K) + (r-q+(sigma**2)/2)*T)/(sigma*sqrt(T))
-    d2 = d1 - sigma*sqrt(T)
-
-    c = S0*exp(-q*T)*norm.cdf(d1) - K*exp(-r*T)*norm.cdf(d2)
-    p = K*exp(-r*T)*norm.cdf(-d2) - S0*exp(-q*T)*norm.cdf(-d1)
-
-    l = (r-q+sigma**2)/(sigma**2)
-    y = log((H**2)/(S0*K))/(sigma*sqrt(T)) + l*sigma*sqrt(T)
-    x1 = log(S0/H)/(sigma*sqrt(T)) + l*sigma*sqrt(T)
-    y1 = log(H/S0)/(sigma*sqrt(T)) + l*sigma*sqrt(T)
-
-    # Consider Call Option
-    # Two Situations: H<=K vs H>K
-    if (Right == 'call'):
-        if (H<=K):
-            cdi = S0*exp(-q*T)*((H/S0)**(2*l))*norm.cdf(y) - K*exp(-r*T)*((H/S0)**(2*l-2))*norm.cdf(y-sigma*sqrt(T))
-            cdo = S0*norm.cdf(x1)*exp(-q*T) - K*exp(-r*T)*norm.cdf(x1-sigma*sqrt(T)) \
-                  - S0*exp(-q*T)*((H/S0)**(2*l))*norm.cdf(y1) + K*exp(-r*T)*((H/S0)**(2*l-2))*norm.cdf(y1-sigma*sqrt(T))
-            cdo = c - cdi
-            cuo = 0
-            cui = c
-        else:
-            cdo = S0*norm.cdf(x1)*exp(-q*T) - K*exp(-r*T)*norm.cdf(x1-sigma*sqrt(T)) \
-                  - S0*exp(-q*T)*((H/S0)**(2*l))*norm.cdf(y1) + K*exp(-r*T)*((H/S0)**(2*l-2))*norm.cdf(y1-sigma*sqrt(T))
-            cdi = c - cdo
-            cui = S0*norm.cdf(x1)*exp(-q*T) - K*exp(-r*T)*norm.cdf(x1-sigma*sqrt(T)) - \
-                  S0*exp(-q*T)*((H/S0)**(2*l))*(norm.cdf(-y)-norm.cdf(-y1)) + \
-                  K*exp(-r*T)*((H/S0)**(2*l-2))*(norm.cdf(-y+sigma*sqrt(T))-norm.cdf(-y1+sigma*sqrt(T)))
-            cuo = c - cui
-    # Consider Put Option
-    # Two Situations: H<=K vs H>K
-    else:
-        if (H>K):
-            pui = -S0*exp(-q*T)*((H/S0)**(2*l))*norm.cdf(-y) + K*exp(-r*T)*((H/S0)*(2*l-2))*norm.cdf(-y+sigma*sqrt(T))
-            puo = p - pui
-            pdo = 0
-            pdi = p
-        else:
-            puo = -S0*norm.cdf(-x1)*exp(-q*T) + K*exp(-r*T)*norm.cdf(-x1+sigma*sqrt(T)) + \
-                  S0*exp(-q*T)*((H/S0)**(2*l))*norm.cdf(-y1) - K*exp(-r*T)*((H/S0)**(2*l-2))*norm.cdf(-y1+sigma*sqrt(T))
-            pui = p - puo
-            pdi = -S0*norm.cdf(-x1)*exp(-q*T) + K*exp(-r*T)*norm.cdf(-x1+sigma*sqrt(T)) + \
-                  S0*exp(-q*T)*((H/S0)**(2*l))*(norm.cdf(y)-norm.cdf(y1)) - \
-                  K*exp(-r*T)*((H/S0)**(2*l-2))*(norm.cdf(y-sigma*sqrt(T)) - norm.cdf(y1-sigma*sqrt(T)))
-            pdo = p - pdi
-
-    if (Right == 'call'):
-        if (knock == 'down'):
-            if (dir == 'in'):
-                return(cdi)
-            else:
-                return(cdo)
-        else:
-            if (dir == 'in'):
-                return(cui)
-            else:
-                return(cdi)
-    else:
-        if (knock == 'down'):
-            if (dir == 'in'):
-                return(pdi)
-            else:
-                return(pdi)
-        else:
-            if (dir == 'in'):
-                return(pui)
-            else:
-                return(pdi)
-
-'''
-#print(Barrier_BS(50,40,0.01,0.03,0.15,1,60,'call','down','in'))
-Barrier_BS(50,40,0.01,0.03,0.15,0.5,60,'call','up','in')
-Barrier_BS(60,40,0.01,0.03,0.15,0.75,30,'put','up','in')
-Barrier_BS(50,30,0.01,0.03,0.15,10,60,'put','down','out')
-Barrier_BS(90,100,0.05,0.45,0.15,3,72,'call','up','out')
-Barrier_BS(100,80,0.1,0.15,0.2,5,60,'put','down','out')
-'''
-
-
 from qfrm import *
 
 class Barrier(OptionValuation):
@@ -160,9 +75,121 @@ class Barrier(OptionValuation):
         -------
         self: Barrier
 
-        .. sectionauthor::
+        .. sectionauthor:: Hanting Li
+
+        .. note::
+        Hull p604
+
+        Examples
+        -------
+
+        >>> s = Stock(S0=50., vol=.25, q=.00)
+        >>> o = Barrier(ref=s,H=35.,knock='down',dir='out',right='call', K=45., T=2., rf_r=.1, desc='down and out call')
+        >>> print(o.calc_px(method='BS').px_spec.px)
+
+        14.5752394837
+
+        >>> print(o.calc_px(method='BS').px_spec)
+
+        keep_hist: false
+        method: BS
+        px: 14.575239483680027
+        sub_method: standard; Hull p.604
+
+        >>> s = Stock(S0=35., vol=.1, q=.1)
+        >>> o = Barrier(H=50.,knock='up',dir='out',ref=s, right='put', K=45., T=2.5, rf_r=.1, desc='up and out put')
+        >>> print(o.calc_px(method='BS').px_spec.px)
+
+        7.90417744642
+
+        >>> s = Stock(S0=85., vol=.35, q=.05)
+        >>> o = Barrier(H=90.,knock='up',dir='in',ref=s, right='call', K=80., T=.5, rf_r=.05, desc='up and in call')
+        >>> print(o.calc_px(method='BS').px_spec.px)
+
+        10.5255960041
 
         """
+
+        from scipy.stats import norm
+        from numpy import exp, log, sqrt
+
+        _ = self
+        # Compute Parameters
+        d1 = (log(_.ref.S0/_.K) + (_.rf_r-_.ref.q+(_.ref.vol**2)/2)*_.T)/(_.ref.vol*sqrt(_.T))
+        d2 = d1 - _.ref.vol*sqrt(_.T)
+
+        c = _.ref.S0*exp(-_.ref.q*_.T)*norm.cdf(d1) - _.K*exp(-_.rf_r*_.T)*norm.cdf(d2)
+        p = _.K*exp(-_.rf_r*_.T)*norm.cdf(-d2) - _.ref.S0*exp(-_.ref.q*_.T)*norm.cdf(-d1)
+
+        l = (_.rf_r-_.ref.q+_.ref.vol**2)/(_.ref.vol**2)
+        y = log((_.H**2)/(_.ref.S0*_.K))/(_.ref.vol*sqrt(_.T)) + l*_.ref.vol*sqrt(_.T)
+        x1 = log(_.ref.S0/_.H)/(_.ref.vol*sqrt(_.T)) + l*_.ref.vol*sqrt(_.T)
+        y1 = log(_.H/_.ref.S0)/(_.ref.vol*sqrt(_.T)) + l*_.ref.vol*sqrt(_.T)
+
+        # Consider Call Option
+        # Two Situations: H<=K vs H>K
+        if (_.right == 'call'):
+            if (_.H<=_.K):
+                cdi = _.ref.S0*exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*norm.cdf(y) - \
+                      _.K*exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*norm.cdf(y-_.ref.vol*sqrt(_.T))
+                cdo = _.ref.S0*norm.cdf(x1)*exp(-_.ref.q*_.T) - _.K*exp(-_.rf_r*_.T)*norm.cdf(x1-_.ref.vol*sqrt(_.T)) \
+                      - _.ref.S0*exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*norm.cdf(y1) + \
+                      _.K*exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*norm.cdf(y1-_.ref.vol*sqrt(_.T))
+                cdo = c - cdi
+                cuo = 0
+                cui = c
+            else:
+                cdo = _.ref.S0*norm.cdf(x1)*exp(-_.ref.q*_.T) - _.K*exp(-_.rf_r*_.T)*norm.cdf(x1-_.ref.vol*sqrt(_.T)) \
+                      - _.ref.S0*exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*norm.cdf(y1) + \
+                      _.K*exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*norm.cdf(y1-_.ref.vol*sqrt(_.T))
+                cdi = c - cdo
+                cui = _.ref.S0*norm.cdf(x1)*exp(-_.ref.q*_.T) - _.K*exp(-_.rf_r*_.T)*norm.cdf(x1-_.ref.vol*sqrt(_.T)) - \
+                      _.ref.S0*exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*(norm.cdf(-y)-norm.cdf(-y1)) + \
+                      _.K*exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*(norm.cdf(-y+_.ref.vol*sqrt(_.T))-norm.cdf(-y1+_.ref.vol*sqrt(_.T)))
+                cuo = c - cui
+        # Consider Put Option
+        # Two Situations: H<=K vs H>K
+        else:
+            if (_.H>_.K):
+                pui = -_.ref.S0*exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*norm.cdf(-y) + \
+                      _.K*exp(-_.rf_r*_.T)*((_.H/_.ref.S0)*(2*l-2))*norm.cdf(-y+_.ref.vol*sqrt(_.T))
+                puo = p - pui
+                pdo = 0
+                pdi = p
+            else:
+                puo = -_.ref.S0*norm.cdf(-x1)*exp(-_.ref.q*_.T) + _.K*exp(-_.rf_r*_.T)*norm.cdf(-x1+_.ref.vol*sqrt(_.T)) + \
+                      _.ref.S0*exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*norm.cdf(-y1) - \
+                      _.K*exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*norm.cdf(-y1+_.ref.vol*sqrt(_.T))
+                pui = p - puo
+                pdi = -_.ref.S0*norm.cdf(-x1)*exp(-_.ref.q*_.T) + _.K*exp(-_.rf_r*_.T)*norm.cdf(-x1+_.ref.vol*sqrt(_.T)) + \
+                      _.ref.S0*exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*(norm.cdf(y)-norm.cdf(y1)) - \
+                      _.K*exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*(norm.cdf(y-_.ref.vol*sqrt(_.T)) - norm.cdf(y1-_.ref.vol*sqrt(_.T)))
+                pdo = p - pdi
+
+        if (_.right == 'call'):
+            if (_.knock == 'down'):
+                if (_.dir == 'in'):
+                    px = cdi
+                else:
+                    px = cdo
+            else:
+                if (_.dir == 'in'):
+                    px = cui
+                else:
+                    px = cdi
+        else:
+            if (_.knock == 'down'):
+                if (_.dir == 'in'):
+                    px = pdi
+                else:
+                    px = pdi
+            else:
+                if (_.dir == 'in'):
+                    px = pui
+                else:
+                    px = pdi
+
+        self.px_spec.add(px=float(px), sub_method='standard; Hull p.604')
 
         return self
 
@@ -348,4 +375,3 @@ class Barrier(OptionValuation):
 
         """
         return self
-
