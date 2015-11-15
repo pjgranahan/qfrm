@@ -50,6 +50,48 @@ class Chooser(OptionValuation):
         >>> print(o.calc_px(tau=3/12, method='BS').px_spec.px)
         6.10707749816
 
+        >>> print(o.calc_px(tau=3/12, method='LT', nsteps=5, keep_hist=True).px_spec.px)
+        7.109866570176281
+
+        >>> print(o.px_spec.ref_tree)
+        ((50.00000000000001,),
+        (46.19936548599171, 54.11329730833717),
+        (42.687627426164845, 50.0, 58.5649789116098),
+        (39.442826023824665, 46.19936548599171, 54.11329730833716, 63.38288231400874),
+        (36.44467070550122, 42.687627426164845, 50.0, 58.56497891160979, 68.597135098346),
+        (33.67441323880132, 39.442826023824665, 46.19936548599171, 54.11329730833716, 63.38288231400873, 74.24034332153934))
+
+        >>> print(o.calc_px(tau=3/12, method='LT', nsteps=2, keep_hist=False))
+        Chooser
+        K: 50
+        T: 0.5
+        _right: put
+        _signCP: -1
+        frf_r: 0
+        px_spec: qfrm.PriceSpec
+        LT_specs:
+            a: 1.0
+            d: 0.8824969025845953
+            df_T: 0.9607894391523232
+            df_dt: 0.9801986733067553
+            dt: 0.25
+            p: 0.4687906266262439
+            u: 1.1331484530668263
+        keep_hist: false
+        method: LT
+        nsteps: 2
+        px: 5.9971272680133465
+        sub_method: binomial tree; Hull Ch.135
+        ref: qfrm.Stock
+        S0: 50
+        curr: null
+        desc: null
+        q: 0.08
+        tkr: null
+        vol: 0.25
+        rf_r: 0.08
+        seed0: null
+        tau: 0.25
 
         """
         self.tau = float(tau)
@@ -88,9 +130,9 @@ class Chooser(OptionValuation):
 
         Returns
         -------
-        self: European
+        self: Chooser
 
-        .. sectionauthor::
+        .. sectionauthor:: Yen-fei Chen
 
         .. note::
         Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
@@ -102,7 +144,7 @@ class Chooser(OptionValuation):
         _ = self.LT_specs(n)
 
         S = self.ref.S0 * _['d'] ** arange(n, -1, -1) * _['u'] ** arange(0, n + 1)
-        O = maximum(self.signCP * (S - self.K), 0)  # terminal option payouts
+        O = maximum(maximum((S - self.K), 0), maximum(-1*(S - self.K), 0))
         S_tree, O_tree = None, None
 
         if getattr(self.px_spec, 'keep_hist', False):
@@ -154,4 +196,3 @@ class Chooser(OptionValuation):
 
         """
         return self
-

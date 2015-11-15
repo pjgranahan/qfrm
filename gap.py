@@ -132,8 +132,3 @@ class Gap(OptionValuation):
         """
 
         return self
-
-
-
-
-
