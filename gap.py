@@ -88,7 +88,7 @@ class Gap(OptionValuation):
         from math import sqrt, exp, log
 
         _ = self
-        d1 = (log(_.ref.S0 / _.K2) + (_.rf_r + _.ref.vol ** 2 / 2.) * _.T)/(_.ref.vol * sqrt(_.T))
+        d1 = (log(_.ref.S0 / _.K2) + (_.rf_r - _.ref.q + _.ref.vol ** 2 / 2.) * _.T)/(_.ref.vol * sqrt(_.T))
         d2 = d1 - _.ref.vol * sqrt(_.T)
 
         # if calc of both prices is cheap, do both and include them into Price object.
