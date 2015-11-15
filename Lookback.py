@@ -1,7 +1,3 @@
-__author__ = 'MengyanXie'
-
-def Lookback_BS(right, S, Sfl, T, vol, r, q=0):
-
 from qfrm import *
 
 class Lookback(OptionValuation):
@@ -15,8 +11,6 @@ class Lookback(OptionValuation):
 
         super().__init__(*args,**kwargs)
         self.q = q
-
-
 
 
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, Sfl = 50.0):
@@ -140,9 +134,91 @@ class Lookback(OptionValuation):
         -------
         self: Look back
 
-        .. sectionauthor::
+        .. sectionauthor:: Hanting Li
 
+        .. note::
+        Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
+        Hull Book p.607
+
+        Examples
+        -------
+
+        >>> s = Stock(S0=35., vol=.05, q=.00)
+        >>> o = Lookback(q=.0,ref=s, right='call', T=0.25, rf_r=.1, desc='Hull p607')
+        >>> print(o.calc_px(method='LT', nsteps=10, keep_hist=False).px_spec.px)
+
+        2.6604441598058415
+
+        >>> print(o.px_spec)
+
+        LT_specs:
+          a: 1.0025031276057952
+          d: 0.9921254736611016
+          df_T: 0.9753099120283326
+          df_dt: 0.9975031223974601
+          dt: 0.025
+          p: 0.6563336278552585
+          u: 1.0079370266644199
+        Sfl: 50.0
+        keep_hist: false
+        method: LT
+        nsteps: 10
+        px: 2.6604441598058415
+        sub_method: binomial tree; Hull Ch.13
+
+
+        >>> s = Stock(S0=25., vol=.005, q=.1)
+        >>> o = Lookback(q=.0,ref=s, right='put', T=1, rf_r=.1, desc='Hull p607')
+        >>> print(o.calc_px(method='LT', nsteps=100, keep_hist=False).px_spec.px)
+
+        1.2817774094002523
+
+
+        >>> s = Stock(S0=100., vol=.015, q=.2)
+        >>> o = Lookback(q=.0,ref=s, right='call', T=3, rf_r=.01, desc='Hull p607')
+        >>> print(o.calc_px(method='LT', nsteps=50, keep_hist=False).px_spec.px)
+
+        16.782434005886856
+
+        >>> # Example of option price development (LT method) with increasing maturities
+        >>> from pandas import Series;  expiries = range(1,11)
+        >>> s = Stock(S0=100., vol=.015, q=.2)
+        >>> o = Lookback(q=.0,ref=s, right='call', T=3, rf_r=.01, desc='Hull p607')
+        >>> O = Series([o.update(T=t).calc_px(method='LT', nsteps=5).px_spec.px for t in expiries], expiries)
+        >>> O.plot(grid=1, title='Price vs expiry (in years)')
         """
+
+        from numpy import arange, maximum, log, exp, sqrt
+
+        keep_hist = getattr(self.px_spec, 'keep_hist', False)
+        n = getattr(self.px_spec, 'nsteps', 3)
+        _ = self.LT_specs(n)
+
+        S = self.ref.S0 * _['d'] ** arange(n, -1, -1) * _['u'] ** arange(0, n + 1)  # terminal stock prices
+        if self.signCP == 1:
+            K = S[0]
+        else:
+            K = S[len(S)-1]
+
+        O = maximum(self.signCP * (S - K), 0)          # terminal option payouts
+        # tree = ((S, O),)
+        S_tree = (tuple([float(s) for s in S]),)  # use tuples of floats (instead of numpy.float)
+        O_tree = (tuple([float(o) for o in O]),)
+        # tree = ([float(s) for s in S], [float(o) for o in O],)
+
+        for i in range(n, 0, -1):
+            O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
+            S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
+            O = maximum(self.signCP * (S - K), 0)   # payout at time step i-1 (moving backward in time)
+
+            # tree = tree + ((S, O),)
+            S_tree = (tuple([float(s) for s in S]),) + S_tree
+            O_tree = (tuple([float(o) for o in O]),) + O_tree
+            # tree = tree + ([float(s) for s in S], [float(o) for o in O],)
+
+        self.px_spec.add(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
+                        LT_specs=_, ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
+
         return self
 
     def _calc_BS(self):
@@ -239,5 +315,3 @@ class Lookback(OptionValuation):
         """
 
         return self
-
-

@@ -21,7 +21,7 @@ class ForwardStart(OptionValuation):
         self.T_s = T_s
 
 
-    def cal_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
+    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
 
         User passes parameters to calc_px, which saves them to local PriceSpec object
@@ -53,7 +53,7 @@ class ForwardStart(OptionValuation):
         --------
 
         >>> s = Stock(S0=50, vol=.15,q=0.05)
-        >>> ForwardStart(ref=s, T_s=0.5,right='call', T=0.5, rf_r=.1).cal_px() # http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
+        >>> ForwardStart(ref=s, T_s=0.5,right='call', T=0.5, rf_r=.1).calc_px() # http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
         ForwardStart
         T: 0.5
         T_s: 0.5
@@ -76,7 +76,7 @@ class ForwardStart(OptionValuation):
 
 
         >>> s = Stock(S0=60, vol=.30,q=0.04)
-        >>> ForwardStart(ref=s, T_s=0.25,K=66,right='call', T=0.75, rf_r=.08).cal_px() #http://www.globalriskguard.com/resources/deriv/fwd_4.pdf
+        >>> ForwardStart(ref=s, T_s=0.25,K=66,right='call', T=0.75, rf_r=.08).calc_px() #http://www.globalriskguard.com/resources/deriv/fwd_4.pdf
         ForwardStart
         K: 66
         T: 0.75
@@ -98,6 +98,10 @@ class ForwardStart(OptionValuation):
         rf_r: 0.08
         seed0: null
 
+        >>> from pandas import Series
+        >>> expiries = range(1,11)
+        >>> O = Series([ForwardStart(ref=s, T_s=0.25,K=66,right='call', T=0.75, rf_r=.08).update(T=t).calc_px(method='BS').px_spec.px for t in expiries], expiries)
+        >>> O.plot(grid=1, title='ForwardStart option Price vs expiry (in years)') # Plotted example
 
         See Also
         --------

@@ -189,12 +189,64 @@ class Binary(OptionValuation):
         -------
         self: Binary
 
-        .. sectionauthor::
+        .. sectionauthor:: Tianyi Yao
 
         .. note::
         Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
 
         """
+        from numpy import cumsum, log, arange, insert, exp, sqrt, sum, maximum
+
+        #Retrieve parameters specific to binary option class
+        payout_type = getattr(self.px_spec, 'payout_type')
+        Q = getattr(self.px_spec, 'Q')
+
+        # Convert the payout_type to lower case
+        payout_type = payout_type.lower()
+
+        #Extract LT parameters
+        n = getattr(self.px_spec, 'nsteps', 3)
+        _ = self.LT_specs(n)
+
+        #Compute final nodes for asset_or_nothing payout type
+        if payout_type == 'asset_or_nothing':
+            S = self.ref.S0 * _['d'] ** arange(n, -1, -1) * _['u'] ** arange(0, n + 1) #Termial asset price
+            O = maximum(self.signCP * (S - self.K), 0)           #terminal option value
+            for ind in range(0,len(O)):
+                if O[ind] > 0:
+                    O[ind] = self.ref.S0
+        #Compute final nodes for cash_or_nothing payout type
+        else:
+            S = Q * _['d'] ** arange(n, -1, -1) * _['u'] ** arange(0, n + 1)    #terminal stock price
+            O = maximum(self.signCP * (S - self.K), 0)          # terminal option value
+            for ind in range(0,len(O)):
+                if O[ind] > 0:
+                    O[ind] = Q
+
+        #initialize tree structure
+        S_tree, O_tree = None, None
+
+        if getattr(self.px_spec, 'keep_hist', False):
+            S_tree = (tuple([float(s) for s in S]),)
+            O_tree = (tuple([float(o) for o in O]),)
+
+            for i in range(n, 0, -1):
+                O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #option prices at time step=i-1
+                S = _['d'] * S[1:i+1]                                       # stock prices at time step=i-1
+
+                S_tree = (tuple([float(s) for s in S]),) + S_tree
+                O_tree = (tuple([float(o) for o in O]),) + O_tree
+
+            out = O_tree[0][0]
+        else:
+            csl = insert(cumsum(log(arange(n) + 1)), 0, 0)
+            tmp = csl[n] - csl - csl[::-1] + log(_['p']) * arange(n + 1) + log(1 - _['p']) * arange(n + 1)[::-1]
+            out = (_['df_T'] * sum(exp(tmp) * tuple(O)))
+
+        self.px_spec.add(px=float(out), sub_method=None,
+                         LT_specs=_, ref_tree=S_tree, opt_tree=O_tree)
+
+
         return self
 
     def _calc_MC(self, nsteps=3, npaths=4, keep_hist=False):
@@ -224,3 +276,8 @@ class Binary(OptionValuation):
 
         """
         return self
+
+s = Stock(S0=42, vol=.20)
+o = Binary(ref=s, right='put', K=40, T=.5, rf_r=.1)
+print(o.calc_px(method='LT', payout_type="asset_or_nothing").px_spec)
+print(o.px_spec.opt_tree)
