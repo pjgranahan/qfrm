@@ -885,7 +885,7 @@ class Asian(OptionValuation):
             T       =   float(self.T)
             vol     =   float(self.ref.vol)
             r       =   float(self.rf_r)
-            q       =   float(self.q)
+            q       =   float(self.ref.q)
 
 
         except:
@@ -907,7 +907,7 @@ class Asian(OptionValuation):
         from scipy.stats import norm
 
         # Parameters for Value Calculation (see link in docstring)
-        a = .5 * (r - q - (vol**2) / 6.)
+        a = .5 * (r - q - (vol ** 2) / 6.)
         vola = vol / sqrt(3.)
         d1 = (log(S * exp(a * T) / K) + (vola**2) * .5 * T) / (vola * sqrt(T))
         d2 = d1 - vola * sqrt(T)
@@ -953,8 +953,9 @@ class Asian(OptionValuation):
 
         return self
 
+
 s = Stock(S0=30, vol=.3)
-o = Asian(q=.02,ref=s, right='call', K=29, T=1., rf_r=.08, desc='Example from Internet')
+o = Asian(q=.02, ref=s, right='call', K=29, T=1., rf_r=.08, desc='Example from Internet')
 o.calc_px()
 print(o.px_spec)
 
