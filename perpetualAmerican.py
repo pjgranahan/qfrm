@@ -38,6 +38,8 @@ class PerpetualAmerican(OptionValuation):
         Examples
         -------
 
+        Use the Black-Scholes model to price a perpetual American option
+
         >>> s = Stock(S0=50, vol=.3, q=0.01)
         >>> o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.08)
 
@@ -52,18 +54,33 @@ class PerpetualAmerican(OptionValuation):
         _signCP: 1
         frf_r: 0
         px_spec: qfrm.PriceSpec
-        keep_hist: false
-        method: BS
+          keep_hist: false
+          method: BS
         ref: qfrm.Stock
-        S0: 50
-        curr: null
-        desc: null
-        q: 0.01
-        tkr: null
-        vol: 0.3
+          S0: 50
+          curr: null
+          desc: null
+          q: 0.01
+          tkr: null
+          vol: 0.3
         rf_r: 0.08
         seed0: null
         <BLANKLINE>
+
+        Change the option to a put
+        >>> print(o.update(right='put').calc_px())
+        8.67627928986901
+
+        Another example with different dividend and risk free interest rate
+        >>> s = Stock(S0=50, vol=.3, q=0.02)
+        >>> o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.05)
+        >>> print(o.calc_px(method='BS'))
+        27.465595636754223
+
+        Change the option to a put
+        >>> print(o.update(right='put').calc_px())
+        13.427262534976805
+
         """
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
         return getattr(self, '_calc_' + method.upper())()

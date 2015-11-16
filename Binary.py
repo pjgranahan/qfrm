@@ -250,7 +250,7 @@ class Binary(OptionValuation):
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
-        >>> O = Series([o.update(T=t).calc_px(method='LT', payout_type="cash_or_nothing", Q=1000).px_spec.px for t in expiries], expiries)
+        >>> O = Series([o.update(T=t).calc_px(method='LT', nsteps=60, payout_type="cash_or_nothing", Q=1000).px_spec.px for t in expiries], expiries)
         >>> O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
