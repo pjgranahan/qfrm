@@ -238,7 +238,7 @@ class PriceSpec:
 
     def add(self, **kwargs):
         for k, v in kwargs.items():
-            if v is not None:  setattr(self, k, v)
+            if v is not None: setattr(self, k, v)
         return self
 
     def __repr__(self):
@@ -741,12 +741,10 @@ class Asian(OptionValuation):
     Inherits all methods and properties of OptionValuation class.
     """
 
-
     def __init__(self,q=0.0,*args,**kwargs):
 
         super().__init__(*args,**kwargs)
         self.q = q
-
 
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
@@ -858,7 +856,150 @@ class Asian(OptionValuation):
 
         Formulae:
 
+        http://homepage.ntu.edu.tw/~jryanwang/course/Financial%20Computation%20or%20Financial%20Engineering%20(graduate%20level)/FE_Ch10%20Asian%20Options.pdf
+        http://www.csie.ntu.edu.tw/~lyuu/works/asian.pdf
+        http://phys.columbia.edu/~klassen/asian.pdf
         """
+        #Imports
+        import numpy as np
+        from math import exp, sqrt, log, floor
+        from scipy.interpolate import interp1d
+
+        #helper function
+        def interpolate(xArr, yArr, x):
+            if xArr[0] == x:
+                return yArr[0]
+            for i in range(0, len(xArr) - 1):
+                if xArr[i] >= x:
+                    #print(yArr[i - 1], xArr[i - 1], x)
+                    return float(yArr[i - 1] + (x - xArr[i - 1]) / (xArr[i] - xArr[i - 1]) * (yArr[i] - yArr[i - 1]))
+
+
+        #Parameters for Lattice Tree
+        nsteps = self.px_spec.nsteps
+        dt = self.T / nsteps
+        u = exp(self.ref.vol * sqrt(dt))
+        d = exp(-self.ref.vol * sqrt(dt))
+        growth_factor = exp((self.rf_r - self.ref.q) * dt)
+        pu = (growth_factor - d) / (u - d)
+        pd = 1 - pu
+        df_T = exp(-self.rf_r * self.T)
+        df_dt = exp(-(self.rf_r - self.ref.q) * dt)
+        h = .1
+        par = {'dt': dt,           # time interval between consecutive two time steps
+               'u': u,             # stock price up move factor
+               'd': d,             # stock price down move factor
+               'a': growth_factor, # growth factor, p.452
+               'pu': pu,             # probability of up move over one time interval dt
+               'pd': pd,
+               'df_T': df_T,       # discount factor over full time interval dt, i.e. per life of an option
+               'df_dt': df_dt}     # discount factor over one time interval dt, i.e. per step
+
+        S = np.zeros((nsteps + 1, nsteps + 1)) # Stock price paths
+        Val = np.zeros((nsteps + 1, nsteps + 1)) # Inner value matrix
+        S[0, 0] = self.ref.S0
+        for i in range(1, nsteps + 1):
+            for j in range(0, i + 1):
+                if j <= i:
+                    S[i, j] = self.ref.S0 * (par['u'] ** j) * (par['d'] ** (i - j))
+                    if i == nsteps:
+                        Val[i, j] = np.maximum((-self.K + S[i, j]) * self.signCP, 0)
+        Fvec = self.ref.S0
+        FTree = np.zeros((nsteps * 2, nsteps * 2))
+        FTree[0] = Fvec
+        for c in range(1, nsteps + 1):
+            StockPriceVec = S[c]
+            Smax = np.max(StockPriceVec[np.nonzero(StockPriceVec)])
+            Smin = np.min(StockPriceVec[np.nonzero(StockPriceVec)])
+            PrevAverageVec = FTree[c - 1]
+            PrevMaxAverage = np.max(PrevAverageVec[np.nonzero(PrevAverageVec)])
+            PrevMinAverage = np.min(PrevAverageVec[np.nonzero(PrevAverageVec)])
+            MaxAverage = (PrevMaxAverage * i + Smax) / (i + 1)
+            MinAverage = (PrevMinAverage * i + Smin) / (i + 1)
+            #now find integer values of m which cover min and max average values
+            tmpdbl = log(MaxAverage / self.ref.S0) / h
+            MaxM = floor(tmpdbl) + 1
+            tmpdbl = log(MinAverage / self.ref.S0) / h
+            MinM = floor(abs(tmpdbl)) + 1
+            tmpN = MaxM + MinM + 1
+            Fvec = np.zeros((tmpN, 1))
+            counter = -MinM
+            for j in range(0, tmpN):
+                Fvec[j] = self.ref.S0 * exp(counter * h)
+                counter += 1
+            for j, t in enumerate(Fvec):
+                FTree[c, j] = t
+        """
+        for i in range(0, len(FTree)):
+            for j in range(0, len(FTree)):
+                print(FTree[i, j], i, j)
+        """
+        #Step 3 : Do backward recursion of the tree
+        #initialize option values at maturity
+        #print(Fvec)
+        Fvec = FTree[nsteps, np.nonzero(FTree[nsteps])] #running average values to consider for calculating set of option
+        # prices
+        Fvec = [Fvec[0][i] for i in range(0, len(Fvec[0]))]
+        VTree = np.zeros((nsteps * 2, 2 * nsteps, len(Fvec)))#stores option values at all nodes of the tree
+        VTimevec = np.zeros((nsteps, len(Fvec)))  #stores list of vectors of option prices at a given time
+        VNodeVec = np.zeros((len(Fvec), 1))
+        for j in range(0, len(Fvec)): #loop over average values
+            VNodeVec[j] = np.maximum(Fvec[j] - self.K, 0)
+        for i in range(0, nsteps):  #loop over nodes at a given time
+            for col, t in enumerate(VNodeVec):
+                VTimevec[i, col] = t
+        for g in range(0, len(VTimevec)):
+            VTree[nsteps - 1][g] = VTimevec[g]
+
+        for i in range(nsteps - 2, -1, -1):
+            Svecnext = S[i + 1]
+            VTimevec = np.zeros((len(FTree[i]), len(FTree[i])))
+            VTimeVecNext = VTree[i + 1]
+            Fvec = FTree[i, np.nonzero(FTree[i])] #running average values to consider for calculating set of option
+            # prices
+            Fvec = [Fvec[0][z] for z in range(0, len(Fvec[0]))] #running average values to consider for calculating set of
+
+            FVecNext = FTree[i + 1, np.nonzero(FTree[i + 1])] #running average values to consider for calculating set of
+            FVecNext = [FVecNext[0][z] for z in range(0, len(FVecNext[0]))]
+            # option prices
+            for j in range(0, i + 1):
+                VNodeVec = np.zeros((len(Fvec)))
+                for k in range(0, len(Fvec)):
+                    #calculate option price using F at current node and Su
+                    F = Fvec[k] #running average
+                    #find running average at next time node of up-jump
+                    Su = Svecnext[j + 1]
+                    Fu = (F * (i + 1) + Su) / (i + 2)
+                    VNodeVecNext = VTimeVecNext[j + 1] #vector of option prices
+                    #get option value to the next timestep]
+                    #print(FVecNext)
+                    #print(VNodeVecNext)
+                    #print(Fu)
+                    Vu = interpolate(FVecNext, VNodeVecNext, Fu)
+                    if Vu is None:
+                        Vu = 0
+                    #find running average at next time node of down-jump
+                    Sd = Svecnext[j]
+                    Fd = (F * (i + 1) + Sd) / (i + 2)
+                    VNodeVecNext = VTimeVecNext[j]  #vector of option prices
+                    #get option value to the next timestep
+                    Vd = interpolate(FVecNext, VNodeVecNext, Fd)
+                    if Vd is None:
+                        Vd = 0
+                    #Vnew = Exp(-r * dt) * (Vu * pu + Vd * pd)
+                    present_value = par['df_dt'] * (Vu * pu + Vd * pd)
+                    #immediate_val = self.signCP * (F - self.K)
+                    #if self.right == "American":
+                    #    Vnew = max(present_value, immediate_val)
+                    #else:
+                    Vnew = max(present_value, 0)
+                    VNodeVec[k] = Vnew
+                for t in range(0, len(VNodeVec)):
+                    VTimevec[j][t] = VNodeVec[t]
+            VTree[i] = VTimevec[z][r]
+        print(VTree)
+        CRR_Price = VTree[0][0][0]
+        self.px_spec.add(px=float(CRR_Price), method='LT', sub_method='Hull and White Interpolation')
         return self
 
     def _calc_BS(self):
@@ -909,7 +1050,7 @@ class Asian(OptionValuation):
         # Parameters for Value Calculation (see link in docstring)
         a = .5 * (r - q - (vol ** 2) / 6.)
         vola = vol / sqrt(3.)
-        d1 = (log(S * exp(a * T) / K) + (vola**2) * .5 * T) / (vola * sqrt(T))
+        d1 = (log(S * exp(a * T) / K) + (vola ** 2) * .5 * T) / (vola * sqrt(T))
         d2 = d1 - vola * sqrt(T)
 
         # Calculate the value of the option using the BS Equation
@@ -954,8 +1095,8 @@ class Asian(OptionValuation):
         return self
 
 
-s = Stock(S0=30, vol=.3)
-o = Asian(q=.02, ref=s, right='call', K=29, T=1., rf_r=.08, desc='Example from Internet')
-o.calc_px()
+s = Stock(S0=50, vol=.3)
+o = Asian(ref=s, right='call', K=50, T=1., rf_r=.1, desc='Example from Internet')
+o.calc_px(method='LT', nsteps=20)
 print(o.px_spec)
 
