@@ -5,6 +5,36 @@ class Gap(OptionValuation):
 
     Inherits all methods and properties of OptionValuation class.
     """
+    def __init__(self, on = None, *args, **kwargs):
+
+        """ Constructor for Barrier class
+
+        Passes additional arguments to OptionValuation class
+
+        Parameters
+        ----------
+        H : int
+                The barrier used to price the barrier option
+        knock : string
+                'down' or 'up'
+        dir : string
+                'in' or 'out'
+        *args, **kwargs: varies
+                arguments required by the constructor of OptionValuation class
+
+
+        Returns
+        -------
+        self : Barrier
+
+        .. sectionauthor:: Thawda Aung
+
+       """
+
+        self.on = (498,499,500,501,502)
+
+        super().__init__(*args,**kwargs)
+
 
     def calc_px(self, K2=None, method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
@@ -20,7 +50,7 @@ class Gap(OptionValuation):
                 The trigger price.
         method : str
                 Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
-        nsteps : int
+        nsteps : vector ( a Vector of number of steps to be used in binomial tree averaging) (has to be positive numbers)
                 LT, MC, FD methods require number of times steps
         npaths : int
                 MC, FD methods require number of simulation paths
@@ -66,9 +96,54 @@ class Gap(OptionValuation):
         -------
         self: Gap
 
-        .. sectionauthor:: Oleg Melnikov
+        .. sectionauthor:: Thawda Aung
 
+
+        >>>s = Stock(S0=500000, vol=.2)
+        >>>o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05)
+        >>>print(o.calc_px(K2=350000, method='LT').px_spec.px)
         """
+        from scipy.stats import norm
+        from math import sqrt, exp , log
+        import numpy as np
+
+        n = getattr(self.px_spec ,'nsteps', 10)
+        assert len(self.on) > n , 'nsteps must be less than the vector on'
+        _ = self
+        para = self.LT_specs(n)
+        on = (498,499,500,501,502)
+        vol = _.ref.vol
+        ttm = _.T
+        r = _.rf_r
+        q = _.ref.q
+        S0 = _.ref.S0
+        sign = _.signCP
+        K2 = _.K2
+        K = _.K
+        px = np.zeros(n)
+        for i in range(n):
+            u1 = exp(vol * sqrt(ttm/ on[i]))
+            d1 = 1/u1
+            p1 = (exp( (r-q) * (ttm / on[i])) - d1 ) / (u1 - d1)
+            leng = on[i]
+            S = [S0 * d1**(leng - j ) * u1**(j) for j in np.arange(0 , on[i]+1)]
+            O = np.zeros(len(S))
+            for m in range(len(S)):
+                if(sign * (S[m] - K2) > 0 ):
+                    O[m] = sign* (S[m] - K)
+                else:
+                    O[m] = 0
+            csl = np.cumsum([np.log(i) for i in np.arange(1,on[i] + 1)])
+            a = np.array(0)
+            a = np.insert(csl , 0 , 0 )
+            csl = a
+            temp = [ csl[on[i]] - csl[j] - csl[ (leng - j) ] +
+                     log(p1 ) * (j) + log( 1 - p1 ) * (leng - j) for j in np.arange(0 , on[i] +1)]
+            px[i] = exp(r * -ttm) * sum([exp(temp[j]) * O[j]  for j in np.arange(0,len(temp))])
+            # tmp = [ csl[on[i] + 1] - csl -1 for i  ]
+        Px = np.mean(px)
+        self.px_spec.add(px=Px, sub_method='binomial_tree; Hull p.335',
+                         L_Tspecs=para, ref_tree = O, opt_tree = O )
         return self
 
     def _calc_BS(self):
@@ -133,7 +208,11 @@ class Gap(OptionValuation):
 
         return self
 
+s = Stock(S0=500000, vol=.2)
+o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05)
+print(o.calc_px(K2=350000, method='LT').px_spec.px)
 
-
-
-
+# s = Stock(S0=500000, vol=.1) 
+#
+# o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='') 
+# print(o.calc_px(K2=50, method='LT').px_spec.px)

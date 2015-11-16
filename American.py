@@ -131,12 +131,63 @@ class American(OptionValuation):
         -------
         self: American
 
-        .. sectionauthor:: Oleg Melnikov
+        .. sectionauthor:: Andrew Weatherly
 
         Note
         ----
 
+        Formulae:
+        http://aeconf.com/articles/may2007/aef080111.pdf (put)
+        https://en.wikipedia.org/wiki/Black%27s_approximation (call)
+
+        Example:
+        >>> s = Stock(S0=30, vol=.3)
+        >>> o = American(ref=s, right='call', K=30, T=1., rf_r=.08, desc='Example from Internet')
+        >>> o.calc_px(method='BS')
+        >>> print(o.px_spec)
+
         """
+
+        from math import exp
+        from numpy import linspace
+        if self.right == 'call' and self.ref.q != 0:
+            #Black's approximations outlined on pg. 346
+            #Dividend paying stocks assume semi-annual payments
+            if self.T > .5:
+                dividend_val1 = sum([self.ref.q * self.ref.S0 * exp(-self.rf_r * i) for i in linspace(.5, self.T - .5,
+                                    self.T * 2 - .5)])
+                dividend_val2 = sum([self.ref.q * self.ref.S0 * exp(-self.rf_r * i) for i in linspace(.5, self.T - 1,
+                                    self.T * 2 - 1)])
+            else:
+                dividend_val1 = 0
+                dividend_val2 = 0
+            first_val = European(ref=Stock(S0=self.ref.S0 - dividend_val1, vol=self.ref.vol, q=self.ref.q), right=self.right,
+                                 K=self.K, rf_r=self.rf_r, T=self.T).pxBS
+            second_val = European(ref=Stock(S0=self.ref.S0 - dividend_val2, vol=self.ref.vol, q=self.ref.q),
+                                  right=self.right, K=self.K, rf_r=self.rf_r, T=self.T - .5).pxBS
+            self.px_spec.add(px=float(max([first_val, second_val])), method='BSM', sub_method='Black\'s Approximation')
+        elif self.right == 'call':
+            #American call is worth the same as European call if there are no dividends
+            self.px_spec.add(px=float(European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right, K=self.K,
+                                               rf_r=self.rf_r, T=self.T).pxBS), method='BSM', sub_method='Geometric')
+        elif self.ref.q != 0:
+            # I wasn't able to find a good approximation for American Put BSM w/ dividends so I'm using 200 and 201
+            # time step LT and taking the average. This is effectively the Antithetic Variable technique found on pg. 476 due
+            # to the oscillating nature of binomial tree
+            f_a = (American(ref=Stock(S0=self.ref.S0, vol=self.ref.vol, q=self.ref.q), right=self.right,
+                            K=self.K, rf_r=self.rf_r, T=self.T).calc_px(method='LT', nsteps=200).px_spec.px
+                   + American(ref=Stock(S0=self.ref.S0, vol=self.ref.vol, q=self.ref.q), right=self.right, K=self.K,
+                              rf_r=self.rf_r, T=self.T).calc_px(method='LT', nsteps=201).px_spec.px) / 2
+            self.px_spec.add(px=float(f_a), method='BSM', sub_method='Antithetic Variable')
+        else:
+            #Control Variate technique outlined on pg.463
+            f_a = American(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right,
+                           K=self.K, rf_r=self.rf_r, T=self.T).calc_px(method='LT', nsteps=100).px_spec.px
+            f_bsm = European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right,
+                             K=self.K, rf_r=self.rf_r, T=self.T).pxBS
+            f_e = European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right,
+                           K=self.K, rf_r=self.rf_r, T=self.T).pxLT(100)
+            self.px_spec.add(px=float(f_a + (f_bsm - f_e)), method='BSM', sub_method='Control Variate')
         return self
 
     def _calc_MC(self):
@@ -170,3 +221,7 @@ class American(OptionValuation):
 
         return self
 
+s = Stock(S0=30, vol=.3)
+o = American(ref=s, right='call', K=30, T=1., rf_r=.08, desc='Example from Internet')
+o.calc_px(method='BS')
+print(o.px_spec)

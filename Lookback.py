@@ -50,75 +50,6 @@ class Lookback(OptionValuation):
 
         Verification of Example: http://investexcel.net/asian-options-excel/
 
-        Examples
-
-        >>> s = Stock(S0=50, vol=.4)
-        >>> o = Lookback(q=.0,ref=s, right='call', K=50, T=0.25, rf_r=.1, desc='Example from Internet')
-        >>> print(o.calc_px(method = 'BS', Sfl = 50.0).px_spec.px)
-
-        8.037120139607019
-
-        >>> print(o.calc_px(method = 'BS', Sfl = 50.0))
-
-        Lookback
-        K: 50
-        T: 0.25
-        _right: call
-        _signCP: 1
-        desc: Example from Internet
-        frf_r: 0
-        px_spec: qfrm.PriceSpec
-        Sfl: 50.0
-        keep_hist: false
-        method: BS
-        px: 8.037120139607019
-        sub_method: Look back, Hull Ch.26
-        q: 0.0
-        ref: qfrm.Stock
-        S0: 50
-        curr: null
-        desc: null
-        q: 0
-        tkr: null
-        vol: 0.4
-        rf_r: 0.1
-        seed0: null
-
-        >>> s = Stock(S0=50, vol=.4)
-        >>> o = Lookback(q=.0,ref=s, right='call', K=50, T=0.25, rf_r=.1, desc='Example from Internet')
-        >>> print(o.calc_px(method = 'BS', Sfl = 50.0).px_spec.px)
-
-        Lookback
-        K: 50
-        T: 0.25
-        _right: put
-        _signCP: -1
-        desc: Example from Internet
-        frf_r: 0
-        px_spec: qfrm.PriceSpec
-        Sfl: 50.0
-        keep_hist: false
-        method: BS
-        px: 7.79021925989035
-        sub_method: Look back, Hull Ch.26
-        q: 0.0
-        ref: qfrm.Stock
-        S0: 50
-        curr: null
-        desc: null
-        q: 0
-        tkr: null
-        vol: 0.4
-        rf_r: 0.1
-        seed0: null
-
-        >>> print(o.px_spec)
-        qfrm.PriceSpec
-        Sfl: 50.0
-        keep_hist: false
-        method: BS
-        px: 7.79021925989035
-        sub_method: Look back, Hull Ch.26
 
         -------
 
@@ -177,7 +108,6 @@ class Lookback(OptionValuation):
         >>> s = Stock(S0=100., vol=.015, q=.2)
         >>> o = Lookback(q=.0,ref=s, right='call', T=3, rf_r=.01, desc='Hull p607')
         >>> print(o.calc_px(method='LT', nsteps=50, keep_hist=False).px_spec.px)
-
         16.782434005886856
 
         >>> # Example of option price development (LT method) with increasing maturities
@@ -233,6 +163,53 @@ class Lookback(OptionValuation):
         Note
         ----
         Formular: https://en.wikipedia.org/wiki/Lookback_option
+
+        Examples
+
+        >>> s = Stock(S0=50, vol=.4)
+        >>> o = Lookback(q=.0,ref=s, right='call', K=50, T=0.25, rf_r=.1, desc='Example from Internet')
+        >>> print(o.calc_px(method = 'BS', Sfl = 50.0).px_spec.px)
+        8.037120139607019
+
+        >>> print(o.calc_px(method = 'BS', Sfl = 50.0))
+        Lookback.Lookback
+        K: 50
+        T: 0.25
+        _right: call
+        _signCP: 1
+        desc: Example from Internet
+        frf_r: 0
+        px_spec: qfrm.PriceSpec
+          Sfl: 50.0
+          keep_hist: false
+          method: BS
+          px: 8.037120139607019
+          sub_method: Look back, Hull Ch.26
+        q: 0.0
+        ref: qfrm.Stock
+          S0: 50
+          curr: null
+          desc: null
+          q: 0
+          tkr: null
+          vol: 0.4
+        rf_r: 0.1
+        seed0: null
+        <BLANKLINE>
+
+        >>> s = Stock(S0=50, vol=.4)
+        >>> o = Lookback(q=.0,ref=s, right='put', K=50, T=0.25, rf_r=.1, desc='Example from Internet')
+        >>> print(o.calc_px(method = 'BS', Sfl = 50.0).px_spec.px)
+        7.79021925989035
+
+        >>> print(o.px_spec)
+        qfrm.PriceSpec
+        Sfl: 50.0
+        keep_hist: false
+        method: BS
+        px: 7.79021925989035
+        sub_method: Look back, Hull Ch.26
+        <BLANKLINE>
         """
 
         # Verify input
@@ -315,3 +292,7 @@ class Lookback(OptionValuation):
         """
 
         return self
+
+s = Stock(S0=50, vol=.4)
+o = Lookback(q=.0,ref=s, right='call', K=50, T=0.25, rf_r=.1, desc='Example from Internet')
+print(o.calc_px(method = 'BS', Sfl = 50.0).px_spec.px)
