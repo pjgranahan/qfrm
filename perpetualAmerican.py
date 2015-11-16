@@ -32,6 +32,8 @@ class PerpetualAmerican(OptionValuation):
 
         Notes
         -----
+        In finance, a perpetual American option is a special type of American option which deos not have a
+        maturity date.
 
         Examples
         -------
@@ -43,7 +45,7 @@ class PerpetualAmerican(OptionValuation):
         37.190676833752335
 
         >>> print(repr(o))
-        PerpetualAmerican
+        perpetualAmerican.PerpetualAmerican
         K: 50
         T: 1
         _right: call
@@ -61,7 +63,7 @@ class PerpetualAmerican(OptionValuation):
         vol: 0.3
         rf_r: 0.08
         seed0: null
-
+        <BLANKLINE>
         """
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
         return getattr(self, '_calc_' + method.upper())()
