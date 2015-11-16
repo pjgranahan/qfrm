@@ -858,7 +858,78 @@ class Asian(OptionValuation):
 
         Formulae:
 
+        http://homepage.ntu.edu.tw/~jryanwang/course/Financial%20Computation%20or%20Financial%20Engineering%20(graduate%20level)/FE_Ch10%20Asian%20Options.pdf
+        http://www.csie.ntu.edu.tw/~lyuu/works/asian.pdf
+        http://phys.columbia.edu/~klassen/asian.pdf
         """
+        #Imports
+        import numpy as np
+        from math import exp, sqrt, log, floor
+
+        #Parameters for Lattice Tree
+        dt = self.T / self.nsteps
+        u = exp(self.ref.vol * sqrt(dt))
+        d = exp(-self.ref.vol * sqrt(dt))
+        growth_factor = exp((self.rf_r - self.ref.q) * dt)
+        pu = (growth_factor - d) / (u - d)
+        pd = 1 - pu
+        df_T = exp(-self.rf_r * self.T)
+        df_dt = exp(-(self.rf_r - self.ref.q) * dt)
+        h = .1
+        par = {'dt': dt,           # time interval between consecutive two time steps
+               'u': u,             # stock price up move factor
+               'd': d,             # stock price down move factor
+               'a': growth_factor, # growth factor, p.452
+               'p': p,             # probability of up move over one time interval dt
+               'df_T': df_T,       # discount factor over full time interval dt, i.e. per life of an option
+               'df_dt': df_dt}     # discount factor over one time interval dt, i.e. per step
+
+        S = np.zeros((self.nsteps + 1, self.nsteps + 1)) # Stock price paths
+        Val = np.zeros((self.nsteps + 1, self.nsteps + 1)) # Inner value matrix
+        S[0, 0] = self.ref.S0
+
+        for i in range(1, self.nsteps + 1):
+            for j in range(0, i + 1):
+                if j <= i:
+                    S[i, j] = self.ref.S0 * (par['u'] ** j) * (par['d'] ** (i - j))
+                    if i == self.nsteps:
+                        Val[i, j] = np.maximum((-self.K + S[i, j]) * self.signCP, 0)
+        Fvec = self.ref.S0
+        FTree = np.zeros((self.n_steps, self.n_steps))
+        FTree[0] = Fvec
+        for c in range(1, self.n_steps + 1):
+            StockPriceVec = S[c]
+            Smax = StockPriceVec[len(StockPriceVec) - 1]
+            Smin = StockPriceVec[0]
+            PrevAverageVec = FTree(c - 1)
+            PrevMaxAverage = PrevAverageVec[len(PrevAverageVec) - 1]
+            PrevMinAverage = PrevAverageVec(0)
+            MaxAverage = (PrevMaxAverage * i + Smax) / (i + 1)
+            MinAverage = (PrevMinAverage * i + Smin) / (i + 1)
+            #now find integer values of m which cover min and max average values
+            tmpdbl = log(MaxAverage / self.ref.S0) / h
+            MaxM = floor(tmpdbl) + 1
+            tmpdbl = log(MinAverage / self.ref.S0) / h
+            MinM = floor(abs(tmpdbl)) + 1
+            tmpN = MaxM + MinM + 1
+            Fvec = np.zeros((tmpN - 1, 1))
+            counter = -MinM
+            for j  in range(0, tmpN):
+              Fvec[j] = self.ref.S0 * exp(counter * h)
+              counter = counter + 1
+            FTree[i] = Fvec
+
+
+        for i in range(self.nsteps - 1, -1, -1):
+            for j in range(self.nsteps + 1, -1, -1):
+                if j <= i:
+                    holder1 = self.K - S[i, j]
+                    holder2 = round(par['df_dt'] * (par['pu'] * Val[i + 1, j + 1] + (par['pd']) * Val[i + 1, j]), 4)
+                    if holder1 > holder2:
+                        Val[i, j] = holder1
+                    else:
+                        Val[i, j] = holder2
+
         return self
 
     def _calc_BS(self):
@@ -909,7 +980,7 @@ class Asian(OptionValuation):
         # Parameters for Value Calculation (see link in docstring)
         a = .5 * (r - q - (vol ** 2) / 6.)
         vola = vol / sqrt(3.)
-        d1 = (log(S * exp(a * T) / K) + (vola**2) * .5 * T) / (vola * sqrt(T))
+        d1 = (log(S * exp(a * T) / K) + (vola ** 2) * .5 * T) / (vola * sqrt(T))
         d2 = d1 - vola * sqrt(T)
 
         # Calculate the value of the option using the BS Equation
