@@ -859,6 +859,7 @@ class Asian(OptionValuation):
         http://homepage.ntu.edu.tw/~jryanwang/course/Financial%20Computation%20or%20Financial%20Engineering%20(graduate%20level)/FE_Ch10%20Asian%20Options.pdf
         http://www.csie.ntu.edu.tw/~lyuu/works/asian.pdf
         http://phys.columbia.edu/~klassen/asian.pdf
+<<<<<<< HEAD
         """
         #Imports
         import numpy as np
@@ -996,8 +997,9 @@ class Asian(OptionValuation):
                     VNodeVec[k] = Vnew
                 for t in range(0, len(VNodeVec)):
                     VTimevec[j][t] = VNodeVec[t]
-            VTree[i] = VTimevec[z][r]
-        print(VTree)
+            for z in range(0, VTimevec.shape[0]):
+                for r in range(0, VTimevec.shape[1]):
+                    VTree[z][r][i] = VTimevec[z][r]
         CRR_Price = VTree[0][0][0]
         self.px_spec.add(px=float(CRR_Price), method='LT', sub_method='Hull and White Interpolation')
         return self

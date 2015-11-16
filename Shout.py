@@ -188,6 +188,3 @@ class Shout(OptionValuation):
         """
 
         return self
-
-
-
