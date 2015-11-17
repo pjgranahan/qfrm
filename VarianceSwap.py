@@ -185,7 +185,6 @@ print(VarianceSwap(ref=Stock(500),rf_r=0.03, T=1.).calc_px().px_spec.px)
 print(VarianceSwap(ref=Stock(290),rf_r=0.03, T=1.).calc_px(method='BS', K=(280.,300.,320.,340.,360.,380.,400.), \
                 vol=(0.2,0.2,0.2,0.3,0.3,0.3,0.3), L_Var=10000000., Var_K=0.1).px_spec.px)
 ##Example 26.4 on Hull p 614
-##Example 26.4 on Hull p 614
 Karr = (800,850,900,950,1000,1050,1100,1150,1200)
 varr = (.29,.28,.27,.26,.25,.24,.23,.22,.21)
 print(VarianceSwap(ref=Stock(S0=1020,q=.01), rf_r=.04, T=.25).calc_px(method='BS', K=Karr, \
