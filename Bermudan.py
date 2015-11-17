@@ -72,7 +72,7 @@ class Bermudan(OptionValuation):
         ##Example from p. 9 of http://janroman.dhis.org/stud/I2012/Bermuda/reportFinal.pdf
         >>> times = (3/12,6/12,9/12,12/12,15/12,18/12,21/12,24/12)
         >>> o = Bermudan(ref=Stock(50, vol=.6), right='put', K=52, T=2, rf_r=0.1)
-        >>> o.calc_px(method='LT', tex=times, nsteps=20, keep_hist=False).px_spec.px       
+        >>> o.calc_px(method='LT', tex=times, nsteps=40, keep_hist=False).px_spec.px       
         13.206509995991107
         ##Price vs. strike curve - example of vectorization of price calculation
         >>> import matplotlib.pyplot as plt
@@ -199,13 +199,13 @@ class Bermudan(OptionValuation):
 
 #LT pricing of Bermudan options
 s = Stock(S0=50, vol=.3)
-o = Bermudan(ref=s, right='put', K=52, T=2., rf_r=.05)
-print(o.calc_px(method='LT', keep_hist=False).px_spec.px)
+o = Bermudan(ref=s, right='put', K=52, T=2, rf_r=.05)
+print(o.calc_px(method='LT', keep_hist=True).px_spec.px)
 ##Changing the maturity
-o = Bermudan(ref=s, right='put', K=52, T=1., rf_r=.05)
-print(o.calc_px(method='LT', keep_hist=False).px_spec.px)
+o = Bermudan(ref=s, right='put', K=52, T=1, rf_r=.05)
+print(o.calc_px(method='LT', keep_hist=True).px_spec.px)
 o = Bermudan(ref=s, right='put', K=52, T=.5, rf_r=.05)
-print(o.calc_px(method='LT', keep_hist=False).px_spec.px)
+print(o.calc_px(method='LT', keep_hist=True).px_spec.px)  
 ##Explicit input of exercise schedule
 from numpy.random import normal, seed
 seed(12345678)
@@ -217,7 +217,7 @@ print(o.calc_px(method='LT', tex=times, keep_hist=False).px_spec.px)
 ##Example from p. 9 of http://janroman.dhis.org/stud/I2012/Bermuda/reportFinal.pdf
 times = (3/12,6/12,9/12,12/12,15/12,18/12,21/12,24/12)
 o = Bermudan(ref=Stock(50, vol=.6), right='put', K=52, T=2, rf_r=0.1)
-print(o.calc_px(method='LT', tex=times, nsteps=40, keep_hist=False).px_spec.px)
+print(o.calc_px(method='LT', tex=times, nsteps=40, keep_hist=False).px_spec.px)   
 ##Price vs. strike curve - example of vectorization of price calculation
 import matplotlib.pyplot as plt
 from numpy import linspace
