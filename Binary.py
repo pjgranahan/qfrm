@@ -120,11 +120,8 @@ class Binary(OptionValuation):
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
-<<<<<<< HEAD
-=======
 
 
->>>>>>> e3166a5c821f2346e43709d9626aa00d735958b4
         """
         self.px_spec = PriceSpec(method=method, sub_method=payout_type, nsteps=nsteps, npaths=npaths,
                                  keep_hist=keep_hist, payout_type=payout_type, Q=Q)
@@ -199,8 +196,6 @@ class Binary(OptionValuation):
         .. note::
         Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
 
-<<<<<<< HEAD
-=======
         Examples
         -------
         #Example of using _calc_LT method
@@ -262,7 +257,6 @@ class Binary(OptionValuation):
         >>> plt.show()
 
 
->>>>>>> e3166a5c821f2346e43709d9626aa00d735958b4
         """
         from numpy import cumsum, log, arange, insert, exp, sqrt, sum, maximum
 
@@ -346,10 +340,3 @@ class Binary(OptionValuation):
         """
         return self
 
-<<<<<<< HEAD
-s = Stock(S0=42, vol=.20)
-o = Binary(ref=s, right='put', K=40, T=.5, rf_r=.1)
-print(o.calc_px(method='LT', payout_type="asset_or_nothing").px_spec)
-print(o.px_spec.opt_tree)
-=======
->>>>>>> e3166a5c821f2346e43709d9626aa00d735958b4
