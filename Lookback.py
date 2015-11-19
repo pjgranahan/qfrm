@@ -292,3 +292,7 @@ class Lookback(OptionValuation):
         """
 
         return self
+
+s = Stock(S0=50, vol=.4)
+o = Lookback(q=.0,ref=s, right='call', K=50, T=0.25, rf_r=.1, desc='Example from Internet')
+print(o.calc_px(method = 'BS', Sfl = 50.0).px_spec.px)
