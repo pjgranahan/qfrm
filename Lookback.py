@@ -50,78 +50,6 @@ class Lookback(OptionValuation):
 
         Verification of Example: http://investexcel.net/asian-options-excel/
 
-<<<<<<< HEAD
-        Examples
-
-        >>> s = Stock(S0=50, vol=.4)
-        >>> o = Lookback(q=.0,ref=s, right='call', K=50, T=0.25, rf_r=.1, desc='Example from Internet')
-        >>> print(o.calc_px(method = 'BS', Sfl = 50.0).px_spec.px)
-
-        8.037120139607019
-
-        >>> print(o.calc_px(method = 'BS', Sfl = 50.0))
-
-        Lookback
-        K: 50
-        T: 0.25
-        _right: call
-        _signCP: 1
-        desc: Example from Internet
-        frf_r: 0
-        px_spec: qfrm.PriceSpec
-        Sfl: 50.0
-        keep_hist: false
-        method: BS
-        px: 8.037120139607019
-        sub_method: Look back, Hull Ch.26
-        q: 0.0
-        ref: qfrm.Stock
-        S0: 50
-        curr: null
-        desc: null
-        q: 0
-        tkr: null
-        vol: 0.4
-        rf_r: 0.1
-        seed0: null
-
-        >>> s = Stock(S0=50, vol=.4)
-        >>> o = Lookback(q=.0,ref=s, right='call', K=50, T=0.25, rf_r=.1, desc='Example from Internet')
-        >>> print(o.calc_px(method = 'BS', Sfl = 50.0).px_spec.px)
-
-        Lookback
-        K: 50
-        T: 0.25
-        _right: put
-        _signCP: -1
-        desc: Example from Internet
-        frf_r: 0
-        px_spec: qfrm.PriceSpec
-        Sfl: 50.0
-        keep_hist: false
-        method: BS
-        px: 7.79021925989035
-        sub_method: Look back, Hull Ch.26
-        q: 0.0
-        ref: qfrm.Stock
-        S0: 50
-        curr: null
-        desc: null
-        q: 0
-        tkr: null
-        vol: 0.4
-        rf_r: 0.1
-        seed0: null
-
-        >>> print(o.px_spec)
-        qfrm.PriceSpec
-        Sfl: 50.0
-        keep_hist: false
-        method: BS
-        px: 7.79021925989035
-        sub_method: Look back, Hull Ch.26
-=======
->>>>>>> e3166a5c821f2346e43709d9626aa00d735958b4
 
         -------
 
@@ -180,10 +108,6 @@ class Lookback(OptionValuation):
         >>> s = Stock(S0=100., vol=.015, q=.2)
         >>> o = Lookback(q=.0,ref=s, right='call', T=3, rf_r=.01, desc='Hull p607')
         >>> print(o.calc_px(method='LT', nsteps=50, keep_hist=False).px_spec.px)
-<<<<<<< HEAD
-
-=======
->>>>>>> e3166a5c821f2346e43709d9626aa00d735958b4
         16.782434005886856
 
         >>> # Example of option price development (LT method) with increasing maturities
@@ -239,90 +163,6 @@ class Lookback(OptionValuation):
         Note
         ----
         Formular: https://en.wikipedia.org/wiki/Lookback_option
-<<<<<<< HEAD
-        """
-
-        # Verify input
-        try:
-            right   =   self.right.lower()
-            S       =   float(self.ref.S0)
-            Sfl     =   float(self.px_spec.Sfl)
-            T       =   float(self.T)
-            vol     =   float(self.ref.vol)
-            r       =   float(self.rf_r)
-            q       =   float(self.q)
-            signCP  =   self.signCP
-
-
-        except:
-            print('right must be String. S, Sfl, T, vol, r, q must be floats or be able to be coerced to float')
-            return False
-
-        assert right in ['call','put'], 'right must be "call" or "put" '
-        assert S >= 0, 'S must be >= 0'
-        assert Sfl > 0, 'Sfl must be > 0'
-        assert T > 0, 'T must be > 0'
-        assert vol > 0, 'vol must be >=0'
-        assert r >= 0, 'r must be >= 0'
-        assert q >= 0, 'q must be >= 0'
-
-        # Imports
-        from math import exp, log, sqrt
-        from scipy.stats import norm
-
-        # Parameters for Value Calculation (see link in docstring)
-
-
-        S_new = S / Sfl if right == 'call' else Sfl / S
-
-        a1 = (log(S_new) + (signCP * (r - q) + vol ** 2 / 2) * T) / (vol * sqrt(T))
-        a2 = a1 - vol * sqrt(T)
-        a3 = (log(S_new) + signCP * (-r + q + vol ** 2 / 2) * T) / (vol * sqrt(T))
-        Y1 = signCP * (-2 * (r - q - vol ** 2 / 2) * log(S_new)) / (vol ** 2)
-
-        c = S * exp(-q * T) * norm.cdf(a1) - S * exp(-q * T) * (vol ** 2) * norm.cdf(-a1) / (2 * (r - q)) - Sfl * exp(-r * T) * (norm.cdf(a2) - vol ** 2 * exp(Y1) * norm.cdf(-a3) / (2 * (r - q)))
-        p = Sfl * exp(-r * T) * (norm.cdf(a1) - vol ** 2 * exp(Y1) * norm.cdf(-a3) / (2 * (r - q))) + S * exp(-q *T) * (vol ** 2) * norm.cdf(-a2) / (2 * (r - q)) - S * exp(-q * T) * norm.cdf(a2)
-
-
-        # Calculate the value of the option using the BS Equation
-        if right == 'call':
-            self.px_spec.add(px=float(c), method='BS', sub_method='Look back, Hull Ch.26')
-
-        else:
-            self.px_spec.add(px=float(p), method='BS', sub_method='Look back, Hull Ch.26')
-        return self
-
-    def _calc_MC(self):
-        """ Internal function for option valuation.
-
-        Returns
-        -------
-        self: Look back
-
-        .. sectionauthor::
-
-        Note
-        ----
-
-        """
-        return self
-
-    def _calc_FD(self):
-        """ Internal function for option valuation.
-
-        Returns
-        -------
-        self: Look back
-
-        .. sectionauthor::
-
-        Note
-        ----
-
-        """
-
-        return self
-=======
 
         Examples
 
@@ -452,8 +292,3 @@ class Lookback(OptionValuation):
         """
 
         return self
-
-s = Stock(S0=50, vol=.4)
-o = Lookback(q=.0,ref=s, right='call', K=50, T=0.25, rf_r=.1, desc='Example from Internet')
-print(o.calc_px(method = 'BS', Sfl = 50.0).px_spec.px)
->>>>>>> e3166a5c821f2346e43709d9626aa00d735958b4

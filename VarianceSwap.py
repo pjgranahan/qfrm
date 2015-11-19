@@ -20,9 +20,9 @@ class VarianceSwap(OptionValuation):
         method : str
                 Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
         K : float
--                Required. Must be a vector (e.g. 1-D tuple, list, array, ...) of European strike prices to estimate variance of the nderlying. 
+                Required. Must be a vector (e.g. 1-D tuple, list, array, ...) of European strike prices to estimate variance of the underlying. 
         vol : float
--                Required. Must be a vector (e.g. 1-D tuple, list, array, ...) of volatilities implied by European options with K trikes.
+                Required. Must be a vector (e.g. 1-D tuple, list, array, ...) of volatilities implied by European options with K strikes.
         L_Var : float
                 Required. The variance notional, i.e. the size of the bet
         Var_K : float
@@ -70,7 +70,7 @@ class VarianceSwap(OptionValuation):
         >>> import matplotlib.pyplot as plt
         >>> from numpy import linspace
         >>> s2K = linspace(0.01,0.2,200)
-        >>> o = o(ref=s(355), rf_r=0.03, T=1.)
+        >>> o = VarianceSwap(ref=Stock(355),rf_r=0.03, T=1.)
         >>> px = tuple(map(lambda i: o.calc_px(Var_K=s2K[i]**2).px_spec.px/1000, range(s2K.shape[0])))
         >>> fig = plt.figure()
         >>> ax = fig.add_subplot(111)
@@ -176,7 +176,7 @@ class VarianceSwap(OptionValuation):
         
 #Pricing by BSM
 s = Stock(355)
-o = VarianceSwap(ref=s,rf_r=0.03, T=1.)
+o = VarianceSwap(ref=s, rf_r=0.03, T=1.)
 print(o.calc_px().px_spec.px)
 ##Changing the stock price
 print(VarianceSwap(ref=Stock(310),rf_r=0.03, T=1.).calc_px().px_spec.px)
@@ -188,7 +188,7 @@ print(VarianceSwap(ref=Stock(290),rf_r=0.03, T=1.).calc_px(method='BS', K=(280.,
 Karr = (800,850,900,950,1000,1050,1100,1150,1200)
 varr = (.29,.28,.27,.26,.25,.24,.23,.22,.21)
 print(VarianceSwap(ref=Stock(S0=1020,q=.01), rf_r=.04, T=.25).calc_px(method='BS', K=Karr, \
-                vol=varr, L_Var=100., Var_K=.045).px_spec.px)
+    vol=varr, L_Var=100., Var_K=.045).px_spec.px)
 ##Price vs. the strike volatility curve - example of vectorization of price calculation
 import matplotlib.pyplot as plt
 from numpy import linspace

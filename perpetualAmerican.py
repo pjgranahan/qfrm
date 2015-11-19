@@ -32,20 +32,14 @@ class PerpetualAmerican(OptionValuation):
 
         Notes
         -----
-<<<<<<< HEAD
-=======
         In finance, a perpetual American option is a special type of American option which deos not have a
         maturity date.
->>>>>>> e3166a5c821f2346e43709d9626aa00d735958b4
 
         Examples
         -------
 
-<<<<<<< HEAD
-=======
         Use the Black-Scholes model to price a perpetual American option
 
->>>>>>> e3166a5c821f2346e43709d9626aa00d735958b4
         >>> s = Stock(S0=50, vol=.3, q=0.01)
         >>> o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.08)
 
@@ -53,30 +47,13 @@ class PerpetualAmerican(OptionValuation):
         37.190676833752335
 
         >>> print(repr(o))
-<<<<<<< HEAD
-        PerpetualAmerican
-=======
         perpetualAmerican.PerpetualAmerican
->>>>>>> e3166a5c821f2346e43709d9626aa00d735958b4
         K: 50
         T: 1
         _right: call
         _signCP: 1
         frf_r: 0
         px_spec: qfrm.PriceSpec
-<<<<<<< HEAD
-        keep_hist: false
-        method: BS
-        ref: qfrm.Stock
-        S0: 50
-        curr: null
-        desc: null
-        q: 0.01
-        tkr: null
-        vol: 0.3
-        rf_r: 0.08
-        seed0: null
-=======
           keep_hist: false
           method: BS
         ref: qfrm.Stock
@@ -103,7 +80,6 @@ class PerpetualAmerican(OptionValuation):
         Change the option to a put
         >>> print(o.update(right='put').calc_px())
         13.427262534976805
->>>>>>> e3166a5c821f2346e43709d9626aa00d735958b4
 
         """
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
