@@ -1,4 +1,4 @@
-from qfrm import *
+from OptionValuation import *
 from European import *
 
 class American(OptionValuation):
@@ -222,7 +222,7 @@ class American(OptionValuation):
 
         return self
 
-s = Stock(S0=30, vol=.3)
-o = American(ref=s, right='call', K=30, T=1., rf_r=.08, desc='Example from Internet')
-o.calc_px(method='BS')
-print(o.px_spec)
+
+
+
+
