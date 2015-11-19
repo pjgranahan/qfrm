@@ -1,4 +1,4 @@
-from qfrm import *
+from OptionValuation import *
 
 class Gap(OptionValuation):
     """ Gap option class.
@@ -207,5 +207,4 @@ class Gap(OptionValuation):
         """
 
         return self
-
 

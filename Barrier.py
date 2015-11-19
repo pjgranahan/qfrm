@@ -1,11 +1,11 @@
-from qfrm import *
+from OptionValuation import *
 
 class Barrier(OptionValuation):
     """ European option class.
 
     Inherits all methods and properties of OptionValuation class.
     """
-
+    '''
     def __init__(self, H = 10., knock = 'down', dir = 'out', *args, **kwargs):
 
         """ Constructor for Barrier class
@@ -36,8 +36,9 @@ class Barrier(OptionValuation):
         self.knock = knock
         self.dir = dir
         super().__init__(*args,**kwargs)
+    '''
 
-    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
+    def calc_px(self, H = 10., knock = 'down', dir = 'out', method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
 
         User passes parameters to calc_px, which saves them to local PriceSpec object
@@ -65,6 +66,9 @@ class Barrier(OptionValuation):
        """
 
 
+        self.H = H
+        self.dir = dir
+        self.knock = knock
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
         return getattr(self, '_calc_' + method.upper())()
 
@@ -84,8 +88,8 @@ class Barrier(OptionValuation):
         -------
 
         >>> s = Stock(S0=50., vol=.25, q=.00)
-        >>> o = Barrier(ref=s,H=35.,knock='down',dir='out',right='call', K=45., T=2., rf_r=.1, desc='down and out call')
-        >>> print(o.calc_px(method='BS').px_spec.px)
+        >>> o = Barrier(ref=s,right='call', K=45., T=2., rf_r=.1, desc='down and out call')
+        >>> print(o.calc_px(method='BS',H=35.,knock='down',dir='out',).px_spec.px)
 
         14.5752394837
 
@@ -97,14 +101,14 @@ class Barrier(OptionValuation):
         sub_method: standard; Hull p.604
 
         >>> s = Stock(S0=35., vol=.1, q=.1)
-        >>> o = Barrier(H=50.,knock='up',dir='out',ref=s, right='put', K=45., T=2.5, rf_r=.1, desc='up and out put')
-        >>> print(o.calc_px(method='BS').px_spec.px)
+        >>> o = Barrier(ref=s, right='put', K=45., T=2.5, rf_r=.1, desc='up and out put')
+        >>> print(o.calc_px(method='BS',H=50.,knock='up',dir='out',).px_spec.px)
 
         7.90417744642
 
         >>> s = Stock(S0=85., vol=.35, q=.05)
-        >>> o = Barrier(H=90.,knock='up',dir='in',ref=s, right='call', K=80., T=.5, rf_r=.05, desc='up and in call')
-        >>> print(o.calc_px(method='BS').px_spec.px)
+        >>> o = Barrier(ref=s, right='call', K=80., T=.5, rf_r=.05, desc='up and in call')
+        >>> print(o.calc_px(method='BS',H=90.,knock='up',dir='in').px_spec.px)
 
         10.5255960041
 
@@ -212,8 +216,8 @@ class Barrier(OptionValuation):
         -------
 
         >>> s = Stock(S0=95., vol=.25, q=.00)
-        >>> o = Barrier(H=90.,knock='down',dir='in',ref=s, right='put', K=100., T=1., rf_r=.1, desc='down and in put')
-        >>> print(o.calc_px(method='LT', nsteps=1050, keep_hist=False).px_spec.px)
+        >>> o = Barrier(right='put', K=100., T=1., rf_r=.1, desc='down and in put')
+        >>> print(o.calc_px(method='LT',H=90.,knock='down',dir='in',ref=s, nsteps=1050, keep_hist=False).px_spec.px)
         >>> print(o.px_spec)
 
         7.104101924957116
@@ -235,26 +239,26 @@ class Barrier(OptionValuation):
 
 
         >>> s = Stock(S0=95., vol=.25, q=.00)
-        >>> o = Barrier(H=87.,knock='down',dir='out',ref=s, right='call', K=100., T=2., rf_r=.1, desc='down and out call')
-        >>> print(o.calc_px(method='LT', nsteps=1050, keep_hist=False).px_spec.px)
+        >>> o = Barrier(ref=s, right='call', K=100., T=2., rf_r=.1, desc='down and out call')
+        >>> print(o.calc_px(method='LT', H=87.,knock='down',dir='out',nsteps=1050, keep_hist=False).px_spec.px)
 
         11.549805549495334
 
         >>> s = Stock(S0=95., vol=.25, q=.00)
-        >>> o = Barrier(H=105.,knock='up',dir='out',ref=s, right='put', K=100., T=2., rf_r=.1, desc='up and out put')
-        >>> print(o.calc_px(method='LT', nsteps=1050, keep_hist=False).px_spec.px)
+        >>> o = Barrier(ref=s, right='put', K=100., T=2., rf_r=.1, desc='up and out put')
+        >>> print(o.calc_px(method='LT', nsteps=1050, H=105.,knock='up',dir='out', keep_hist=False).px_spec.px)
 
         3.2607593764427434
 
         >>> s = Stock(S0=95., vol=.25, q=.00)
-        >>> o = Barrier(H=105.,knock='up',dir='in',ref=s, right='call', K=100., T=2., rf_r=.1, desc='up and in call')
-        >>> print(o.calc_px(method='LT', nsteps=1050, keep_hist=False).px_spec.px)
+        >>> o = Barrier(ref=s, right='call', K=100., T=2., rf_r=.1, desc='up and in call')
+        >>> print(o.calc_px(method='LT',H=105.,knock='up',dir='in', nsteps=1050, keep_hist=False).px_spec.px)
 
         20.037733657756565
 
         >>> s = Stock(S0=95., vol=.25, q=.00)
-        >>> o = Barrier(H=105.,knock='up',dir='in',ref=s, right='call', K=100., T=2., rf_r=.1, desc='up and in call')
-        >>> print(o.calc_px(method='LT', nsteps=10, keep_hist=False).px_spec.px)
+        >>> o = Barrier(ref=s, right='call', K=100., T=2., rf_r=.1, desc='up and in call')
+        >>> print(o.calc_px(method='LT',H=105.,knock='up',dir='in', nsteps=10, keep_hist=False).px_spec.px)
 
         20.040606033552542
 
