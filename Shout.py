@@ -47,29 +47,6 @@ class Shout(OptionValuation):
         Verification of Example: http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L4shout.pdf
 
         -------
-
-       """
-
-        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
-        return getattr(self, '_calc_' + method.upper())()
-
-    def _calc_LT(self):
-        """ Internal function for option valuation.
-
-        Returns
-        -------
-        self: Shout
-
-        .. sectionauthor:: Mengyan Xie
-
-        Notes
-        -----
-
-        The shout option is usually a call option, but with a difference: at any time t before maturity, the holder may
-        "shout". The effect of this is that he is guaranteed a minimum payoff of St - K, although he will get the payoff
-        of the call option if this is greater than the minimum. In spirit this is the same as the binomial method for
-        pricing American options.
-
         Examples
 
         >>> s = Stock(S0=50, vol=.3)
@@ -114,6 +91,30 @@ class Shout(OptionValuation):
         rf_r: 0.05
         seed0: null
         <BLANKLINE>
+
+       """
+
+        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
+        return getattr(self, '_calc_' + method.upper())()
+
+    def _calc_LT(self):
+        """ Internal function for option valuation.
+
+        Returns
+        -------
+        self: Shout
+
+        .. sectionauthor:: Mengyan Xie
+
+        Notes
+        -----
+
+        The shout option is usually a call option, but with a difference: at any time t before maturity, the holder may
+        "shout". The effect of this is that he is guaranteed a minimum payoff of St - K, although he will get the payoff
+        of the call option if this is greater than the minimum. In spirit this is the same as the binomial method for
+        pricing American options.
+
+
 
         """
         from numpy import arange, maximum, log, exp, sqrt
