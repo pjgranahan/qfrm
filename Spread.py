@@ -89,6 +89,19 @@ class Spread(OptionValuation):
 
         """
 
+        from math import log, sqrt, exp
+        from scipy.stats import norm
+
+
+        vol = sqrt(self.ref.vol**2 - 2*self.rho*self.ref.vol*self.S2.vol + self.S2.vol**2)
+        d1 = (1./(vol*sqrt(self.T)))*log((self.S2.S0*exp(-self.S2.q*self.T))/(self.ref.S0*exp(-self.ref.q*self.T)))
+        d2 = d1 - (vol*sqrt(self.T)/2.)
+        d1 = d1 + (vol*sqrt(self.T)/2.)
+        p = self.S2.S0*exp(-self.S2.q*self.T)*norm.cdf(d1)
+        p = p - self.ref.S0*exp(-self.ref.q*self.T)*norm.cdf(d2)
+
+        self.px_spec.add(px=float(p), method='BS')
+
         return self
 
 
@@ -160,6 +173,17 @@ class Spread(OptionValuation):
         """
 
         return self
+
+
+
+s1 = Stock(S0=30.,q=0.,vol=.2)
+s2 = Stock(S0=31.,q=0.,vol=.3)
+o = Spread(ref = s1, rf_r = .05, right='call', K=0., T=2., desc='Example from Internet')
+o.calc_px(method='MC',S2 = s2,rho=.4,nsteps=1000,npaths=1000)
+print(o.px_spec.px)
+o.calc_px(method='BS',S2 = s2,rho=.4,nsteps=1000,npaths=1000)
+print(o.px_spec.px)
+
 
 
 
