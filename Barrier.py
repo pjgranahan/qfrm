@@ -112,6 +112,15 @@ class Barrier(OptionValuation):
 
         20.040606033552542
 
+        >>> # Example of option price convergence (LT method) with i
+        >>> s = Stock(S0=95., vol=.25, q=.00)
+        >>> o = Barrier(ref=s, right='call', K=100., T=2., rf_r=.1, desc='up and in call')
+        >>> from pandas import Series;  steps = range(3,250)
+        >>> O = Series([o.calc_px(method='LT', nsteps=s).px_spec.px for s in steps], steps)
+        >>> O.plot(grid=1, title='Price vs Steps')
+        >>> # import matplotlib.pyplot as plt
+        >>> # plt.show() # uncomment these two rows to actually show plots
+
 
        """
 
@@ -351,3 +360,6 @@ class Barrier(OptionValuation):
 
         """
         return self
+
+
+
