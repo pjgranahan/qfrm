@@ -1,4 +1,4 @@
-from qfrm import *
+from OptionValuation import *
 
 class PerpetualAmerican(OptionValuation):
     """ perpetual American option class.
@@ -47,16 +47,16 @@ class PerpetualAmerican(OptionValuation):
         37.190676833752335
 
         >>> print(repr(o))
-        perpetualAmerican.PerpetualAmerican
+        PerpetualAmerican.PerpetualAmerican
         K: 50
         T: 1
         _right: call
         _signCP: 1
         frf_r: 0
-        px_spec: qfrm.PriceSpec
+        px_spec: OptionValuation.PriceSpec
           keep_hist: false
           method: BS
-        ref: qfrm.Stock
+        ref: OptionValuation.Stock
           S0: 50
           curr: null
           desc: null
