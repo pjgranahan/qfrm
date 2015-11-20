@@ -96,6 +96,14 @@ class Asian(OptionValuation):
             px: 1.6162118076748948
             sub_method: Geometric
 
+        >>> s = Stock(S0=20, vol=.3, q = .00)
+        >>> o = Asian(ref=s, right='put', K=21., T=2., rf_r=.08)
+        >>> from pandas import Series;  exps = range(1,10)
+        >>> O = Series([o.update(T=t).calc_px(method='BS').px_spec.px for t in exps], exps)
+        >>> O.plot(grid=1, title='Price vs Time to Expiry')
+        >>> # import matplotlib.pyplot as plt
+        >>> # plt.show() # run last two lines to show plot
+
 
        """
 
@@ -355,5 +363,4 @@ class Asian(OptionValuation):
         """
 
         return self
-
 
