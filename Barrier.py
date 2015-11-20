@@ -31,29 +31,13 @@ class Barrier(OptionValuation):
 
         .. sectionauthor:: Scott Morgan
 
-       """
+        Notes
+        ---------
 
-
-        self.H = H
-        self.dir = dir
-        self.knock = knock
-        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
-        return getattr(self, '_calc_' + method.upper())()
-
-    def _calc_BS(self):
-        """ Internal function for option valuation.
-
-        Returns
-        -------
-        self: Barrier
-
-        .. sectionauthor:: Hanting Li
-
-        .. note::
-        Hull p604
+        Examples can be verified at: http://www.fintools.com/resources/online-calculators/exotics-calculators/exoticscalc-barrier/
 
         Examples
-        -------
+        ---------
 
         >>> s = Stock(S0=50., vol=.25, q=.00)
         >>> o = Barrier(ref=s,right='call', K=45., T=2., rf_r=.1, desc='down and out call')
@@ -79,6 +63,76 @@ class Barrier(OptionValuation):
         >>> print(o.calc_px(method='BS',H=90.,knock='up',dir='in').px_spec.px)
 
         10.5255960041
+
+        >>> # SEE NOTES for verification
+        >>> s = Stock(S0=95., vol=.25, q=.00)
+        >>> o = Barrier(right='put', K=100., T=1., rf_r=.1, desc='down and in put')
+        >>> print(o.calc_px(method='LT',H=90.,knock='down',dir='in',ref=s, nsteps=1050, keep_hist=False).px_spec.px)
+        >>> print(o.px_spec)
+
+        7.104101924957116
+
+        qfrm.PriceSpec
+        LT_specs:
+          a: 1.0000952426305294
+          d: 0.9923145180146982
+          df_T: 0.9048374180359595
+          df_dt: 0.9999047664397653
+          dt: 0.0009523809523809524
+          p: 0.5042435843778115
+          u: 1.0077450060900832
+        keep_hist: false
+        method: LT
+        nsteps: 1050
+        px: 7.104101924957116
+        sub_method: in out parity
+
+
+        >>> s = Stock(S0=95., vol=.25, q=.00)
+        >>> o = Barrier(ref=s, right='call', K=100., T=2., rf_r=.1, desc='down and out call')
+        >>> print(o.calc_px(method='LT', H=87.,knock='down',dir='out',nsteps=1050, keep_hist=False).px_spec.px)
+
+        11.549805549495334
+
+        >>> s = Stock(S0=95., vol=.25, q=.00)
+        >>> o = Barrier(ref=s, right='put', K=100., T=2., rf_r=.1, desc='up and out put')
+        >>> print(o.calc_px(method='LT', nsteps=1050, H=105.,knock='up',dir='out', keep_hist=False).px_spec.px)
+
+        3.2607593764427434
+
+        >>> s = Stock(S0=95., vol=.25, q=.00)
+        >>> o = Barrier(ref=s, right='call', K=100., T=2., rf_r=.1, desc='up and in call')
+        >>> print(o.calc_px(method='LT',H=105.,knock='up',dir='in', nsteps=1050, keep_hist=False).px_spec.px)
+
+        20.037733657756565
+
+        >>> s = Stock(S0=95., vol=.25, q=.00)
+        >>> o = Barrier(ref=s, right='call', K=100., T=2., rf_r=.1, desc='up and in call')
+        >>> print(o.calc_px(method='LT',H=105.,knock='up',dir='in', nsteps=10, keep_hist=False).px_spec.px)
+
+        20.040606033552542
+
+
+       """
+
+
+        self.H = H
+        self.dir = dir
+        self.knock = knock
+        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
+        return getattr(self, '_calc_' + method.upper())()
+
+    def _calc_BS(self):
+        """ Internal function for option valuation.
+
+        Returns
+        -------
+        self: Barrier
+
+        .. sectionauthor:: Hanting Li
+
+        .. note::
+        Hull p604
 
         """
 
@@ -179,56 +233,6 @@ class Barrier(OptionValuation):
         In-Out Parity: http://www.iam.uni-bonn.de/people/ankirchner/lectures/OP_WS1314/OP_chap_nine.pdf
         Verify Examples: http://www.fintools.com/resources/online-calculators/exotics-calculators/exoticscalc-barrier/
 
-
-        Examples
-        -------
-
-        >>> s = Stock(S0=95., vol=.25, q=.00)
-        >>> o = Barrier(right='put', K=100., T=1., rf_r=.1, desc='down and in put')
-        >>> print(o.calc_px(method='LT',H=90.,knock='down',dir='in',ref=s, nsteps=1050, keep_hist=False).px_spec.px)
-        >>> print(o.px_spec)
-
-        7.104101924957116
-
-        qfrm.PriceSpec
-        LT_specs:
-          a: 1.0000952426305294
-          d: 0.9923145180146982
-          df_T: 0.9048374180359595
-          df_dt: 0.9999047664397653
-          dt: 0.0009523809523809524
-          p: 0.5042435843778115
-          u: 1.0077450060900832
-        keep_hist: false
-        method: LT
-        nsteps: 1050
-        px: 7.104101924957116
-        sub_method: in out parity
-
-
-        >>> s = Stock(S0=95., vol=.25, q=.00)
-        >>> o = Barrier(ref=s, right='call', K=100., T=2., rf_r=.1, desc='down and out call')
-        >>> print(o.calc_px(method='LT', H=87.,knock='down',dir='out',nsteps=1050, keep_hist=False).px_spec.px)
-
-        11.549805549495334
-
-        >>> s = Stock(S0=95., vol=.25, q=.00)
-        >>> o = Barrier(ref=s, right='put', K=100., T=2., rf_r=.1, desc='up and out put')
-        >>> print(o.calc_px(method='LT', nsteps=1050, H=105.,knock='up',dir='out', keep_hist=False).px_spec.px)
-
-        3.2607593764427434
-
-        >>> s = Stock(S0=95., vol=.25, q=.00)
-        >>> o = Barrier(ref=s, right='call', K=100., T=2., rf_r=.1, desc='up and in call')
-        >>> print(o.calc_px(method='LT',H=105.,knock='up',dir='in', nsteps=1050, keep_hist=False).px_spec.px)
-
-        20.037733657756565
-
-        >>> s = Stock(S0=95., vol=.25, q=.00)
-        >>> o = Barrier(ref=s, right='call', K=100., T=2., rf_r=.1, desc='up and in call')
-        >>> print(o.calc_px(method='LT',H=105.,knock='up',dir='in', nsteps=10, keep_hist=False).px_spec.px)
-
-        20.040606033552542
 
         """
 
