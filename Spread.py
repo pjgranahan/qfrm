@@ -43,6 +43,34 @@ class Spread(OptionValuation):
         Examples
         -------
 
+        >>> s1 = Stock(S0=30.,q=0.,vol=.2)
+        >>> s2 = Stock(S0=31.,q=0.,vol=.3)
+        >>> o = Spread(ref = s1, rf_r = .05, right='call', K=0., T=2., seed0 = 0)
+        >>> o.calc_px(method='MC',S2 = s2,rho=.4,nsteps=1000,npaths=1000)
+        >>> print(o.px_spec.px)
+        5.644473359622987
+
+        >>> s1 = Stock(S0=30.,q=0.,vol=.2)
+        >>> s2 = Stock(S0=31.,q=0.,vol=.3)
+        >>> o = Spread(ref = s1, rf_r = .05, right='call', K=0., T=2., seed0 = 0)
+        >>> o.calc_px(method='BS',S2 = s2,rho=.4)
+        >>> print(o.px_spec.px)
+        5.409907579760095
+
+        >>> s1 = Stock(S0=30.,q=0.,vol=.2)
+        >>> s2 = Stock(S0=31.,q=0.,vol=.3)
+        >>> o = Spread(ref = s1, rf_r = .05, right='put', K=2., T=2., seed0 = 0)
+        >>> o.calc_px(method='MC',S2 = s2,rho=.4,nsteps=1000,npaths=1000)
+        >>> print(o.px_spec.px)
+        5.262902444782136
+
+        >>> s1 = Stock(S0=30.,q=0.,vol=.2)
+        >>> s2 = Stock(S0=30.,q=0.,vol=.2)
+        >>> o = Spread(ref = s1, rf_r = .05, right='put', K=1., T=2., seed0 = 2, desc = 'Perfectly correlated -- present value of 1')
+        >>> o.calc_px(method='MC',S2 = s2,rho=1.,nsteps=1000,npaths=1000)
+        >>> print(o.px_spec.px)
+        0.9048374180359596
+
 
 
 
@@ -122,6 +150,7 @@ class Spread(OptionValuation):
         from numpy.random import normal
         from numpy import maximum, mean
         from math import sqrt, exp
+        from numpy.random import seed
 
         _ = self.px_spec
         npaths = getattr(_, 'npaths', 3)
@@ -130,6 +159,10 @@ class Spread(OptionValuation):
         __ = self.LT_specs(npaths)
 
         opt_vals = list()
+
+        if self.seed0 is not None:
+            seed(self.seed0)
+
 
         for path in range(0,npaths):
 
@@ -175,14 +208,6 @@ class Spread(OptionValuation):
         return self
 
 
-
-s1 = Stock(S0=30.,q=0.,vol=.2)
-s2 = Stock(S0=31.,q=0.,vol=.3)
-o = Spread(ref = s1, rf_r = .05, right='call', K=0., T=2., desc='Example from Internet')
-o.calc_px(method='MC',S2 = s2,rho=.4,nsteps=1000,npaths=1000)
-print(o.px_spec.px)
-o.calc_px(method='BS',S2 = s2,rho=.4,nsteps=1000,npaths=1000)
-print(o.px_spec.px)
 
 
 
