@@ -5,38 +5,6 @@ class Barrier(OptionValuation):
 
     Inherits all methods and properties of OptionValuation class.
     """
-    '''
-    def __init__(self, H = 10., knock = 'down', dir = 'out', *args, **kwargs):
-
-        """ Constructor for Barrier class
-
-        Passes additional arguments to OptionValuation class
-
-        Parameters
-        ----------
-        H : int
-                The barrier used to price the barrier option
-        knock : string
-                'down' or 'up'
-        dir : string
-                'in' or 'out'
-        *args, **kwargs: varies
-                arguments required by the constructor of OptionValuation class
-
-
-        Returns
-        -------
-        self : Barrier
-
-        .. sectionauthor:: Scott Morgan
-
-       """
-
-        self.H = H
-        self.knock = knock
-        self.dir = dir
-        super().__init__(*args,**kwargs)
-    '''
 
     def calc_px(self, H = 10., knock = 'down', dir = 'out', method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
