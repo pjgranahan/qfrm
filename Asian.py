@@ -36,13 +36,13 @@ class Asian(OptionValuation):
         Notes
         -----
 
-        Verification of First Example: http://investexcel.net/asian-options-excel/
+        Verification of First and Second Examples: http://investexcel.net/asian-options-excel/
 
         Examples
         -------
 
         >>> s = Stock(S0=30, vol=.3, q = .02)
-        >>> o = Asian(ref=s, right='call', K=29, T=1., rf_r=.08, desc='Example from Internet')
+        >>> o = Asian(ref=s, right='call', K=29, T=1., rf_r=.08, desc='Example from Internet - Call')
         >>> o.calc_px()
         >>> print(o.px_spec)
 
@@ -53,7 +53,7 @@ class Asian(OptionValuation):
             sub_method: Geometric
 
         >>> s = Stock(S0=30, vol=.3, q = .02)
-        >>> o = Asian(ref=s, right='put', K=29, T=1., rf_r=.08, desc='Example from Internet')
+        >>> o = Asian(ref=s, right='put', K=29, T=1., rf_r=.08, desc='Example from Internet - Put')
         >>> o.calc_px()
         >>> print(o.px_spec)
 
@@ -64,7 +64,7 @@ class Asian(OptionValuation):
             sub_method: Geometric
 
         >>> s = Stock(S0=30, vol=.3, q = .02)
-        >>> o = Asian(ref=s, right='put', K=30., T=1., rf_r=.08, desc='Example from Internet')
+        >>> o = Asian(ref=s, right='put', K=30., T=1., rf_r=.08)
         >>> o.calc_px()
         >>> print(o.px_spec)
 
@@ -75,7 +75,7 @@ class Asian(OptionValuation):
             sub_method: Geometric
 
         >>> s = Stock(S0=20, vol=.3, q = .00)
-        >>> o = Asian(ref=s, right='put', K=21., T=1., rf_r=.08, desc='Example from Internet')
+        >>> o = Asian(ref=s, right='put', K=21., T=1., rf_r=.08)
         >>> o.calc_px()
         >>> print(o.px_spec)
 
@@ -86,7 +86,7 @@ class Asian(OptionValuation):
             sub_method: Geometric
 
         >>> s = Stock(S0=20, vol=.3, q = .00)
-        >>> o = Asian(ref=s, right='put', K=21., T=2., rf_r=.08, desc='Example from Internet')
+        >>> o = Asian(ref=s, right='put', K=21., T=2., rf_r=.08)
         >>> o.calc_px()
         >>> print(o.px_spec)
 
@@ -95,8 +95,6 @@ class Asian(OptionValuation):
             method: BSM
             px: 1.6162118076748948
             sub_method: Geometric
-
-
 
 
        """
