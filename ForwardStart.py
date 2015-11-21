@@ -1,4 +1,4 @@
-from qfrm import *
+from OptionValuation import *
 
 class ForwardStart(OptionValuation):
     """ ForwardStart option class
@@ -44,10 +44,14 @@ class ForwardStart(OptionValuation):
         -------
         self : ForwardStart
 
-        .. sectionauthor:: Runmin Zhang
-
         Notes
         -----
+        [1] https://en.wikipedia.org/wiki/Forward_start_option  -- WikiPedia: Forward start option
+        [2] http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf -- How to pricing forward start opions, resource for Example 1
+        [3] http://www.globalriskguard.com/resources/deriv/fwd_4.pdf -- How to pricing forward start opions, resource for Example 2
+
+        .. sectionauthor:: Runmin Zhang
+
 
         Examples
         --------
@@ -103,11 +107,7 @@ class ForwardStart(OptionValuation):
         >>> O = Series([ForwardStart(ref=s, T_s=0.25,K=66,right='call', T=0.75, rf_r=.08).update(T=t).calc_px(method='BS').px_spec.px for t in expiries], expiries)
         >>> O.plot(grid=1, title='ForwardStart option Price vs expiry (in years)') # Plotted example
 
-        See Also
-        --------
-        [1] https://en.wikipedia.org/wiki/Forward_start_option  -- WikiPedia: Forward start option
-        [2] http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf -- How to pricing forward start opions, resource for Example 1
-        [3] http://www.globalriskguard.com/resources/deriv/fwd_4.pdf -- How to pricing forward start opions, resource for Example 2
+
 
         """
 
@@ -167,7 +167,6 @@ class ForwardStart(OptionValuation):
         from math import sqrt, exp, log
 
         # Parameters in BSM
-
         d1 = (log(S0/K)+(r-q+vol**2/2)*T)/(vol*sqrt(T))
         d2 = d1 - vol*sqrt(T)
 
