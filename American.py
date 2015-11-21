@@ -163,14 +163,14 @@ class American(OptionValuation):
                 dividend_val1 = 0
                 dividend_val2 = 0
             first_val = European(ref=Stock(S0=self.ref.S0 - dividend_val1, vol=self.ref.vol, q=self.ref.q), right=self.right,
-                                 K=self.K, rf_r=self.rf_r, T=self.T).pxBS
+                                 K=self.K, rf_r=self.rf_r, T=self.T).calc_px(method='BS').px_spec.px
             second_val = European(ref=Stock(S0=self.ref.S0 - dividend_val2, vol=self.ref.vol, q=self.ref.q),
-                                  right=self.right, K=self.K, rf_r=self.rf_r, T=self.T - .5).pxBS
+                                  right=self.right, K=self.K, rf_r=self.rf_r, T=self.T - .5).calc_px(method='BS').px_spec.px
             self.px_spec.add(px=float(max([first_val, second_val])), method='BSM', sub_method='Black\'s Approximation')
         elif self.right == 'call':
             #American call is worth the same as European call if there are no dividends
             self.px_spec.add(px=float(European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right, K=self.K,
-                                               rf_r=self.rf_r, T=self.T).pxBS), method='BSM', sub_method='Geometric')
+                                               rf_r=self.rf_r, T=self.T).calc_px(method='BS').px_spec.px), method='BS')
         elif self.ref.q != 0:
             # I wasn't able to find a good approximation for American Put BSM w/ dividends so I'm using 200 and 201
             # time step LT and taking the average. This is effectively the Antithetic Variable technique found on pg. 476 due
@@ -222,7 +222,8 @@ class American(OptionValuation):
 
         return self
 
-
-
+s = Stock(S0=50, vol=.3, q=.02)
+o = American(ref=s, right='call', K=50, T=1., rf_r=.1, desc='Example from Internet')
+print(o.calc_px(method='BS').px_spec)
 
 
