@@ -1,7 +1,7 @@
 from OptionValuation import *
 
 class Barrier(OptionValuation):
-    """ Barier option class.
+    """ European option class.
 
     Inherits all methods and properties of OptionValuation class.
     """
@@ -29,23 +29,27 @@ class Barrier(OptionValuation):
         -------
         self : Barrier
 
-        .. sectionauthor:: Scott Morgan
+        .. sectionauthor:: Scott Morgan, Hanting Li
 
         Notes
         ---------
 
-        Examples can be verified at: http://www.fintools.com/resources/online-calculators/exotics-calculators/exoticscalc-barrier/
+        Examples can be verified at:
+            http://www.fintools.com/resources/online-calculators/exotics-calculators/exoticscalc-barrier/
+            DerivaGem, Barrier Option
+            QFRM R Pakcage, Barrier Option, BS method
 
         Examples
         ---------
 
+        # BS Examples, see notes for verification
         >>> s = Stock(S0=50., vol=.25, q=.00)
         >>> o = Barrier(ref=s,right='call', K=45., T=2., rf_r=.1, desc='down and out call')
-        >>> print(o.calc_px(method='BS',H=35.,knock='down',dir='out',).px_spec.px)
+        >>> o.calc_px(H=35.,knock='down',dir='out',method='BS').px_spec.px
 
         14.5752394837
 
-        >>> print(o.calc_px(method='BS').px_spec)
+        >>> o.calc_px(H=35.,knock='down',dir='out',method='BS').px_spec
 
         keep_hist: false
         method: BS
@@ -54,13 +58,13 @@ class Barrier(OptionValuation):
 
         >>> s = Stock(S0=35., vol=.1, q=.1)
         >>> o = Barrier(ref=s, right='put', K=45., T=2.5, rf_r=.1, desc='up and out put')
-        >>> print(o.calc_px(method='BS',H=50.,knock='up',dir='out',).px_spec.px)
+        >>> o.calc_px(H=50.,knock='up',method='BS',dir='out').px_spec.px
 
         7.90417744642
 
         >>> s = Stock(S0=85., vol=.35, q=.05)
         >>> o = Barrier(ref=s, right='call', K=80., T=.5, rf_r=.05, desc='up and in call')
-        >>> print(o.calc_px(method='BS',H=90.,knock='up',dir='in').px_spec.px)
+        >>> o.calc_px(method='BS',H=90.,knock='up',dir='in').px_spec.px
 
         10.5255960041
 
@@ -111,7 +115,8 @@ class Barrier(OptionValuation):
         >>> print(o.calc_px(method='LT',H=105.,knock='up',dir='in', nsteps=10, keep_hist=False).px_spec.px)
 
         20.040606033552542
-
+        
+        
         >>> # Example of option price convergence (LT method) with i
         >>> s = Stock(S0=95., vol=.25, q=.00)
         >>> o = Barrier(ref=s, right='call', K=100., T=2., rf_r=.1, desc='up and in call')
@@ -360,6 +365,3 @@ class Barrier(OptionValuation):
 
         """
         return self
-
-
-
