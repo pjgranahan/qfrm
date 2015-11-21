@@ -125,6 +125,11 @@ class American(OptionValuation):
     def _calc_BS(self):
         """ Internal function for option valuation.
 
+        The _calc_BS() function is called thru calc_PX() and uses the Black Scholes Merton differential equation to price
+        the American option. Due to the optimal stopping problem, this is technically impossible, so the methods below are
+        approximations that have been developed by financial computation scientists.
+
+
         Returns
         -------
         self: American
@@ -134,12 +139,15 @@ class American(OptionValuation):
         Note
         ----
 
+        Important that if you plan on giving a dividend paying stock that it is semi-annual percentage dividends. This is
+        currently the only type of dividends that the BSM can accept.
+
         Formulae:
         http://aeconf.com/articles/may2007/aef080111.pdf (put)
         https://en.wikipedia.org/wiki/Black%27s_approximation (dividend call)
         http://www.bus.lsu.edu/academics/finance/faculty/dchance/Instructional/TN98-01.pdf (non-dividend call)
 
-        Verifiable Example from Hull & White 2001
+        Verifiable Example from Hull & White 2001 (second in the example list)
         http://efinance.org.cn/cn/FEshuo/230301%20%20%20%20%20The%20Use%20of%20the%20Control%20Variate%20Technique%20in%20Option%20Pricing,%20pp.%20237-251.pdf
         Scroll to page 246 in the pdf and and look at the very bottom right number b/c we use control variate for n = 100
 
@@ -147,14 +155,13 @@ class American(OptionValuation):
         -------
 
         >>> s = Stock(S0=30, vol=.3)
-        >>> o = American(ref=s, right='call', K=30, T=1., rf_r=.08, desc='Example from Internet')
+        >>> o = American(ref=s, right='call', K=30, T=1., rf_r=.08)
         >>> o.calc_px(method='BS')
         American
         K: 30
         T: 1.0
         _right: call
         _signcp: 1
-        desc: Example from Internet
         frf_r: 0
         px_spec: OptionValuation.PriceSpec
           keep_hist: false
@@ -176,14 +183,17 @@ class American(OptionValuation):
         method: European BSM
         px: 4.71339376436789
         <BLANKLINE>
+
+        Below is the verifiable example from Hull and White '01
         >>> t = Stock(S0=40, vol=.2)
-        >>> z = American(ref=t, right='put', K=35, T=.5833, rf_r=.0488)
+        >>> z = American(ref=t, right='put', K=35, T=.5833, rf_r=.0488, desc='Example From Hull and White 2001')
         >>> z.calc_px(method='BS')
         American
         K: 35
         T: 0.5833
         _right: put
         _signcp: -1
+        desc: Example From Hull and White 2001
         frf_r: 0
         px_spec: OptionValuation.PriceSpec
           keep_hist: false
@@ -207,10 +217,53 @@ class American(OptionValuation):
         px: 0.43262705935537815
         sub_method: Control Variate
         <BLANKLINE>
+
+        >>> p = Stock(S0=50, vol=.25, q=.02)
+        >>> v = American(ref=p, right='call', K=40, T=2, rf_r=.05)
+        >>> print(v.calc_px(method='BS'))
+        American
+        K: 40
+        T: 2
+        _right: call
+        _signcp: 1
+        frf_r: 0
+        px_spec: OptionValuation.PriceSpec
+          keep_hist: false
+          method: BSM
+          px: 11.337850838178046
+          sub_method: Black's Approximation
+        ref: OptionValuation.Stock
+          S0: 50
+          curr: null
+          desc: null
+          q: 0.02
+          tkr: null
+          vol: 0.25
+        rf_r: 0.05
+        seed0: null
+        <BLANKLINE>
+
+        >>> print(v.px_spec)
+        OptionValuation.PriceSpec
+        keep_hist: false
+        method: BSM
+        px: 11.337850838178046
+        sub_method: Black's Approximation
+        <BLANKLINE>
         """
 
+        #Verify Input
+        assert self.right in ['call', 'put'], 'right must be "call" or "put" '
+        assert self.ref.vol > 0, 'vol must be >=0'
+        assert self.K > 0, 'K must be > 0'
+        assert self.T > 0, 'T must be > 0'
+        assert self.ref.S0 >= 0, 'S must be >= 0'
+        assert self.rf_r >= 0, 'r must be >= 0'
+
+        #Imports
         from math import exp
         from numpy import linspace
+
         if self.right == 'call' and self.ref.q != 0:
             #Black's approximations outlined on pg. 346
             #Dividend paying stocks assume semi-annual payments
@@ -288,15 +341,3 @@ class American(OptionValuation):
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
-
-"""
-s = Stock(S0=50, vol=.3, q=.02)
-o = American(ref=s, right='put', K=50, T=1., rf_r=.1, desc='Example from Internet')
-o.calc_px(method='BS')
-print(o.px_spec)
-
-t = Stock(S0=40, vol=.2)
-z = American(ref=t, right='put', K=35, T=.5833, rf_r=.0488)
-print(z.calc_px(method='BS'))
-print(z.px_spec)
-"""
