@@ -40,24 +40,21 @@ class American(OptionValuation):
 
         >>> s = Stock(S0=50, vol=.3)
         >>> o = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc='7.42840, Hull p.288')
-
         >>> o.calc_px(method='LT', nsteps=2, keep_hist=True).px_spec.px
         7.42840190270483
 
         >>> o.px_spec.ref_tree
-        ((50.000000000000014,),
-         (37.0409110340859, 67.49294037880017),
-         (27.440581804701324, 50.00000000000001, 91.10594001952546))
+        ((50.000000000000014,), (37.0409110340859, 67.49294037880017), (27.440581804701324, 50.00000000000001, 91.10594001952546))
 
         >>> o.calc_px(method='LT', nsteps=2, keep_hist=False)
         American
         K: 52
         T: 2
         _right: put
-        _signCP: -1
+        _signcp: -1
         desc: 7.42840, Hull p.288
         frf_r: 0
-        px_spec: qfrm.PriceSpec
+        px_spec: OptionValuation.PriceSpec
           LT_specs:
             a: 1.0512710963760241
             d: 0.7408182206817179
@@ -71,7 +68,7 @@ class American(OptionValuation):
           nsteps: 2
           px: 7.42840190270483
           sub_method: binomial tree; Hull Ch.13
-        ref: qfrm.Stock
+        ref: OptionValuation.Stock
           S0: 50
           curr: null
           desc: null
@@ -80,7 +77,7 @@ class American(OptionValuation):
           vol: 0.3
         rf_r: 0.05
         seed0: null
-
+        <BLANKLINE>
         """
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
         return getattr(self, '_calc_' + method.upper())()
@@ -145,8 +142,33 @@ class American(OptionValuation):
         >>> s = Stock(S0=30, vol=.3)
         >>> o = American(ref=s, right='call', K=30, T=1., rf_r=.08, desc='Example from Internet')
         >>> o.calc_px(method='BS')
+        American
+        K: 30
+        T: 1.0
+        _right: call
+        _signcp: 1
+        desc: Example from Internet
+        frf_r: 0
+        px_spec: OptionValuation.PriceSpec
+          keep_hist: false
+          method: European BSM
+          px: 4.71339376436789
+        ref: OptionValuation.Stock
+          S0: 30
+          curr: null
+          desc: null
+          q: 0
+          tkr: null
+          vol: 0.3
+        rf_r: 0.08
+        seed0: null
+        <BLANKLINE>
         >>> print(o.px_spec)
-
+        OptionValuation.PriceSpec
+        keep_hist: false
+        method: European BSM
+        px: 4.71339376436789
+        <BLANKLINE>
         """
 
         from math import exp
@@ -168,7 +190,9 @@ class American(OptionValuation):
                                   right=self.right, K=self.K, rf_r=self.rf_r, T=self.T - .5).calc_px(method='BS').px_spec.px
             self.px_spec.add(px=float(max([first_val, second_val])), method='BSM', sub_method='Black\'s Approximation')
         elif self.right == 'call':
-            #American call is worth the same as European call if there are no dividends
+            #American call is worth the same as European call if there are no dividends. This is by definition.
+            #Check first line of the http://www.bus.lsu.edu/academics/finance/faculty/dchance/Instructional/TN98-01.pdf
+            #paper as evidence
             self.px_spec.add(px=float(European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right, K=self.K,
                                                rf_r=self.rf_r, T=self.T).calc_px(method='BS').px_spec.px),
                              method='European BSM')
@@ -223,8 +247,13 @@ class American(OptionValuation):
 
         return self
 
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
+
 s = Stock(S0=50, vol=.3, q=.02)
 o = American(ref=s, right='put', K=50, T=1., rf_r=.1, desc='Example from Internet')
-print(o.calc_px(method='BS').px_spec)
+o.calc_px(method='BS')
+print(o.px_spec)
 
 
