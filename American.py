@@ -1,3 +1,4 @@
+import numpy as np
 from OptionValuation import *
 from European import *
 
@@ -39,7 +40,7 @@ class American(OptionValuation):
         -------
 
         >>> s = Stock(S0=50, vol=.3)
-        >>> o = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc='7.42840, Hull p.288')
+        >>> o = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc='px=7.42840, see Hull p.288')
 
         >>> o.calc_px(method='LT', nsteps=2, keep_hist=True).px_spec.px
         7.42840190270483
@@ -95,14 +96,14 @@ class American(OptionValuation):
         .. sectionauthor:: Oleg Melnikov
 
         """
-        from numpy import arange, maximum, log, exp, sqrt
+        # from numpy import arange, maximum, log, exp, sqrt
 
         keep_hist = getattr(self.px_spec, 'keep_hist', False)
         n = getattr(self.px_spec, 'nsteps', 3)
         _ = self.LT_specs(n)
 
-        S = self.ref.S0 * _['d'] ** arange(n, -1, -1) * _['u'] ** arange(0, n + 1)  # terminal stock prices
-        O = maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
+        S = self.ref.S0 * _['d'] ** np.arange(n, -1, -1) * _['u'] ** np.arange(0, n + 1)  # terminal stock prices
+        O = np.maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
         # tree = ((S, O),)
         S_tree = (tuple([float(s) for s in S]),)  # use tuples of floats (instead of numpy.float)
         O_tree = (tuple([float(o) for o in O]),)
@@ -111,8 +112,8 @@ class American(OptionValuation):
         for i in range(n, 0, -1):
             O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
             S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
-            Payout = maximum(self.signCP * (S - self.K), 0)   # payout at time step i-1 (moving backward in time)
-            O = maximum(O, Payout)
+            Payout = np.maximum(self.signCP * (S - self.K), 0)   # payout at time step i-1 (moving backward in time)
+            O = np.maximum(O, Payout)
             # tree = tree + ((S, O),)
             S_tree = (tuple([float(s) for s in S]),) + S_tree
             O_tree = (tuple([float(o) for o in O]),) + O_tree

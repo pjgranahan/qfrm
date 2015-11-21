@@ -1,3 +1,6 @@
+import numbers
+import numpy as np
+
 class Util():
     """ A collection of utility functions, most of which are static methods, i.e. can be called as Util.isiterable().
 
@@ -41,8 +44,7 @@ class Util():
         :rtype: bool
         ..seealso:: Stackoverflow: how-can-i-check-if-my-python-object-is-a-number
         """
-        from numbers import Number
-        return isinstance(x, Number)
+        return isinstance(x, numbers.Number)
 
     @staticmethod
     def are_numbers(x):
@@ -123,7 +125,7 @@ class Util():
         >>> # convert $6 semiannula (SA) coupon bond payments to indexed cash flows
         >>> Util.cpn2cf(6,2,2.1)  # returns {'cf': (3.0, 3.0, 3.0, 3.0, 103.0),  'ttcf': (0.1, 0.6, 1.1, 1.6, 2.1)}
         """
-        from numpy import arange
+
 
         if cpn == 0: freq = 1  # set frequency to annual for zero coupon instruments
         period = 1./freq            # time (in year units) period between coupon payments
@@ -131,7 +133,7 @@ class Util():
         start = period if (ttm % period) == 0 else ttm % period  # time length from now till next cpn, yrs
         c = float(cpn)/freq   # coupon payment per period, $
 
-        ttcf = tuple((float(x) for x in arange(start, end, period)))        # times to cash flows (tuple of floats)
+        ttcf = tuple((float(x) for x in np.arange(start, end, period)))        # times to cash flows (tuple of floats)
         cf = tuple(map(lambda i: c if i < (len(ttcf) - 1) else c + 100, range(len(ttcf)))) # cash flows (tuple of floats)
         return {'ttcf': ttcf, 'cf': cf}
 
@@ -185,11 +187,11 @@ class Util():
         :rtype: Tuple[float,...,float]
         :Example:
 
-        >>> x = (1, 1/3, 1/7,[1/11, 1/13, {1/19, 1/29}]);  from numpy import array; a = array(x)
+        >>> x = (1, 1/3, 1/7,[1/11, 1/13, {1/19, 1/29}]);  import numpy as np; a = np.array(x)
         >>> Util.round(x)
         >>> Util.round(x, to_tuple=True)
-        >>> Util.round(array(x))
-        >>> Util.round(array, to_tuple=True)
+        >>> Util.round(np.array(x))
+        >>> Util.round(np.array, to_tuple=True)
 
         .. seealso::
             http://stackoverflow.com/questions/24642669/python-quickest-way-to-round-every-float-in-nested-list-of-tuples
@@ -210,7 +212,7 @@ class Util():
         :rtype:  tuple
         :Example:
 
-        >>> from  numpy import array; x = (1, 1/3, 1/7,[1/11, 1/13, {1/19, 1/29}]); a = array(x)
+        >>> import numpy as np;  np.array; x = (1, 1/3, 1/7,[1/11, 1/13, {1/19, 1/29}]); a = np.array(x)
         >>> Util.to_tuple(x)
         >>> Util.to_tuple(a)
 

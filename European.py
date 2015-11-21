@@ -1,3 +1,7 @@
+from scipy import stats
+import numpy as np
+import math
+
 from OptionValuation import *
 
 class European(OptionValuation):
@@ -120,18 +124,18 @@ class European(OptionValuation):
         .. sectionauthor:: Oleg Melnikov
 
         """
-        from scipy.stats import norm
-        from math import sqrt, exp, log
 
         _ = self
-        d1 = (log(_.ref.S0 / _.K) + (_.rf_r + _.ref.vol ** 2 / 2.) * _.T)/(_.ref.vol * sqrt(_.T))
-        d2 = d1 - _.ref.vol * sqrt(_.T)
+        d1 = (math.log(_.ref.S0 / _.K) + (_.rf_r + _.ref.vol ** 2 / 2.) * _.T)/(_.ref.vol * math.sqrt(_.T))
+        d2 = d1 - _.ref.vol * math.sqrt(_.T)
 
         # if calc of both prices is cheap, do both and include them into Price object.
         # Price.px should always point to the price of interest to the user
-        # Save values as basic data types (int, floats, str), instead of numpy.array
-        px_call = float(_.ref.S0 * exp(-_.ref.q * _.T) * norm.cdf(d1) - _.K * exp(-_.rf_r * _.T) * norm.cdf(d2))
-        px_put = float(- _.ref.S0 * exp(-_.ref.q * _.T) * norm.cdf(-d1) + _.K * exp(-_.rf_r * _.T) * norm.cdf(-d2))
+        # Save values as basic data types (int, floats, str), instead of np.array
+        px_call = float(_.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(d1)
+                        - _.K * math.exp(-_.rf_r * _.T) * stats.norm.cdf(d2))
+        px_put = float(- _.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(-d1)
+                       + _.K * math.exp(-_.rf_r * _.T) * stats.norm.cdf(-d2))
         px = px_call if _.signCP == 1 else px_put if _.signCP == -1 else None
 
         self.px_spec.add(px=px, sub_method='standard; Hull p.335', px_call=px_call, px_put=px_put, d1=d1, d2=d2)
@@ -151,13 +155,12 @@ class European(OptionValuation):
         Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
 
         """
-        from numpy import cumsum, log, arange, insert, exp, sqrt, sum, maximum
 
         n = getattr(self.px_spec, 'nsteps', 3)
         _ = self.LT_specs(n)
 
-        S = self.ref.S0 * _['d'] ** arange(n, -1, -1) * _['u'] ** arange(0, n + 1)
-        O = maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
+        S = self.ref.S0 * _['d'] ** np.arange(n, -1, -1) * _['u'] ** np.arange(0, n + 1)
+        O = np.maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
         S_tree, O_tree = None, None
 
         if getattr(self.px_spec, 'keep_hist', False):
@@ -173,9 +176,10 @@ class European(OptionValuation):
 
             out = O_tree[0][0]
         else:
-            csl = insert(cumsum(log(arange(n) + 1)), 0, 0)         # logs avoid overflow & truncation
-            tmp = csl[n] - csl - csl[::-1] + log(_['p']) * arange(n + 1) + log(1 - _['p']) * arange(n + 1)[::-1]
-            out = (_['df_T'] * sum(exp(tmp) * tuple(O)))
+            csl = np.insert(np.cumsum(np.log(np.arange(n) + 1)), 0, 0)         # logs avoid overflow & truncation
+            tmp = csl[n] - csl - csl[::-1] + np.log(_['p']) * np.arange(n + 1) \
+                  + np.log(1 - _['p']) * np.arange(n + 1)[::-1]
+            out = (_['df_T'] * sum(np.exp(tmp) * tuple(O)))
 
         self.px_spec.add(px=float(out), sub_method='binomial tree; Hull Ch.135',
                          LT_specs=_, ref_tree=S_tree, opt_tree=O_tree)

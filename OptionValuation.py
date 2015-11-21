@@ -1,18 +1,21 @@
+import yaml
+import math
+import pandas as pd
+import matplotlib.pyplot as plt
 from Util import *
 
 
 class PriceSpec:
-    """ object for storing calculated price and related specifications.
+    """ Object for storing calculated price and related intermediate parameters.
 
-    use this object to store the price, methods and any intermediate results in your option object.
+    Use this object to store the price, sub/method and any intermediate results in your option object.
+
     """
     px = None  # use float data type
-    method = None  # 'bs', 'lt', 'mc', 'fd'
+    method = None  # 'BS', 'LT', 'MC', 'FD'
     sub_method = None   # indicate specifics about pricing method. ex: 'lsm' or 'naive' for mc pricing of American
 
     def __init__(self, **kwargs):
-        # for K, v in kwargs.items():
-        #     if v is not None:  setattr(self, K, v)
         self.add(**kwargs)
 
     def add(self, **kwargs):
@@ -21,91 +24,96 @@ class PriceSpec:
         return self
 
     def __repr__(self):
-        from yaml import dump
-
-        s = dump(self, default_flow_style=0).replace('!!python/object:','').replace('!!python/tuple','')
+        s = yaml.dump(self, default_flow_style=0).replace('!!python/object:','').replace('!!python/tuple','')
         s = s.replace('__main__.','')
-        # if not new_line:  s = s.replace(',',', ').replace('\n', ',').replace(': ', ':').replace('  ',' ')
         return s
 
 
 class Stock:
-    """ class representing an underlying instrument.
-    .. sectionauthor:: oleg melnikov
-    sets parameters of an equity stock share: S0, vol, ticker, dividend yield, curr, tkr ...
+    """ Object for storing parameters of an underlying (referenced) asset.
+
+    .. sectionauthor:: Oleg Melnikov
+
+    Sets parameters of an equity stock share: S0, vol, ticker, dividend yield, curr, tkr ...
+
     """
-    # def __init__(self, S0=50, vol=.3, q=0, curr=None, tkr=None, desc=None):
     def __init__(self, S0=None, vol=None, q=0, curr=None, tkr=None, desc=None):
-        """ class object constructor.
-        :param S0: stock price today ( or at the time of evaluation), positive number. used in pricing options.
-        :type S0:  float
-        :param vol: volatility of this stock as a rate, positive number. used in pricing options.
+        """ Constructor.
+
+        Parameters
+        ----------
+        S0 : float
+            stock price today ( or at the time of evaluation), positive number. used in pricing options.
+        vol : float
+            volatility of this stock as a rate, positive number. used in pricing options.
             ex. if volatility is 30%, enter vol=.3
-        :type vol:  float
-        :param q:   dividend yield rate, usually used with equity indices. optional
-        :type q:    float
-        :param curr: currency name/symbol of this stock... optional
-        :type curr:  str
-        :param tkr:  stock ticker. optional.
-        :type tkr:   str
-        :param desc: any additional information related to the stock.
-        :type desc:  dict
-        :return:     __init__() method always implicitly returns self, i.e. a reference to this object
-        :rtype:      __main__.stock
+        q : float
+            dividend yield rate, usually used with equity indices. optional
+        curr : str
+            currency name/symbol of this stock... optional
+        tkr : str
+            stock ticker. optional.
+        desc : dict
+            any additional information related to the stock.
+
         """
         self.S0, self.vol, self.q, self.curr, self.tkr, self.desc = S0, vol, q, curr, tkr, desc
 
 
 class OptionSeries:
-    """ class representing an option series.
+    """ Object representing an option series.
 
-    this class describes the option specs outside of valuation. so, it doesn't contain interest rates needed for pricing.
-    this class can be used for plotting and evaluating option packages (strategies like bull spread, straddle, ...).
-    it can also be inherited by classes that require an important extension - option valuation.
+    This class describes the option specs outside of valuation. so, it doesn't contain interest rates needed for pricing.
+    This class can be used for plotting and evaluating option packages (strategies like bull spread, straddle, ...).
+    It can also be inherited by classes that require an important extension - option valuation.
 
-    sets option series specifications: ref, K, T, .... this is a ligth object with only a few methods.
-    .. sectionauthor:: oleg melnikov
+    Sets option series specifications: ref, K, T, .... this is a ligth object with only a few methods.
 
-    .. seealso::
-        http://stackoverflow.com/questions/6535832/python-inherit-the-superclass-init
-        http://stackoverflow.com/questions/285061/how-do-you-programmatically-set-an-attribute-in-python
+    .. sectionauthor:: Oleg Melnikov
+
     """
     def __init__(self, ref=None, right=None, K=None, T=None, clone=None, desc=None):
-        """ constructor.
+        """ Constructor.
 
-        if clone object is supplied, its specs are used.
+        If clone object is supplied, its specs are used.
 
-        :param ref: any suitable object of an underlying instrument (must have S0 & vol variables).
+        Parameters
+        ----------
+        ref : object
+            any suitable object of an underlying instrument (must have S0 & vol variables).
                 required, if clone = None.
-        :type ref:  object
-        :param right: 'call', 'put', and 'other' for more exotic instruments. required, if clone = None.
-        :type right:  str
-        :param K:   strike price, positive number. required, if clone = None.
-        :type K:    float
-        :param T:   time to maturity, in years, positive number. required, if clone = None.
-        :type T:    float
-        :param clone:   another option object from which this object will inherit specifications. optional.
+        right : str
+            'call', 'put', and 'other' for more exotic instruments. required, if clone = None.
+        K : float
+            strike price, positive number. required, if clone = None.
+        T : float
+            time to maturity, in years, positive number. required, if clone = None.
+        clone : OptionValuation, European, American, any child of OptionValuation
+            another option object from which this object will inherit specifications. optional.
             this is useful if you want to price European option as (for example) American.
             then European option's specs will be used to create a new American option. just makes things simple.
-        :type clone:  object inherited from OptionValuation
-        :param desc:  any number of describing variables. optional.
-        :type desc:   dict
-        :return:   __init__() method always implicitly returns self, i.e. a reference to this object
-        :rtype:    __main__.OptionSeries
+        desc : dict
+            any number of describing variables. optional.
+
         """
         self.update(ref=ref, right=right, K=K, T=T, clone=clone, desc=desc)
 
     def update(self, **kwargs):
-        """
+        """ Updates current objects' parameters
 
-        :param kwargs:
-        :return:
+        Use this method to add/update any specification for the current option.
 
-        :example:
+        Parameters
+        ----------
+        **kwargs :
+            parameters (key=value,  key=value, ...) that needs to be updated
 
-        >>> o = OptionSeries(ref=stock(S0=50, vol=.3), right='put', K=52, T=2).update(K=53)
+        Examples
+        --------
+
+        >>> o = OptionSeries(ref=stock(S0=50, vol=.3), right='put', K=52, T=2).update(K=53) # sets new strike
         >>> o
-        >>> OptionSeries(clone=o, K=54).update(right='call')
+        >>> OptionSeries(clone=o, K=54).update(right='call')  # changes right to call
 
         """
         self.reset()   # delete old calculations, before updating parameters
@@ -247,9 +255,7 @@ class OptionSeries:
         """
         _ = self
 
-        from yaml import dump
-
-        s = dump(_, default_flow_style=not new_line).replace('!!python/object:','').replace('!!python/tuple','')
+        s = yaml.dump(_, default_flow_style=not new_line).replace('!!python/object:','').replace('!!python/tuple','')
         s = s.replace('__main__.','')
         if not new_line:  s = s.replace(',',', ').replace('\n', ',').replace(': ', ':').replace('  ',' ')
         return s
@@ -401,15 +407,14 @@ class OptionValuation(OptionSeries):
          'u': 1.2775561233185384}
         """
         assert isinstance(nsteps, int), 'nsteps must be an integer, >2'
-        from math import exp, sqrt
 
         sp = {'dt': self.T / nsteps}
-        sp['u'] = exp(self.ref.vol * sqrt(sp['dt']))
+        sp['u'] = math.exp(self.ref.vol * math.sqrt(sp['dt']))
         sp['d'] = 1 / sp['u']
-        sp['a'] = exp(self.net_r * sp['dt'])   # growth factor, p.452
+        sp['a'] = math.exp(self.net_r * sp['dt'])   # growth factor, p.452
         sp['p'] = (sp['a'] - sp['d']) / (sp['u'] - sp['d'])
-        sp['df_T'] = exp(-self.rf_r * self.T)
-        sp['df_dt'] = exp(-self.rf_r * sp['dt'])
+        sp['df_T'] = math.exp(-self.rf_r * self.T)
+        sp['df_dt'] = math.exp(-self.rf_r * sp['dt'])
 
         return sp
 
@@ -437,15 +442,13 @@ class OptionValuation(OptionSeries):
 
         :example:
 
-        >>> from American import *; from European import *
         >>> s = Stock(S0=50, vol=.3)
         >>> a = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc={'$7.42840, hull p.288'})
         >>> e = European(clone=a)
         >>> a.plot_px_convergence(nsteps_max=50, vs=e)
 
         """
-        import matplotlib.pyplot as plt
-        from pandas import DataFrame
+
 
         if ax is None: fig, ax = plt.subplots()
         if 'fig' in locals():
@@ -454,7 +457,7 @@ class OptionValuation(OptionSeries):
 
         lt_prices = [self.calc_lt(n).px_spec.px for n in range(1, nsteps_max + 1)]
 
-        DataFrame({'lt price for ' + self.specs: lt_prices,
+        pd.DataFrame({'lt price for ' + self.specs: lt_prices,
                    'bs price for ' + self.specs: self.calc_bs().px_spec.px}) \
             .plot(ax=ax, grid=1, title='option price convergence with number of steps')
 
@@ -475,8 +478,6 @@ class OptionValuation(OptionSeries):
         >>> a.plot()
 
         """
-        import matplotlib.pyplot as plt
-
         fig, ax = plt.subplots()
         def onresize(event):  fig.tight_layout()
         cid = fig.canvas.mpl_connect('resize_event', onresize)  # tighten layout on resize event
