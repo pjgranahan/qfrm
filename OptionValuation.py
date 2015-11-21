@@ -6,9 +6,9 @@ class pricespec:
 
     use this object to store the price, methods and any intermediate results in your option object.
     """
-    px = none  # use float data type
-    method = none  # 'bs', 'lt', 'mc', 'fd'
-    sub_method = none   # indicate specifics about pricing method. ex: 'lsm' or 'naive' for mc pricing of american
+    px = None  # use float data type
+    method = None  # 'bs', 'lt', 'mc', 'fd'
+    sub_method = None   # indicate specifics about pricing method. ex: 'lsm' or 'naive' for mc pricing of american
 
     def __init__(self, **kwargs):
         # for k, v in kwargs.items():
