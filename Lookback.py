@@ -1,17 +1,10 @@
-from qfrm import *
+from OptionValuation import *
 
 class Lookback(OptionValuation):
     """ Lookback option class.
 
     Inherits all methods and properties of OptionValuation class.
     """
-
-    def __init__(self,q=0.0,*args,**kwargs):
-
-
-        super().__init__(*args,**kwargs)
-        self.q = q
-
 
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, Sfl = 50.0):
         """ Wrapper function that calls appropriate valuation method.
@@ -37,25 +30,33 @@ class Lookback(OptionValuation):
                 just been originated, Smin = S0.)
                 If put option, Sfl is maximum asset price achieved to date. (If the look back has just been originated,
                 Smax = S0.)
+        q : float
+                Dividend
 
 
         Returns
         -------
         self : Lookback
 
-        .. sectionauthor:: Mengyan Xie
+        .. sectionauthor:: Mengyan Xie, Hanting Li
 
         Notes
         -----
 
-        Verification of Example: http://investexcel.net/asian-options-excel/
+        Verification of Example:
+           http://investexcel.net/asian-options-excel/
+           DerivaGem, Lookback Option
+           QFRM R Package, Lookback Option
+           Hull P608 Example
 
+        Notes: The LT method might not generate the same result with BS
+               To improve the accuracy, the number of steps can be added
 
         -------
         Examples
 
-        >>> s = Stock(S0=50, vol=.4)
-        >>> o = Lookback(q=.0,ref=s, right='call', K=50, T=0.25, rf_r=.1, desc='Example from Internet')
+        >>> s = Stock(S0=50, vol=.4, q=.0)
+        >>> o = Lookback(ref=s, right='call', K=50, T=0.25, rf_r=.1, desc='Example from Internet')
         >>> print(o.calc_px(method = 'BS', Sfl = 50.0).px_spec.px)
         8.037120139607019
 
@@ -85,8 +86,8 @@ class Lookback(OptionValuation):
         seed0: null
         <BLANKLINE>
 
-        >>> s = Stock(S0=50, vol=.4)
-        >>> o = Lookback(q=.0,ref=s, right='put', K=50, T=0.25, rf_r=.1, desc='Example from Internet')
+        >>> s = Stock(S0=50, vol=.4, q=.0)
+        >>> o = Lookback(ref=s, right='put', K=50, T=0.25, rf_r=.1, desc='Example from Internet')
         >>> print(o.calc_px(method = 'BS', Sfl = 50.0).px_spec.px)
         7.79021925989035
 
@@ -98,6 +99,48 @@ class Lookback(OptionValuation):
         px: 7.79021925989035
         sub_method: Look back, Hull Ch.26
         <BLANKLINE>
+
+
+        >>> s = Stock(S0=35., vol=.05, q=.00)
+        >>> o = Lookback(ref=s, right='call', T=0.25, rf_r=.1, desc='Hull p607')
+        >>> o.calc_px(method='LT', nsteps=100, keep_hist=False).px_spec.px
+        1.829899147224415
+
+        >>> o.px_spec
+        OptionValuation.PriceSpec
+        LT_specs:
+          a: 1.0002500312526044
+          d: 0.99750312239746
+          df_T: 0.9753099120283326
+          df_dt: 0.999750031247396
+          dt: 0.0025
+          p: 0.54938119875659
+          u: 1.0025031276057952
+        Sfl: 50.0
+        keep_hist: false
+        method: LT
+        nsteps: 100
+        px: 1.829899147224415
+        sub_method: binomial tree; Hull Ch.13
+
+
+        >>> s = Stock(S0=50., vol=.4, q=.0)
+        >>> o = Lookback(ref=s, right='call', T=3/12, rf_r=.1, desc='Hull p607')
+        >>> o.calc_px(method='LT', nsteps=1000, keep_hist=False).px_spec.px
+        8.13575890392886
+
+
+        >>> s = Stock(S0=100., vol=.02, q=.0)
+        >>> o = Lookback(ref=s, right='call', T=3, rf_r=.01, desc='Hull p607')
+        >>> o.calc_px(method='LT', nsteps=50, keep_hist=False).px_spec.px
+        6.436996102693329
+
+        >>> # Example of option price development (LT method) with increasing maturities
+        >>> from pandas import Series;  expiries = range(1,11)
+        >>> s = Stock(S0=100., vol=.015, q=.0)
+        >>> o = Lookback(ref=s, right='call', T=3, rf_r=.01, desc='Hull p607')
+        >>> O = Series([o.update(T=t).calc_px(method='LT', nsteps=5).px_spec.px for t in expiries], expiries)
+        >>> O.plot(grid=1, title='Price vs expiry (in years)')
 
        """
 
@@ -120,77 +163,37 @@ class Lookback(OptionValuation):
         Examples
         -------
 
-        >>> s = Stock(S0=35., vol=.05, q=.00)
-        >>> o = Lookback(q=.0,ref=s, right='call', T=0.25, rf_r=.1, desc='Hull p607')
-        >>> print(o.calc_px(method='LT', nsteps=10, keep_hist=False).px_spec.px)
 
-        2.6604441598058415
-
-        >>> print(o.px_spec)
-
-        LT_specs:
-          a: 1.0025031276057952
-          d: 0.9921254736611016
-          df_T: 0.9753099120283326
-          df_dt: 0.9975031223974601
-          dt: 0.025
-          p: 0.6563336278552585
-          u: 1.0079370266644199
-        Sfl: 50.0
-        keep_hist: false
-        method: LT
-        nsteps: 10
-        px: 2.6604441598058415
-        sub_method: binomial tree; Hull Ch.13
-
-
-        >>> s = Stock(S0=25., vol=.005, q=.1)
-        >>> o = Lookback(q=.0,ref=s, right='put', T=1, rf_r=.1, desc='Hull p607')
-        >>> print(o.calc_px(method='LT', nsteps=100, keep_hist=False).px_spec.px)
-
-        1.2817774094002523
-
-
-        >>> s = Stock(S0=100., vol=.015, q=.2)
-        >>> o = Lookback(q=.0,ref=s, right='call', T=3, rf_r=.01, desc='Hull p607')
-        >>> print(o.calc_px(method='LT', nsteps=50, keep_hist=False).px_spec.px)
-        16.782434005886856
-
-        >>> # Example of option price development (LT method) with increasing maturities
-        >>> from pandas import Series;  expiries = range(1,11)
-        >>> s = Stock(S0=100., vol=.015, q=.2)
-        >>> o = Lookback(q=.0,ref=s, right='call', T=3, rf_r=.01, desc='Hull p607')
-        >>> O = Series([o.update(T=t).calc_px(method='LT', nsteps=5).px_spec.px for t in expiries], expiries)
-        >>> O.plot(grid=1, title='Price vs expiry (in years)')
         """
 
-        from numpy import arange, maximum, log, exp, sqrt
+        from numpy import array, maximum, arange
 
         keep_hist = getattr(self.px_spec, 'keep_hist', False)
         n = getattr(self.px_spec, 'nsteps', 3)
         _ = self.LT_specs(n)
 
-        S = self.ref.S0 * _['d'] ** arange(n, -1, -1) * _['u'] ** arange(0, n + 1)  # terminal stock prices
-        if self.signCP == 1:
-            K = S[0]
-        else:
-            K = S[len(S)-1]
+        # Get the Price based on Binomial Tree
+        S = (self.ref.S0,)
+        S_tree = S
+        K_tree = S
 
-        O = maximum(self.signCP * (S - K), 0)          # terminal option payouts
-        # tree = ((S, O),)
-        S_tree = (tuple([float(s) for s in S]),)  # use tuples of floats (instead of numpy.float)
+        for i in range(0, n, 1):
+            if (self.signCP == -1):
+                K = tuple(_['u'] * array(S)) + (S[len(S)-1],)
+            else:
+                K = (S[0],) + tuple(_['d'] * array(S))
+            S = tuple(_['u'] * array(S)) + (_['d']*S[len(S)-1],)
+            S_tree = (tuple([float(s) for s in S]),) + S_tree
+            K_tree = (tuple([float(k) for k in K]),) + K_tree
+
+        ST = self.ref.S0 * _['d'] ** arange(n, -1, -1) * _['u'] ** arange(0, n + 1)
+        K = K_tree[0]
+        O = maximum(self.signCP * (ST - K), 0)
         O_tree = (tuple([float(o) for o in O]),)
-        # tree = ([float(s) for s in S], [float(o) for o in O],)
 
         for i in range(n, 0, -1):
             O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
-            S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
-            O = maximum(self.signCP * (S - K), 0)   # payout at time step i-1 (moving backward in time)
-
-            # tree = tree + ((S, O),)
-            S_tree = (tuple([float(s) for s in S]),) + S_tree
             O_tree = (tuple([float(o) for o in O]),) + O_tree
-            # tree = tree + ([float(s) for s in S], [float(o) for o in O],)
 
         self.px_spec.add(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
                         LT_specs=_, ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
@@ -221,7 +224,7 @@ class Lookback(OptionValuation):
             T       =   float(self.T)
             vol     =   float(self.ref.vol)
             r       =   float(self.rf_r)
-            q       =   float(self.q)
+            q       =   float(self.ref.q)
             signCP  =   self.signCP
 
 
