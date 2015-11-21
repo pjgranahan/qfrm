@@ -1,4 +1,4 @@
-from qfrm import *
+from OptionValuation import *
 
 class Barrier(OptionValuation):
     """ European option class.
@@ -62,7 +62,34 @@ class Barrier(OptionValuation):
 
         .. sectionauthor:: Scott Morgan
 
-       """
+        # Example Checking Methods:
+        # DerivaGem, Barrier Option
+        # QFRM R Pakcage, Barrier Option, BS method
+        >>> s = Stock(S0=50., vol=.25, q=.00)
+        >>> o = Barrier(ref=s,H=35.,knock='down',dir='out',right='call', K=45., T=2., rf_r=.1, desc='down and out call')
+        >>> o.calc_px(method='BS').px_spec.px
+
+        14.5752394837
+
+        >>> o.calc_px(method='BS').px_spec
+
+        keep_hist: false
+        method: BS
+        px: 14.575239483680027
+        sub_method: standard; Hull p.604
+
+        >>> s = Stock(S0=35., vol=.1, q=.1)
+        >>> o = Barrier(H=50.,knock='up',dir='out',ref=s, right='put', K=45., T=2.5, rf_r=.1, desc='up and out put')
+        >>> o.calc_px(method='BS').px_spec.px
+
+        7.90417744642
+
+        >>> s = Stock(S0=85., vol=.35, q=.05)
+        >>> o = Barrier(H=90.,knock='up',dir='in',ref=s, right='call', K=80., T=.5, rf_r=.05, desc='up and in call')
+        >>> o.calc_px(method='BS').px_spec.px
+
+        10.5255960041
+        """
 
 
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
@@ -83,37 +110,13 @@ class Barrier(OptionValuation):
         Examples
         -------
 
-        >>> s = Stock(S0=50., vol=.25, q=.00)
-        >>> o = Barrier(ref=s,H=35.,knock='down',dir='out',right='call', K=45., T=2., rf_r=.1, desc='down and out call')
-        >>> print(o.calc_px(method='BS').px_spec.px)
-
-        14.5752394837
-
-        >>> print(o.calc_px(method='BS').px_spec)
-
-        keep_hist: false
-        method: BS
-        px: 14.575239483680027
-        sub_method: standard; Hull p.604
-
-        >>> s = Stock(S0=35., vol=.1, q=.1)
-        >>> o = Barrier(H=50.,knock='up',dir='out',ref=s, right='put', K=45., T=2.5, rf_r=.1, desc='up and out put')
-        >>> print(o.calc_px(method='BS').px_spec.px)
-
-        7.90417744642
-
-        >>> s = Stock(S0=85., vol=.35, q=.05)
-        >>> o = Barrier(H=90.,knock='up',dir='in',ref=s, right='call', K=80., T=.5, rf_r=.05, desc='up and in call')
-        >>> print(o.calc_px(method='BS').px_spec.px)
-
-        10.5255960041
-
         """
 
         from scipy.stats import norm
         from numpy import exp, log, sqrt
 
         _ = self
+
         # Compute Parameters
         d1 = (log(_.ref.S0/_.K) + (_.rf_r-_.ref.q+(_.ref.vol**2)/2)*_.T)/(_.ref.vol*sqrt(_.T))
         d2 = d1 - _.ref.vol*sqrt(_.T)
