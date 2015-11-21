@@ -170,7 +170,8 @@ class American(OptionValuation):
         elif self.right == 'call':
             #American call is worth the same as European call if there are no dividends
             self.px_spec.add(px=float(European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right, K=self.K,
-                                               rf_r=self.rf_r, T=self.T).calc_px(method='BS').px_spec.px), method='BS')
+                                               rf_r=self.rf_r, T=self.T).calc_px(method='BS').px_spec.px),
+                             method='European BSM')
         elif self.ref.q != 0:
             # I wasn't able to find a good approximation for American Put BSM w/ dividends so I'm using 200 and 201
             # time step LT and taking the average. This is effectively the Antithetic Variable technique found on pg. 476 due
@@ -185,9 +186,9 @@ class American(OptionValuation):
             f_a = American(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right,
                            K=self.K, rf_r=self.rf_r, T=self.T).calc_px(method='LT', nsteps=100).px_spec.px
             f_bsm = European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right,
-                             K=self.K, rf_r=self.rf_r, T=self.T).pxBS
+                             K=self.K, rf_r=self.rf_r, T=self.T).calc_px(method='BS').px_spec.px
             f_e = European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right,
-                           K=self.K, rf_r=self.rf_r, T=self.T).pxLT(100)
+                           K=self.K, rf_r=self.rf_r, T=self.T).calc_px(method='LT', nsteps=100).px_spec.px
             self.px_spec.add(px=float(f_a + (f_bsm - f_e)), method='BSM', sub_method='Control Variate')
         return self
 
@@ -223,7 +224,7 @@ class American(OptionValuation):
         return self
 
 s = Stock(S0=50, vol=.3, q=.02)
-o = American(ref=s, right='call', K=50, T=1., rf_r=.1, desc='Example from Internet')
+o = American(ref=s, right='put', K=50, T=1., rf_r=.1, desc='Example from Internet')
 print(o.calc_px(method='BS').px_spec)
 
 
