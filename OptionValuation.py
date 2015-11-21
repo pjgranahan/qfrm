@@ -8,11 +8,11 @@ class PriceSpec:
     """
     px = None  # use float data type
     method = None  # 'bs', 'lt', 'mc', 'fd'
-<<<<<<< HEAD
+
     sub_method = None   # indicate specifics about pricing method. ex: 'lsm' or 'naive' for mc pricing of american
-=======
+
     sub_method = None   # indicate specifics about pricing method. ex: 'lsm' or 'naive' for mc pricing of American
->>>>>>> 0986c7df72e19a8489bd90b4041a6a552896df8e
+
 
     def __init__(self, **kwargs):
         # for K, v in kwargs.items():
