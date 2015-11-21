@@ -6,38 +6,7 @@ class Barrier(OptionValuation):
     Inherits all methods and properties of OptionValuation class.
     """
 
-    def __init__(self, H = 10., knock = 'down', dir = 'out', *args, **kwargs):
-
-        """ Constructor for Barrier class
-
-        Passes additional arguments to OptionValuation class
-
-        Parameters
-        ----------
-        H : int
-                The barrier used to price the barrier option
-        knock : string
-                'down' or 'up'
-        dir : string
-                'in' or 'out'
-        *args, **kwargs: varies
-                arguments required by the constructor of OptionValuation class
-
-
-        Returns
-        -------
-        self : Barrier
-
-        .. sectionauthor:: Scott Morgan
-
-       """
-
-        self.H = H
-        self.knock = knock
-        self.dir = dir
-        super().__init__(*args,**kwargs)
-
-    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
+    def calc_px(self, H = 10., knock = 'down', dir = 'out', method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
 
         User passes parameters to calc_px, which saves them to local PriceSpec object
@@ -60,18 +29,27 @@ class Barrier(OptionValuation):
         -------
         self : Barrier
 
-        .. sectionauthor:: Scott Morgan
+        .. sectionauthor:: Scott Morgan, Hanting Li
 
-        # Example Checking Methods:
-        # DerivaGem, Barrier Option
-        # QFRM R Pakcage, Barrier Option, BS method
+        Notes
+        ---------
+
+        Examples can be verified at:
+            http://www.fintools.com/resources/online-calculators/exotics-calculators/exoticscalc-barrier/
+            DerivaGem, Barrier Option
+            QFRM R Pakcage, Barrier Option, BS method
+
+        Examples
+        ---------
+
+        # BS Examples, see notes for verification
         >>> s = Stock(S0=50., vol=.25, q=.00)
-        >>> o = Barrier(ref=s,H=35.,knock='down',dir='out',right='call', K=45., T=2., rf_r=.1, desc='down and out call')
-        >>> o.calc_px(method='BS').px_spec.px
+        >>> o = Barrier(ref=s,right='call', K=45., T=2., rf_r=.1, desc='down and out call')
+        >>> o.calc_px(H=35.,knock='down',dir='out',method='BS').px_spec.px
 
         14.5752394837
 
-        >>> o.calc_px(method='BS').px_spec
+        >>> o.calc_px(H=35.,knock='down',dir='out',method='BS').px_spec
 
         keep_hist: false
         method: BS
@@ -79,19 +57,72 @@ class Barrier(OptionValuation):
         sub_method: standard; Hull p.604
 
         >>> s = Stock(S0=35., vol=.1, q=.1)
-        >>> o = Barrier(H=50.,knock='up',dir='out',ref=s, right='put', K=45., T=2.5, rf_r=.1, desc='up and out put')
-        >>> o.calc_px(method='BS').px_spec.px
+        >>> o = Barrier(ref=s, right='put', K=45., T=2.5, rf_r=.1, desc='up and out put')
+        >>> o.calc_px(H=50.,knock='up',method='BS',dir='out').px_spec.px
 
         7.90417744642
 
         >>> s = Stock(S0=85., vol=.35, q=.05)
-        >>> o = Barrier(H=90.,knock='up',dir='in',ref=s, right='call', K=80., T=.5, rf_r=.05, desc='up and in call')
-        >>> o.calc_px(method='BS').px_spec.px
+        >>> o = Barrier(ref=s, right='call', K=80., T=.5, rf_r=.05, desc='up and in call')
+        >>> o.calc_px(method='BS',H=90.,knock='up',dir='in').px_spec.px
 
         10.5255960041
-        """
+
+        >>> # SEE NOTES for verification
+        >>> s = Stock(S0=95., vol=.25, q=.00)
+        >>> o = Barrier(right='put', K=100., T=1., rf_r=.1, desc='down and in put')
+        >>> print(o.calc_px(method='LT',H=90.,knock='down',dir='in',ref=s, nsteps=1050, keep_hist=False).px_spec.px)
+        >>> print(o.px_spec)
+
+        7.104101924957116
+
+        qfrm.PriceSpec
+        LT_specs:
+          a: 1.0000952426305294
+          d: 0.9923145180146982
+          df_T: 0.9048374180359595
+          df_dt: 0.9999047664397653
+          dt: 0.0009523809523809524
+          p: 0.5042435843778115
+          u: 1.0077450060900832
+        keep_hist: false
+        method: LT
+        nsteps: 1050
+        px: 7.104101924957116
+        sub_method: in out parity
 
 
+        >>> s = Stock(S0=95., vol=.25, q=.00)
+        >>> o = Barrier(ref=s, right='call', K=100., T=2., rf_r=.1, desc='down and out call')
+        >>> print(o.calc_px(method='LT', H=87.,knock='down',dir='out',nsteps=1050, keep_hist=False).px_spec.px)
+
+        11.549805549495334
+
+        >>> s = Stock(S0=95., vol=.25, q=.00)
+        >>> o = Barrier(ref=s, right='put', K=100., T=2., rf_r=.1, desc='up and out put')
+        >>> print(o.calc_px(method='LT', nsteps=1050, H=105.,knock='up',dir='out', keep_hist=False).px_spec.px)
+
+        3.2607593764427434
+
+        >>> s = Stock(S0=95., vol=.25, q=.00)
+        >>> o = Barrier(ref=s, right='call', K=100., T=2., rf_r=.1, desc='up and in call')
+        >>> print(o.calc_px(method='LT',H=105.,knock='up',dir='in', nsteps=1050, keep_hist=False).px_spec.px)
+
+        20.037733657756565
+
+        >>> s = Stock(S0=95., vol=.25, q=.00)
+        >>> o = Barrier(ref=s, right='call', K=100., T=2., rf_r=.1, desc='up and in call')
+        >>> print(o.calc_px(method='LT',H=105.,knock='up',dir='in', nsteps=10, keep_hist=False).px_spec.px)
+
+        20.040606033552542
+
+
+       """
+
+
+        self.H = H
+        self.dir = dir
+        self.knock = knock
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
         return getattr(self, '_calc_' + method.upper())()
 
@@ -107,16 +138,12 @@ class Barrier(OptionValuation):
         .. note::
         Hull p604
 
-        Examples
-        -------
-
         """
 
         from scipy.stats import norm
         from numpy import exp, log, sqrt
 
         _ = self
-
         # Compute Parameters
         d1 = (log(_.ref.S0/_.K) + (_.rf_r-_.ref.q+(_.ref.vol**2)/2)*_.T)/(_.ref.vol*sqrt(_.T))
         d2 = d1 - _.ref.vol*sqrt(_.T)
@@ -210,56 +237,6 @@ class Barrier(OptionValuation):
         In-Out Parity: http://www.iam.uni-bonn.de/people/ankirchner/lectures/OP_WS1314/OP_chap_nine.pdf
         Verify Examples: http://www.fintools.com/resources/online-calculators/exotics-calculators/exoticscalc-barrier/
 
-
-        Examples
-        -------
-
-        >>> s = Stock(S0=95., vol=.25, q=.00)
-        >>> o = Barrier(H=90.,knock='down',dir='in',ref=s, right='put', K=100., T=1., rf_r=.1, desc='down and in put')
-        >>> print(o.calc_px(method='LT', nsteps=1050, keep_hist=False).px_spec.px)
-        >>> print(o.px_spec)
-
-        7.104101924957116
-
-        qfrm.PriceSpec
-        LT_specs:
-          a: 1.0000952426305294
-          d: 0.9923145180146982
-          df_T: 0.9048374180359595
-          df_dt: 0.9999047664397653
-          dt: 0.0009523809523809524
-          p: 0.5042435843778115
-          u: 1.0077450060900832
-        keep_hist: false
-        method: LT
-        nsteps: 1050
-        px: 7.104101924957116
-        sub_method: in out parity
-
-
-        >>> s = Stock(S0=95., vol=.25, q=.00)
-        >>> o = Barrier(H=87.,knock='down',dir='out',ref=s, right='call', K=100., T=2., rf_r=.1, desc='down and out call')
-        >>> print(o.calc_px(method='LT', nsteps=1050, keep_hist=False).px_spec.px)
-
-        11.549805549495334
-
-        >>> s = Stock(S0=95., vol=.25, q=.00)
-        >>> o = Barrier(H=105.,knock='up',dir='out',ref=s, right='put', K=100., T=2., rf_r=.1, desc='up and out put')
-        >>> print(o.calc_px(method='LT', nsteps=1050, keep_hist=False).px_spec.px)
-
-        3.2607593764427434
-
-        >>> s = Stock(S0=95., vol=.25, q=.00)
-        >>> o = Barrier(H=105.,knock='up',dir='in',ref=s, right='call', K=100., T=2., rf_r=.1, desc='up and in call')
-        >>> print(o.calc_px(method='LT', nsteps=1050, keep_hist=False).px_spec.px)
-
-        20.037733657756565
-
-        >>> s = Stock(S0=95., vol=.25, q=.00)
-        >>> o = Barrier(H=105.,knock='up',dir='in',ref=s, right='call', K=100., T=2., rf_r=.1, desc='up and in call')
-        >>> print(o.calc_px(method='LT', nsteps=10, keep_hist=False).px_spec.px)
-
-        20.040606033552542
 
         """
 
