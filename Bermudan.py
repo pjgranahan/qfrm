@@ -40,8 +40,13 @@ class Bermudan(OptionValuation):
 
         .. sectionauthor:: Oleg Melkinov; Andy Liao
 
+
         Notes
         -----
+        The Bermudan option is a modified American with restricted early-exercise dates. Due to this restriction, 
+        Bermudans are named as such as they are "between" American and European options in exercisability, and as this module demonstrates,
+        in price.
+        
 
         Examples
         -------
@@ -64,7 +69,7 @@ class Bermudan(OptionValuation):
         >>> seed(12345678)
         >>> rlist = normal(1,1,20)
         >>> rlist
-        (1.5537081891302398, -0.45963199306004054, -0.29458513937766706, ... 2.0690862578324634, 1.5065661292243346, 1.7135377495155995) 
+        (1.5537081891302398, -0.45963199306004054, -0.29458513937766706 ... 2.0690862578324634, 1.5065661292243346, 1.7135377495155995) 
         >>> times = tuple(map(lambda i: float(str(round(abs(rlist[i]),2))), range(20)))
         >>> o = Bermudan(ref=s, right='put', K=52, T=1., rf_r=.05)
         >>> o.calc_px(method='LT', tex=times, keep_hist=True).px_spec.px
@@ -197,40 +202,4 @@ class Bermudan(OptionValuation):
 
         return self
 
-#LT pricing of Bermudan options
-s = Stock(S0=50, vol=.3)
-o = Bermudan(ref=s, right='put', K=52, T=2, rf_r=.05)
-print(o.calc_px(method='LT', keep_hist=True).px_spec.px)
-##Changing the maturity
-o = Bermudan(ref=s, right='put', K=52, T=1, rf_r=.05)
-print(o.calc_px(method='LT', keep_hist=True).px_spec.px)
-o = Bermudan(ref=s, right='put', K=52, T=.5, rf_r=.05)
-print(o.calc_px(method='LT', keep_hist=True).px_spec.px)  
-##Explicit input of exercise schedule
-from numpy.random import normal, seed
-seed(12345678)
-rlist = tuple(normal(1,1,20))
-#print(rlist)
-times = tuple(map(lambda i: float(str(round(abs(rlist[i]),2))), range(20)))
-o = Bermudan(ref=s, right='put', K=52, T=1., rf_r=.05)
-print(o.calc_px(method='LT', tex=times, keep_hist=False).px_spec.px)
-##Example from p. 9 of http://janroman.dhis.org/stud/I2012/Bermuda/reportFinal.pdf
-times = (3/12,6/12,9/12,12/12,15/12,18/12,21/12,24/12)
-o = Bermudan(ref=Stock(50, vol=.6), right='put', K=52, T=2, rf_r=0.1)
-print(o.calc_px(method='LT', tex=times, nsteps=40, keep_hist=False).px_spec.px)   
-##Price vs. strike curve - example of vectorization of price calculation
-import matplotlib.pyplot as plt
-from numpy import linspace
-Karr = linspace(30,70,101)
-px = tuple(map(lambda i:  Bermudan(ref=Stock(50, vol=.6), right='put', K=Karr[i], T=2, rf_r=0.1).\
-    calc_px(tex=times, nsteps=20).px_spec.px, range(Karr.shape[0])))
-fig = plt.figure()
-ax = fig.add_subplot(111)
-ax.plot(Karr,px,label='Bermudan put')
-ax.set_title('Price of Bermudan put vs K')
-ax.set_ylabel('Px')
-ax.set_xlabel('K')
-ax.grid()
-ax.legend()
-plt.show()
-#print(px)
+
