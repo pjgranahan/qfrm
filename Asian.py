@@ -41,6 +41,7 @@ class Asian(OptionValuation):
         Examples
         -------
 
+        >>> # SEE NOTES to verify first two examples
         >>> s = Stock(S0=30, vol=.3, q = .02)
         >>> o = Asian(ref=s, right='call', K=29, T=1., rf_r=.08, desc='Example from Internet - Call')
         >>> o.calc_px()

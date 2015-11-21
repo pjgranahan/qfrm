@@ -1,7 +1,7 @@
 from OptionValuation import *
 
 class Spread(OptionValuation):
-    """ Asian option class.
+    """ Spread option class.
 
     Inherits all methods and properties of OptionValuation class.
     """
@@ -46,16 +46,25 @@ class Spread(OptionValuation):
         >>> s1 = Stock(S0=30.,q=0.,vol=.2)
         >>> s2 = Stock(S0=31.,q=0.,vol=.3)
         >>> o = Spread(ref = s1, rf_r = .05, right='call', K=0., T=2., seed0 = 0)
-        >>> o.calc_px(method='MC',S2 = s2,rho=.4,nsteps=1000,npaths=1000)
+        >>> o.calc_px(method='BS',S2 = s2,rho=.4)
         >>> print(o.px_spec.px)
-        5.644473359622987
+        5.409907579760095
+
+        >>> s1 = Stock(S0=30.,q=0.,vol=.2)
+        >>> s2 = Stock(S0=31.,q=0.,vol=.3)
+        >>> o = Spread(ref = s1, rf_r = .05, right='put', K=0., T=2., seed0 = 0)
+        >>> from pandas import Series;  exps = range(1,10)
+        >>> O = Series([o.update(T=t).calc_px(method='BS',S2=s2, rho=.4, nsteps = 100, npaths=100).px_spec.px for t in exps], exps)
+        >>> O.plot(grid=1, title='Price vs Time to Expiry')
+        >>> # import matplotlib.pyplot as plt
+        >>> # plt.show() # run last two lines to show plot
 
         >>> s1 = Stock(S0=30.,q=0.,vol=.2)
         >>> s2 = Stock(S0=31.,q=0.,vol=.3)
         >>> o = Spread(ref = s1, rf_r = .05, right='call', K=0., T=2., seed0 = 0)
-        >>> o.calc_px(method='BS',S2 = s2,rho=.4)
+        >>> o.calc_px(method='MC',S2 = s2,rho=.4,nsteps=1000,npaths=1000)
         >>> print(o.px_spec.px)
-        5.409907579760095
+        5.644473359622987
 
         >>> s1 = Stock(S0=30.,q=0.,vol=.2)
         >>> s2 = Stock(S0=31.,q=0.,vol=.3)
@@ -72,7 +81,14 @@ class Spread(OptionValuation):
         0.9048374180359596
 
 
-
+        >>> s1 = Stock(S0=30.,q=0.,vol=.2)
+        >>> s2 = Stock(S0=31.,q=0.,vol=.3)
+        >>> o = Spread(ref = s1, rf_r = .05, right='put', K=2., T=2., seed0 = 0)
+        >>> from pandas import Series;  exps = range(1,10)
+        >>> O = Series([o.update(T=t).calc_px(method='MC',S2=s2, rho=.4, nsteps = 100, npaths=100).px_spec.px for t in exps], exps)
+        >>> O.plot(grid=1, title='Price vs Time to Expiry')
+        >>> # import matplotlib.pyplot as plt
+        >>> # plt.show() # run last two lines to show plot
 
        """
 
@@ -83,6 +99,7 @@ class Spread(OptionValuation):
 
     def _calc_LT(self):
         """ Internal function for option valuation.
+
 
         Returns
         -------
@@ -102,7 +119,11 @@ class Spread(OptionValuation):
 
 
     def _calc_BS(self):
-        """ Internal function for option valuation.
+        """ Internal function for option valuation using the Black-Scholes Method
+
+        _calc_BS uses a Black-Scholes based analytical solution, but it is not exact and is only
+        valid when K = 0. Thus, it does not even factor in K at all and should only be used to price
+        spreads with K = 0.
 
         Returns
         -------
@@ -112,6 +133,8 @@ class Spread(OptionValuation):
 
         Note
         ----
+
+        HUGE NOTE: Black-Scholes Method only works when K = 0
 
         Formulae:
 
@@ -134,7 +157,12 @@ class Spread(OptionValuation):
 
 
     def _calc_MC(self):
-        """ Internal function for option valuation.
+        """ Internal function for option valuation using Monte-Carlo simulation
+
+
+        _calc_MC uses Monte-Carlo simulation to price European Spread Options
+        It computes correlated paths and computes the average present value of
+        the spread at expiry
 
         Returns
         -------
@@ -206,8 +234,6 @@ class Spread(OptionValuation):
         """
 
         return self
-
-
 
 
 

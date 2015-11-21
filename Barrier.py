@@ -1,7 +1,7 @@
 from OptionValuation import *
 
 class Barrier(OptionValuation):
-    """ European option class.
+    """ Barier option class.
 
     Inherits all methods and properties of OptionValuation class.
     """
