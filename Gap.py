@@ -8,16 +8,14 @@ class Gap(OptionValuation):
 
     def __init__(self, on = None, *args, **kwargs):
 
-        """ Constructor for Barrier class
+        """ Constructor for Gap option class
 
         Passes additional arguments to OptionValuation class
 
         Parameters
         ----------
-        H : int
-                The barrier used to price the barrier option
-        knock : string
-                'down' or 'up'
+        on : Numeric Vector
+                A vector of number of steps to be used in binomial tree averaging, vector of positive intergers
         dir : string
                 'in' or 'out'
         *args, **kwargs: varies
@@ -26,13 +24,13 @@ class Gap(OptionValuation):
 
         Returns
         -------
-        self : Barrier
+        self : Gap
 
         .. sectionauthor:: Thawda Aung
 
        """
 
-        self.on = (498,499,500,501,502)
+        self.on = on
 
         super().__init__(*args,**kwargs)
 
@@ -84,6 +82,30 @@ class Gap(OptionValuation):
         >>> print(o.calc_px(K2=50, method='BS').px_spec.px)
         4.360987885821741
 
+
+
+        LT Examples..
+
+        This might take about 1-4 mins depending on your CPU
+
+        >>> s = Stock(S0=500000, vol=.2,  q = 0)
+        >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, on = (90000,)*23, desc = 'HULL p. 601 Exp 26.1')
+        >>> print(o.calc_px(K2=350000, nsteps = 22, method='LT').px_spec.px)
+        1895.80129679
+
+
+        >>> s = Stock(S0=50, vol=.2,  q = 0)
+        >>> o = Gap(ref=s, right='call', K=57, T=1, rf_r=.09, on = (90000,)*23)
+        >>> print(o.calc_px(K2=50, nsteps = 22, method='LT').px_spec.px)
+        2.27490242761
+
+        >>> s = Stock(S0=50, vol=.2,  q = 0)
+        >>> o = Gap(ref=s, right='put', K=57, T=1, rf_r=.09, on = (90000,)*23)
+        >>> print(o.calc_px(K2=50, nsteps = 22, method='LT').px_spec.px)
+        4.36897999796
+
+
+
         """
         self.K2 = float(K2)
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
@@ -122,12 +144,41 @@ class Gap(OptionValuation):
 
     def _calc_LT(self):
         """ Internal function for option valuation.
+        A binomial tree pricer of Gap options that takes the average results for given step sizes in NSteps.
+        Large step sizes should be used for optimal accuracy but may take a minute or so.
 
         Returns
         -------
         self: Gap
+        :param
+                on : Numeric Vector
+                A vector of number of steps to be used in binomial tree averaging, vector of positive intergers
 
         .. sectionauthor:: Thawda Aung
+
+        References :
+        Hull, John C., Options, Futures and Other Derivatives, 9ed, 2014. Prentice Hall. ISBN 978-0-13-345631-8. http://www-2.rotman.utoronto.ca/~hull/ofod/index.html.
+        Humphreys, Natalia. University of Dallas.
+
+        LT Examples..
+
+        This might take about 1-4 mins depending on your CPU
+
+        >>> s = Stock(S0=500000, vol=.2,  q = 0)
+        >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, on = (90000,)*23, desc = 'HULL p. 601 Exp 26.1')
+        >>> print(o.calc_px(K2=350000, nsteps = 22, method='LT').px_spec.px)
+        1895.80129679
+
+
+        >>> s = Stock(S0=50, vol=.2,  q = 0)
+        >>> o = Gap(ref=s, right='call', K=57, T=1, rf_r=.09, on = (90000,)*23)
+        >>> print(o.calc_px(K2=50, nsteps = 22, method='LT').px_spec.px)
+        2.27490242761
+
+        >>> s = Stock(S0=50, vol=.2,  q = 0)
+        >>> o = Gap(ref=s, right='put', K=57, T=1, rf_r=.09, on = (90000,)*23)
+        >>> print(o.calc_px(K2=50, nsteps = 22, method='LT').px_spec.px)
+        4.36897999796
 
 
         >>>s = Stock(S0=500000, vol=.2)
@@ -138,13 +189,13 @@ class Gap(OptionValuation):
         from math import sqrt, exp , log
         import numpy as np
 
-        n = getattr(self.px_spec ,'nsteps', 10)
+        n = getattr(self.px_spec ,'nsteps', 5)
         assert len(self.on) > n , 'nsteps must be less than the vector on'
         _ = self
         para = self.LT_specs(n)
-        on = (498,499,500,501,502)
         vol = _.ref.vol
         ttm = _.T
+        on = self.on
         r = _.rf_r
         q = _.ref.q
         S0 = _.ref.S0
@@ -207,4 +258,9 @@ class Gap(OptionValuation):
         """
 
         return self
+
+s = Stock(S0=50, vol=.2,  q = 0)
+o = Gap(ref=s, right='put', K=57, T=1, rf_r=.09, on = (90000,)*23)
+print(o.calc_px(K2=50, nsteps = 22, method='LT').px_spec.px)
+
 

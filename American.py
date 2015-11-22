@@ -1,3 +1,4 @@
+import numpy as np
 from OptionValuation import *
 from European import *
 
@@ -39,7 +40,7 @@ class American(OptionValuation):
         -------
 
         >>> s = Stock(S0=50, vol=.3)
-        >>> o = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc='7.42840, Hull p.288')
+        >>> o = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc='px=7.42840, see Hull p.288')
 
         >>> o.calc_px(method='LT', nsteps=2, keep_hist=True).px_spec.px
         7.42840190270483
@@ -95,14 +96,14 @@ class American(OptionValuation):
         .. sectionauthor:: Oleg Melnikov
 
         """
-        from numpy import arange, maximum, log, exp, sqrt
+        # from numpy import arange, maximum, log, exp, sqrt
 
         keep_hist = getattr(self.px_spec, 'keep_hist', False)
         n = getattr(self.px_spec, 'nsteps', 3)
         _ = self.LT_specs(n)
 
-        S = self.ref.S0 * _['d'] ** arange(n, -1, -1) * _['u'] ** arange(0, n + 1)  # terminal stock prices
-        O = maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
+        S = self.ref.S0 * _['d'] ** np.arange(n, -1, -1) * _['u'] ** np.arange(0, n + 1)  # terminal stock prices
+        O = np.maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
         # tree = ((S, O),)
         S_tree = (tuple([float(s) for s in S]),)  # use tuples of floats (instead of numpy.float)
         O_tree = (tuple([float(o) for o in O]),)
@@ -111,8 +112,8 @@ class American(OptionValuation):
         for i in range(n, 0, -1):
             O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
             S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
-            Payout = maximum(self.signCP * (S - self.K), 0)   # payout at time step i-1 (moving backward in time)
-            O = maximum(O, Payout)
+            Payout = np.maximum(self.signCP * (S - self.K), 0)   # payout at time step i-1 (moving backward in time)
+            O = np.maximum(O, Payout)
             # tree = tree + ((S, O),)
             S_tree = (tuple([float(s) for s in S]),) + S_tree
             O_tree = (tuple([float(o) for o in O]),) + O_tree
@@ -149,47 +150,49 @@ class American(OptionValuation):
 
         """
 
-        from math import exp
-        from numpy import linspace
-        if self.right == 'call' and self.ref.q != 0:
-            #Black's approximations outlined on pg. 346
-            #Dividend paying stocks assume semi-annual payments
-            if self.T > .5:
-                dividend_val1 = sum([self.ref.q * self.ref.S0 * exp(-self.rf_r * i) for i in linspace(.5, self.T - .5,
-                                    self.T * 2 - .5)])
-                dividend_val2 = sum([self.ref.q * self.ref.S0 * exp(-self.rf_r * i) for i in linspace(.5, self.T - 1,
-                                    self.T * 2 - 1)])
-            else:
-                dividend_val1 = 0
-                dividend_val2 = 0
-            first_val = European(ref=Stock(S0=self.ref.S0 - dividend_val1, vol=self.ref.vol, q=self.ref.q), right=self.right,
-                                 K=self.K, rf_r=self.rf_r, T=self.T).pxBS
-            second_val = European(ref=Stock(S0=self.ref.S0 - dividend_val2, vol=self.ref.vol, q=self.ref.q),
-                                  right=self.right, K=self.K, rf_r=self.rf_r, T=self.T - .5).pxBS
-            self.px_spec.add(px=float(max([first_val, second_val])), method='BSM', sub_method='Black\'s Approximation')
-        elif self.right == 'call':
-            #American call is worth the same as European call if there are no dividends
-            self.px_spec.add(px=float(European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right, K=self.K,
-                                               rf_r=self.rf_r, T=self.T).pxBS), method='BSM', sub_method='Geometric')
-        elif self.ref.q != 0:
-            # I wasn't able to find a good approximation for American Put BSM w/ dividends so I'm using 200 and 201
-            # time step LT and taking the average. This is effectively the Antithetic Variable technique found on pg. 476 due
-            # to the oscillating nature of binomial tree
-            f_a = (American(ref=Stock(S0=self.ref.S0, vol=self.ref.vol, q=self.ref.q), right=self.right,
-                            K=self.K, rf_r=self.rf_r, T=self.T).calc_px(method='LT', nsteps=200).px_spec.px
-                   + American(ref=Stock(S0=self.ref.S0, vol=self.ref.vol, q=self.ref.q), right=self.right, K=self.K,
-                              rf_r=self.rf_r, T=self.T).calc_px(method='LT', nsteps=201).px_spec.px) / 2
-            self.px_spec.add(px=float(f_a), method='BSM', sub_method='Antithetic Variable')
-        else:
-            #Control Variate technique outlined on pg.463
-            f_a = American(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right,
-                           K=self.K, rf_r=self.rf_r, T=self.T).calc_px(method='LT', nsteps=100).px_spec.px
-            f_bsm = European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right,
-                             K=self.K, rf_r=self.rf_r, T=self.T).pxBS
-            f_e = European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right,
-                           K=self.K, rf_r=self.rf_r, T=self.T).pxLT(100)
-            self.px_spec.add(px=float(f_a + (f_bsm - f_e)), method='BSM', sub_method='Control Variate')
-        return self
+        return self # 11.21, added by Oleg. Temporarily disables this function until Andrew updates it.
+
+        # from math import exp
+        # from numpy import linspace
+        # if self.right == 'call' and self.ref.q != 0:
+        #     #Black's approximations outlined on pg. 346
+        #     #Dividend paying stocks assume semi-annual payments
+        #     if self.T > .5:
+        #         dividend_val1 = sum([self.ref.q * self.ref.S0 * exp(-self.rf_r * i) for i in linspace(.5, self.T - .5,
+        #                             self.T * 2 - .5)])
+        #         dividend_val2 = sum([self.ref.q * self.ref.S0 * exp(-self.rf_r * i) for i in linspace(.5, self.T - 1,
+        #                             self.T * 2 - 1)])
+        #     else:
+        #         dividend_val1 = 0
+        #         dividend_val2 = 0
+        #     first_val = European(ref=Stock(S0=self.ref.S0 - dividend_val1, vol=self.ref.vol, q=self.ref.q), right=self.right,
+        #                          K=self.K, rf_r=self.rf_r, T=self.T).pxBS
+        #     second_val = European(ref=Stock(S0=self.ref.S0 - dividend_val2, vol=self.ref.vol, q=self.ref.q),
+        #                           right=self.right, K=self.K, rf_r=self.rf_r, T=self.T - .5).pxBS
+        #     self.px_spec.add(px=float(max([first_val, second_val])), method='BSM', sub_method='Black\'s Approximation')
+        # elif self.right == 'call':
+        #     #American call is worth the same as European call if there are no dividends
+        #     self.px_spec.add(px=float(European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right, K=self.K,
+        #                                        rf_r=self.rf_r, T=self.T).pxBS), method='BSM', sub_method='Geometric')
+        # elif self.ref.q != 0:
+        #     # I wasn't able to find a good approximation for American Put BSM w/ dividends so I'm using 200 and 201
+        #     # time step LT and taking the average. This is effectively the Antithetic Variable technique found on pg. 476 due
+        #     # to the oscillating nature of binomial tree
+        #     f_a = (American(ref=Stock(S0=self.ref.S0, vol=self.ref.vol, q=self.ref.q), right=self.right,
+        #                     K=self.K, rf_r=self.rf_r, T=self.T).calc_px(method='LT', nsteps=200).px_spec.px
+        #            + American(ref=Stock(S0=self.ref.S0, vol=self.ref.vol, q=self.ref.q), right=self.right, K=self.K,
+        #                       rf_r=self.rf_r, T=self.T).calc_px(method='LT', nsteps=201).px_spec.px) / 2
+        #     self.px_spec.add(px=float(f_a), method='BSM', sub_method='Antithetic Variable')
+        # else:
+        #     #Control Variate technique outlined on pg.463
+        #     f_a = American(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right,
+        #                    K=self.K, rf_r=self.rf_r, T=self.T).calc_px(method='LT', nsteps=100).px_spec.px
+        #     f_bsm = European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right,
+        #                      K=self.K, rf_r=self.rf_r, T=self.T).pxBS
+        #     f_e = European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right,
+        #                    K=self.K, rf_r=self.rf_r, T=self.T).pxLT(100)
+        #     self.px_spec.add(px=float(f_a + (f_bsm - f_e)), method='BSM', sub_method='Control Variate')
+        # return self
 
     def _calc_MC(self):
         """ Internal function for option valuation.
