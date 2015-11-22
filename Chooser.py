@@ -47,13 +47,13 @@ class Chooser(OptionValuation):
         -------
         >>> s = Stock(S0=50, vol=0.25, q=0.08)
         >>> o = Chooser(ref=s, right='put', K=50, T=.5, rf_r=.08)
-        >>> print(o.calc_px(tau=3/12, method='BS').px_spec.px)
+        >>> o.calc_px(tau=3/12, method='BS').px_spec.px
         6.10707749816
 
-        >>> print(o.calc_px(tau=3/12, method='LT', nsteps=5, keep_hist=True).px_spec.px)
+        >>> o.calc_px(tau=3/12, method='LT', nsteps=5, keep_hist=True).px_spec.px
         7.109866570176281
 
-        >>> print(o.px_spec.ref_tree)
+        >>> o.px_spec.ref_tree
         ((50.00000000000001,),
         (46.19936548599171, 54.11329730833717),
         (42.687627426164845, 50.0, 58.5649789116098),
@@ -61,7 +61,7 @@ class Chooser(OptionValuation):
         (36.44467070550122, 42.687627426164845, 50.0, 58.56497891160979, 68.597135098346),
         (33.67441323880132, 39.442826023824665, 46.19936548599171, 54.11329730833716, 63.38288231400873, 74.24034332153934))
 
-        >>> print(o.calc_px(tau=3/12, method='LT', nsteps=2, keep_hist=False))
+        >>> o.calc_px(tau=3/12, method='LT', nsteps=2, keep_hist=False)
         Chooser
         K: 50
         T: 0.5
