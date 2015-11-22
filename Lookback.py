@@ -112,7 +112,7 @@ class Lookback(OptionValuation):
 
 
         >>> s = Stock(S0=35., vol=.05, q=.00)
-        >>> o = Lookback(ref=s, right='call', T=0.25, rf_r=.1, desc='Hull p607')
+        >>> o = Lookback(ref=s, right='call', K=30, T=0.25, rf_r=.1, desc='Hull p607')
         >>> o.calc_px(method='LT', nsteps=100, keep_hist=False).px_spec.px
         1.829899147224415
 
@@ -135,20 +135,20 @@ class Lookback(OptionValuation):
 
 
         >>> s = Stock(S0=50., vol=.4, q=.0)
-        >>> o = Lookback(ref=s, right='call', T=3/12, rf_r=.1, desc='Hull p607')
+        >>> o = Lookback(ref=s, right='call', T=3/12, K=30, rf_r=.1, desc='Hull p607')
         >>> o.calc_px(method='LT', nsteps=1000, keep_hist=False).px_spec.px
         8.13575890392886
 
 
         >>> s = Stock(S0=100., vol=.02, q=.0)
-        >>> o = Lookback(ref=s, right='call', T=3, rf_r=.01, desc='Hull p607')
+        >>> o = Lookback(ref=s, right='call', T=3, K=30, rf_r=.01, desc='Hull p607')
         >>> o.calc_px(method='LT', nsteps=50, keep_hist=False).px_spec.px
         6.436996102693329
 
         >>> # Example of option price development (LT method) with increasing maturities
         >>> from pandas import Series;  expiries = range(1,11)
         >>> s = Stock(S0=100., vol=.015, q=.0)
-        >>> o = Lookback(ref=s, right='call', T=3, rf_r=.01, desc='Hull p607')
+        >>> o = Lookback(ref=s, right='call', T=3, K=30, rf_r=.01, desc='Hull p607')
         >>> O = Series([o.update(T=t).calc_px(method='LT', nsteps=5).px_spec.px for t in expiries], expiries)
         >>> O.plot(grid=1, title='Price vs expiry (in years)')
 
