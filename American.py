@@ -53,7 +53,7 @@ class American(OptionValuation):
         T: 2
         _right: put
         _signCP: -1
-        desc: px=7.42840, see Hull p.288
+        desc: 7.42840, Hull p.288
         frf_r: 0
         px_spec: PriceSpec
           LT_specs:
