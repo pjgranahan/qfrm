@@ -6,7 +6,42 @@ import warnings
 from Util import *
 
 
-class PriceSpec:
+class Spec:
+    """ Helper class for printing class variables.
+
+    This is a base class that is inherited by any child class needs to display its specifications (class variables).
+
+    """
+    def full_spec(self, new_line=False):
+        """ Returns a formatted string containing all variables of this class (recursively)
+
+        new_line : bool
+            Whether include new line symbol '\n' or not
+
+        Returns
+        -------
+        str
+            Formatted string with option specifications
+
+        Examples
+        --------
+
+        """
+        s = yaml.dump(self, default_flow_style=not new_line).replace('!!python/object:','').replace('!!python/tuple','')
+        s = s.replace('__main__.','').replace('OptionValuation.','').replace('OptionSeries.','').replace('null','-')
+        if not new_line:
+            s = s.replace(',', ', ').replace('\n', ',').replace(': ', ':').replace('  ', ' ')
+
+        return s
+
+    def __repr__(self):
+        return self.full_spec(new_line=True)
+
+    def __str__(self):
+        return self.full_spec(new_line=True)
+
+
+class PriceSpec(Spec):
     """ Object for storing calculated price and related intermediate parameters.
 
     Use this object to store the price, sub/method and any intermediate results in your option object.
@@ -46,52 +81,30 @@ class PriceSpec:
             if v is not None:  setattr(self, K, v)
         return self
 
-    # if getattr(self.px_spec, 'method') is None:
-    # warnings.warn('Hmmm... I will use "BS" pricing method, since you did not provide any', UserWarning)
-    # self.px_spec.method = 'BS'
-
-    # def get_method(self):
-    #     if getattr(self, '_method') is None:
-    #         warnings.warn('Hmmm... I will use npaths=3, since you did not provide any', UserWarning)
+    # def __repr__(self):
+    #     """ Compiles a printable representation of the object
     #
+    #     Returns
+    #     -------
+    #     str
+    #         Return a string containing a printable representation of an object.
     #
-    # def set_method(self, method):
+    #     Examples
+    #     --------
+    #     >>> PriceSpec(a=1, b='2', c=2.0)  # instantiates an object, saves its input, prints out structure
+    #     OptionValuation.PriceSpec
+    #     a: 1
+    #     b: '2'
+    #     c: 2.0
+    #     <BLANKLINE>
     #
-    #
-    #     if not self.px_spec.method == 'BS':
-    #         if not self.px_spec.method == 'LT':
-    #             if getattr(self.px_spec, 'npaths') is None:
-    #                 warnings.warn('Hmmm... I will use npaths=3, since you did not provide any', UserWarning)
-    #                 self.px_spec.npaths = 3
-    #
-    #         if getattr(self.px_spec, 'nsteps') is None:
-    #             warnings.warn('Hmmm... I will use nsteps=3, since you did not provide any', UserWarning)
-    #             self.px_spec.steps = 3
-
-    def __repr__(self):
-        """ Compiles a printable representation of the object
-
-        Returns
-        -------
-        str
-            Return a string containing a printable representation of an object.
-
-        Examples
-        --------
-        >>> PriceSpec(a=1, b='2', c=2.0)  # instantiates an object, saves its input, prints out structure
-        OptionValuation.PriceSpec
-        a: 1
-        b: '2'
-        c: 2.0
-        <BLANKLINE>
-
-        """
-        s = yaml.dump(self, default_flow_style=0).replace('!!python/object:','').replace('!!python/tuple','')
-        s = s.replace('__main__.','')
-        return s
+    #     """
+    #     s = yaml.dump(self, default_flow_style=0).replace('!!python/object:','').replace('!!python/tuple','')
+    #     s = s.replace('__main__.','')
+    #     return s
 
 
-class Stock:
+class Stock(Spec):
     """ Object for storing parameters of an underlying (referenced) asset.
 
     .. sectionauthor:: Oleg Melnikov
@@ -122,7 +135,7 @@ class Stock:
         self.S0, self.vol, self.q, self.curr, self.tkr, self.desc = S0, vol, q, curr, tkr, desc
 
 
-class OptionSeries:
+class OptionSeries(Spec):
     """ Object representing an option series.
 
     This class describes the option specs outside of valuation. so, it doesn't contain interest rates needed for pricing.
@@ -135,7 +148,7 @@ class OptionSeries:
 
     """
     def __init__(self, ref=None, right=None, K=None, T=None, clone=None, desc=None):
-        """ Constructor.
+        r""" Constructor.
 
         If clone object is supplied, its specs are used.
 
@@ -157,6 +170,57 @@ class OptionSeries:
         desc : dict
             any number of describing variables. optional.
 
+        Examples
+        --------
+        Examples show different ways of printing specs (parameters) of the objects
+
+        >>> OptionSeries(ref=Stock(S0=50, vol=0.3), K=51, right='call').full_spec(False)
+        'OptionSeries {K:51, _right:call, _signCP:1, px_spec:PriceSpec {}, ,
+        ref:Stock {S0:50, curr:null, desc:null, q:0, tkr:null, ,  vol:0.3}},'
+
+        >>> print(OptionSeries(ref=Stock(S0=50, vol=0.3, tkr='ibm', curr='usd'), K=51, right='call').full_spec(True))
+        OptionValuation.OptionSeries
+        K: 51
+        _right: call
+        _signCP: 1
+        px_spec: OptionValuation.PriceSpec {}
+        ref: OptionValuation.Stock
+          S0: 50
+          curr: usd
+          desc: null
+          q: 0
+          tkr: ibm
+          vol: 0.3
+        <BLANKLINE>
+
+        >>> o = OptionSeries(ref=Stock(S0=50,vol=.03)); repr(o)
+        'OptionSeries\npx_spec: PriceSpec {}\n
+        ref: Stock\n  S0: 50\n  curr: null\n  desc: null\n  q: 0\n  tkr: null\n  vol: 0.03\n'
+        >>> o  # equivalent to print(repr(o))
+        OptionValuation.OptionSeries
+        px_spec: OptionValuation.PriceSpec {}
+        ref: OptionValuation.Stock
+          S0: 50
+          curr: null
+          desc: null
+          q: 0
+          tkr: null
+          vol: 0.03
+        <BLANKLINE>
+        >>> o = OptionSeries(ref=Stock(S0=50,vol=.03));  str(o)
+        'OptionValuation.OptionSeries\\npx_spec: OptionValuation.PriceSpec {}\\nref:
+        OptionValuation.Stock\\n  S0: 50\\n  curr: null\\n  desc: null\\n  q: 0\\n  tkr: null\\n  vol: 0.03\\n'
+        >>> print(str(o))
+        OptionValuation.OptionSeries
+        px_spec: OptionValuation.PriceSpec {}
+        ref: OptionValuation.Stock
+          S0: 50
+          curr: null
+          desc: null
+          q: 0
+          tkr: null
+          vol: 0.03
+        <BLANKLINE>
         """
         self.update(ref=ref, right=right, K=K, T=T, clone=clone, desc=desc)
 
@@ -230,10 +294,11 @@ class OptionSeries:
             'call', 'put', or 'other'
 
         """
-        if getattr(self,'right') is None:
+        if getattr(self, '_right') is None:
             warnings.warn('Hmmm... I will use "call" right, since you did not provide any', UserWarning)
             self._right = 'call'
-            return self._right
+
+        return self._right
         # try:
         #     return self._right
         # except:
@@ -336,7 +401,7 @@ class OptionSeries:
 
         K = '' if getattr(self, 'K', None) is None else str(self.K) + ' '
         T = '' if getattr(self, 'T', None) is None else str(self.T) + 'yr '
-        style = '' if self.style in ['OptionSeries', 'OptionValuation'] else self.style + ' '
+        style = '' if self.style is None else self.style + ' '
         right = '' if getattr(self, 'right', None) is None else str(self.right) + ' '
 
         return (tkr + K + T + style + str(right)).rstrip()  # strip trailing spaces
@@ -354,139 +419,22 @@ class OptionSeries:
         --------
 
         >>> OptionSeries(ref=Stock(S0=50, vol=0.3), K=51, right='call').specs
-        '51 call,S0=50,vol=0.3,q=0'
+        '51 call, Stock {S0:50, curr:-, desc:-, q:0, tkr:-, vol:0.3},'
         >>> OptionSeries(ref=Stock(S0=50, vol=0.3, tkr='IBM'), K=51, right='call').specs
-        'IBM 51 call,S0=50,vol=0.3,q=0'
+        'IBM 51 call, Stock {S0:50, curr:-, desc:-, q:0, tkr:IBM, vol:0.3},'
         >>> OptionSeries(ref=Stock(S0=50, vol=0.3), K=51, T=2, right='call', desc='some option').specs
-        '51 2yr call,S0=50,vol=0.3,q=0'
+        '51 2yr call, Stock {S0:50, curr:-, desc:-, q:0, tkr:-, vol:0.3},'
         >>> from qfrm import *; American(ref=Stock(S0=50, vol=0.3), K=51, right='call').specs
-        '51 American call,S0=50,vol=0.3,rf_r=None,q=0,frf_r=0'
+        '51 American call, Stock {S0:50, curr:-, desc:-, q:0, tkr:-, , vol:0.3}, rf_r=None frf_r=0'
 
         """
-        _ = self
+        try: ref = self.ref.full_spec(new_line=False)
+        except: ref = ''
 
-        rf_r = frf_r = q = vol = ''
-        if hasattr(_, 'ref'):  # if reference object is specified, read its parameters
-            if hasattr(_.ref, 'S0'): S0 = (',S0=' + str(_.ref.S0))
-            if hasattr(_.ref, 'q'): q = (',q=' + str(_.ref.q))
-            if hasattr(_.ref, 'vol'): vol = (',vol=' + str(_.ref.vol))
-            vol = (',vol=' + str(_.ref.vol)) if getattr(_.ref, 'vol', 0)!=0 else ''
-        if hasattr(_, 'frf_r'): frf_r = (',frf_r=' + str(_.frf_r))
-        if hasattr(_, 'rf_r'): rf_r = (',rf_r=' + str(_.rf_r))
+        frf_r = (' frf_r=' + str(self.frf_r)) if hasattr(self, 'frf_r') else ''
+        rf_r = (' rf_r=' + str(self.rf_r)) if hasattr(self, 'rf_r') else ''
 
-        return self.series + S0 + vol + rf_r + q + frf_r
-
-    def full_spec(self, new_line=False):
-        """ Returns a formatted string containing all variables of this class (recursively)
-
-        new_line : bool
-            Whether include new line symbol '\n' or not
-
-        Returns
-        -------
-        str
-            Formatted string with option specifications
-
-        Examples
-        --------
-
-        >>> OptionSeries(ref=Stock(S0=50, vol=0.3), K=51, right='call').full_spec(False)
-        'OptionValuation.OptionSeries {K:51, _right:call, _signCP:1, px_spec:OptionValuation.PriceSpec {}, ,
-        ref:OptionValuation.Stock {S0:50, curr:null, desc:null, q:0, ,  tkr:null, vol:0.3}},'
-
-        >>> print(OptionSeries(ref=Stock(S0=50, vol=0.3, tkr='ibm', curr='usd'), K=51, right='call').full_spec(True))
-        OptionValuation.OptionSeries
-        K: 51
-        _right: call
-        _signCP: 1
-        px_spec: OptionValuation.PriceSpec {}
-        ref: OptionValuation.Stock
-          S0: 50
-          curr: usd
-          desc: null
-          q: 0
-          tkr: ibm
-          vol: 0.3
-        <BLANKLINE>
-
-        """
-        _ = self
-
-        s = yaml.dump(_, default_flow_style=not new_line).replace('!!python/object:','').replace('!!python/tuple','')
-        s = s.replace('__main__.','')
-        if not new_line:
-            s = s.replace(',',', ').replace('\n', ',').replace(': ', ':').replace('  ',' ')
-        # else:
-        #     s = s.replace('\n','\\n')
-        return s
-
-    def __repr__(self):
-        r""" Called by the repr() built-in function to compute the “official” string representation of an object.
-
-        Returns
-        -------
-        str
-            full list of object properties
-
-        Notes
-        -----
-        http://stackoverflow.com/questions/1436703/difference-between-str-and-repr-in-python
-        https://docs.python.org/2/reference/datamodel.html#object.__repr__
-        http://stackoverflow.com/questions/1984162/purpose-of-pythons-repr
-
-        Examples
-        --------
-
-        >>> o = OptionSeries(ref=Stock(S0=50,vol=.03))
-        >>> repr(o)
-        'OptionValuation.OptionSeries\npx_spec: OptionValuation.PriceSpec {}\nref: OptionValuation.Stock\n
-        S0: 50\n  curr: null\n  desc: null\n  q: 0\n  tkr: null\n  vol: 0.03\n'
-
-        >>> o  # equivalent to print(repr(o))
-        OptionValuation.OptionSeries
-        px_spec: OptionValuation.PriceSpec {}
-        ref: OptionValuation.Stock
-          S0: 50
-          curr: null
-          desc: null
-          q: 0
-          tkr: null
-          vol: 0.03
-        <BLANKLINE>
-
-        """
-        return self.full_spec(new_line=True)
-
-    def __str__(self):
-        """ Called by str(object) and the built-in functions format() and print()
-        to compute the “informal” or nicely printable string representation of an object.
-
-        Returns
-        -------
-        str
-            full list of object properties
-
-        Examples
-        --------
-
-        >>> o = OptionSeries(ref=Stock(S0=50,vol=.03))
-        >>> str(o)
-        'OptionValuation.OptionSeries\\npx_spec: OptionValuation.PriceSpec {}\\nref:
-        OptionValuation.Stock\\n  S0: 50\\n  curr: null\\n  desc: null\\n  q: 0\\n  tkr: null\\n  vol: 0.03\\n'
-        >>> print(str(o))
-        OptionValuation.OptionSeries
-        px_spec: OptionValuation.PriceSpec {}
-        ref: OptionValuation.Stock
-          S0: 50
-          curr: null
-          desc: null
-          q: 0
-          tkr: null
-          vol: 0.03
-        <BLANKLINE>
-
-        """
-        return self.full_spec(new_line=True)
+        return self.series + ', ' + ref + rf_r + frf_r
 
     @property
     def clone(self):  return self
@@ -567,18 +515,18 @@ class OptionValuation(OptionSeries):
         --------
 
         >>> OptionValuation(ref=Stock(S0=50), rf_r=.05, frf_r=.01)
-        OptionValuation.OptionValuation
+        OptionValuation
         frf_r: 0.01
-        px_spec: OptionValuation.PriceSpec {}
-        ref: OptionValuation.Stock
+        px_spec: PriceSpec {}
+        ref: Stock
           S0: 50
-          curr: null
-          desc: null
+          curr: -
+          desc: -
           q: 0
-          tkr: null
-          vol: null
+          tkr: -
+          vol: -
         rf_r: 0.05
-        seed0: null
+        seed0: -
         <BLANKLINE>
         """
         self.rf_r, self.frf_r, self.seed0 = rf_r, frf_r, seed0
@@ -613,9 +561,15 @@ class OptionValuation(OptionSeries):
         {'p': 0.60138570166548, 'a': 1.0253151205244289, 'd': 0.9048374180359595, 'df_dt': 0.9753099120283326, 'u': 1.1051709180756477, 'dt': 0.25, 'df_T': 0.951229424500714}
 
 
-         >>> #s = Stock(S0=50, vol=.3)
-         >>> #OptionValuation(ref=s,right='put', K=52, T=2, rf_r=.05, desc={'hull p.288'}).LT_specs(3)
-
+        >>> s = Stock(S0=50, vol=.3)
+        >>> OptionValuation(ref=s,right='put', K=52, T=2, rf_r=.05, desc={'hull p.288'}).LT_specs(3)
+        {'a': 1.033895113513574,
+         'd': 0.7827444773247475,
+         'df_T': 0.9048374180359595,
+         'df_dt': 0.9672161004820059,
+         'dt': 0.6666666666666666,
+         'p': 0.5075681589595774,
+         'u': 1.2775561233185384}
 
          """
         assert isinstance(nsteps, int), 'nsteps must be an integer, >2'
@@ -655,12 +609,11 @@ class OptionValuation(OptionSeries):
         Examples
         --------
 
-        >>> from qfrm import *
-        >>> s = Stock(S0=50, vol=.3);
-        >>> European(ref=s, K=52, T=2, rf_r=.05).pxBS()
+        >>> from qfrm import *;  s = Stock(S0=50, vol=.3);
         >>> a = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc={'$7.42840, hull p.288'})
         >>> e = European(clone=a)
-        >>> a.plot_px_convergence(nsteps_max=50, vs=e)
+        >>> e.plot_px_convergence(nsteps_max=10)
+        >>> a.plot_px_convergence(nsteps_max=10, vs=e)
 
         """
         if ax is None: fig, ax = plt.subplots()
@@ -668,11 +621,11 @@ class OptionValuation(OptionSeries):
             def onresize(event):  plt.tight_layout()
             cid = fig.canvas.mpl_connect('resize_event', onresize)  # tighten layout on resize event
 
-        LT_prices = [self.calc_px(method='LT', nsteps=n).px_spec.px for n in range(1, nsteps_max + 1)]
+        LT_prices = [self.pxLT(nsteps=n) for n in range(1, nsteps_max + 1)]
 
         pd.DataFrame({'LT price for ' + self.specs: LT_prices,
                    'BS price for ' + self.specs: self.pxBS()}) \
-            .plot(ax=ax, grid=1, title='option price convergence with number of steps')
+            .plot(ax=ax, grid=1, title='Option price convergence: price vs number of steps')
 
         if vs is not None: vs.plot_px_convergence(nsteps_max=nsteps_max, ax=ax)
 
@@ -781,30 +734,12 @@ class OptionValuation(OptionSeries):
             return None
 
         else:
-            # if self.get_right is None:
-            #     warnings.warn('Hmmm... I will use "call" right, since you did not provide any', UserWarning)
-            #     self.right = 'call'
-
             self.px_spec = PriceSpec(**kwargs)
             assert getattr(self, 'ref') is not None, 'Ooops. Please supply referenced (underlying) asset, `ref`'
             assert getattr(self, 'rf_r') is not None, 'Ooops. Please supply risk free rate `rf_r`'
             assert getattr(self, 'K') is not None, 'Ooops. Please supply strike `K`'
             assert getattr(self, 'T') is not None, 'Ooops. Please supply time to expiry (in years) `T`'
             assert getattr(self, '_signCP') is not None, 'Ooops. Please supply option right: call, put, ...'
-
-            # if getattr(self.px_spec, 'method') is None:
-            #     warnings.warn('Hmmm... I will use "BS" pricing method, since you did not provide any', UserWarning)
-            #     self.px_spec.method = 'BS'
-            #
-            # if not self.px_spec.method == 'BS':
-            #     if not self.px_spec.method == 'LT':
-            #         if getattr(self.px_spec, 'npaths') is None:
-            #             warnings.warn('Hmmm... I will use npaths=3, since you did not provide any', UserWarning)
-            #             self.px_spec.npaths = 3
-            #
-            #     if getattr(self.px_spec, 'nsteps') is None:
-            #         warnings.warn('Hmmm... I will use nsteps=3, since you did not provide any', UserWarning)
-            #         self.px_spec.steps = 3
 
             return getattr(self, '_calc_' + self.px_spec.method.upper())()
 
@@ -826,6 +761,12 @@ class OptionValuation(OptionSeries):
         float
             price of the exotic option
 
+        Examples
+        --------
+
+        >>> from qfrm import *; European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').pxBS()
+        3.444364288840312
+
         """
         return self.calc_px(method='BS', **kwargs).px_spec.px
 
@@ -844,6 +785,12 @@ class OptionValuation(OptionSeries):
         -------
         float
             price of the exotic option
+
+        Examples
+        --------
+
+        >>> from qfrm import *; European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').pxLT()
+        3.6693707022743633
 
         """
         return self.calc_px(method='LT', **kwargs).px_spec.px
@@ -864,6 +811,11 @@ class OptionValuation(OptionSeries):
         float
             price of the exotic option
 
+        Examples
+        --------
+
+        >>> from qfrm import *; European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').pxMC()
+
         """
         return self.calc_px(method='MC', **kwargs).px_spec.px
 
@@ -883,17 +835,14 @@ class OptionValuation(OptionSeries):
         float
             price of the exotic option
 
+
+        Examples
+        --------
+
+        >>> from qfrm import *; European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').pxFD()
+
         """
         return self.calc_px(method='FD', **kwargs).px_spec.px
-
-    @property
-    def method(self):
-        # assumes `px_spec` exists and has `method` attribute
-        try:
-            return self.px_spec.method.upper()
-        except:
-            warnings.warn('cannot access self.px_spec.method.upper() method.  ', UserWarning)
-            return None
 
 
 
@@ -911,16 +860,4 @@ class OptionValuation(OptionSeries):
 #     import doctest; doctest.testmod()
 
 # python.exe -m doctest OptionValuation.py
-
-
-# from qfrm import *
-# s = Stock(S0=50, vol=.3);
-# European(ref=s, K=52, T=2, rf_r=.05).pxBS()
-
-
-# from qfrm import *
-# s = Stock(S0=50, vol=.3);
-# a = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc={'$7.42840, hull p.288'})
-# e = European(clone=a)
-# a.plot_px_convergence(nsteps_max=50, vs=e)
 

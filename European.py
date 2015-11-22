@@ -44,9 +44,8 @@ class European(OptionValuation):
 
         >>> s = Stock(S0=42, vol=.20)
         >>> o = European(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @0.81, put @4.76, Hull p.339')
-
         >>> o.calc_px(method='BS').px_spec   # save interim results to self.px_spec. Equivalent to repr(o)
-        qfrm.PriceSpec
+        OptionValuation.PriceSpec
         d1: 0.7692626281060315
         d2: 0.627841271868722
         keep_hist: false
@@ -67,7 +66,10 @@ class European(OptionValuation):
 
         >>> s = Stock(S0=810, vol=.2, q=.02)
         >>> o = European(ref=s, right='call', K=800, T=.5, rf_r=.05, desc='53.39, Hull p.291')
-        >>> o.calc_px(method='LT', nsteps=3, keep_hist=True).px_spec.px  # option price from a 3-step tree (that's 2 time intervals)
+        >>> o.calc_px(method='LT', nsteps=3).px_spec.px  # option price from a 3-step tree (that's 2 time intervals)
+        59.867529937506426
+
+        >>> o.pxLT(nsteps=3, keep_hist=True)  # option price from a 3-step tree (that's 2 time intervals)
         59.867529937506426
 
         >>> o.px_spec.ref_tree  # prints reference tree

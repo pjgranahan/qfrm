@@ -150,7 +150,7 @@ class American(OptionValuation):
 
         """
 
-        return None # 11.21, added by Oleg. Temporarily disables this function until Andrew updates it.
+        return self # 11.21, added by Oleg. Temporarily disables this function until Andrew updates it.
 
         # from math import exp
         # from numpy import linspace
