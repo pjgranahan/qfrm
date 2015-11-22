@@ -49,6 +49,7 @@ class Barrier(OptionValuation):
         14.5752394837
 
         >>> o.calc_px(H=35.,knock='down',dir='out',method='BS').px_spec
+        PriceSpec
         keep_hist: false
         method: BS
         px: 14.575239483680027
