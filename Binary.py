@@ -35,7 +35,7 @@ class Binary(OptionValuation):
         -------
         self : Binary
 
-        .. sectionauthor:: Patrick Granahan
+        .. sectionauthor:: Patrick Granahan, Tianyi Yao
 
         Notes
         -----
@@ -126,8 +126,15 @@ class Binary(OptionValuation):
 
 
 
-        ------- Examples using _calc_LT()
-        .. sectionauthor:: Tianyi Yao
+
+        Examples using _calc_LT()
+        -------
+
+        Notes
+        -------
+        Verification of examples
+
+        DerivaGem software, Binary option (both cash_or_nothing and asset_or_nothing)
 
 
         Use a binomial tree model to price a cash-or-nothing binary option
