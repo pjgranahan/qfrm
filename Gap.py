@@ -156,6 +156,10 @@ class Gap(OptionValuation):
 
         .. sectionauthor:: Thawda Aung
 
+        References :
+        Hull, John C., Options, Futures and Other Derivatives, 9ed, 2014. Prentice Hall. ISBN 978-0-13-345631-8. http://www-2.rotman.utoronto.ca/~hull/ofod/index.html.
+        Humphreys, Natalia. University of Dallas.
+
         LT Examples..
 
         This might take about 1-4 mins depending on your CPU
