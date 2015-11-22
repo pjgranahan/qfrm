@@ -1,3 +1,8 @@
+from scipy import stats
+import warnings
+import numpy as np
+import math
+
 from OptionValuation import *
 
 class Lookback(OptionValuation):
@@ -56,7 +61,7 @@ class Lookback(OptionValuation):
         Examples
 
         >>> s = Stock(S0=50, vol=.4, q=.0)
-        >>> o = Lookback(ref=s, right='call', K=50, T=0.25, rf_r=.1, desc='Example from Internet')
+        >>> o = Lookback(ref=s, right='call', K=50, T=0.25, rf_r=.1, desc='Example from Hull Ch.26 Example 26.2 (p608)')
         >>> print(o.calc_px(method = 'BS', Sfl = 50.0).px_spec.px)
         8.037120139607019
 
@@ -66,24 +71,23 @@ class Lookback(OptionValuation):
         T: 0.25
         _right: call
         _signCP: 1
-        desc: Example from Internet
+        desc: Example from Hull Ch.26 Example 26.2 (p608)
         frf_r: 0
-        px_spec: qfrm.PriceSpec
+        px_spec: PriceSpec
           Sfl: 50.0
           keep_hist: false
           method: BS
           px: 8.037120139607019
           sub_method: Look back, Hull Ch.26
-        q: 0.0
-        ref: qfrm.Stock
+        ref: Stock
           S0: 50
-          curr: null
-          desc: null
-          q: 0
-          tkr: null
+          curr: -
+          desc: -
+          q: 0.0
+          tkr: -
           vol: 0.4
         rf_r: 0.1
-        seed0: null
+        seed0: -
         <BLANKLINE>
 
         >>> s = Stock(S0=50, vol=.4, q=.0)
@@ -92,13 +96,19 @@ class Lookback(OptionValuation):
         7.79021925989035
 
         >>> print(o.px_spec)
-        qfrm.PriceSpec
+        PriceSpec
         Sfl: 50.0
         keep_hist: false
         method: BS
         px: 7.79021925989035
         sub_method: Look back, Hull Ch.26
         <BLANKLINE>
+
+        >>> from pandas import Series;  expiries = range(1,11)
+        >>> O = Series([o.update(T=t).calc_px(method='BS').px_spec.px for t in expiries], expiries)
+        >>> O.plot(grid=1, title='BS Price vs expiry (in years)')
+        >>> import matplotlib.pyplot as plt
+        >>> plt.show()
 
 
         >>> s = Stock(S0=35., vol=.05, q=.00)
@@ -144,8 +154,9 @@ class Lookback(OptionValuation):
 
        """
 
-        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, Sfl = Sfl)
-        return getattr(self, '_calc_' + method.upper())()
+        #self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, Sfl = Sfl)
+        #return getattr(self, '_calc_' + method.upper())()
+        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, Sfl = Sfl)
 
     def _calc_LT(self):
         """ Internal function for option valuation.
