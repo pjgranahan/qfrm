@@ -40,8 +40,7 @@ class American(OptionValuation):
         -------
 
         >>> s = Stock(S0=50, vol=.3)
-        >>> o = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc='px=7.42840, see Hull p.288')
-
+        >>> o = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc='7.42840, Hull p.288')
         >>> o.calc_px(method='LT', nsteps=2, keep_hist=True).px_spec.px
         7.42840190270483
 
@@ -80,7 +79,6 @@ class American(OptionValuation):
         rf_r: 0.05
         seed0: -
         <BLANKLINE>
-
         """
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
         return getattr(self, '_calc_' + method.upper())()
