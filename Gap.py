@@ -108,7 +108,6 @@ class Gap(OptionValuation):
         >>> o.calc_px(K2=50, nsteps = 22, method='LT').px_spec.px
         4.36897999796
 
-        Visual example
         >>> from pandas import Series
         >>> expiries = range(1,11)
         >>> o = Series([o.update(T=t).calc_px(method='LT', nsteps=5).px_spec.px for t in expiries], expiries)
