@@ -1,3 +1,8 @@
+from scipy import stats
+import warnings
+import numpy as np
+import math
+
 from OptionValuation import *
 
 class Lookback(OptionValuation):
@@ -56,7 +61,7 @@ class Lookback(OptionValuation):
         Examples
 
         >>> s = Stock(S0=50, vol=.4, q=.0)
-        >>> o = Lookback(ref=s, right='call', K=50, T=0.25, rf_r=.1, desc='Example from Hull Ch.26.11 Example 26.2(p608)')
+        >>> o = Lookback(ref=s, right='call', K=50, T=0.25, rf_r=.1, desc='Example from Hull Ch.26 Example 26.2 (p608)')
         >>> print(o.calc_px(method = 'BS', Sfl = 50.0).px_spec.px)
         8.037120139607019
 
@@ -65,33 +70,33 @@ class Lookback(OptionValuation):
         K: 50
         T: 0.25
         _right: call
-        _signcp: 1
-        desc: Example from Hull Ch.26.11 Example 26.2(p608)
+        _signCP: 1
+        desc: Example from Hull Ch.26 Example 26.2 (p608)
         frf_r: 0
-        px_spec: OptionValuation.PriceSpec
+        px_spec: PriceSpec
           Sfl: 50.0
           keep_hist: false
           method: BS
           px: 8.037120139607019
           sub_method: Look back, Hull Ch.26
-        ref: OptionValuation.Stock
+        ref: Stock
           S0: 50
-          curr: null
-          desc: null
+          curr: -
+          desc: -
           q: 0.0
-          tkr: null
+          tkr: -
           vol: 0.4
         rf_r: 0.1
-        seed0: null
+        seed0: -
         <BLANKLINE>
 
         >>> s = Stock(S0=50, vol=.4, q=.0)
-        >>> o = Lookback(ref=s, right='put', K=50, T=0.25, rf_r=.1, desc='Example from Hull Ch.26.11 Example 26.2(p608)')
+        >>> o = Lookback(ref=s, right='put', K=50, T=0.25, rf_r=.1, desc='Example from Internet')
         >>> print(o.calc_px(method = 'BS', Sfl = 50.0).px_spec.px)
         7.79021925989035
 
         >>> print(o.px_spec)
-        OptionValuation.PriceSpec
+        PriceSpec
         Sfl: 50.0
         keep_hist: false
         method: BS
@@ -99,13 +104,12 @@ class Lookback(OptionValuation):
         sub_method: Look back, Hull Ch.26
         <BLANKLINE>
 
-        >>> from pandas import Series
-        >>> expiries = range(1,11)
-        >>> O = Series([o.update(T=t).calc_px(method='BS', Sfl=50.0).px_spec.px for t in expiries], expiries)
-        >>> O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
-        <matplotlib.axes._subplots.AxesSubplot object at ...>
+        >>> from pandas import Series;  expiries = range(1,11)
+        >>> O = Series([o.update(T=t).calc_px(method='BS').px_spec.px for t in expiries], expiries)
+        >>> O.plot(grid=1, title='BS Price vs expiry (in years)')
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
+
 
         >>> s = Stock(S0=35., vol=.05, q=.00)
         >>> o = Lookback(ref=s, right='call', T=0.25, rf_r=.1, desc='Hull p607')
@@ -150,8 +154,9 @@ class Lookback(OptionValuation):
 
        """
 
-        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, Sfl = Sfl)
-        return getattr(self, '_calc_' + method.upper())()
+        #self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, Sfl = Sfl)
+        #return getattr(self, '_calc_' + method.upper())()
+        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, Sfl = Sfl)
 
     def _calc_LT(self):
         """ Internal function for option valuation.
@@ -219,7 +224,32 @@ class Lookback(OptionValuation):
         ----
         Formular: https://en.wikipedia.org/wiki/Lookback_option
 
+
         """
+
+        # Verify input
+        try:
+            right   =   self.right.lower()
+            S       =   float(self.ref.S0)
+            Sfl     =   float(self.px_spec.Sfl)
+            T       =   float(self.T)
+            vol     =   float(self.ref.vol)
+            r       =   float(self.rf_r)
+            q       =   float(self.ref.q)
+            signCP  =   self.signCP
+
+
+        except:
+            print('right must be String. S, Sfl, T, vol, r, q must be floats or be able to be coerced to float')
+            return False
+
+        assert right in ['call','put'], 'right must be "call" or "put" '
+        assert S >= 0, 'S must be >= 0'
+        assert Sfl > 0, 'Sfl must be > 0'
+        assert T > 0, 'T must be > 0'
+        assert vol > 0, 'vol must be >=0'
+        assert r >= 0, 'r must be >= 0'
+        assert q >= 0, 'q must be >= 0'
 
         # Imports
         from math import exp, log, sqrt
@@ -227,27 +257,20 @@ class Lookback(OptionValuation):
 
         # Parameters for Value Calculation (see link in docstring)
 
-        _ = self
-        S_new = _.ref.S0 / _.px_spec.Sfl if _.right == 'call' else _.px_spec.Sfl / _.ref.S0
 
-        a1 = (log(S_new) + (_.signCP * (_.rf_r - _.ref.q) + _.ref.vol ** 2 / 2) * _.T) / (_.ref.vol * sqrt(_.T))
-        a2 = a1 - _.ref.vol * sqrt(_.T)
-        a3 = (log(S_new) +_.signCP * (-_.rf_r + _.ref.q + _.ref.vol ** 2 / 2) * _.T) / (_.ref.vol * sqrt(_.T))
-        Y1 = _.signCP * (-2 * (_.rf_r - _.ref.q - _.ref.vol ** 2 / 2) * log(S_new)) / (_.ref.vol ** 2)
+        S_new = S / Sfl if right == 'call' else Sfl / S
 
-        Ac1 = _.ref.S0 * exp(-_.ref.q * _.T) * norm.cdf(a1)
-        Ac2 = _.ref.S0 * exp(-_.ref.q * _.T) * (_.ref.vol ** 2) * norm.cdf(-a1) / (2 * (_.rf_r - _.ref.q))
-        Ac3 = _.px_spec.Sfl * exp(-_.rf_r * _.T) * (norm.cdf(a2) - _.ref.vol ** 2 * exp(Y1) * norm.cdf(-a3) / (2 * (_.rf_r - _.ref.q)))
-        c = Ac1 - Ac2 - Ac3
+        a1 = (log(S_new) + (signCP * (r - q) + vol ** 2 / 2) * T) / (vol * sqrt(T))
+        a2 = a1 - vol * sqrt(T)
+        a3 = (log(S_new) + signCP * (-r + q + vol ** 2 / 2) * T) / (vol * sqrt(T))
+        Y1 = signCP * (-2 * (r - q - vol ** 2 / 2) * log(S_new)) / (vol ** 2)
 
-        Ap1 = _.px_spec.Sfl * exp(-_.rf_r * _.T) * (norm.cdf(a1) - _.ref.vol ** 2 * exp(Y1) * norm.cdf(-a3) / (2 * (_.rf_r - _.ref.q)))
-        Ap2 = _.ref.S0 * exp(-_.ref.q *_.T) * (_.ref.vol ** 2) * norm.cdf(-a2) / (2 * (_.rf_r - _.ref.q))
-        Ap3 = _.ref.S0 * exp(-_.ref.q * _.T) * norm.cdf(a2)
-        p = Ap1 + Ap2 - Ap3
+        c = S * exp(-q * T) * norm.cdf(a1) - S * exp(-q * T) * (vol ** 2) * norm.cdf(-a1) / (2 * (r - q)) - Sfl * exp(-r * T) * (norm.cdf(a2) - vol ** 2 * exp(Y1) * norm.cdf(-a3) / (2 * (r - q)))
+        p = Sfl * exp(-r * T) * (norm.cdf(a1) - vol ** 2 * exp(Y1) * norm.cdf(-a3) / (2 * (r - q))) + S * exp(-q *T) * (vol ** 2) * norm.cdf(-a2) / (2 * (r - q)) - S * exp(-q * T) * norm.cdf(a2)
 
 
         # Calculate the value of the option using the BS Equation
-        if _.right == 'call':
+        if right == 'call':
             self.px_spec.add(px=float(c), method='BS', sub_method='Look back, Hull Ch.26')
 
         else:
@@ -284,4 +307,3 @@ class Lookback(OptionValuation):
         """
 
         return self
-
