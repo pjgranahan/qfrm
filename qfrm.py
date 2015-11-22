@@ -7,7 +7,7 @@ from Asian import *
 from Barrier import *
 from Bermudan import *
 from Binary import *
-from Chooser import *
+# from Chooser import *
 from European import *
 from ForwardStart import *
 from Gap import *

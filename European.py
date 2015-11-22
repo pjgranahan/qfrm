@@ -1,4 +1,5 @@
 from scipy import stats
+import warnings
 import numpy as np
 import math
 
@@ -111,8 +112,8 @@ class European(OptionValuation):
         seed0: null
 
         """
-        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
-        return getattr(self, '_calc_' + method.upper())()
+
+        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
 
     def _calc_BS(self):
         """ Internal function for option valuation.
@@ -186,7 +187,7 @@ class European(OptionValuation):
 
         return self
 
-    def _calc_MC(self, nsteps=3, npaths=4, keep_hist=False):
+    def _calc_MC(self):
         """ Internal function for option valuation.
 
         Returns
@@ -202,7 +203,7 @@ class European(OptionValuation):
         """
         return self
 
-    def _calc_FD(self, nsteps=3, npaths=4, keep_hist=False):
+    def _calc_FD(self):
         """ Internal function for option valuation.
 
         Returns
@@ -213,4 +214,3 @@ class European(OptionValuation):
 
         """
         return self
-

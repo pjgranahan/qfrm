@@ -2,6 +2,7 @@ import yaml
 import math
 import pandas as pd
 import matplotlib.pyplot as plt
+import warnings
 from Util import *
 
 
@@ -45,6 +46,28 @@ class PriceSpec:
             if v is not None:  setattr(self, K, v)
         return self
 
+    # if getattr(self.px_spec, 'method') is None:
+    # warnings.warn('Hmmm... I will use "BS" pricing method, since you did not provide any', UserWarning)
+    # self.px_spec.method = 'BS'
+
+    # def get_method(self):
+    #     if getattr(self, '_method') is None:
+    #         warnings.warn('Hmmm... I will use npaths=3, since you did not provide any', UserWarning)
+    #
+    #
+    # def set_method(self, method):
+    #
+    #
+    #     if not self.px_spec.method == 'BS':
+    #         if not self.px_spec.method == 'LT':
+    #             if getattr(self.px_spec, 'npaths') is None:
+    #                 warnings.warn('Hmmm... I will use npaths=3, since you did not provide any', UserWarning)
+    #                 self.px_spec.npaths = 3
+    #
+    #         if getattr(self.px_spec, 'nsteps') is None:
+    #             warnings.warn('Hmmm... I will use nsteps=3, since you did not provide any', UserWarning)
+    #             self.px_spec.steps = 3
+
     def __repr__(self):
         """ Compiles a printable representation of the object
 
@@ -56,10 +79,11 @@ class PriceSpec:
         Examples
         --------
         >>> PriceSpec(a=1, b='2', c=2.0)  # instantiates an object, saves its input, prints out structure
-        PriceSpec
+        OptionValuation.PriceSpec
         a: 1
         b: '2'
         c: 2.0
+        <BLANKLINE>
 
         """
         s = yaml.dump(self, default_flow_style=0).replace('!!python/object:','').replace('!!python/tuple','')
@@ -151,33 +175,36 @@ class OptionSeries:
 
         >>> o = OptionSeries(ref=Stock(S0=50, vol=.3), right='put', K=52, T=2).update(K=53) # sets new strike
         >>> o   # prints structure of the object to screen
-        OptionSeries
+        OptionValuation.OptionSeries
         K: 53
         T: 2
         _right: put
-        _signcp: -1
-        px_spec: PriceSpec {}
-        ref: Stock
+        _signCP: -1
+        px_spec: OptionValuation.PriceSpec {}
+        ref: OptionValuation.Stock
           S0: 50
           curr: null
           desc: null
           q: 0
           tkr: null
           vol: 0.3
+        <BLANKLINE>
+
         >>> OptionSeries(clone=o, K=54).update(right='call')  # copy parameters from o; changes strike & right
-        OptionSeries
+        OptionValuation.OptionSeries
         K: 54
         T: 2
         _right: call
-        _signcp: 1
-        px_spec: PriceSpec {}
-        ref: Stock
+        _signCP: 1
+        px_spec: OptionValuation.PriceSpec {}
+        ref: OptionValuation.Stock
           S0: 50
           curr: null
           desc: null
           q: 0
           tkr: null
           vol: 0.3
+        <BLANKLINE>
 
         """
         self.reset()   # delete old calculations, before updating parameters
@@ -203,9 +230,17 @@ class OptionSeries:
             'call', 'put', or 'other'
 
         """
-        return self._right
+        if getattr(self,'right') is None:
+            warnings.warn('Hmmm... I will use "call" right, since you did not provide any', UserWarning)
+            self._right = 'call'
+            return self._right
+        # try:
+        #     return self._right
+        # except:
+        #     warnings.warn('Cannot access self._right in OptionValuation.get_right() method', UserWarning)
+        #     return ''
 
-    def set_right(self, right='put'):
+    def set_right(self, right='call'):
         """ Sets option's right to a new string.
 
         This is a setter method that hides direct access to the right attribute.
@@ -222,13 +257,27 @@ class OptionSeries:
         """
         if right is not None:
             self._right = right.lower()
-            self._signcp = 1 if self._right == 'call' else -1 if self._right == 'put' else 0  # 0 for other rights
+            self._signCP = 1 if self._right == 'call' else -1 if self._right == 'put' else 0  # 0 for other rights
         return self
 
     right = property(get_right, set_right, None, 'option\'s right (str): call or put')
 
     @property
-    def signCP(self): return self._signcp   # defines a getter attribute (property)
+    def signCP(self):
+        """ Identifies a sign (+/-) indicating the right of the option.
+
+        This property is convenient in calculations, which have parts with sign depending on the option's right.
+        There is no setter property for `signCP`, instead it must be set via `right` property.
+
+        Returns
+        -------
+        int
+            +1 if the option is a call
+            -1 if the option is a put
+            0 for other rights of the option
+
+        """
+        return self._signCP   # defines a getter attribute (property)
 
     @property
     def style(self):
@@ -246,9 +295,9 @@ class OptionSeries:
         Examples
         --------
 
-        >>> from American import *; American().style
+        >>> from qfrm import *; American().style
         'American'
-        >>> from European import European; European().style
+        >>> from qfrm import *; European().style
         'European'
         >>> OptionSeries().style  # returns None
 
@@ -278,7 +327,7 @@ class OptionSeries:
         'IBM 51 call'
         >>> OptionSeries(ref=Stock(S0=50, vol=0.3, tkr='IBM'), K=51, T=2, right='call').series
         'IBM 51 2yr call'
-        >>> from American import American; American(ref=Stock(S0=50, vol=0.3), K=51, right='call').series
+        >>> from qfrm import *; American(ref=Stock(S0=50, vol=0.3), K=51, right='call').series
         '51 American call'
 
         """
@@ -310,7 +359,7 @@ class OptionSeries:
         'IBM 51 call,S0=50,vol=0.3,q=0'
         >>> OptionSeries(ref=Stock(S0=50, vol=0.3), K=51, T=2, right='call', desc='some option').specs
         '51 2yr call,S0=50,vol=0.3,q=0'
-        >>> from American import American; American(ref=Stock(S0=50, vol=0.3), K=51, right='call').specs
+        >>> from qfrm import *; American(ref=Stock(S0=50, vol=0.3), K=51, right='call').specs
         '51 American call,S0=50,vol=0.3,rf_r=None,q=0,frf_r=0'
 
         """
@@ -342,107 +391,144 @@ class OptionSeries:
         --------
 
         >>> OptionSeries(ref=Stock(S0=50, vol=0.3), K=51, right='call').full_spec(False)
-        'OptionValuation.OptionSeries {K:51, _right:call, _signcp:1, px_spec:OptionValuation.PriceSpec {}, , ref:OptionValuation.Stock {S0:50, curr:null, desc:null, q:0, ,  tkr:null, vol:0.3}},'
+        'OptionValuation.OptionSeries {K:51, _right:call, _signCP:1, px_spec:OptionValuation.PriceSpec {}, ,
+        ref:OptionValuation.Stock {S0:50, curr:null, desc:null, q:0, ,  tkr:null, vol:0.3}},'
 
         >>> print(OptionSeries(ref=Stock(S0=50, vol=0.3, tkr='ibm', curr='usd'), K=51, right='call').full_spec(True))
-            OptionSeries
-            K: 51
-            _right: call
-            _signcp: 1
-            ref: Stock
-              S0: 50
-              curr: usd
-              desc: null
-              q: 0
-              tkr: ibm
-              vol: 0.3
+        OptionValuation.OptionSeries
+        K: 51
+        _right: call
+        _signCP: 1
+        px_spec: OptionValuation.PriceSpec {}
+        ref: OptionValuation.Stock
+          S0: 50
+          curr: usd
+          desc: null
+          q: 0
+          tkr: ibm
+          vol: 0.3
+        <BLANKLINE>
 
-        .. seealso::
-            docs.python.org/3.4/library/pprint.html
-            stackoverflow.com/questions/3229419/pretty-printing-nested-dictionaries-in-python
-            dpinte.wordpress.com/2008/10/31/pyaml-dump-option
-            alternative serialization(formatting): pprint, pickle
         """
         _ = self
 
         s = yaml.dump(_, default_flow_style=not new_line).replace('!!python/object:','').replace('!!python/tuple','')
         s = s.replace('__main__.','')
-        if not new_line:  s = s.replace(',',', ').replace('\n', ',').replace(': ', ':').replace('  ',' ')
+        if not new_line:
+            s = s.replace(',',', ').replace('\n', ',').replace(': ', ':').replace('  ',' ')
+        # else:
+        #     s = s.replace('\n','\\n')
         return s
 
     def __repr__(self):
-        """ called by the repr() built-in function to compute the “official” string representation of an object.
+        r""" Called by the repr() built-in function to compute the “official” string representation of an object.
 
-        :return: full list of object properties
-        :rtype: str
+        Returns
+        -------
+        str
+            full list of object properties
 
-        .. seealso::
-            http://stackoverflow.com/questions/1436703/difference-between-str-and-repr-in-python
-            https://docs.python.org/2/reference/datamodel.html#object.__repr__
-            http://stackoverflow.com/questions/1984162/purpose-of-pythons-repr
+        Notes
+        -----
+        http://stackoverflow.com/questions/1436703/difference-between-str-and-repr-in-python
+        https://docs.python.org/2/reference/datamodel.html#object.__repr__
+        http://stackoverflow.com/questions/1984162/purpose-of-pythons-repr
 
-        :exmaple:
+        Examples
+        --------
 
         >>> o = OptionSeries(ref=Stock(S0=50,vol=.03))
         >>> repr(o)
-        >>> o   # equivalent to print(repr(o))
+        'OptionValuation.OptionSeries\npx_spec: OptionValuation.PriceSpec {}\nref: OptionValuation.Stock\n
+        S0: 50\n  curr: null\n  desc: null\n  q: 0\n  tkr: null\n  vol: 0.03\n'
+
+        >>> o  # equivalent to print(repr(o))
+        OptionValuation.OptionSeries
+        px_spec: OptionValuation.PriceSpec {}
+        ref: OptionValuation.Stock
+          S0: 50
+          curr: null
+          desc: null
+          q: 0
+          tkr: null
+          vol: 0.03
+        <BLANKLINE>
 
         """
         return self.full_spec(new_line=True)
 
     def __str__(self):
-        """ called by str(object) and the built-in functions format() and print()
+        """ Called by str(object) and the built-in functions format() and print()
         to compute the “informal” or nicely printable string representation of an object.
 
-        :return: full list of object properties
-        :rtype: str
+        Returns
+        -------
+        str
+            full list of object properties
 
-        :example:
+        Examples
+        --------
 
         >>> o = OptionSeries(ref=Stock(S0=50,vol=.03))
         >>> str(o)
+        'OptionValuation.OptionSeries\\npx_spec: OptionValuation.PriceSpec {}\\nref:
+        OptionValuation.Stock\\n  S0: 50\\n  curr: null\\n  desc: null\\n  q: 0\\n  tkr: null\\n  vol: 0.03\\n'
         >>> print(str(o))
+        OptionValuation.OptionSeries
+        px_spec: OptionValuation.PriceSpec {}
+        ref: OptionValuation.Stock
+          S0: 50
+          curr: null
+          desc: null
+          q: 0
+          tkr: null
+          vol: 0.03
+        <BLANKLINE>
 
         """
         return self.full_spec(new_line=True)
-
-    @property
-    def style(self):
-        """ retrieve option object name.
-
-        :return: option style
-        :rtype: str
-        """
-        return type(self).__name__
 
     @property
     def clone(self):  return self
 
     @clone.setter
     def clone(self, clone=None):
-        """
+        """ Inherits parameters from specified (cloned) option.
 
-        :param clone:
-        :return:
+        All parameters will be copied into this (current) option object.
 
-        :example:
+        Parameters
+        ----------
+        clone : OptionSeries, OptionValuation, European, American, ...
+            Target option object that needs to be duplicated.
 
-        >>> o = OptionSeries(); o.right='call'
-        >>> OptionSeries(clone=o).right
-        >>> OptionSeries(clone=OptionSeries().set_right('call')).right
+        Examples
+        --------
+
+        >>> o = OptionSeries(right='call'); OptionSeries(clone=o).right  # create new option similar to o
+        'call'
+
+        >>> from qfrm import *
+        >>> American(clone=European(frf_r=.05))  # create American option similar to European option
+        American.American
+        frf_r: 0.05
+        px_spec: OptionValuation.PriceSpec {}
+        rf_r: null
+        seed0: null
+        <BLANKLINE>
 
         """
         # copy specs from supplied object
-        if clone is not None:
-            [setattr(self, v, getattr(clone, v)) for v in vars(clone)]
+        if clone is not None:  [setattr(self, v, getattr(clone, v)) for v in vars(clone)]
 
     def reset(self):
-        """ delete calculated attributes.
+        """ Delete calculated attributes.
 
-        :return:
-        :rtype:
+        Returns
+        -------
+        self : OptionValuation
+
         """
-        # if not getattr(self, 'px_spec', None) is None: del self.px_spec
         self.px_spec = PriceSpec(px=None)
         return self
 
@@ -481,7 +567,19 @@ class OptionValuation(OptionSeries):
         --------
 
         >>> OptionValuation(ref=Stock(S0=50), rf_r=.05, frf_r=.01)
-
+        OptionValuation.OptionValuation
+        frf_r: 0.01
+        px_spec: OptionValuation.PriceSpec {}
+        ref: OptionValuation.Stock
+          S0: 50
+          curr: null
+          desc: null
+          q: 0
+          tkr: null
+          vol: null
+        rf_r: 0.05
+        seed0: null
+        <BLANKLINE>
         """
         self.rf_r, self.frf_r, self.seed0 = rf_r, frf_r, seed0
         super().__init__(*args, **kwargs)  # pass remaining arguments to base (parent) class
@@ -511,27 +609,15 @@ class OptionValuation(OptionSeries):
 
         Examples
         --------
-
         >>> OptionValuation(ref=Stock(S0=42, vol=.2), right='call', K=40, T=.5, rf_r=.1).LT_specs(2)
-        {'a': 1.0253151205244289,
-         'd': 0.9048374180359595,
-         'df_T': 0.951229424500714,
-         'df_dt': 0.9753099120283326,
-         'dt': 0.25,
-         'p': 0.60138570166548,
-         'u': 1.1051709180756477}
+        {'p': 0.60138570166548, 'a': 1.0253151205244289, 'd': 0.9048374180359595, 'df_dt': 0.9753099120283326, 'u': 1.1051709180756477, 'dt': 0.25, 'df_T': 0.951229424500714}
 
-         >>> s = Stock(S0=50, vol=.3)
-         >>> OptionValuation(ref=s,right='put', K=52, T=2, rf_r=.05, desc={'hull p.288'}).LT_specs(3)
-        {'a': 1.033895113513574,
-         'd': 0.7827444773247475,
-         'df_T': 0.9048374180359595,
-         'df_dt': 0.9672161004820059,
-         'dt': 0.6666666666666666,
-         'p': 0.5075681589595774,
-         'u': 1.2775561233185384}
 
-        """
+         >>> #s = Stock(S0=50, vol=.3)
+         >>> #OptionValuation(ref=s,right='put', K=52, T=2, rf_r=.05, desc={'hull p.288'}).LT_specs(3)
+
+
+         """
         assert isinstance(nsteps, int), 'nsteps must be an integer, >2'
 
         sp = {'dt': self.T / nsteps}
@@ -545,20 +631,20 @@ class OptionValuation(OptionSeries):
         return sp
 
     def plot_px_convergence(self, nsteps_max=50, ax=None, vs=None):
-        """ Plots convergence of an option price for different nsteps values.
+        """ Plots convergence of an option price for different `nsteps` values.
 
-        If vs object is provided, its plot is added,
-        i.e. call vs.plot_px_convergence(...) to add a plot of the benchmark option.
-        This is helpful to compare the convergence of lt price for European vs American options.
-        BSM price (a constant line) is also plotted.
-        If ax is not provided, create a new ax, then continue.
+        If `vs` object is provided, its plot is added,
+        i.e. execute `vs.plot_px_convergence(...)` to add a plot of the benchmark option.
+        This is helpful to compare the convergence of lt price for European versus American options.
+        BSM price (a constant line) is also plotted, if available.
+        If `ax` argument is omitted, a new `matplotlib.axes` object is created for plotting.
 
         Parameters
         ----------
         nsteps_max : int
-            sets the range of nsteps, so that the lt price can be computed for each time step.
-            i.e. this is the maximum range of the x-axis on the resulting plot. pxlt is called with range(1, nsteps_max).
-            required. positive integer.
+            sets the range of `nsteps`, so that the lt price can be computed for each time step.
+            i.e. this is the maximum range of the x-axis on the resulting plot.
+            `calc_px` is called with `range(1, nsteps_max)`. Required. positive integer.
         ax : matplotlib.axes._subplots.axessubplot, optional
             Plot object on which to plot the data.
         vs : object, optional
@@ -569,8 +655,9 @@ class OptionValuation(OptionSeries):
         Examples
         --------
 
-        >>> from American import *; from European import *
+        >>> from qfrm import *
         >>> s = Stock(S0=50, vol=.3);
+        >>> European(ref=s, K=52, T=2, rf_r=.05).pxBS()
         >>> a = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc={'$7.42840, hull p.288'})
         >>> e = European(clone=a)
         >>> a.plot_px_convergence(nsteps_max=50, vs=e)
@@ -581,10 +668,10 @@ class OptionValuation(OptionSeries):
             def onresize(event):  plt.tight_layout()
             cid = fig.canvas.mpl_connect('resize_event', onresize)  # tighten layout on resize event
 
-        lt_prices = [self.calc_LT(n).px_spec.px for n in range(1, nsteps_max + 1)]
+        LT_prices = [self.calc_px(method='LT', nsteps=n).px_spec.px for n in range(1, nsteps_max + 1)]
 
-        pd.DataFrame({'lt price for ' + self.specs: lt_prices,
-                   'bs price for ' + self.specs: self.calc_bs().px_spec.px}) \
+        pd.DataFrame({'LT price for ' + self.specs: LT_prices,
+                   'BS price for ' + self.specs: self.pxBS()}) \
             .plot(ax=ax, grid=1, title='option price convergence with number of steps')
 
         if vs is not None: vs.plot_px_convergence(nsteps_max=nsteps_max, ax=ax)
@@ -598,7 +685,7 @@ class OptionValuation(OptionSeries):
         Examples
         --------
 
-        >>> from American import *; from European import *
+        >>> from qfrm import *
         >>> s = Stock(S0=50, vol=.3)
         >>> a = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc={'$7.42840, hull p.288'})
         >>> a.plot()
@@ -625,24 +712,28 @@ class OptionValuation(OptionSeries):
 
         >>> o = OptionValuation(rf_r=0.05); vars(o)
         >>> o.update(rf_r=0.04)
-            OptionValuation
-            frf_r: 0
-            rf_r: 0.04
-            seed0: null
+        OptionValuation.OptionValuation
+        frf_r: 0
+        px_spec: OptionValuation.PriceSpec {}
+        rf_r: 0.04
+        seed0: null
+        <BLANKLINE>
         >>> o.update(ref=Stock(q=0.01))
-            OptionValuation
-            frf_r: 0
-            ref: Stock
-              S0: null
-              curr: null
-              desc: null
-              q: 0.01
-              tkr: null
-              vol: null
-            rf_r: 0.04
-            seed0: null
+        OptionValuation.OptionValuation
+        frf_r: 0
+        px_spec: OptionValuation.PriceSpec {}
+        ref: OptionValuation.Stock
+          S0: null
+          curr: null
+          desc: null
+          q: 0.01
+          tkr: null
+          vol: null
+        rf_r: 0.04
+        seed0: null
+        <BLANKLINE>
         >>> o.net_r
-            0.03
+        0.03
 
         """
         try: q = 0 if self.ref.q is None else self.ref.q
@@ -653,6 +744,156 @@ class OptionValuation(OptionSeries):
 
         return rf_r - q - frf_r   # calculate RFR net of yield and foreign RFR
 
+    def calc_px(self, **kwargs):
+        """ Wrapper pricing function.
+
+        Each exotic option overloads `calc_px()` to accept exotic-specific parameters from user.
+        Then child's `calc_px()` calls `OptionValuation.calc_px()` to check basic pricing parameters
+        and to call the appropriate pricing method.
+
+        Returns
+        -------
+        self, None
+            Returns None, if called on OptionValuation object.
+            Returns self (sub-class), if called on class that inherited OptionValuation (these are exotic classes)
+
+        Examples
+        --------
+
+        >>> OptionValuation().calc_px()  # prints a UserWarning and returns None
+        ...
+
+        >>> from qfrm import *; European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5).calc_px()
+        Traceback (most recent call last):
+        ...
+            assert getattr(self, '_signCP') is not None, 'Ooops. Please supply option right: call, put, ...'
+        AttributeError: 'European' object has no attribute '_signCP'
+
+        >>> from qfrm import *; European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').calc_px()
+        European.European
+        ...
+          px: 3.444364288840312
+        ...
+
+        """
+        if self.style is None:
+            warnings.warn('Assure that calc_px() is overloaded by exotic option class.', UserWarning)
+            return None
+
+        else:
+            # if self.get_right is None:
+            #     warnings.warn('Hmmm... I will use "call" right, since you did not provide any', UserWarning)
+            #     self.right = 'call'
+
+            self.px_spec = PriceSpec(**kwargs)
+            assert getattr(self, 'ref') is not None, 'Ooops. Please supply referenced (underlying) asset, `ref`'
+            assert getattr(self, 'rf_r') is not None, 'Ooops. Please supply risk free rate `rf_r`'
+            assert getattr(self, 'K') is not None, 'Ooops. Please supply strike `K`'
+            assert getattr(self, 'T') is not None, 'Ooops. Please supply time to expiry (in years) `T`'
+            assert getattr(self, '_signCP') is not None, 'Ooops. Please supply option right: call, put, ...'
+
+            # if getattr(self.px_spec, 'method') is None:
+            #     warnings.warn('Hmmm... I will use "BS" pricing method, since you did not provide any', UserWarning)
+            #     self.px_spec.method = 'BS'
+            #
+            # if not self.px_spec.method == 'BS':
+            #     if not self.px_spec.method == 'LT':
+            #         if getattr(self.px_spec, 'npaths') is None:
+            #             warnings.warn('Hmmm... I will use npaths=3, since you did not provide any', UserWarning)
+            #             self.px_spec.npaths = 3
+            #
+            #     if getattr(self.px_spec, 'nsteps') is None:
+            #         warnings.warn('Hmmm... I will use nsteps=3, since you did not provide any', UserWarning)
+            #         self.px_spec.steps = 3
+
+            return getattr(self, '_calc_' + self.px_spec.method.upper())()
+
+        return None
+
+    def pxBS(self, **kwargs):
+        """ Calls exotic pricing method `calc_px()`
+
+        This property calls `calc_px()` method which should be overloaded
+        by each exotic option class (inheriting OptionValuation)
+
+        Parameters
+        ----------
+        kwargs
+            Pricing parameters required to price this exotic option. See `calc_px()` for specifics and examples.
+
+        Returns
+        -------
+        float
+            price of the exotic option
+
+        """
+        return self.calc_px(method='BS', **kwargs).px_spec.px
+
+    def pxLT(self, **kwargs):
+        """ Calls exotic pricing method `calc_px()`
+
+        This property calls `calc_px()` method which should be overloaded
+        by each exotic option class (inheriting OptionValuation)
+
+        Parameters
+        ----------
+        kwargs
+            Pricing parameters required to price this exotic option. See `calc_px()` for specifics and examples.
+
+        Returns
+        -------
+        float
+            price of the exotic option
+
+        """
+        return self.calc_px(method='LT', **kwargs).px_spec.px
+
+    def pxMC(self, **kwargs):
+        """ Calls exotic pricing method `calc_px()`
+
+        This property calls `calc_px()` method which should be overloaded
+        by each exotic option class (inheriting OptionValuation)
+
+        Parameters
+        ----------
+        kwargs
+            Pricing parameters required to price this exotic option. See `calc_px()` for specifics and examples.
+
+        Returns
+        -------
+        float
+            price of the exotic option
+
+        """
+        return self.calc_px(method='MC', **kwargs).px_spec.px
+
+    def pxFD(self, **kwargs):
+        """ Calls exotic pricing method `calc_px()`
+
+        This property calls `calc_px()` method which should be overloaded
+        by each exotic option class (inheriting OptionValuation)
+
+        Parameters
+        ----------
+        kwargs
+            Pricing parameters required to price this exotic option. See `calc_px()` for specifics and examples.
+
+        Returns
+        -------
+        float
+            price of the exotic option
+
+        """
+        return self.calc_px(method='FD', **kwargs).px_spec.px
+
+    @property
+    def method(self):
+        # assumes `px_spec` exists and has `method` attribute
+        try:
+            return self.px_spec.method.upper()
+        except:
+            warnings.warn('cannot access self.px_spec.method.upper() method.  ', UserWarning)
+            return None
 
 
 
@@ -667,5 +908,19 @@ class OptionValuation(OptionSeries):
 #     # To doctest this module, in OS command prompt (project folder) run:      python.exe OptionValuation.py
 #
 #     print('__main__ Called from Python Console... Testing examples...')
-#     import doctest
-#     doctest.testmod()
+#     import doctest; doctest.testmod()
+
+# python.exe -m doctest OptionValuation.py
+
+
+# from qfrm import *
+# s = Stock(S0=50, vol=.3);
+# European(ref=s, K=52, T=2, rf_r=.05).pxBS()
+
+
+# from qfrm import *
+# s = Stock(S0=50, vol=.3);
+# a = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc={'$7.42840, hull p.288'})
+# e = European(clone=a)
+# a.plot_px_convergence(nsteps_max=50, vs=e)
+
