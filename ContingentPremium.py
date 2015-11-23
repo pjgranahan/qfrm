@@ -213,40 +213,9 @@ class ContingentPremium(OptionValuation):
             px = px_call if self.signCP == 1 else px_put if self.signCP == -1 else None
             return px - vanilla
 
-        print(vanilla)
-        option_price = root(binary, vanilla, method='hybr')
+        option_price = root(binary, vanilla, method='hybr') #finds the binary price that we need
         option_price = option_price.x
-        print(option_price)
-        nsteps = n
-        par = _
-        S = np.zeros((nsteps + 1, nsteps + 1))
-        Val = np.zeros((nsteps + 1, nsteps + 1))
-        S[0, 0] = self.ref.S0
-        if self.right == 'put':
-            for i in range(1, nsteps + 1):
-                for j in range(0, nsteps + 1):
-                    if j <= i:
-                        S[i, j] = self.ref.S0 * (par['u'] ** j) * (par['d'] ** (i - j))
-                        if i == nsteps and S[i, j] < self.K:
-                            Val[i, j] = self.K - S[i, j] + option_price
-            for i in range(nsteps - 1, -1, -1):
-                for j in range(nsteps + 1, -1, -1):
-                    if j <= i:
-                        Val[i, j] = round(par['df_dt'] * (par['p'] * Val[i + 1, j + 1] + (1 - par['p']) * Val[i + 1, j]), 4)
-        else:
-            for i in range(1, nsteps + 1):
-                for j in range(0, nsteps + 1):
-                    if j <= i:
-                        S[i, j] = self.ref.S0 * (par['u'] ** j) * (par['d'] ** (i - j))
-                        if i == nsteps and S[i, j] > self.K:
-                            Val[i, j] = S[i, j] - self.K - option_price
-            for i in range(nsteps - 1, -1, -1):
-                for j in range(nsteps + 1, -1, -1):
-                    if j <= i:
-                        Val[i, j] = round(par['df_dt'] * (par['p'] * Val[i + 1, j + 1] + (1 - par['p']) * Val[i + 1, j]), 4)
-
-        O = Val[0, 0]
-        self.px_spec.add(px=float(Util.demote(O)), method='LT', sub_method='Binomial Tree',
+        self.px_spec.add(px=float(Util.demote(option_price)), method='LT', sub_method='Binomial Tree',
                         LT_specs=_)
 
         # self.px_spec = PriceSpec(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
@@ -258,8 +227,8 @@ if __name__ == "__main__":
     import doctest
     doctest.testmod()
 """
-s = Stock(S0=100, vol=.2, q=.05)
-o = ContingentPremium(ref=s, right='call', K=100, T=.25, rf_r=.1)
+s = Stock(S0=1/97, vol=.2, q=.032)
+o = ContingentPremium(ref=s, right='call', K=1/100, T=.25, rf_r=.059)
 #print(o.calc_px(method='LT', nsteps=200, keep_hist=True).px_spec.px)
-print(o.calc_px(method='LT', nsteps=1999))
+print(o.calc_px(method='LT', nsteps=2000))
 
