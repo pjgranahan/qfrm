@@ -149,7 +149,8 @@ class VarianceSwap(OptionValuation):
         Var_E = (2./_.T) * (log(fz/styx) - (fz/styx - 1.) + Kint)
         px = _.L_Var * (Var_E - _.Var_K)/expr
 
-        #adds the BSM price of calls and puts from the vector K,vol to px_call; px_put, and the price of the variance swap to px.
+        #adds the BSM price of calls and puts from the vector K,vol to px_call; px_put, and the price of the variance 
+        #swap to px.
         self.px_spec.add(px=px, sub_method='Hull p. 613-614', px_call=px_call, px_put=px_put, d1=d1, d2=d2)
         
         return self
