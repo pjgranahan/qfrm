@@ -207,6 +207,55 @@ class ForwardStart(OptionValuation):
         ----
 
         """
+
+        #initialize the price array
+        S=np.zeros((n_steps+1,n_paths),'d')
+        S[0,:]=S0
+        for t in range(1,n_steps+1):
+
+            #generate random numbers
+            rand=standard_normal(n_paths)
+
+            S[t,:]=S[t-1,:]*exp(((r-((vol**2)/2))*dt)+(vol*rand*sqrt(dt)))
+
+        #find the payout at maturity
+        final=maximum(signCP*(S[-1]-K),0)
+
+        #discount the expected payoff at maturity to present
+        v0 = (exp(-r*T)*sum(final))/n_paths
+
+        #array for plotting
+        payout=np.zeros((n_steps+1,n_paths),'d')
+
+        for time_1 in range(0,n_steps+1):
+            payout[time_1,:]=maximum(signCP*(S[time_1,:]-K),0)
+        euro_val=np.zeros((n_steps+1,n_paths),'d')
+        for time_2 in range(n_steps,-1,-1):
+
+            euro_val[time_2,:]=payout[-1,:]*np.exp(-r*(n_steps-time_2)*dt)
+        if method == 'naive':
+            title='European'+' '+right+' '+'option value (via naive)'+' '+str(v0)
+            print(title)
+        else:
+            title='European'+' '+right+' '+'option value (via LSM)'+' '+str(v0)
+            print(title)
+        #plotting for European option
+        if plot == 1:
+            time=[]
+            temp=0
+            for d in range(0,n_steps+1):
+                time.append(temp)
+                temp+=dt
+            plt.subplot(2,2,1)
+            plt.plot(time,S)
+            plt.title('stock price realizations (against time steps)')
+            plt.subplot(2,2,3)
+            plt.plot(time,payout)
+            plt.title('payout (against time steps)')
+            plt.subplot(2,2,2)
+            plt.plot(time,euro_val)
+            plt.title(title)
+            plt.show()
         return self
 
     def _calc_FD(self):
