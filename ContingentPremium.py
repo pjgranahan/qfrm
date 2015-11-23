@@ -4,6 +4,7 @@ from OptionValuation import *
 from European import *
 from Binary import *
 
+
 class ContingentPremium(OptionValuation):
     """ Boston Option Valuation Class
 
@@ -190,8 +191,6 @@ class ContingentPremium(OptionValuation):
         keep_hist = getattr(self.px_spec, 'keep_hist', False)
         n = getattr(self.px_spec, 'nsteps', 3)
         _ = self.LT_specs(n)
-
-        n = getattr(self.px_spec, 'nsteps', 3)
         if self.ref.q is not None:
             option_price = European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol, q=self.ref.q), right=self.right,
                            K=self.K, rf_r=self.rf_r, T=self.T).calc_px(method='LT', nsteps=n, keep_hist=False).px_spec.px
@@ -199,9 +198,8 @@ class ContingentPremium(OptionValuation):
             option_price = European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right,
                            K=self.K, rf_r=self.rf_r, T=self.T).calc_px(method='LT', nsteps=n, keep_hist=False).px_spec.px
 
-        print("test")
         nsteps = n
-        par = self.LT_params(nsteps)
+        par = _
         S = np.zeros((nsteps + 1, nsteps + 1))
         Val = np.zeros((nsteps + 1, nsteps + 1))
         S[0, 0] = self.ref.S0
@@ -229,9 +227,10 @@ class ContingentPremium(OptionValuation):
                         Val[i, j] = round(par['df_dt'] * (par['p'] * Val[i + 1, j + 1] + (1 - par['p']) * Val[i + 1, j]), 4)
 
         O = Val[0, 0]
+        print(O)
         O_tree = Val
         self.px_spec.add(px=float(Util.demote(O)), method='LT', sub_method='Binomial Tree',
-                        LT_specs=_, ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
+                        LT_specs=_, ref_tree = S if keep_hist else None, opt_tree = O_tree if keep_hist else None)
 
         # self.px_spec = PriceSpec(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
         #                 LT_specs=_, ref_tree = S_tree if save_tree else None, opt_tree = O_tree if save_tree else None)
