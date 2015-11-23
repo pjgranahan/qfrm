@@ -6,7 +6,8 @@ class Bermudan(OptionValuation):
     Inherits all methods and properties of OptionValuation class.
     """
 
-    def calc_px(self, method='LT', tex=(.12,.24,.46,.9,.91,.92,.93,.94,.95,.96,.97,.98,.99, 1.), nsteps=None, npaths=None, keep_hist=False):
+    def calc_px(self, method='LT', tex=(.12,.24,.46,.9,.91,.92,.93,.94,.95,.96,.97,.98,.99, 1.), \
+        nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
 
         User passes parameters to calc_px, which saves them to local PriceSpec object
@@ -23,11 +24,13 @@ class Bermudan(OptionValuation):
                 For Bermudan, assume that exercisability is for discrete tex times only.
                 This also needs to be sorted ascending and the final value is the corresponding vanilla maturity.
                 If T is not equal the the final value of T, then
-                    the T will take precedence: if T < max(tex) then tex will be truncated to tex[tex < T] and will be appended to tex.
+                    the T will take precedence: if T < max(tex) then tex will be truncated to tex[tex < T] and will be 
+                    appended to tex.
                     If T > max(tex) then the largest value of tex will be replaced with T.
         nsteps : int
                 MC, FD methods require number of times steps. 
-                Optional if using LT: n_steps = <integer> * <length of tex>. Will fill in the spaces between steps implied by tex. 
+                Optional if using LT: n_steps = <integer> * <length of tex>. Will fill in the spaces between steps 
+                implied by tex. 
                 Useful if tex is regular or sparse to improve accuracy. Otherwise leave as None.
         npaths : int
                 MC, FD methods require number of simulation paths
@@ -44,8 +47,8 @@ class Bermudan(OptionValuation):
         Notes
         -----
         The Bermudan option is a modified American with restricted early-exercise dates. Due to this restriction, 
-        Bermudans are named as such as they are "between" American and European options in exercisability, and as this module demonstrates,
-        in price.
+        Bermudans are named as such as they are "between" American and European options in exercisability, and as 
+        this module demonstrates, in price.
         
 
         Examples
@@ -81,7 +84,8 @@ class Bermudan(OptionValuation):
         >>> import matplotlib.pyplot as plt
         >>> from numpy import linspace
         >>> Karr = linspace(30,70,101)
-        >>> px = tuple(map(lambda i:  Bermudan(ref=Stock(50, vol=.6), right='put', K=Karr[i], T=2, rf_r=0.1).calc_px(tex=times, nsteps=20).px_spec.px, range(Karr.shape[0])))
+        >>> px = tuple(map(lambda i:  Bermudan(ref=Stock(50, vol=.6), right='put', K=Karr[i], T=2, rf_r=0.1).
+        ... calc_px(tex=times, nsteps=20).px_spec.px, range(Karr.shape[0])))
         >>> fig = plt.figure()
         >>> ax = fig.add_subplot(111) 
         >>> ax.plot(Karr,px,label='Bermudan put')
