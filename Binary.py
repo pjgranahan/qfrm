@@ -1,7 +1,7 @@
 from OptionValuation import *
 import numpy as np
-from math import log, exp, sqrt
-from scipy.stats import norm
+import math
+import scipy.stats
 
 
 class Binary(OptionValuation):
@@ -343,27 +343,27 @@ class Binary(OptionValuation):
         payout_type = payout_type.lower()
 
         # Calculate d1 and d2
-        d1 = ((log(self.ref.S0 / self.K)) + ((self.rf_r - self.ref.q + self.ref.vol ** 2 / 2) * self.T)) / (
-            self.ref.vol * sqrt(self.T))
-        d2 = d1 - (self.ref.vol * sqrt(self.T))
+        d1 = ((math.log(self.ref.S0 / self.K)) + ((self.rf_r - self.ref.q + self.ref.vol ** 2 / 2) * self.T)) / (
+            self.ref.vol * math.sqrt(self.T))
+        d2 = d1 - (self.ref.vol * math.sqrt(self.T))
 
         # Price the asset-or-nothing binary option
         if payout_type == "asset_or_nothing":
             # Calculate the discount
-            discount = self.ref.S0 * exp(-self.ref.q * self.T)
+            discount = self.ref.S0 * math.exp(-self.ref.q * self.T)
 
             # Compute the put and call price
-            px_call = discount * norm.cdf(d1)
-            px_put = discount * norm.cdf(-d1)
+            px_call = discount * scipy.stats.norm.cdf(d1)
+            px_put = discount * scipy.stats.norm.cdf(-d1)
 
         # Price the cash-or-nothing binary option
         elif payout_type == "cash_or_nothing":
             # Calculate the discount
-            discount = Q * exp(-self.rf_r * self.T)
+            discount = Q * math.exp(-self.rf_r * self.T)
 
             # Compute the put and call price
-            px_call = discount * norm.cdf(d2)
-            px_put = discount * norm.cdf(-d2)
+            px_call = discount * scipy.stats.norm.cdf(d2)
+            px_put = discount * scipy.stats.norm.cdf(-d2)
 
         # The underlying is unknown
         else:
