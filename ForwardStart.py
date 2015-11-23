@@ -1,5 +1,6 @@
 from OptionValuation import *
-
+from scipy.stats import norm
+from math import sqrt, exp, log
 class ForwardStart(OptionValuation):
     """ ForwardStart option class
 
@@ -163,8 +164,7 @@ class ForwardStart(OptionValuation):
         assert q >= 0, 'q >= 0'
 
         # Import external functions
-        from scipy.stats import norm
-        from math import sqrt, exp, log
+
 
         # Parameters in BSM
         d1 = (log(S0/K)+(r-q+vol**2/2)*T)/(vol*sqrt(T))

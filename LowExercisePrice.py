@@ -1,4 +1,7 @@
 from OptionValuation import *
+from scipy.stats import norm
+from math import sqrt, exp, log
+from numpy import cumsum, log, arange, insert, exp, sqrt, sum, maximum
 
 class LowExercisePrice(OptionValuation):
     """ LowExercisePrice option class.
@@ -106,8 +109,6 @@ class LowExercisePrice(OptionValuation):
 
         """
 
-        from scipy.stats import norm
-        from math import sqrt, exp, log
 
         _ = self
         K = 0.01
@@ -144,7 +145,7 @@ class LowExercisePrice(OptionValuation):
         -------
         """
 
-        from numpy import cumsum, log, arange, insert, exp, sqrt, sum, maximum
+
         # Get the # of steps of binomial tree
         n = getattr(self.px_spec, 'nsteps', 3)
         _ = self.LT_specs(n)
