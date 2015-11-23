@@ -36,7 +36,6 @@ class Gap(OptionValuation):
 
     def calc_px(self, K2=None, method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
-
         User passes parameters to calc_px, which saves them to local PriceSpec object
         and calls specific pricing function (_calc_BS,...).
         This makes significantly less docstrings to write, since user is not interfacing pricing functions,
@@ -259,8 +258,11 @@ class Gap(OptionValuation):
 
         return self
 
-s = Stock(S0=50, vol=.2,  q = 0)
-o = Gap(ref=s, right='put', K=57, T=1, rf_r=.09, on = (90000,)*23)
-print(o.calc_px(K2=50, nsteps = 22, method='LT').px_spec.px)
+# s = Stock(S0=50, vol=.2,  q = 0)
+# o = Gap(ref=s, right='put', K=57, T=1, rf_r=.09, on = (90000,)*23)
+# print(o.calc_px(K2=50, nsteps = 22, method='LT').px_spec.px)
 
 
+# if __name__ == "__main__":
+#     import doctest
+#     doctest.testmod()
