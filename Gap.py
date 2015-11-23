@@ -36,6 +36,7 @@ class Gap(OptionValuation):
 
     def calc_px(self, K2=None, method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
+
         User passes parameters to calc_px, which saves them to local PriceSpec object
         and calls specific pricing function (_calc_BS,...).
         This makes significantly less docstrings to write, since user is not interfacing pricing functions,
@@ -62,23 +63,27 @@ class Gap(OptionValuation):
 
         Notes
         -----
+        A gap option has a strike price, K1 , and a trigger price, K2 . The trigger price
+        determines whether or not the gap option will have a nonzero payoff. The strike price
+        determines the amount of the nonzero payoff. The strike price may be greater than or
+        less than the trigger price.
 
         Examples
         -------
 
         >>> s = Stock(S0=500000, vol=.2)
         >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='Hull p.601 Example 26.1')
-        >>> print(o.calc_px(K2=350000, method='BS').px_spec.px)
+        >>> o.calc_px(K2=350000, method='BS').px_spec.px
         1895.6889443965902
 
         >>> s = Stock(S0=50, vol=.2)
         >>> o = Gap(ref=s, right='call', K=57, T=1, rf_r=.09)
-        >>> print(o.calc_px(K2=50, method='BS').px_spec.px)
+        >>> o.calc_px(K2=50, method='BS').px_spec.px
         2.266910325361735
 
         >>> s = Stock(S0=50, vol=.2)
         >>> o = Gap(ref=s, right='put', K=57, T=1, rf_r=.09)
-        >>> print(o.calc_px(K2=50, method='BS').px_spec.px)
+        >>> o.calc_px(K2=50, method='BS').px_spec.px
         4.360987885821741
 
 
@@ -89,19 +94,29 @@ class Gap(OptionValuation):
 
         >>> s = Stock(S0=500000, vol=.2,  q = 0)
         >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, on = (90000,)*23, desc = 'HULL p. 601 Exp 26.1')
-        >>> print(o.calc_px(K2=350000, nsteps = 22, method='LT').px_spec.px)
+        >>> o.calc_px(K2=350000, nsteps = 22, method='LT').px_spec.px
         1895.80129679
 
 
         >>> s = Stock(S0=50, vol=.2,  q = 0)
         >>> o = Gap(ref=s, right='call', K=57, T=1, rf_r=.09, on = (90000,)*23)
-        >>> print(o.calc_px(K2=50, nsteps = 22, method='LT').px_spec.px)
+        >>> o.calc_px(K2=50, nsteps = 22, method='LT').px_spec.px
         2.27490242761
 
         >>> s = Stock(S0=50, vol=.2,  q = 0)
         >>> o = Gap(ref=s, right='put', K=57, T=1, rf_r=.09, on = (90000,)*23)
-        >>> print(o.calc_px(K2=50, nsteps = 22, method='LT').px_spec.px)
+        >>> o.calc_px(K2=50, nsteps = 22, method='LT').px_spec.px
         4.36897999796
+
+        >>> from pandas import Series
+        >>> expiries = range(1,11)
+        >>> o = Series([o.update(T=t).calc_px(method='LT', nsteps=5).px_spec.px for t in expiries], expiries)
+        >>> o.plot(grid=1, title='Price vs expiry (in years)')
+
+        See Also
+        --------
+        [1] http://www.actuarialbookstore.com/samples/3MFE-BRE-12FSM%20Sample%20_4-12-12.pdf
+        [2] https://www.ma.utexas.edu/users/mcudina/Lecture14_3_4_5.pdf
 
 
 
@@ -257,12 +272,3 @@ class Gap(OptionValuation):
         """
 
         return self
-
-# s = Stock(S0=50, vol=.2,  q = 0)
-# o = Gap(ref=s, right='put', K=57, T=1, rf_r=.09, on = (90000,)*23)
-# print(o.calc_px(K2=50, nsteps = 22, method='LT').px_spec.px)
-
-
-# if __name__ == "__main__":
-#     import doctest
-#     doctest.testmod()
