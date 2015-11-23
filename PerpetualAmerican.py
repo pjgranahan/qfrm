@@ -53,7 +53,14 @@ class PerpetualAmerican(OptionValuation):
         >>> print(o.calc_px(method='BS').px_spec.px) #print the option price with the above specification
         37.190676833752335
 
-        >>> print(repr(o))  #display the specification of the perpetual American option
+        >>> print(o.calc_px(method="BS").px_spec)  #display the specification of the perpetual American option
+        PriceSpec
+        keep_hist: false
+        method: BS
+        px: 37.190676833752335
+        <BLANKLINE>
+
+        >>> print(o.calc_px(method='BS'))  #display more properties of the option
         PerpetualAmerican.PerpetualAmerican
         K: 50
         T: 1
@@ -64,6 +71,7 @@ class PerpetualAmerican(OptionValuation):
         px_spec: PriceSpec
           keep_hist: false
           method: BS
+          px: 37.190676833752335
         ref: Stock
           S0: 50
           curr: -
@@ -76,18 +84,74 @@ class PerpetualAmerican(OptionValuation):
         <BLANKLINE>
 
         Change the option to a put
-        >>> print(o.update(right='put').calc_px())
+        >>> print(o.update(right='put').calc_px().px_spec.px)
         8.67627928986901
+
+        >>> print(o.update(right='put').calc_px()) #display full specification
+        PerpetualAmerican.PerpetualAmerican
+        K: 50
+        T: 1
+        _right: put
+        _signCP: -1
+        desc: call @37.19 put @8.68 example from Internet
+        frf_r: 0
+        px_spec: PriceSpec
+          keep_hist: false
+          method: BS
+          px: 8.67627928986901
+        ref: Stock
+          S0: 50
+          curr: -
+          desc: -
+          q: 0.01
+          tkr: -
+          vol: 0.3
+        rf_r: 0.08
+        seed0: -
+        <BLANKLINE>
 
         Another example with different dividend and risk free interest rate
         >>> s = Stock(S0=50, vol=.3, q=0.02)
         >>> o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.05, desc='call @27.47 put @13.43 example from Internet')
-        >>> print(o.calc_px(method='BS'))
+        >>> print(o.calc_px(method='BS').px_spec.px)
         27.465595636754223
 
         Change the option to a put
-        >>> print(o.update(right='put').calc_px())
+        >>> print(o.update(right='put').calc_px().px_spec.px)
         13.427262534976805
+
+        >>> print(o.update(right='put').calc_px())
+        PerpetualAmerican.PerpetualAmerican
+        K: 50
+        T: 1
+        _right: put
+        _signCP: -1
+        desc: call @27.47 put @13.43 example from Internet
+        frf_r: 0
+        px_spec: PriceSpec
+          keep_hist: false
+          method: BS
+          px: 13.427262534976805
+        ref: Stock
+          S0: 50
+          curr: -
+          desc: -
+          q: 0.02
+          tkr: -
+          vol: 0.3
+        rf_r: 0.05
+        seed0: -
+        <BLANKLINE>
+
+        # Example of option price development (BS method) with increasing maturities (This would give a horizontal line\
+        because this perpetual American option does not have an expiry)
+        >>> from pandas import Series
+        >>> expiries = range(1,11)
+        >>> O = Series([o.update(T=t).calc_px(method='BS').px_spec.px for t in expiries], expiries)
+        >>> O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at ...>
+        >>> import matplotlib.pyplot as plt
+        >>> plt.show()
 
         """
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
@@ -150,7 +214,7 @@ class PerpetualAmerican(OptionValuation):
             else:
                 print('The option cannot be priced due to unknown threshold condition')
 
-        self.px_spec.add(px=out)
+        self.px_spec.add(px=float(out))
 
 
 
@@ -201,16 +265,4 @@ class PerpetualAmerican(OptionValuation):
         return self
 
 
-#add graph examples, make math clearer by more comments, verify results
-s = Stock(S0=50, vol=.3, q=0.01)
-o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.08, desc='call @37.19 put @8.68')
-#print(o.calc_px(method='BS').px_spec.px)
-print(o.calc_px(method='BS').px_spec)
-#print(repr(o))
-#print(o.update(right='put').calc_px())
-#print(str(o))
 
-#s = Stock(S0=50, vol=.3, q=0.02)
-#o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.05, desc='call @27.47 put @13.43 example from Internet')
-#print(o.calc_px(method='BS'))
-#print(o.update(right='put').calc_px())
