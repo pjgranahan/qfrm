@@ -1,4 +1,7 @@
 from OptionValuation import *
+from scipy.stats import norm
+from math import sqrt, exp, log
+from numpy import cumsum, log, arange, insert, exp, sqrt, sum, maximum
 
 class LowExercisePrice(OptionValuation):
     """ LowExercisePrice option class.
@@ -76,7 +79,7 @@ class LowExercisePrice(OptionValuation):
 
         >>> s = Stock(S0=19.6, vol=.30)
         >>> o = LowExercisePrice(ref=s,T=5, rf_r=.10)
-        >>> o.plot_px_convergence(nsteps_max=30)  # Not working until qfrm.OptionValuation.plot_px_convergence is updated.
+        >>> o.plot_px_convergence(nsteps_max=30)  # It will be a straight line, because LEPO is similar to a forward contract.
 
         Returns
         -------
@@ -106,8 +109,6 @@ class LowExercisePrice(OptionValuation):
 
         """
 
-        from scipy.stats import norm
-        from math import sqrt, exp, log
 
         _ = self
         K = 0.01
@@ -144,7 +145,7 @@ class LowExercisePrice(OptionValuation):
         -------
         """
 
-        from numpy import cumsum, log, arange, insert, exp, sqrt, sum, maximum
+
         # Get the # of steps of binomial tree
         n = getattr(self.px_spec, 'nsteps', 3)
         _ = self.LT_specs(n)

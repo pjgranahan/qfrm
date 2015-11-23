@@ -6,7 +6,8 @@ class Bermudan(OptionValuation):
     Inherits all methods and properties of OptionValuation class.
     """
 
-    def calc_px(self, method='LT', tex=(.12,.24,.46,.9,.91,.92,.93,.94,.95,.96,.97,.98,.99, 1.), nsteps=None, npaths=None, keep_hist=False):
+    def calc_px(self, method='LT', tex=(.12,.24,.46,.9,.91,.92,.93,.94,.95,.96,.97,.98,.99, 1.), \
+        nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
 
         User passes parameters to calc_px, which saves them to local PriceSpec object
@@ -23,11 +24,13 @@ class Bermudan(OptionValuation):
                 For Bermudan, assume that exercisability is for discrete tex times only.
                 This also needs to be sorted ascending and the final value is the corresponding vanilla maturity.
                 If T is not equal the the final value of T, then
-                    the T will take precedence: if T < max(tex) then tex will be truncated to tex[tex < T] and will be appended to tex.
+                    the T will take precedence: if T < max(tex) then tex will be truncated to tex[tex < T] and will be 
+                    appended to tex.
                     If T > max(tex) then the largest value of tex will be replaced with T.
         nsteps : int
                 MC, FD methods require number of times steps. 
-                Optional if using LT: n_steps = <integer> * <length of tex>. Will fill in the spaces between steps implied by tex. 
+                Optional if using LT: n_steps = <integer> * <length of tex>. Will fill in the spaces between steps 
+                implied by tex. 
                 Useful if tex is regular or sparse to improve accuracy. Otherwise leave as None.
         npaths : int
                 MC, FD methods require number of simulation paths
@@ -44,8 +47,8 @@ class Bermudan(OptionValuation):
         Notes
         -----
         The Bermudan option is a modified American with restricted early-exercise dates. Due to this restriction, 
-        Bermudans are named as such as they are "between" American and European options in exercisability, and as this module demonstrates,
-        in price.
+        Bermudans are named as such as they are "between" American and European options in exercisability, and as 
+        this module demonstrates, in price.
         
 
         Examples
@@ -64,38 +67,39 @@ class Bermudan(OptionValuation):
         >>> o.calc_px(method='LT', keep_hist=True).px_spec.px        
         4.705110748543638
         >>> ##Explicit input of exercise schedule
-        ##Explicit input of exercise schedule
+        >>> ##Explicit input of exercise schedule
         >>> from numpy.random import normal, seed
         >>> seed(12345678)
         >>> rlist = normal(1,1,20)
-        >>> rlist
-        (1.5537081891302398, -0.45963199306004054, -0.29458513937766706 ... 2.0690862578324634, 1.5065661292243346, 1.7135377495155995) 
         >>> times = tuple(map(lambda i: float(str(round(abs(rlist[i]),2))), range(20)))
         >>> o = Bermudan(ref=s, right='put', K=52, T=1., rf_r=.05)
         >>> o.calc_px(method='LT', tex=times, keep_hist=True).px_spec.px
         5.8246496768398055
-        ##Example from p. 9 of http://janroman.dhis.org/stud/I2012/Bermuda/reportFinal.pdf
+        >>> ##Example from p. 9 of http://janroman.dhis.org/stud/I2012/Bermuda/reportFinal.pdf
         >>> times = (3/12,6/12,9/12,12/12,15/12,18/12,21/12,24/12)
         >>> o = Bermudan(ref=Stock(50, vol=.6), right='put', K=52, T=2, rf_r=0.1)
         >>> o.calc_px(method='LT', tex=times, nsteps=40, keep_hist=False).px_spec.px       
         13.206509995991107
-        ##Price vs. strike curve - example of vectorization of price calculation
+        >>> ##Price vs. strike curve - example of vectorization of price calculation
         >>> import matplotlib.pyplot as plt
         >>> from numpy import linspace
         >>> Karr = linspace(30,70,101)
-        >>> px = tuple(map(lambda i:  Bermudan(ref=Stock(50, vol=.6), right='put', K=Karr[i], T=2, rf_r=0.1).\
-        >>>     calc_px(tex=times, nsteps=20).px_spec.px, range(Karr.shape[0])))
+        >>> px = tuple(map(lambda i:  Bermudan(ref=Stock(50, vol=.6), right='put', K=Karr[i], T=2, rf_r=0.1).
+        ... calc_px(tex=times, nsteps=20).px_spec.px, range(Karr.shape[0])))
         >>> fig = plt.figure()
-        >>> ax = fig.add_subplot(111)
+        >>> ax = fig.add_subplot(111) 
         >>> ax.plot(Karr,px,label='Bermudan put')
+        [<...>]
         >>> ax.set_title('Price of Bermudan put vs K')
+        <...>
         >>> ax.set_ylabel('Px')
+        <...>
         >>> ax.set_xlabel('K')
+        <...>
         >>> ax.grid()
-        >>> ax.legend()
-        >>> plt.show()
-        >>> px
-        (3.4135993706808603, 3.54131301801646, 3.6690266889245886, ... 24.389711144207705, 24.67908101626121, 24.969339388026746)
+        >>> ax.legend() 
+        <...>
+        >>> plt.show()        
         
         """
 
@@ -139,7 +143,8 @@ class Bermudan(OptionValuation):
         # tree = ([float(s) for s in S], [float(o) for o in O],)
 
         for i in range(n, 0, -1):
-            O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
+            O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices 
+            #(@time step=i-1)
             S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
             Payout = maximum(self.signCP * (S - self.K), 0)   # payout at time step i-1 (moving backward in time)
             if i*_['dt'] in self.tex:   #The Bermudan condition: exercise only at scheduled times         
@@ -153,7 +158,8 @@ class Bermudan(OptionValuation):
                         LT_specs=_, ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
 
         # self.px_spec = PriceSpec(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
-        #                 LT_specs=_, ref_tree = S_tree if save_tree else None, opt_tree = O_tree if save_tree else None)
+        #                 LT_specs=_, ref_tree = S_tree if save_tree else None, opt_tree = O_tree if save_tree 
+        #else None)
         return self
 
     def _calc_BS(self):
