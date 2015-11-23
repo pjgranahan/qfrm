@@ -1,4 +1,5 @@
 from qfrm import *
+from American import American
 
 
 class Quanto(OptionValuation):
@@ -57,7 +58,7 @@ class Quanto(OptionValuation):
         _right: call
         _signCP: 1
         frf_r: 0.05
-        px_spec: qfrm.PriceSpec
+        px_spec: PriceSpec
           LT_specs:
             a: 1.0003000450045003
             d: 0.965262359891545
@@ -71,15 +72,15 @@ class Quanto(OptionValuation):
           nsteps: 100
           px: 172.20505562521683
           sub_method: binomial tree; Hull Ch.13
-        ref: qfrm.Stock
+        ref: Stock
           S0: 1200
-          curr: null
-          desc: null
+          curr: -
+          desc: -
           q: 0.015
-          tkr: null
+          tkr: -
           vol: 0.25
         rf_r: 0.03
-        seed0: null
+        seed0: -
         <BLANKLINE>
 
         Calculate the price of a Quanto option. This example comes from Hull ch.30, problem.30.9.b (p.704)
@@ -128,7 +129,6 @@ class Quanto(OptionValuation):
 
         # Once we have the foreign numeraire dividend yield calculated,
         # we can price the Quanto option using an American option with specific parameters
-        from American import American
         stock = Stock(S0=self.ref.S0, vol=self.ref.vol, q=foreign_numeraire_dividend_yield)
         american_option = American(ref=stock, right=self.right, K=self.K, T=self.T, rf_r=self.frf_r)
 
