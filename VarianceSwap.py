@@ -83,11 +83,16 @@ class VarianceSwap(OptionValuation):
         >>> fig = plt.figure()
         >>> ax = fig.add_subplot(111)
         >>> ax.plot(s2K,px,label='Variance Swap')
+        [<...>]
         >>> ax.set_title('Price of Variance Swap vs Vol_K for L_Var = '+str(o.L_Var/1000)+'M')
-        >>> ax.set_xlabel('Px [\'000]')
+        <...>
+        >>> ax.set_ylabel('Px [x000]')
+        <...>
         >>> ax.set_xlabel('volatility strike')
+        <...>
         >>> ax.grid()
         >>> ax.legend()
+        <...>
         >>> plt.show()
 
         """

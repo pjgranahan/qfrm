@@ -83,13 +83,18 @@ class Bermudan(OptionValuation):
         >>> Karr = linspace(30,70,101)
         >>> px = tuple(map(lambda i:  Bermudan(ref=Stock(50, vol=.6), right='put', K=Karr[i], T=2, rf_r=0.1).calc_px(tex=times, nsteps=20).px_spec.px, range(Karr.shape[0])))
         >>> fig = plt.figure()
-        >>> ax = fig.add_subplot(111)
+        >>> ax = fig.add_subplot(111) 
         >>> ax.plot(Karr,px,label='Bermudan put')
+        [<...>]
         >>> ax.set_title('Price of Bermudan put vs K')
+        <...>
         >>> ax.set_ylabel('Px')
+        <...>
         >>> ax.set_xlabel('K')
+        <...>
         >>> ax.grid()
-        >>> ax.legend()
+        >>> ax.legend() 
+        <...>
         >>> plt.show()        
         
         """
