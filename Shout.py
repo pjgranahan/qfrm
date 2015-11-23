@@ -1,7 +1,5 @@
 from scipy import stats
-import warnings
-import numpy as np
-import math
+from numpy import maximum, where, polyval, polyfit, exp, mean, sqrt, zeros, log, arange
 from OptionValuation import *
 
 class Shout(OptionValuation):
@@ -10,14 +8,7 @@ class Shout(OptionValuation):
     Inherits all methods and properties of OptionValuation class.
     """
 
-    def __init__(self,q=0.0,*args,**kwargs):
-
-
-        super().__init__(*args,**kwargs)
-        self.q = q
-
-
-    def calc_px(self, method='LT', nsteps=None, npaths=None, keep_hist=False):
+    def calc_px(self, method='LT', nsteps=None, npaths=None, keep_hist=False, seed=None):
         """ Wrapper function that calls appropriate valuation method.
 
         User passes parameters to calc_px, which saves them to local PriceSpec object
@@ -35,7 +26,8 @@ class Shout(OptionValuation):
                 MC, FD methods require number of simulation paths
         keep_hist : bool
                 If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
-
+        seed : int
+                Seed number for Monte Carlo simulation
 
         Returns
         -------
@@ -109,8 +101,10 @@ class Shout(OptionValuation):
         >>> plt.show()
 
        """
-
-        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
+        self.seed = seed
+        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
+        return getattr(self, '_calc_' + method.upper())()
+        #return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
 
 
     def _calc_LT(self):
@@ -133,7 +127,6 @@ class Shout(OptionValuation):
 
 
         """
-        from numpy import arange, maximum, log, exp, sqrt
 
         keep_hist = getattr(self.px_spec, 'keep_hist', False)
         n = getattr(self.px_spec, 'nsteps', 3)
@@ -148,14 +141,14 @@ class Shout(OptionValuation):
         for i in range(n, 0, -1):
             left = n - i + 1
             tleft = left * _['dt']
-            d1 = (0 + (self.rf_r + self.ref.vol ** 2 / 2) * tleft) / (self.ref.vol * math.sqrt(tleft))
-            d2 = d1 - self.ref.vol * math.sqrt(tleft)
+            d1 = (0 + (self.rf_r + self.ref.vol ** 2 / 2) * tleft) / (self.ref.vol * sqrt(tleft))
+            d2 = d1 - self.ref.vol * sqrt(tleft)
 
             O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
             S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
-            Shout = self.signCP * S / math.exp(self.ref.q * tleft) * stats.norm.cdf(self.signCP * d1) - \
-                    self.signCP * S / math.exp(self.rf_r * tleft) * stats.norm.cdf(self.signCP * d2) + \
-                    self.signCP * (S - self.K) / math.exp(self.rf_r * tleft)
+            Shout = self.signCP * S / exp(self.ref.q * tleft) * stats.norm.cdf(self.signCP * d1) - \
+                    self.signCP * S / exp(self.rf_r * tleft) * stats.norm.cdf(self.signCP * d2) + \
+                    self.signCP * (S - self.K) / exp(self.rf_r * tleft)
 
             Payout = maximum(Shout, 0)
             O = maximum(O, Payout)
@@ -196,12 +189,42 @@ class Shout(OptionValuation):
         -------
         self: Shout
 
-        .. sectionauthor::
+        .. sectionauthor:: Yen-fei Chen
 
         Note
         ----
+        [1] eprints.maths.ox.ac.uk/933/1/lisa_yudaken.pdf
+        [2] Hull, J.C., Options, Futures and Other Derivatives, 9ed, 2014. Prentice Hall, p609.
 
         """
+        n_steps = getattr(self.px_spec, 'nsteps', 3)
+        n_paths = getattr(self.px_spec, 'npaths', 3)
+        _ = self.MC_specs(n)
+
+        dt = T / n_steps
+        df = exp(-r * dt)
+        signCP = 1 if right.lower()[0] == 'c' else -1
+        seed(Seed)
+
+        h = zeros((n_steps+1, n_paths) ,'d') # option value matrix
+        S = zeros((n_steps+1, n_paths) ,'d') # stock price matrix
+        S[0,:] = S0 # initial value
+
+        # stock price paths
+        for t in range(1,n_steps+1):
+            ran = standard_normal(n_paths) # pseudo - random numbers
+            S[t,:] = S[t-1,:] * exp((r-vol**2/2)*dt + vol*ran*sqrt(dt))
+
+        h = maximum(signCP*(S-K), 0)
+        V = maximum(signCP*(S-K), 0) # payoff of immediate exercise
+
+        for t in range (n_steps-1,-1,-1):
+            rg = polyfit(S[t,:], df*array(h[t+1,:]), deg) # regression at time t
+            C= polyval(rg, S[t,:]) # continuation values
+            h[t,:]= where(V[t,:]>C, V[t,:], h[t+1,:]*df) # exercise decision
+
+        V0 = mean(h[0,:]) # MCS estimator
+
         return self
 
     def _calc_FD(self):
