@@ -107,12 +107,14 @@ class Lookback(OptionValuation):
         >>> from pandas import Series;  expiries = range(1,11)
         >>> O = Series([o.update(T=t).calc_px(method='BS').px_spec.px for t in expiries], expiries)
         >>> O.plot(grid=1, title='BS Price vs expiry (in years)')
+        <matplotlib.axes._subplots.AxesSubplot object at ...>
+
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
 
         >>> s = Stock(S0=35., vol=.05, q=.00)
-        >>> o = Lookback(ref=s, right='call', T=0.25, rf_r=.1, desc='Hull p607')
+        >>> o = Lookback(ref=s, right='call', K=30, T=0.25, rf_r=.1, desc='Hull p607')
         >>> o.calc_px(method='LT', nsteps=100, keep_hist=False).px_spec.px
         1.829899147224415
 
@@ -135,20 +137,20 @@ class Lookback(OptionValuation):
 
 
         >>> s = Stock(S0=50., vol=.4, q=.0)
-        >>> o = Lookback(ref=s, right='call', T=3/12, rf_r=.1, desc='Hull p607')
+        >>> o = Lookback(ref=s, right='call', T=3/12, K=30, rf_r=.1, desc='Hull p607')
         >>> o.calc_px(method='LT', nsteps=1000, keep_hist=False).px_spec.px
         8.13575890392886
 
 
         >>> s = Stock(S0=100., vol=.02, q=.0)
-        >>> o = Lookback(ref=s, right='call', T=3, rf_r=.01, desc='Hull p607')
+        >>> o = Lookback(ref=s, right='call', T=3, K=30, rf_r=.01, desc='Hull p607')
         >>> o.calc_px(method='LT', nsteps=50, keep_hist=False).px_spec.px
         6.436996102693329
 
         >>> # Example of option price development (LT method) with increasing maturities
         >>> from pandas import Series;  expiries = range(1,11)
         >>> s = Stock(S0=100., vol=.015, q=.0)
-        >>> o = Lookback(ref=s, right='call', T=3, rf_r=.01, desc='Hull p607')
+        >>> o = Lookback(ref=s, right='call', T=3, K=30, rf_r=.01, desc='Hull p607')
         >>> O = Series([o.update(T=t).calc_px(method='LT', nsteps=5).px_spec.px for t in expiries], expiries)
         >>> O.plot(grid=1, title='Price vs expiry (in years)')
 
@@ -227,50 +229,29 @@ class Lookback(OptionValuation):
 
         """
 
-        # Verify input
-        try:
-            right   =   self.right.lower()
-            S       =   float(self.ref.S0)
-            Sfl     =   float(self.px_spec.Sfl)
-            T       =   float(self.T)
-            vol     =   float(self.ref.vol)
-            r       =   float(self.rf_r)
-            q       =   float(self.ref.q)
-            signCP  =   self.signCP
+        _ = self
+        # Compute Parameters
 
+        S_new = _.ref.S0 / _.px_spec.Sfl if _.signCP == 1 else _.px_spec.Sfl / _.ref.S0
 
-        except:
-            print('right must be String. S, Sfl, T, vol, r, q must be floats or be able to be coerced to float')
-            return False
+        a1 = (math.log(S_new) + (_.signCP * (_.rf_r - _.ref.q) + _.ref.vol ** 2 / 2) * _.T) / (_.ref.vol * math.sqrt(_.T))
+        a2 = a1 - _.ref.vol * math.sqrt(_.T)
+        a3 = (math.log(S_new) + _.signCP * (-_.rf_r + _.ref.q + _.ref.vol ** 2 / 2) * _.T) / (_.ref.vol * math.sqrt(_.T))
+        Y1 = _.signCP * (-2 * (_.rf_r - _.ref.q - _.ref.vol ** 2 / 2) * math.log(S_new)) / (_.ref.vol ** 2)
 
-        assert right in ['call','put'], 'right must be "call" or "put" '
-        assert S >= 0, 'S must be >= 0'
-        assert Sfl > 0, 'Sfl must be > 0'
-        assert T > 0, 'T must be > 0'
-        assert vol > 0, 'vol must be >=0'
-        assert r >= 0, 'r must be >= 0'
-        assert q >= 0, 'q must be >= 0'
+        c1 = _.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(a1)
+        c2 = _.ref.S0 * math.exp(-_.ref.q * _.T) * (_.ref.vol ** 2) * stats.norm.cdf(-a1) / (2 * (_.rf_r - _.ref.q))
+        c3 = - _.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (stats.norm.cdf(a2) - _.ref.vol ** 2 * math.exp(Y1) * stats.norm.cdf(-a3) / (2 * (_.rf_r - _.ref.q)))
+        c = c1 - c2 + c3
 
-        # Imports
-        from math import exp, log, sqrt
-        from scipy.stats import norm
-
-        # Parameters for Value Calculation (see link in docstring)
-
-
-        S_new = S / Sfl if right == 'call' else Sfl / S
-
-        a1 = (log(S_new) + (signCP * (r - q) + vol ** 2 / 2) * T) / (vol * sqrt(T))
-        a2 = a1 - vol * sqrt(T)
-        a3 = (log(S_new) + signCP * (-r + q + vol ** 2 / 2) * T) / (vol * sqrt(T))
-        Y1 = signCP * (-2 * (r - q - vol ** 2 / 2) * log(S_new)) / (vol ** 2)
-
-        c = S * exp(-q * T) * norm.cdf(a1) - S * exp(-q * T) * (vol ** 2) * norm.cdf(-a1) / (2 * (r - q)) - Sfl * exp(-r * T) * (norm.cdf(a2) - vol ** 2 * exp(Y1) * norm.cdf(-a3) / (2 * (r - q)))
-        p = Sfl * exp(-r * T) * (norm.cdf(a1) - vol ** 2 * exp(Y1) * norm.cdf(-a3) / (2 * (r - q))) + S * exp(-q *T) * (vol ** 2) * norm.cdf(-a2) / (2 * (r - q)) - S * exp(-q * T) * norm.cdf(a2)
+        p1 = self.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (stats.norm.cdf(a1) - _.ref.vol ** 2 * math.exp(Y1) * stats.norm.cdf(-a3) / (2 * (_.rf_r - _.ref.q)))
+        p2 = _.ref.S0 * math.exp(-_.ref.q * _.T) * (_.ref.vol ** 2) * stats.norm.cdf(-a2) / (2 * (_.rf_r - _.ref.q))
+        p3 = _.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(a2)
+        p = p1 + p2 - p3
 
 
         # Calculate the value of the option using the BS Equation
-        if right == 'call':
+        if self.signCP == 1:
             self.px_spec.add(px=float(c), method='BS', sub_method='Look back, Hull Ch.26')
 
         else:

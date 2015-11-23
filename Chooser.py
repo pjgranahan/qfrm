@@ -35,25 +35,21 @@ class Chooser(OptionValuation):
 
         Notes
         -----
-        Hull, John C.,Options, Futures and Other Derivatives, 9ed, 2014. Prentice Hall. ISBN 978-0-13-345631-8. http://www-2.rotman.utoronto.ca/~hull/ofod/index.html
-
-        Huang Espen G., Option Pricing Formulas, 2ed. http://down.cenet.org.cn/upfile/10/20083212958160.pdf
-
-        Wee, Lim Tiong, MFE5010 Exotic Options,Notes for Lecture 4 Chooser option. http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L4chooser.pdf
-
-        Humphreys, Natalia A., ACTS 4302 Principles of Actuarial Models: Financial Economics. Lesson 14: All-or-nothing, Gap, Exchange and Chooser Options.
+        An option contract that allows the holder to decide whether it is a call or put prior to
+        the expiration date. Chooser options usually have the same exercise price and expiration
+        date regardless of what decision the holder ultimately makes.
 
         Examples
         -------
         >>> s = Stock(S0=50, vol=0.25, q=0.08)
         >>> o = Chooser(ref=s, right='put', K=50, T=.5, rf_r=.08)
-        >>> print(o.calc_px(tau=3/12, method='BS').px_spec.px)
+        >>> o.calc_px(tau=3/12, method='BS').px_spec.px
         6.10707749816
 
-        >>> print(o.calc_px(tau=3/12, method='LT', nsteps=5, keep_hist=True).px_spec.px)
+        >>> o.calc_px(tau=3/12, method='LT', nsteps=5, keep_hist=True).px_spec.px
         7.109866570176281
 
-        >>> print(o.px_spec.ref_tree)
+        >>> o.px_spec.ref_tree
         ((50.00000000000001,),
         (46.19936548599171, 54.11329730833717),
         (42.687627426164845, 50.0, 58.5649789116098),
@@ -61,7 +57,7 @@ class Chooser(OptionValuation):
         (36.44467070550122, 42.687627426164845, 50.0, 58.56497891160979, 68.597135098346),
         (33.67441323880132, 39.442826023824665, 46.19936548599171, 54.11329730833716, 63.38288231400873, 74.24034332153934))
 
-        >>> print(o.calc_px(tau=3/12, method='LT', nsteps=2, keep_hist=False))
+        >>> o.calc_px(tau=3/12, method='LT', nsteps=2, keep_hist=False)
         Chooser
         K: 50
         T: 0.5
@@ -92,6 +88,26 @@ class Chooser(OptionValuation):
         rf_r: 0.08
         seed0: null
         tau: 0.25
+
+        >>> from pandas import Series
+        >>> expiries = range(1,11)
+        >>> o = Series([o.update(T=t).calc_px(method='LT', nsteps=5).px_spec.px for t in expiries], expiries)
+        >>> o.plot(grid=1, title='Price vs expiry (in years)')
+
+        See Also
+        --------
+        Hull, John C.,Options, Futures and Other Derivatives, 9ed, 2014. Prentice Hall. ISBN 978-0-13-345631-8.
+        http://www-2.rotman.utoronto.ca/~hull/ofod/index.html
+
+        Huang Espen G., Option Pricing Formulas, 2ed.
+        http://down.cenet.org.cn/upfile/10/20083212958160.pdf
+
+        Wee, Lim Tiong, MFE5010 Exotic Options,Notes for Lecture 4 Chooser option.
+        http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L4chooser.pdf
+
+        Humphreys, Natalia A., ACTS 4302 Principles of Actuarial Models: Financial Economics.
+        Lesson 14: All-or-nothing, Gap, Exchange and Chooser Options.
+
 
         """
         self.tau = float(tau)
