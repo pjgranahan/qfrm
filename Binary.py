@@ -1,5 +1,5 @@
 from OptionValuation import *
-
+import numpy as np
 
 class Binary(OptionValuation):
     """
@@ -383,7 +383,7 @@ class Binary(OptionValuation):
         Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
 
         """
-        import numpy as np
+
 
         #Retrieve parameters specific to binary option class
         payout_type = getattr(self.px_spec, 'payout_type')
