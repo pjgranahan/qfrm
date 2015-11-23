@@ -3,7 +3,9 @@ import math
 from OptionValuation import *
 from European import *
 from Binary import *
-
+from scipy.optimize import root
+from scipy.stats import norm
+from math import log, exp, sqrt
 
 class ContingentPremium(OptionValuation):
     """ Boston Option Valuation Class
@@ -192,12 +194,29 @@ class ContingentPremium(OptionValuation):
         n = getattr(self.px_spec, 'nsteps', 3)
         _ = self.LT_specs(n)
         if self.ref.q is not None:
-            option_price = European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol, q=self.ref.q), right=self.right,
+            vanilla = European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol, q=self.ref.q), right=self.right,
                            K=self.K, rf_r=self.rf_r, T=self.T).calc_px(method='LT', nsteps=n, keep_hist=False).px_spec.px
         else:
-            option_price = European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right,
+            vanilla = European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right,
                            K=self.K, rf_r=self.rf_r, T=self.T).calc_px(method='LT', nsteps=n, keep_hist=False).px_spec.px
 
+        def binary(Q):
+            #  Calculate d1 and d2
+            d1 = ((log(self.ref.S0 / self.K)) + ((self.rf_r - self.ref.q + self.ref.vol ** 2 / 2) * self.T)) / (
+                self.ref.vol * sqrt(self.T))
+            d2 = d1 - (self.ref.vol * sqrt(self.T))
+            # Calculate the discount
+            discount = Q * exp(-self.rf_r * self.T)
+            # Compute the put and call price
+            px_call = discount * norm.cdf(d2)
+            px_put = discount * norm.cdf(-d2)
+            px = px_call if self.signCP == 1 else px_put if self.signCP == -1 else None
+            return px - vanilla
+
+        print(vanilla)
+        option_price = root(binary, vanilla, method='hybr')
+        option_price = option_price.x
+        print(option_price)
         nsteps = n
         par = _
         S = np.zeros((nsteps + 1, nsteps + 1))
@@ -227,10 +246,8 @@ class ContingentPremium(OptionValuation):
                         Val[i, j] = round(par['df_dt'] * (par['p'] * Val[i + 1, j + 1] + (1 - par['p']) * Val[i + 1, j]), 4)
 
         O = Val[0, 0]
-        print(O)
-        O_tree = Val
         self.px_spec.add(px=float(Util.demote(O)), method='LT', sub_method='Binomial Tree',
-                        LT_specs=_, ref_tree = S if keep_hist else None, opt_tree = O_tree if keep_hist else None)
+                        LT_specs=_)
 
         # self.px_spec = PriceSpec(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
         #                 LT_specs=_, ref_tree = S_tree if save_tree else None, opt_tree = O_tree if save_tree else None)
@@ -241,8 +258,8 @@ if __name__ == "__main__":
     import doctest
     doctest.testmod()
 """
-s = Stock(S0=50, vol=.2)
-o = ContingentPremium(ref=s, right='call', K=50, T=1, rf_r=.05)
+s = Stock(S0=100, vol=.2, q=.05)
+o = ContingentPremium(ref=s, right='call', K=100, T=.25, rf_r=.1)
 #print(o.calc_px(method='LT', nsteps=200, keep_hist=True).px_spec.px)
-print(o.calc_px(method='LT', nsteps=2, keep_hist=True))
+print(o.calc_px(method='LT', nsteps=1999))
 
