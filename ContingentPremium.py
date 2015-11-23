@@ -6,6 +6,8 @@ from Binary import *
 from scipy.optimize import root
 from scipy.stats import norm
 from math import log, exp, sqrt
+import matplotlib.pyplot as plt
+
 
 class ContingentPremium(OptionValuation):
     """ Boston Option Valuation Class
@@ -49,52 +51,49 @@ class ContingentPremium(OptionValuation):
 
         Examples
         -------
-        >>> s = Stock(S0=50, vol=.3)
-        >>> o = ContingentPremium(ref=s, right='put', K=52, T=2, rf_r=.05)
-        >>> o.calc_px(method='LT', nsteps=2, keep_hist=True).px_spec.px
-        8.209653750647185
+        >>> s = Stock(S0=1/97, vol=.2, q=.032)
+        >>> o = ContingentPremium(ref=s, right='call', K=1/100, T=.25, rf_r=.059)
+        >>> o.calc_px(method='LT', nsteps=2000, keep_hist=False).px_spec.px
+        0.000995798782229753
 
-        >>> o.px_spec.ref_tree
-        ((50.000000000000014,), (37.0409110340859, 67.49294037880017), (27.440581804701324, 50.00000000000001, 91.10594001952546))
-
-        >>> o.calc_px(method='LT', nsteps=2, keep_hist=False)
-        Boston
-        K: 52
-        T: 2
-        _right: put
-        _signCP: -1
+        >>> o.calc_px(method='LT', nsteps=2000, keep_hist=False)
+        ContingentPremium
+        K: 0.01
+        T: 0.25
+        _right: call
+        _signCP: 1
         frf_r: 0
         px_spec: PriceSpec
           LT_specs:
-            a: 1.0512710963760241
-            d: 0.7408182206817179
-            df_T: 0.9048374180359595
-            df_dt: 0.951229424500714
-            dt: 1.0
-            p: 0.5097408651817704
-            u: 1.3498588075760032
+            a: 1.0000033750056954
+            d: 0.9977664301601515
+            df_T: 0.9853582483752771
+            df_dt: 0.9999926250271952
+            dt: 0.000125
+            p: 0.5001956568255778
+            u: 1.0022385698419318
           keep_hist: false
           method: LT
-          nsteps: 2
-          px: 8.209653750647185
+          nsteps: 2000
+          px: 0.000995798782229753
           sub_method: Binomial Tree
         ref: Stock
-          S0: 50
+          S0: 0.010309278350515464
           curr: -
           desc: -
-          q: 0
+          q: 0.032
           tkr: -
-          vol: 0.3
-        rf_r: 0.05
+          vol: 0.2
+        rf_r: 0.059
         seed0: -
         <BLANKLINE>
 
         >>> s = Stock(S0=45, vol=.3, q=.02)
         >>> o = ContingentPremium(ref=s, right='call', K=52, T=3, rf_r=.05)
-        >>> o.calc_px(method='LT', nsteps=10, keep_hist=True).px_spec.px
-        9.272539685915113
+        >>> o.calc_px(method='LT', nsteps=10, keep_hist=False).px_spec.px
+        25.921951519642672
         >>> o.calc_px(method='LT', nsteps=10, keep_hist=False)
-        Boston
+        ContingentPremium
         K: 52
         T: 3
         _right: call
@@ -112,7 +111,7 @@ class ContingentPremium(OptionValuation):
           keep_hist: false
           method: LT
           nsteps: 10
-          px: 9.272539685915113
+          px: 25.921951519642672
           sub_method: Binomial Tree
         ref: Stock
           S0: 45
@@ -127,10 +126,10 @@ class ContingentPremium(OptionValuation):
 
         >>> s = Stock(S0=100, vol=.4)
         >>> o = ContingentPremium(ref=s, right='put', K=100, T=1, rf_r=.08)
-        >>> o.calc_px(method='LT', nsteps=5, keep_hist=True).px_spec.px
-        14.256042662176432
+        >>> o.calc_px(method='LT', nsteps=5, keep_hist=False).px_spec.px
+        26.877929027736258
         >>> o.calc_px(method='LT', nsteps=5, keep_hist=False)
-        Boston
+        ContingentPremium
         K: 100
         T: 1
         _right: put
@@ -148,7 +147,7 @@ class ContingentPremium(OptionValuation):
           keep_hist: false
           method: LT
           nsteps: 5
-          px: 14.256042662176432
+          px: 26.877929027736258
           sub_method: Binomial Tree
         ref: Stock
           S0: 100
@@ -179,7 +178,10 @@ class ContingentPremium(OptionValuation):
         http://business.missouri.edu/stansfieldjj/457/PPT/Chpt019.ppt - Slide 4
         http://www.risklatte.com/Articles/QuantitativeFinance/QF50.php
 
-        http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2contingent.pdf - This has verifiable example
+        http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2contingent.pdf -
+        This has verifiable example. Note that they actually calculated the example incorrectly. They had a d_1 value of
+        .4771 when it was actually supposed to be .422092. You can check this on your own and recalculate the option price
+        that they give. It should be roughly .00095 instead of .01146
         """
 
         #Verify Input
@@ -218,17 +220,23 @@ class ContingentPremium(OptionValuation):
         self.px_spec.add(px=float(Util.demote(option_price)), method='LT', sub_method='Binomial Tree',
                         LT_specs=_)
 
-        # self.px_spec = PriceSpec(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
-        #                 LT_specs=_, ref_tree = S_tree if save_tree else None, opt_tree = O_tree if save_tree else None)
         return self
 
-"""
+
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
-"""
-s = Stock(S0=1/97, vol=.2, q=.032)
-o = ContingentPremium(ref=s, right='call', K=1/100, T=.25, rf_r=.059)
-#print(o.calc_px(method='LT', nsteps=200, keep_hist=True).px_spec.px)
-print(o.calc_px(method='LT', nsteps=2000))
 
+s = Stock(S0=50, vol=.2, q=.01)
+o = [0] * 21
+strike = [40] * 21
+for i in range(0, 21):
+    strike[i] += i
+    o[i] = ContingentPremium(ref=s, right='call', K=strike[i], T=1, rf_r=.05).calc_px(method='LT', nsteps=100).px_spec.px
+
+plt.plot(strike, o, label='Changing Strike')
+plt.xlabel('Strike Price')
+plt.ylabel("Option Price")
+plt.legend(loc='best')
+plt.title("Changing Strike Price")
+plt.show()

@@ -1,6 +1,8 @@
 import numpy as np
 from OptionValuation import *
 from European import *
+import matplotlib.pyplot as plt
+
 
 class American(OptionValuation):
     """ American option class.
@@ -31,7 +33,7 @@ class American(OptionValuation):
         -------
         self : American
 
-        .. sectionauthor:: Oleg Melnikov
+        .. sectionauthor:: Oleg Melnikov and Andrew Weatherly
 
         Notes
         -----
@@ -245,7 +247,7 @@ class American(OptionValuation):
         https://en.wikipedia.org/wiki/Black%27s_approximation (dividend call)
         http://www.bus.lsu.edu/academics/finance/faculty/dchance/Instructional/TN98-01.pdf (non-dividend call)
 
-        Verifiable Example from Hull & White 2001 (second in the example list)
+        Verifiable Example from Hull & White 2001 (SECOND in the example list)
         http://efinance.org.cn/cn/FEshuo/230301%20%20%20%20%20The%20Use%20of%20the%20Control%20Variate%20Technique%20in%20Option%20Pricing,%20pp.%20237-251.pdf
         Scroll to page 246 in the pdf and and look at the very bottom right number b/c we use control variate for n = 100
         """
@@ -339,3 +341,17 @@ class American(OptionValuation):
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
+
+s = Stock(S0=50, vol=.2)
+o = [0] * 21
+strike = [40] * 21
+for i in range(0, 21):
+    strike[i] += i
+    o[i] = American(ref=s, right='put', K=strike[i], T=1, rf_r=.05).calc_px(method='BS').px_spec.px
+
+plt.plot(strike, o, label='Changing Strike')
+plt.xlabel('Strike Price')
+plt.ylabel("Option Price")
+plt.legend(loc='best')
+plt.title("Changing Strike Price")
+plt.show()
