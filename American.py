@@ -1,6 +1,8 @@
 import numpy as np
 from OptionValuation import *
 from European import *
+import matplotlib.pyplot as plt
+
 
 class American(OptionValuation):
     """ American option class.
@@ -31,7 +33,7 @@ class American(OptionValuation):
         -------
         self : American
 
-        .. sectionauthor:: Oleg Melnikov
+        .. sectionauthor:: Oleg Melnikov and Andrew Weatherly
 
         Notes
         -----
@@ -79,81 +81,6 @@ class American(OptionValuation):
         rf_r: 0.05
         seed0: -
         <BLANKLINE>
-        """
-        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
-        return getattr(self, '_calc_' + method.upper())()
-
-    def _calc_LT(self):
-        """ Internal function for option valuation.
-
-        Returns
-        -------
-        self: American
-
-        .. sectionauthor:: Oleg Melnikov
-
-        """
-        # from numpy import arange, maximum, log, exp, sqrt
-
-        keep_hist = getattr(self.px_spec, 'keep_hist', False)
-        n = getattr(self.px_spec, 'nsteps', 3)
-        _ = self.LT_specs(n)
-
-        S = self.ref.S0 * _['d'] ** np.arange(n, -1, -1) * _['u'] ** np.arange(0, n + 1)  # terminal stock prices
-        O = np.maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
-        # tree = ((S, O),)
-        S_tree = (tuple([float(s) for s in S]),)  # use tuples of floats (instead of numpy.float)
-        O_tree = (tuple([float(o) for o in O]),)
-        # tree = ([float(s) for s in S], [float(o) for o in O],)
-
-        for i in range(n, 0, -1):
-            O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
-            S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
-            Payout = np.maximum(self.signCP * (S - self.K), 0)   # payout at time step i-1 (moving backward in time)
-            O = np.maximum(O, Payout)
-            # tree = tree + ((S, O),)
-            S_tree = (tuple([float(s) for s in S]),) + S_tree
-            O_tree = (tuple([float(o) for o in O]),) + O_tree
-            # tree = tree + ([float(s) for s in S], [float(o) for o in O],)
-
-        self.px_spec.add(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
-                        LT_specs=_, ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
-
-        # self.px_spec = PriceSpec(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
-        #                 LT_specs=_, ref_tree = S_tree if save_tree else None, opt_tree = O_tree if save_tree else None)
-        return self
-
-    def _calc_BS(self):
-        """ Internal function for option valuation.
-
-        The _calc_BS() function is called thru calc_PX() and uses the Black Scholes Merton differential equation to price
-        the American option. Due to the optimal stopping problem, this is technically impossible, so the methods below are
-        approximations that have been developed by financial computation scientists.
-
-
-        Returns
-        -------
-        self: American
-
-        .. sectionauthor:: Andrew Weatherly
-
-        Note
-        ----
-
-        Important that if you plan on giving a dividend paying stock that it is semi-annual percentage dividends. This is
-        currently the only type of dividends that the BSM can accept.
-
-        Formulae:
-        http://aeconf.com/articles/may2007/aef080111.pdf (put)
-        https://en.wikipedia.org/wiki/Black%27s_approximation (dividend call)
-        http://www.bus.lsu.edu/academics/finance/faculty/dchance/Instructional/TN98-01.pdf (non-dividend call)
-
-        Verifiable Example from Hull & White 2001 (second in the example list)
-        http://efinance.org.cn/cn/FEshuo/230301%20%20%20%20%20The%20Use%20of%20the%20Control%20Variate%20Technique%20in%20Option%20Pricing,%20pp.%20237-251.pdf
-        Scroll to page 246 in the pdf and and look at the very bottom right number b/c we use control variate for n = 100
-
-        Examples
-        -------
 
         >>> s = Stock(S0=30, vol=.3)
         >>> o = American(ref=s, right='call', K=30, T=1., rf_r=.08)
@@ -252,6 +179,78 @@ class American(OptionValuation):
         sub_method: Black's Approximation
         <BLANKLINE>
         """
+        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
+        return getattr(self, '_calc_' + method.upper())()
+
+    def _calc_LT(self):
+        """ Internal function for option valuation.
+
+        Returns
+        -------
+        self: American
+
+        .. sectionauthor:: Oleg Melnikov
+
+        """
+        # from numpy import arange, maximum, log, exp, sqrt
+
+        keep_hist = getattr(self.px_spec, 'keep_hist', False)
+        n = getattr(self.px_spec, 'nsteps', 3)
+        _ = self.LT_specs(n)
+
+        S = self.ref.S0 * _['d'] ** np.arange(n, -1, -1) * _['u'] ** np.arange(0, n + 1)  # terminal stock prices
+        O = np.maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
+        # tree = ((S, O),)
+        S_tree = (tuple([float(s) for s in S]),)  # use tuples of floats (instead of numpy.float)
+        O_tree = (tuple([float(o) for o in O]),)
+        # tree = ([float(s) for s in S], [float(o) for o in O],)
+
+        for i in range(n, 0, -1):
+            O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
+            S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
+            Payout = np.maximum(self.signCP * (S - self.K), 0)   # payout at time step i-1 (moving backward in time)
+            O = np.maximum(O, Payout)
+            # tree = tree + ((S, O),)
+            S_tree = (tuple([float(s) for s in S]),) + S_tree
+            O_tree = (tuple([float(o) for o in O]),) + O_tree
+            # tree = tree + ([float(s) for s in S], [float(o) for o in O],)
+
+        self.px_spec.add(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
+                        LT_specs=_, ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
+
+        # self.px_spec = PriceSpec(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
+        #                 LT_specs=_, ref_tree = S_tree if save_tree else None, opt_tree = O_tree if save_tree else None)
+        return self
+
+    def _calc_BS(self):
+        """ Internal function for option valuation.
+
+        The _calc_BS() function is called through calc_PX() and uses the Black Scholes Merton differential equation to price
+        the American option. Due to the optimal stopping problem, this is technically impossible, so the methods below are
+        approximations that have been developed by financial computation scientists.
+
+
+        Returns
+        -------
+        self: American
+
+        .. sectionauthor:: Andrew Weatherly
+
+        Note
+        ----
+
+        Important that if you plan on giving a dividend paying stock that it is semi-annual percentage dividends. This is
+        currently the only type of dividends that the BSM can accept.
+
+        Formulae:
+        http://aeconf.com/articles/may2007/aef080111.pdf (put)
+        https://en.wikipedia.org/wiki/Black%27s_approximation (dividend call)
+        http://www.bus.lsu.edu/academics/finance/faculty/dchance/Instructional/TN98-01.pdf (non-dividend call)
+
+        Verifiable Example from Hull & White 2001 (SECOND in the example list)
+        http://efinance.org.cn/cn/FEshuo/230301%20%20%20%20%20The%20Use%20of%20the%20Control%20Variate%20Technique%20in%20Option%20Pricing,%20pp.%20237-251.pdf
+        Scroll to page 246 in the pdf and and look at the very bottom right number b/c we use control variate for n = 100
+        """
 
         #Verify Input
         assert self.right in ['call', 'put'], 'right must be "call" or "put" '
@@ -342,3 +341,17 @@ class American(OptionValuation):
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
+
+s = Stock(S0=50, vol=.2)
+o = [0] * 21
+strike = [40] * 21
+for i in range(0, 21):
+    strike[i] += i
+    o[i] = American(ref=s, right='put', K=strike[i], T=1, rf_r=.05).calc_px(method='BS').px_spec.px
+
+plt.plot(strike, o, label='Changing Strike')
+plt.xlabel('Strike Price')
+plt.ylabel("Option Price")
+plt.legend(loc='best')
+plt.title("Changing Strike Price")
+plt.show()
