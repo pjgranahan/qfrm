@@ -41,14 +41,21 @@ class Chooser(OptionValuation):
 
         Examples
         -------
-         Examples
-        -------
+        ===============================================================================================
+
         BS Examples
 
         >>> s = Stock(S0=50, vol=0.2, q=0.05)
-        >>> o = Chooser(ref=s, right='put', K=50, T=1, rf_r=.1, desc= 'Exotic options paper page 9 Table 2 time 05')
+        >>> o = Chooser(ref=s, right='put', K=50, T=1, rf_r=.1, desc= 'Exotic options paper page 297 Table 2 time 0.5')
         >>> print(o.calc_px(tau=6/12, method='BS').px_spec.px)
         6.58789632353
+        EXOTIC OPTIONS: A CHOOSER OPTION AND ITS PRICING by Raimonda Martinkkute-Kauliene (Dec 2012)
+        https://www.dropbox.com/s/r9lvi0uzdehwlm4/101-330-1-PB%20%284%29.pdf?dl=0
+
+        >>> s = Stock(S0=50, vol=0.2, q=0.05)
+        >>> o = Chooser(ref=s, right='put', K=50, T=1, rf_r=.1, desc= 'Exotic options paper page 297 Table 2 time 1.00')
+        >>> print(o.calc_px(tau=12/12, method='BS').px_spec.px)
+        7.62130227383
         EXOTIC OPTIONS: A CHOOSER OPTION AND ITS PRICING by Raimonda Martinkkute-Kauliene (Dec 2012)
         https://www.dropbox.com/s/r9lvi0uzdehwlm4/101-330-1-PB%20%284%29.pdf?dl=0
 
@@ -61,10 +68,10 @@ class Chooser(OptionValuation):
         >>> o = Chooser(ref=s, right='call', K=50, T=9/12, rf_r=.06)
         >>> print(o.calc_px(tau=3/12, method='BS').px_spec.px)
         5.42052870833
+        ===============================================================================================
 
 
-
-
+        LT Examples
 
         >>> o.calc_px(tau=3/12, method='LT', nsteps=5, keep_hist=True).px_spec.px
         7.109866570176281
