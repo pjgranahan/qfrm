@@ -1,4 +1,6 @@
 from qfrm import *
+from scipy.stats import norm
+from numpy import sqrt, exp, log, asarray, zeros
 
 class VarianceSwap(OptionValuation):
     """ VarianceSwap option class.
@@ -118,8 +120,6 @@ class VarianceSwap(OptionValuation):
         .. sectionauthor:: Andy Liao
 
         """
-        from scipy.stats import norm
-        from numpy import sqrt, exp, log, asarray, zeros
 
         _ = self
         d1 = tuple(map(lambda i: (log(_.ref.S0 / _.K[i]) + (_.rf_r + _.ref.vol[i] ** 2 / 2.) * _.T)/(_.ref.vol[i] * \

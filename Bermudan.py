@@ -1,4 +1,5 @@
 from qfrm import *
+from numpy import arange, maximum
 
 class Bermudan(OptionValuation):
     """ Bermudan option class.
@@ -127,7 +128,6 @@ class Bermudan(OptionValuation):
         .. sectionauthor:: Oleg Melnikov; Andy Liao
 
         """
-        from numpy import arange, maximum, log, exp, sqrt
 
         keep_hist = getattr(self.px_spec, 'keep_hist', False)
         n = getattr(self.px_spec, 'nsteps', 3)
