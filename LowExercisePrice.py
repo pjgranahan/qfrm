@@ -76,7 +76,7 @@ class LowExercisePrice(OptionValuation):
 
         >>> s = Stock(S0=19.6, vol=.30)
         >>> o = LowExercisePrice(ref=s,T=5, rf_r=.10)
-        >>> o.plot_px_convergence(nsteps_max=30)  # Not working until qfrm.OptionValuation.plot_px_convergence is updated.
+        >>> o.plot_px_convergence(nsteps_max=30)  # It will be a straight line, because LEPO is similar to a forward contract.
 
         Returns
         -------
