@@ -67,14 +67,12 @@ class VarianceSwap(OptionValuation):
         >>> VarianceSwap(ref=Stock(500), rf_r=0.03, T=1.).calc_px().px_spec.px
         -1404368.576835108
         >>> ##Explicit input parameters
-        >>> VarianceSwap(ref=Stock(290), rf_r=0.03, T=1.).calc_px(method='BS', K=(280.,300.,320.,340.,360.,380.,400.), \
-        >>>     vol=(0.2,0.2,0.2,0.3,0.3,0.3,0.3), L_Var=10000000., Var_K=0.01).px_spec.px
+        >>> VarianceSwap(ref=Stock(290), rf_r=0.03, T=1.).calc_px(method='BS', K=(280.,300.,320.,340.,360.,380.,400.), vol=(0.2,0.2,0.2,0.3,0.3,0.3,0.3), L_Var=10000000., Var_K=0.01).px_spec.px
         312551.28861793218
         >>> ##Example 26.4 on Hull p 614
         >>> Karr = (800,850,900,950,1000,1050,1100,1150,1200)
         >>> varr = (.29,.28,.27,.26,.25,.24,.23,.22,.21)
-        >>> VarianceSwap(ref=Stock(S0=1020,q=.01), rf_r=.04, T=.25).calc_px(method='BS', K=Karr, \
-        >>>     vol=varr, L_Var=100., Var_K=.045).px_spec.px
+        >>> VarianceSwap(ref=Stock(S0=1020,q=.01), rf_r=.04, T=.25).calc_px(method='BS', K=Karr, vol=varr, L_Var=100., Var_K=.045).px_spec.px
         1.6907399454932426
         >>> ##Price vs. the strike volatility curve - example of vectorization of price calculation
         >>> import matplotlib.pyplot as plt
@@ -91,9 +89,6 @@ class VarianceSwap(OptionValuation):
         >>> ax.grid()
         >>> ax.legend()
         >>> plt.show()
-        >>> px
-        (480.31232659661396, 480.11816887427602, 479.90631812208477 ... 100.48162094750336, 96.801936344057935, 93.10455871075915)
-         
 
         """
         
