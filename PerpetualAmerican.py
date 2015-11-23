@@ -48,7 +48,8 @@ class PerpetualAmerican(OptionValuation):
         R package: PerpetualBS.R
 
         >>> s = Stock(S0=50, vol=.3, q=0.01)
-        >>> o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.08, desc='call @37.19 put @8.68 example from Internet')
+        >>> o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.08, \
+        desc='call @37.19 put @8.68 example from Internet')
 
         >>> print(o.calc_px(method='BS').px_spec.px) #print the option price with the above specification
         37.190676833752335
@@ -112,7 +113,8 @@ class PerpetualAmerican(OptionValuation):
 
         Another example with different dividend and risk free interest rate
         >>> s = Stock(S0=50, vol=.3, q=0.02)
-        >>> o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.05, desc='call @27.47 put @13.43 example from Internet')
+        >>> o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.05, \
+        desc='call @27.47 put @13.43 example from Internet')
         >>> print(o.calc_px(method='BS').px_spec.px)
         27.465595636754223
 

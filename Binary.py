@@ -140,10 +140,10 @@ class Binary(OptionValuation):
         Use a binomial tree model to price a cash-or-nothing binary option
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05, desc='call @641.237 put @263.6  DerivaGem')
-        >>> print(o.calc_px(method='LT', nsteps=365, payout_type="cash_or_nothing", Q=1000).px_spec.px) #display option price
+        >>> print(o.calc_px(method='LT', nsteps=365, payout_type="cash_or_nothing", Q=1000).px_spec.px) #option price
         640.4359248459538
 
-        >>> print(o.calc_px(method='LT', nsteps=365, payout_type="cash_or_nothing", Q=1000).px_spec)  #display option specification
+        >>> print(o.calc_px(method='LT', nsteps=365, payout_type="cash_or_nothing", Q=1000).px_spec)  #option specs
         PriceSpec
         LT_specs:
           a: 1.000274010136661
@@ -164,7 +164,7 @@ class Binary(OptionValuation):
 
         Another way to view the specification of the binomial tree
 
-        >>> print(o.calc_px(method='LT', nsteps=365, payout_type="cash_or_nothing", Q=1000))  #display option specification
+        >>> print(o.calc_px(method='LT', nsteps=365, payout_type="cash_or_nothing", Q=1000))  #option specs
         Binary.Binary
         K: 40
         T: 2
@@ -200,11 +200,12 @@ class Binary(OptionValuation):
         <BLANKLINE>
 
         For the purpose of illustration, I only use a 2-step tree to display, where the option price here is not accurate
-
-        >>> print(o.calc_px(method='LT', nsteps=2, payout_type="cash_or_nothing", Q=1000, keep_hist=True).px_spec.ref_tree) #the reference tree
+        #the reference tree
+        >>> print(o.calc_px(method='LT', nsteps=2, payout_type="cash_or_nothing", Q=1000, keep_hist=True).px_spec.ref_tree)
         ((50.000000000000014,), (37.0409110340859, 67.49294037880017), (27.440581804701324, 50.00000000000001, 91.10594001952546))
 
-        >>> print(o.calc_px(method='LT', nsteps=2, payout_type="cash_or_nothing", Q=1000, keep_hist=True).px_spec.opt_tree) #the option value tree
+        #the option value tree
+        >>> print(o.calc_px(method='LT', nsteps=2, payout_type="cash_or_nothing", Q=1000, keep_hist=True).px_spec.opt_tree)
         ((687.3561078226671,), (484.8805098313515, 951.229424500714), (0.0, 1000.0, 1000.0))
 
         Another way to display option price
@@ -214,17 +215,18 @@ class Binary(OptionValuation):
         >>> print((o.px_spec.px, o.px_spec.method))  # alternative attribute access)
         (640.4359248450264, 'LT')
 
-        >>> print(Binary(clone=o, right='put', desc='call @641.237 put @263.6  DerivaGem').calc_px(method='LT',nsteps=365, payout_type='cash_or_nothing',Q=1000).px_spec.px) #change to a put option
+        >>> print(Binary(clone=o, right='put', desc='call @641.237 put @263.6  DerivaGem').calc_px(method='LT',nsteps=365, \
+        payout_type='cash_or_nothing',Q=1000).px_spec.px) #change to a put option
         264.40149319130967
 
         -------------------------------------
         Use a binomial tree model to price an asset-or-nothing binary option
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05, desc='call @41.74 put @8.254 DerivaGem')
-        >>> print(o.calc_px(method='LT', nsteps=365, payout_type="asset_or_nothing").px_spec.px) #display option price
+        >>> print(o.calc_px(method='LT', nsteps=365, payout_type="asset_or_nothing").px_spec.px) #option price
         41.717204143389715
 
-        >>> print(o.calc_px(method='LT', nsteps=365, payout_type="asset_or_nothing").px_spec)  #display option specification
+        >>> print(o.calc_px(method='LT', nsteps=365, payout_type="asset_or_nothing").px_spec)  #option specs
         PriceSpec
         LT_specs:
           a: 1.000274010136661
@@ -245,7 +247,7 @@ class Binary(OptionValuation):
 
         Another way to view the specification of the binomial tree
 
-        >>> print(o.calc_px(method='LT', nsteps=365, payout_type="asset_or_nothing"))  #display option specification
+        >>> print(o.calc_px(method='LT', nsteps=365, payout_type="asset_or_nothing"))  #option specs
         Binary.Binary
         K: 40
         T: 2
@@ -282,10 +284,10 @@ class Binary(OptionValuation):
 
         For the purpose of illustration, I only use a 2-step tree to display, where the option price here is not accurate
 
-        >>> print(o.calc_px(method='LT', nsteps=2, payout_type="asset_or_nothing", keep_hist=True).px_spec.ref_tree) #the reference tree
+        >>> print(o.calc_px(method='LT', nsteps=2, payout_type="asset_or_nothing", keep_hist=True).px_spec.ref_tree)
         ((50.000000000000014,), (37.0409110340859, 67.49294037880017), (27.440581804701324, 50.00000000000001, 91.10594001952546))
 
-        >>> print(o.calc_px(method='LT', nsteps=2, payout_type="asset_or_nothing", keep_hist=True).px_spec.opt_tree) #the option value tree
+        >>> print(o.calc_px(method='LT', nsteps=2, payout_type="asset_or_nothing", keep_hist=True).px_spec.opt_tree)
         ((44.03218631609853,), (24.244025491567577, 67.49294037880017), (0.0, 50.00000000000001, 91.10594001952546))
 
         Another way to display option price
@@ -295,7 +297,8 @@ class Binary(OptionValuation):
         >>> print((o.px_spec.px, o.px_spec.method))  # alternative attribute access)
         (41.71720414332934, 'LT')
 
-        >>> print(Binary(clone=o, right='put', desc='call @41.74 put @8.254 DerivaGem').calc_px(method='LT',nsteps=365, payout_type='asset_or_nothing').px_spec.px) #change to a put option
+        >>> print(Binary(clone=o, right='put', desc='call @41.74 put @8.254 DerivaGem').calc_px(method='LT',nsteps=365, \
+        payout_type='asset_or_nothing').px_spec.px) #change to a put option
         8.282795856682807
 
 
@@ -303,7 +306,8 @@ class Binary(OptionValuation):
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
-        >>> O = Series([o.update(T=t).calc_px(method='LT', nsteps=365, payout_type="cash_or_nothing", Q=1000).px_spec.px for t in expiries], expiries)
+        >>> O = Series([o.update(T=t).calc_px(method='LT', nsteps=365, payout_type="cash_or_nothing", Q=1000).px_spec.px \
+        for t in expiries], expiries)
         >>> O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
