@@ -1,5 +1,8 @@
 from OptionValuation import *
 import numpy as np
+from math import log, exp, sqrt
+from scipy.stats import norm
+
 
 class Binary(OptionValuation):
     """
@@ -55,7 +58,7 @@ class Binary(OptionValuation):
         Examples
         -------
 
-        Use the Black-Scholes model to price an asset-or-nothing binary option
+        Use the Black-Scholes model to price an asset-or-nothing binary option. Verifiable using DerivaGem.
 
         >>> s = Stock(S0=42, vol=.20)
         >>> o = Binary(ref=s, right='put', K=40, T=.5, rf_r=.1)
@@ -83,7 +86,7 @@ class Binary(OptionValuation):
         >>> o.update(right='call').calc_px().px_spec.px
         32.7235142195921
 
-        Use the Black-Scholes model to price a cash-or-nothing binary option
+        Use the Black-Scholes model to price a cash-or-nothing binary option. Verifiable using DerivaGem.
 
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05)
@@ -338,10 +341,6 @@ class Binary(OptionValuation):
 
         # Convert the payout_type to lower case
         payout_type = payout_type.lower()
-
-        # Explicit imports
-        from math import log, exp, sqrt
-        from scipy.stats import norm
 
         # Calculate d1 and d2
         d1 = ((log(self.ref.S0 / self.K)) + ((self.rf_r - self.ref.q + self.ref.vol ** 2 / 2) * self.T)) / (
