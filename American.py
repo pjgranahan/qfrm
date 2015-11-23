@@ -337,21 +337,3 @@ class American(OptionValuation):
         """
 
         return self
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
-
-s = Stock(S0=50, vol=.2)
-o = [0] * 21
-strike = [40] * 21
-for i in range(0, 21):
-    strike[i] += i
-    o[i] = American(ref=s, right='put', K=strike[i], T=1, rf_r=.05).calc_px(method='BS').px_spec.px
-
-plt.plot(strike, o, label='Changing Strike')
-plt.xlabel('Strike Price')
-plt.ylabel("Option Price")
-plt.legend(loc='best')
-plt.title("Changing Strike Price")
-plt.show()
