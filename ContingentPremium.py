@@ -1,8 +1,10 @@
 import numpy as np
 import math
 from OptionValuation import *
+from European import *
+from Binary import *
 
-class Boston(OptionValuation):
+class ContingentPremium(OptionValuation):
     """ Boston Option Valuation Class
 
     Inherits all methods and properties of OptionValuation class.
@@ -29,22 +31,23 @@ class Boston(OptionValuation):
 
         Returns
         -------
-        self : Boston
+        self : ContingentPremium
 
         .. sectionauthor:: Andrew Weatherly
 
         Notes
         -----
-        A Boston option is simply an American option except that the premium is paid at the end of the contract instead of
-        the beginning as done in a normal American option.  Because of this, the price of the option has to be calculated
-        as the American price NPV.
+        A Contingent Premium option is simply an European option except that the premium is paid at the end of the contract
+        instead of
+        the beginning as done in a normal European option. Additionally, the premium is only paid if the asset hits the
+        strike price at TTM (i.e. above for call, below for put).
 
         See page 598 and 599 in Hull for explanation.
 
         Examples
         -------
         >>> s = Stock(S0=50, vol=.3)
-        >>> o = Boston(ref=s, right='put', K=52, T=2, rf_r=.05)
+        >>> o = ContingentPremium(ref=s, right='put', K=52, T=2, rf_r=.05)
         >>> o.calc_px(method='LT', nsteps=2, keep_hist=True).px_spec.px
         8.209653750647185
 
@@ -84,7 +87,7 @@ class Boston(OptionValuation):
         <BLANKLINE>
 
         >>> s = Stock(S0=45, vol=.3, q=.02)
-        >>> o = Boston(ref=s, right='call', K=52, T=3, rf_r=.05)
+        >>> o = ContingentPremium(ref=s, right='call', K=52, T=3, rf_r=.05)
         >>> o.calc_px(method='LT', nsteps=10, keep_hist=True).px_spec.px
         9.272539685915113
         >>> o.calc_px(method='LT', nsteps=10, keep_hist=False)
@@ -120,7 +123,7 @@ class Boston(OptionValuation):
         <BLANKLINE>
 
         >>> s = Stock(S0=100, vol=.4)
-        >>> o = Boston(ref=s, right='put', K=100, T=1, rf_r=.08)
+        >>> o = ContingentPremium(ref=s, right='put', K=100, T=1, rf_r=.08)
         >>> o.calc_px(method='LT', nsteps=5, keep_hist=True).px_spec.px
         14.256042662176432
         >>> o.calc_px(method='LT', nsteps=5, keep_hist=False)
@@ -172,6 +175,8 @@ class Boston(OptionValuation):
         -------
         http://business.missouri.edu/stansfieldjj/457/PPT/Chpt019.ppt - Slide 4
         http://www.risklatte.com/Articles/QuantitativeFinance/QF50.php
+
+        http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2contingent.pdf - This has verifiable example
         """
 
         #Verify Input
@@ -186,24 +191,45 @@ class Boston(OptionValuation):
         n = getattr(self.px_spec, 'nsteps', 3)
         _ = self.LT_specs(n)
 
-        S = self.ref.S0 * _['d'] ** np.arange(n, -1, -1) * _['u'] ** np.arange(0, n + 1)  # terminal stock prices
-        O = np.maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
-        # tree = ((S, O),)
-        S_tree = (tuple([float(s) for s in S]),)  # use tuples of floats (instead of numpy.float)
-        O_tree = (tuple([float(o) for o in O]),)
-        # tree = ([float(s) for s in S], [float(o) for o in O],)
+        n = getattr(self.px_spec, 'nsteps', 3)
+        if self.ref.q is not None:
+            option_price = European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol, q=self.ref.q), right=self.right,
+                           K=self.K, rf_r=self.rf_r, T=self.T).calc_px(method='LT', nsteps=n, keep_hist=False).px_spec.px
+        else:
+            option_price = European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right,
+                           K=self.K, rf_r=self.rf_r, T=self.T).calc_px(method='LT', nsteps=n, keep_hist=False).px_spec.px
 
-        for i in range(n, 0, -1):
-            O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
-            S = _['d'] * S[1:i + 1]                   # prior stock prices (@time step=i-1)
-            Payout = np.maximum(self.signCP * (S - self.K), 0)   # payout at time step i-1 (moving backward in time)
-            O = np.maximum(O, Payout)
-            # tree = tree + ((S, O),)
-            S_tree = (tuple([float(s) for s in S]),) + S_tree
-            O_tree = (tuple([float(o) for o in O]),) + O_tree
-            # tree = tree + ([float(s) for s in S], [float(o) for o in O],)
-        O *= math.exp(self.rf_r * self.T)
-        #O_tree = Util.demote([i - O for i in O_tree])
+        print("test")
+        nsteps = n
+        par = self.LT_params(nsteps)
+        S = np.zeros((nsteps + 1, nsteps + 1))
+        Val = np.zeros((nsteps + 1, nsteps + 1))
+        S[0, 0] = self.ref.S0
+        if self.right == 'put':
+            for i in range(1, nsteps + 1):
+                for j in range(0, nsteps + 1):
+                    if j <= i:
+                        S[i, j] = self.ref.S0 * (par['u'] ** j) * (par['d'] ** (i - j))
+                        if i == nsteps and S[i, j] < self.K:
+                            Val[i, j] = self.K - S[i, j] + option_price
+            for i in range(nsteps - 1, -1, -1):
+                for j in range(nsteps + 1, -1, -1):
+                    if j <= i:
+                        Val[i, j] = round(par['df_dt'] * (par['p'] * Val[i + 1, j + 1] + (1 - par['p']) * Val[i + 1, j]), 4)
+        else:
+            for i in range(1, nsteps + 1):
+                for j in range(0, nsteps + 1):
+                    if j <= i:
+                        S[i, j] = self.ref.S0 * (par['u'] ** j) * (par['d'] ** (i - j))
+                        if i == nsteps and S[i, j] > self.K:
+                            Val[i, j] = S[i, j] - self.K - option_price
+            for i in range(nsteps - 1, -1, -1):
+                for j in range(nsteps + 1, -1, -1):
+                    if j <= i:
+                        Val[i, j] = round(par['df_dt'] * (par['p'] * Val[i + 1, j + 1] + (1 - par['p']) * Val[i + 1, j]), 4)
+
+        O = Val[0, 0]
+        O_tree = Val
         self.px_spec.add(px=float(Util.demote(O)), method='LT', sub_method='Binomial Tree',
                         LT_specs=_, ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
 
@@ -216,8 +242,8 @@ if __name__ == "__main__":
     import doctest
     doctest.testmod()
 """
-s = Stock(S0=50, vol=.2, q=.032)
-o = Boston(ref=s, right='call', K=50, T=.25, rf_r=.059)
+s = Stock(S0=50, vol=.2)
+o = ContingentPremium(ref=s, right='call', K=50, T=1, rf_r=.05)
 #print(o.calc_px(method='LT', nsteps=200, keep_hist=True).px_spec.px)
 print(o.calc_px(method='LT', nsteps=2, keep_hist=True))
 
