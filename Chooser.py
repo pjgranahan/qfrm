@@ -1,5 +1,6 @@
 import numpy as np
 from OptionValuation import *
+import matplotlib.pyplot as plt
 
 class Chooser(OptionValuation):
     """ Chooser option class.
