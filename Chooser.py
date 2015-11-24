@@ -1,3 +1,4 @@
+import numpy as np
 from OptionValuation import *
 
 class Chooser(OptionValuation):
