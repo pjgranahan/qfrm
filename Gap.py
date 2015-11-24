@@ -1,4 +1,6 @@
+import numpy as np
 from OptionValuation import *
+import matplotlib.pyplot as plt
 
 class Gap(OptionValuation):
     """ Gap option class.
