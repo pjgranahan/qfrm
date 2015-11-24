@@ -6,7 +6,8 @@ class Basket(OptionValuation):
     Inherits all methods and properties of OptionValuation class.
     """
 
-    def calc_px(self, method='BS', mu = (0.1,0.2), weight = (0.5,0.5), nsteps=None, npaths=None, keep_hist=False):
+    def calc_px(self, method='BS', mu = (0.1,0.2,0.5), weight = (0.5,0.3,0.2),
+                corr = [[1,0,0],[0,1,0],[0,0,1]], nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
 
         User passes parameters to calc_px, which saves them to local PriceSpec object
@@ -38,18 +39,16 @@ class Basket(OptionValuation):
         -------
 
         >>> s = Stock(S0=(42,55,75), vol=(.20,.30,.50))
-        >>> o = Basket(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @0.81, put @4.76, Hull p.339')
+        >>> o = Basket(ref=s, right='call', K=40, T=.5, rf_r=.1, desc='Hull p.612')
 
-        >>> o.calc_px(method='MC',mu=(.1,.2,.5),weight=(0.3,0.5,0.2)).px_spec   # save interim results to self.px_spec. Equivalent to repr(o)
-        qfrm.PriceSpec
-        d1: 0.7692626281060315
-        d2: 0.627841271868722
+        >>> o.calc_px(method='MC',mu=(.1,.2,.5),weight=(0.3,0.5,0.2),corr=[[1,0,0],[0,1,0],[0,0,1]],npaths=10000,nsteps=100).px_spec   # save interim results to self.px_spec. Equivalent to repr(o)
+        PriceSpec
         keep_hist: false
-        method: BS
-        px: 0.8085993729000922
-        px_call: 4.759422392871532
-        px_put: 0.8085993729000922
-        sub_method: standard; Hull p.335
+        method: MC
+        npaths: 10000
+        nsteps: 100
+        px: 19.29183765961456
+        sub_method: standard; Hull p.612
 
         >>> (o.px_spec.px, o.px_spec.d1, o.px_spec.d2, o.px_spec.method)  # alternative attribute access
         (0.8085993729000922, 0.7692626281060315, 0.627841271868722, 'BS')
@@ -110,6 +109,9 @@ class Basket(OptionValuation):
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
         self.mu = mu
         self.weight = weight
+        self.corr = corr
+        self.npaths = npaths
+        self.nsteps = nsteps
         return getattr(self, '_calc_' + method.upper())()
 
     def _calc_BS(self):
@@ -141,7 +143,7 @@ class Basket(OptionValuation):
 
         return self
 
-    def _calc_MC(self, nsteps=3, npaths=4, keep_hist=False):
+    def _calc_MC(self, keep_hist=False):
         """ Internal function for option valuation.
 
         Returns
@@ -156,16 +158,20 @@ class Basket(OptionValuation):
 
         """
 
-        from numpy.random import multivariate_normal
-        from numpy import sqrt, mean, matrix, transpose
+        from numpy.random import multivariate_normal, seed
+        from numpy import sqrt, mean, matrix, transpose, diag, dot, repeat, exp
 
         _ = self
 
         S0 = _.ref.S0
         vol = _.ref.vol
         mu = _.mu
+        corrM = _.corr
+        nsteps = _.nsteps
+        npaths = _.npaths
 
         deltat = _.T/nsteps
+        Nasset = len(vol)
 
         def calS(St,mu,sigma,param):
             deltaS = mu*St*deltat + sigma*St*param*sqrt(deltat)
@@ -181,7 +187,11 @@ class Basket(OptionValuation):
 
         priceNpath = ()
 
-        param = multivariate_normal([0,0,0],[[1,0,0],[0,1,0],[0,0,1]],nsteps)
+
+        covM = dot(dot(diag(vol),(corrM)),diag(vol))
+
+        seed(111)
+        param = multivariate_normal(repeat(0,Nasset),covM,nsteps)
         param = tuple(zip(*param))
 
         for i in range(npaths):
@@ -190,9 +200,10 @@ class Basket(OptionValuation):
             wprice = tuple(wprice.ravel().tolist()[0])
             priceNpath = priceNpath + (wprice,)
 
-        payoff = mean(tuple(zip(*priceNpath))[nsteps])-_.K
+        payoff = max(0,_.signCP*(mean(tuple(zip(*priceNpath))[nsteps])-_.K))
 
-        self.px_spec.add(px=float(payoff), sub_method='standard; Hull p.604')
+
+        self.px_spec.add(px=float(payoff*exp(-_.rf_r*_.T)), sub_method='standard; Hull p.612')
 
         return self
 
