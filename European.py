@@ -46,7 +46,7 @@ class European(OptionValuation):
         >>> o = European(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @0.81, put @4.76, Hull p.339')
         >>> o.calc_px(method='BS').px_spec   # save interim results to self.px_spec. Equivalent to repr(o)
         ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PriceSpec...px: 0.8085993729000922...
+        PriceSpec...px: 0.808599372...
 
         >>> (o.px_spec.px, o.px_spec.d1, o.px_spec.d2, o.px_spec.method)  # alternative attribute access
         (0.8085993729000922, 0.7692626281060315, 0.627841271868722, 'BS')
@@ -63,48 +63,18 @@ class European(OptionValuation):
         59.867529937506426
 
         >>> o.pxLT(nsteps=3, keep_hist=True)  # option price from a 3-step tree (that's 2 time intervals)
-        59.867529937506426
+        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        59.867529937...
 
-        >>> o.px_spec.ref_tree  # prints reference tree
-        ((810.0,),
-         (746.4917680871579, 878.9112325795882),
-         (687.9629133603595, 810.0, 953.6851293266307),
-         (634.0230266330457, 746.491768087158, 878.9112325795882, 1034.8204598880159))
+        >>> o.px_spec.ref_tree  # prints reference tree  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        ((810.0,), (746.491768087...878.911232579...), (687.962913360...810.0, 953.685129326...),
+         (634.023026633...746.491768087...878.911232579...1034.8204598880159))
 
         >>> o.calc_px(method='LT', nsteps=2, keep_hist=True).px_spec.opt_tree
-        ((53.39471637496134,),
-         (5.062315192620067, 100.66143225703827),
-         (0.0, 10.0, 189.3362341097378))
+        ((53.39471637496134,), (5.062315192620067, 100.66143225703827), (0.0, 10.0, 189.3362341097378))
 
-        >>> o.calc_px(method='LT', nsteps=2)
-        European
-        K: 800
-        T: 0.5
-        _right: call
-        _signCP: 1
-        desc: 53.39, Hull p.291
-        frf_r: 0
-        px_spec: qfrm.PriceSpec
-          LT_specs:
-            a: 1.0075281954445339
-            d: 0.9048374180359595
-            df_T: 0.9753099120283326
-            df_dt: 0.9875778004938814
-            dt: 0.25
-            p: 0.5125991278953855
-            u: 1.1051709180756477
-          method: LT
-          px: 53.39471637496135
-          sub_method: binomial tree; Hull Ch.13
-        ref: qfrm.Stock
-          S0: 810
-          curr: null
-          desc: null
-          q: 0.02
-          tkr: null
-          vol: 0.2
-        rf_r: 0.05
-        seed0: null
+        >>> o.calc_px(method='LT', nsteps=2)   # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        European...px: 53.39471637496135...
 
         """
 
