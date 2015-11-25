@@ -156,6 +156,9 @@ class Lookback(OptionValuation):
         >>> O.plot(grid=1, title='Price vs expiry (in years)')
         <matplotlib.axes._subplots.AxesSubplot object at ...>
 
+        >>> import matplotlib.pyplot as plt
+        >>> plt.show()
+
        """
 
         #self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, Sfl = Sfl)
