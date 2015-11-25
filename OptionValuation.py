@@ -1,47 +1,12 @@
-import yaml
 import math
 import pandas as pd
 import matplotlib.pyplot as plt
 import warnings
+import itertools
 from Util import *
 
 
-class Spec:
-    """ Helper class for printing class variables.
-
-    This is a base class that is inherited by any child class needs to display its specifications (class variables).
-
-    """
-    def full_spec(self, new_line=False):
-        """ Returns a formatted string containing all variables of this class (recursively)
-
-        new_line : bool
-            Whether include new line symbol '\n' or not
-
-        Returns
-        -------
-        str
-            Formatted string with option specifications
-
-        Examples
-        --------
-
-        """
-        s = yaml.dump(self, default_flow_style=not new_line).replace('!!python/object:','').replace('!!python/tuple','')
-        s = s.replace('__main__.','').replace('OptionValuation.','').replace('OptionSeries.','').replace('null','-')
-        if not new_line:
-            s = s.replace(',', ', ').replace('\n', ',').replace(': ', ':').replace('  ', ' ')
-
-        return s
-
-    def __repr__(self):
-        return self.full_spec(new_line=True)
-
-    def __str__(self):
-        return self.full_spec(new_line=True)
-
-
-class PriceSpec(Spec):
+class PriceSpec(SpecPrinter):
     """ Object for storing calculated price and related intermediate parameters.
 
     Use this object to store the price, sub/method and any intermediate results in your option object.
@@ -104,7 +69,7 @@ class PriceSpec(Spec):
     #     return s
 
 
-class Stock(Spec):
+class Stock(SpecPrinter):
     """ Object for storing parameters of an underlying (referenced) asset.
 
     .. sectionauthor:: Oleg Melnikov
@@ -131,11 +96,22 @@ class Stock(Spec):
         desc : dict
             any additional information related to the stock.
 
+        Examples
+        --------
+        >>> Stock(S0=50, vol=0.2, tkr='MSFT')   # doctest: +NORMALIZE_WHITESPACE
+        Stock
+        S0: 50
+        curr: -
+        desc: -
+        q: 0
+        tkr: MSFT
+        vol: 0.2
+
         """
         self.S0, self.vol, self.q, self.curr, self.tkr, self.desc = S0, vol, q, curr, tkr, desc
 
 
-class OptionSeries(Spec):
+class OptionSeries(SpecPrinter):
     """ Object representing an option series.
 
     This class describes the option specs outside of valuation. so, it doesn't contain interest rates needed for pricing.
@@ -174,53 +150,57 @@ class OptionSeries(Spec):
         --------
         Examples show different ways of printing specs (parameters) of the objects
 
-        >>> OptionSeries(ref=Stock(S0=50, vol=0.3), K=51, right='call').full_spec(False)
-        'OptionSeries {K:51, _right:call, _signCP:1, px_spec:PriceSpec {}, ,
-        ref:Stock {S0:50, curr:null, desc:null, q:0, tkr:null, ,  vol:0.3}},'
+        >>> OptionSeries(ref=Stock(S0=50, vol=0.3), K=51, right='call').full_spec(new_line=False)
+        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        'OptionSeries {K:51, _right:call, _signCP:1,...ref:Stock {S0:50, curr:-, desc:-, q:0, ,  tkr:-, vol:0.3}},'
 
         >>> print(OptionSeries(ref=Stock(S0=50, vol=0.3, tkr='ibm', curr='usd'), K=51, right='call').full_spec(True))
-        OptionValuation.OptionSeries
+        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        OptionSeries
         K: 51
         _right: call
         _signCP: 1
-        px_spec: OptionValuation.PriceSpec {}
-        ref: OptionValuation.Stock
+        px_spec: PriceSpec {}
+        ref: Stock
           S0: 50
           curr: usd
-          desc: null
+          desc: -
           q: 0
           tkr: ibm
           vol: 0.3
-        <BLANKLINE>
 
         >>> o = OptionSeries(ref=Stock(S0=50,vol=.03)); repr(o)
-        'OptionSeries\npx_spec: PriceSpec {}\n
-        ref: Stock\n  S0: 50\n  curr: null\n  desc: null\n  q: 0\n  tkr: null\n  vol: 0.03\n'
+        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        'OptionSeries\npx_spec: PriceSpec {}\nref: Stock\n  S0: 50\n
+        curr: -\n  desc: -\n  q: 0\n  tkr: -\n  vol: 0.03\n'
         >>> o  # equivalent to print(repr(o))
-        OptionValuation.OptionSeries
-        px_spec: OptionValuation.PriceSpec {}
-        ref: OptionValuation.Stock
+        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        OptionSeries
+        px_spec: PriceSpec {}
+        ref: Stock
           S0: 50
-          curr: null
-          desc: null
+          curr: -
+          desc: -
           q: 0
-          tkr: null
+          tkr: -
           vol: 0.03
-        <BLANKLINE>
+
         >>> o = OptionSeries(ref=Stock(S0=50,vol=.03));  str(o)
-        'OptionValuation.OptionSeries\\npx_spec: OptionValuation.PriceSpec {}\\nref:
-        OptionValuation.Stock\\n  S0: 50\\n  curr: null\\n  desc: null\\n  q: 0\\n  tkr: null\\n  vol: 0.03\\n'
+        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        'OptionSeries\npx_spec: PriceSpec {}\nref: Stock\n  S0: 50\n
+        curr: -\n  desc: -\n  q: 0\n  tkr: -\n  vol: 0.03\n'
         >>> print(str(o))
-        OptionValuation.OptionSeries
-        px_spec: OptionValuation.PriceSpec {}
-        ref: OptionValuation.Stock
+        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        OptionSeries
+        px_spec: PriceSpec {}
+        ref: Stock
           S0: 50
-          curr: null
-          desc: null
+          curr: -
+          desc: -
           q: 0
-          tkr: null
+          tkr: -
           vol: 0.03
-        <BLANKLINE>
+
         """
         self.update(ref=ref, right=right, K=K, T=T, clone=clone, desc=desc)
 
@@ -239,34 +219,34 @@ class OptionSeries(Spec):
 
         >>> o = OptionSeries(ref=Stock(S0=50, vol=.3), right='put', K=52, T=2).update(K=53) # sets new strike
         >>> o   # prints structure of the object to screen
-        OptionValuation.OptionSeries
+        OptionSeries
         K: 53
         T: 2
         _right: put
         _signCP: -1
-        px_spec: OptionValuation.PriceSpec {}
-        ref: OptionValuation.Stock
+        px_spec: PriceSpec {}
+        ref: Stock
           S0: 50
-          curr: null
-          desc: null
+          curr: -
+          desc: -
           q: 0
-          tkr: null
+          tkr: -
           vol: 0.3
         <BLANKLINE>
 
         >>> OptionSeries(clone=o, K=54).update(right='call')  # copy parameters from o; changes strike & right
-        OptionValuation.OptionSeries
+        OptionSeries
         K: 54
         T: 2
         _right: call
         _signCP: 1
-        px_spec: OptionValuation.PriceSpec {}
-        ref: OptionValuation.Stock
+        px_spec: PriceSpec {}
+        ref: Stock
           S0: 50
-          curr: null
-          desc: null
+          curr: -
+          desc: -
           q: 0
-          tkr: null
+          tkr: -
           vol: 0.3
         <BLANKLINE>
 
@@ -365,7 +345,6 @@ class OptionSeries(Spec):
         >>> from qfrm import *; European().style
         'European'
         >>> OptionSeries().style  # returns None
-
         """
         if any('OptionValuation' == i.__name__ for i in self.__class__.__bases__):
             return type(self).__name__
@@ -385,14 +364,14 @@ class OptionSeries(Spec):
 
         Examples
         --------
-
+        >>> from qfrm import *
         >>> OptionSeries(ref=Stock(S0=50, vol=0.3), K=51, right='call').series
         '51 call'
         >>> OptionSeries(ref=Stock(S0=50, vol=0.3, tkr='IBM'), K=51, right='call').series
         'IBM 51 call'
         >>> OptionSeries(ref=Stock(S0=50, vol=0.3, tkr='IBM'), K=51, T=2, right='call').series
         'IBM 51 2yr call'
-        >>> from qfrm import *; American(ref=Stock(S0=50, vol=0.3), K=51, right='call').series
+        >>> American(ref=Stock(S0=50, vol=0.3), K=51, right='call').series
         '51 American call'
 
         """
@@ -418,13 +397,10 @@ class OptionSeries(Spec):
         Examples
         --------
 
-        >>> OptionSeries(ref=Stock(S0=50, vol=0.3), K=51, right='call').specs
-        '51 call, Stock {S0:50, curr:-, desc:-, q:0, tkr:-, vol:0.3},'
-        >>> OptionSeries(ref=Stock(S0=50, vol=0.3, tkr='IBM'), K=51, right='call').specs
-        'IBM 51 call, Stock {S0:50, curr:-, desc:-, q:0, tkr:IBM, vol:0.3},'
-        >>> OptionSeries(ref=Stock(S0=50, vol=0.3), K=51, T=2, right='call', desc='some option').specs
-        '51 2yr call, Stock {S0:50, curr:-, desc:-, q:0, tkr:-, vol:0.3},'
-        >>> from qfrm import *; American(ref=Stock(S0=50, vol=0.3), K=51, right='call').specs
+        >>> from qfrm import *; s = Stock(S0=50, vol=0.3, tkr='IBM')
+        >>> OptionSeries(ref=s, K=51, right='call').specs
+        'IBM 51 call, Stock {S0:50, curr:-, desc:-, q:0, tkr:IBM, , vol:0.3},'
+        >>> American(ref=Stock(S0=50, vol=0.3), K=51, right='call').specs
         '51 American call, Stock {S0:50, curr:-, desc:-, q:0, tkr:-, , vol:0.3}, rf_r=None frf_r=0'
 
         """
@@ -453,24 +429,24 @@ class OptionSeries(Spec):
         Examples
         --------
 
-        >>> o = OptionSeries(right='call'); OptionSeries(clone=o).right  # create new option similar to o
+        >>> o = OptionSeries(right='call');
+        >>> OptionSeries(clone=o).right  # create new option similar to o
         'call'
 
-        >>> from qfrm import *
-        >>> American(clone=European(frf_r=.05))  # create American option similar to European option
-        American.American
+        >>> from qfrm import *; American(clone=European(frf_r=.05))  # create American similar to European
+        ... # doctest: +ELLIPSES, +NORMALIZE_WHITESPACE
+        American
         frf_r: 0.05
         px_spec: OptionValuation.PriceSpec {}
-        rf_r: null
-        seed0: null
-        <BLANKLINE>
+        rf_r: -
+        seed0: -
 
         """
         # copy specs from supplied object
         if clone is not None:  [setattr(self, v, getattr(clone, v)) for v in vars(clone)]
 
     def reset(self):
-        """ Delete calculated attributes.
+        """ Erase calculated parameters.
 
         Returns
         -------
@@ -557,19 +533,17 @@ class OptionValuation(OptionSeries):
 
         Examples
         --------
-        >>> OptionValuation(ref=Stock(S0=42, vol=.2), right='call', K=40, T=.5, rf_r=.1).LT_specs(2)
-        {'p': 0.60138570166548, 'a': 1.0253151205244289, 'd': 0.9048374180359595, 'df_dt': 0.9753099120283326, 'u': 1.1051709180756477, 'dt': 0.25, 'df_T': 0.951229424500714}
-
+        >>> from pprint import pprint
+        >>> pprint(OptionValuation(ref=Stock(S0=42, vol=.2), right='call', K=40, T=.5, rf_r=.1).LT_specs(2))
+        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        {'a': 1.0253151205244289, 'd': 0.9048374180359595, 'df_T': 0.951229424500714,
+         'df_dt': 0.9753099120283326, 'dt': 0.25, 'p': 0.60138570166548, 'u': 1.1051709180756477}
 
         >>> s = Stock(S0=50, vol=.3)
-        >>> OptionValuation(ref=s,right='put', K=52, T=2, rf_r=.05, desc={'hull p.288'}).LT_specs(3)
-        {'a': 1.033895113513574,
-         'd': 0.7827444773247475,
-         'df_T': 0.9048374180359595,
-         'df_dt': 0.9672161004820059,
-         'dt': 0.6666666666666666,
-         'p': 0.5075681589595774,
-         'u': 1.2775561233185384}
+        >>> pprint(OptionValuation(ref=s,right='put', K=52, T=2, rf_r=.05, desc={'See Hull p.288'}).LT_specs(3))
+        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        {'a': 1.033895113513574, 'd': 0.7827444773247475, 'df_T': 0.9048374180359595,
+         'df_dt': 0.9672161004820059, 'dt': 0.6666666666666666, 'p': 0.5075681589595774, 'u': 1.2775561233185384}
 
          """
         assert isinstance(nsteps, int), 'nsteps must be an integer, >2'
@@ -583,6 +557,71 @@ class OptionValuation(OptionSeries):
         sp['df_dt'] = math.exp(-self.rf_r * sp['dt'])
 
         return sp
+
+    def plot_bt(self, bt=None, ax=None, title=''):
+        """ Plots recombining binary tree
+
+        Parameters
+        ----------
+        bt : tuple[tuple[long,...], ...]
+            binomial tree
+        ax : matplotlib.axes._subplots.axessubplot, optional
+            Plot object on which to plot the data.
+        vs : object, optional
+            another option object (i.e. subclass of OptionValuation such as European, American,...)
+        :return : None
+            Plot the price convergence.
+
+        Examples
+        --------
+
+        See J.C.Hull OFOD, 9ed, p.289, Fig 13.10, 2-step Binomial tree for American put option.
+        The following produces two trees: stock price progressions and option proce backward induction.
+        >>> from qfrm import *;  s = Stock(S0=50, vol=.3)
+        >>> a = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc={'$7.42840, See Hull p.289'})
+        >>> ref_tree = a.calc_px(method='LT', nsteps=20, keep_hist=True).px_spec.ref_tree
+        >>> a.plot_bt(bt=ref_tree, title='Binary tree of stock prices; ' + a.specs) # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at 0x...>
+        >>> a.plot_bt(bt=a.px_spec.opt_tree, title='Binary tree of option prices; ' + a.specs)# doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at 0x...>
+
+        """
+        # import itertools; ax = None; bt = ((4,), (3, 5), (2, 4, 6), (1, 3, 5, 7))
+
+        if ax is None: fig, ax = plt.subplots()
+        if 'fig' in locals():
+            def onresize(event):
+                try: plt.tight_layout()
+                except: pass
+            cid = fig.canvas.mpl_connect('resize_event', onresize)  # tighten layout on resize event
+
+        def pairs(t):
+            a, b = itertools.tee(t)
+            next(b)
+            for ind, (t1, t2) in enumerate(zip(a, b)):
+                it = iter(t2)
+                nxt = next(it)
+                for ele in t1:
+                    n = next(it)
+                    yield [(ind, ele), (ind + 1, nxt)]
+                    yield [(ind, ele), (ind + 1, n)]
+                    nxt = n
+
+        annotated = set()
+        for l in list(pairs(bt)):
+            d = [[p[0] for p in l], [p[1] for p in l]]
+            ax.plot(d[0], d[1], 'k--', color='.5')
+            for p in l:
+                annotated.add(p)
+
+        for p in annotated:
+            ax.annotate(str(round(p[1],2)), xy=p, horizontalalignment='center', color='0')
+        # from pprint import pprint as pp
+        # pp(list(pairs(t)),compact=1)
+        plt.grid()
+        plt.tight_layout();
+        plt.show()
+        plt.title(title)
 
     def plot_px_convergence(self, nsteps_max=50, ax=None, vs=None):
         """ Plots convergence of an option price for different `nsteps` values.
@@ -610,10 +649,10 @@ class OptionValuation(OptionSeries):
         --------
 
         >>> from qfrm import *;  s = Stock(S0=50, vol=.3);
-        >>> a = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc={'$7.42840, hull p.288'})
+        >>> a = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc={'$7.42840, See Hull p.288'})
         >>> e = European(clone=a)
-        >>> e.plot_px_convergence(nsteps_max=10)
-        >>> a.plot_px_convergence(nsteps_max=10, vs=e)
+        >>> e.plot_px_convergence(nsteps_max=10)  # doctest: +ELLIPSIS
+        >>> a.plot_px_convergence(nsteps_max=10, vs=e)  # doctest: +ELLIPSIS
 
         """
         if ax is None: fig, ax = plt.subplots()
@@ -632,24 +671,31 @@ class OptionValuation(OptionSeries):
         plt.tight_layout();
         plt.show()
 
-    def plot(self):
+    def plot(self, nsteps_max=10):
         """ Plot multiple subplots in a single panel.
+
+        Parameters
+        ----------
+        nsteps_max : int
+            Indicates max number of steps for plotting price vs. number of steps
 
         Examples
         --------
-
-        >>> from qfrm import *
-        >>> s = Stock(S0=50, vol=.3)
-        >>> a = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc={'$7.42840, hull p.288'})
-        >>> a.plot()
+        See J.C.Hull, OFOD, 9ed, p.288-289.
+        This example demonstrates change in (convergence of) price with increasing number of steps of binary tree.
+        >>> from qfrm import *; s = Stock(S0=50, vol=.3)
+        >>> a = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc={'$7.42840, See Hull p.288'})
+        >>> a.plot(nsteps_max=5) # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at 0x...>
 
         """
         fig, ax = plt.subplots()
         def onresize(event):  fig.tight_layout()
         cid = fig.canvas.mpl_connect('resize_event', onresize)  # tighten layout on resize event
 
-        self.plot_px_convergence(nsteps_max=50, ax=ax)
-        plt.tight_layout();         plt.show()
+        self.plot_px_convergence(nsteps_max=nsteps_max, ax=ax)
+        plt.tight_layout();
+        plt.show()
 
     @property
     def net_r(self):
@@ -662,30 +708,14 @@ class OptionValuation(OptionSeries):
 
         Examples
         --------
-
-        >>> o = OptionValuation(rf_r=0.05); vars(o)
-        >>> o.update(rf_r=0.04)
-        OptionValuation.OptionValuation
-        frf_r: 0
-        px_spec: OptionValuation.PriceSpec {}
-        rf_r: 0.04
-        seed0: null
-        <BLANKLINE>
-        >>> o.update(ref=Stock(q=0.01))
-        OptionValuation.OptionValuation
-        frf_r: 0
-        px_spec: OptionValuation.PriceSpec {}
-        ref: OptionValuation.Stock
-          S0: null
-          curr: null
-          desc: null
-          q: 0.01
-          tkr: null
-          vol: null
-        rf_r: 0.04
-        seed0: null
-        <BLANKLINE>
-        >>> o.net_r
+        >>> from pprint import pprint; from qfrm import *
+        >>> o = OptionValuation(rf_r=0.05); pprint(vars(o))  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        {'frf_r': 0,...'rf_r': 0.05,...}
+        >>> o.update(rf_r=0.04)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        OptionValuation...frf_r: 0...rf_r: 0.04...
+        >>> o.update(ref=Stock(q=0.01))  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        OptionValuation...frf_r: 0...q: 0.01...rf_r: 0.04...
+        >>> o.net_r   # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         0.03
 
         """
@@ -714,19 +744,18 @@ class OptionValuation(OptionSeries):
         --------
 
         >>> OptionValuation().calc_px()  # prints a UserWarning and returns None
-        ...
+        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE, +IGNORE_EXCEPTION_DETAIL
 
         >>> from qfrm import *; European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5).calc_px()
+        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         Traceback (most recent call last):
         ...
             assert getattr(self, '_signCP') is not None, 'Ooops. Please supply option right: call, put, ...'
         AttributeError: 'European' object has no attribute '_signCP'
 
         >>> from qfrm import *; European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').calc_px()
-        European.European
-        ...
-          px: 3.444364288840312
-        ...
+        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        European ... px: 3.444364288840312 ...
 
         """
         if self.style is None:
@@ -844,20 +873,4 @@ class OptionValuation(OptionSeries):
         """
         return self.calc_px(method='FD', **kwargs).px_spec.px
 
-
-
-# if __name__ == 'OptionValuation':
-#     # To doctest this module, in Python Console run:      import OptionValuation
-#
-#     print('Called from Python Console... Testing examples...')
-#     import doctest
-#     doctest.testmod()
-
-# if __name__ == '__main__':
-#     # To doctest this module, in OS command prompt (project folder) run:      python.exe OptionValuation.py
-#
-#     print('__main__ Called from Python Console... Testing examples...')
-#     import doctest; doctest.testmod()
-
-# python.exe -m doctest OptionValuation.py
 
