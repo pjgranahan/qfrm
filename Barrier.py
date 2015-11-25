@@ -68,6 +68,14 @@ class Barrier(OptionValuation):
         >>> o.calc_px(method='BS',H=90.,knock='up',dir='in').px_spec.px
         10.52559600411976
 
+        >>> from pandas import Series;  expiries = range(1,11)
+        >>> O = Series([o.update(T=t).calc_px(method='BS').px_spec.px for t in expiries], expiries)
+        >>> O.plot(grid=1, title='BS Price vs expiry (in years)')
+        <matplotlib.axes._subplots.AxesSubplot object at ...>
+
+        >>> import matplotlib.pyplot as plt
+        >>> plt.show()
+
         >>> # SEE NOTES for verification
         >>> s = Stock(S0=95., vol=.25, q=.00)
         >>> o = Barrier(ref=s, right='put', K=100., T=1., rf_r=.1, desc='down and in put')
