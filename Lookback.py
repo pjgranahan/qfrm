@@ -119,7 +119,7 @@ class Lookback(OptionValuation):
         1.829899147224415
 
         >>> o.px_spec
-        OptionValuation.PriceSpec
+        PriceSpec
         LT_specs:
           a: 1.0002500312526044
           d: 0.99750312239746
@@ -134,6 +134,7 @@ class Lookback(OptionValuation):
         nsteps: 100
         px: 1.829899147224415
         sub_method: binomial tree; Hull Ch.13
+        <BLANKLINE>
 
 
         >>> s = Stock(S0=50., vol=.4, q=.0)
@@ -153,6 +154,7 @@ class Lookback(OptionValuation):
         >>> o = Lookback(ref=s, right='call', T=3, K=30, rf_r=.01, desc='Hull p607')
         >>> O = Series([o.update(T=t).calc_px(method='LT', nsteps=5).px_spec.px for t in expiries], expiries)
         >>> O.plot(grid=1, title='Price vs expiry (in years)')
+        <matplotlib.axes._subplots.AxesSubplot object at ...>
 
        """
 
