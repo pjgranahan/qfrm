@@ -1,4 +1,6 @@
 from OptionValuation import *
+from scipy.stats import norm
+from numpy import exp, log, sqrt
 
 class Barrier(OptionValuation):
     """ European option class.
@@ -46,7 +48,7 @@ class Barrier(OptionValuation):
         >>> s = Stock(S0=50., vol=.25, q=.00)
         >>> o = Barrier(ref=s,right='call', K=45., T=2., rf_r=.1, desc='down and out call')
         >>> o.calc_px(H=35.,knock='down',dir='out',method='BS').px_spec.px
-        14.5752394837
+        14.575239483680027
 
         >>> o.calc_px(H=35.,knock='down',dir='out',method='BS').px_spec
         PriceSpec
@@ -54,16 +56,17 @@ class Barrier(OptionValuation):
         method: BS
         px: 14.575239483680027
         sub_method: standard; Hull p.604
+        <BLANKLINE>
 
         >>> s = Stock(S0=35., vol=.1, q=.1)
         >>> o = Barrier(ref=s, right='put', K=45., T=2.5, rf_r=.1, desc='up and out put')
         >>> o.calc_px(H=50.,knock='up',method='BS',dir='out').px_spec.px
-        7.90417744642
+        7.904177446424047
 
         >>> s = Stock(S0=85., vol=.35, q=.05)
         >>> o = Barrier(ref=s, right='call', K=80., T=.5, rf_r=.05, desc='up and in call')
         >>> o.calc_px(method='BS',H=90.,knock='up',dir='in').px_spec.px
-        10.5255960041
+        10.52559600411976
 
         >>> # SEE NOTES for verification
         >>> s = Stock(S0=95., vol=.25, q=.00)
@@ -146,9 +149,6 @@ class Barrier(OptionValuation):
         Hull p604
 
         """
-
-        from scipy.stats import norm
-        from numpy import exp, log, sqrt
 
         _ = self
         # Compute Parameters
