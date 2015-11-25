@@ -1,3 +1,4 @@
+import yaml
 import numbers
 import numpy as np
 
@@ -221,3 +222,49 @@ class Util():
         """
         try:  return tuple((Util.to_tuple(i)) for i in a)
         except TypeError: return float(a) if leaf_as_float else a
+
+
+class SpecPrinter:
+    """ Helper class for printing class's internal variables.
+
+    This is a base class that is inherited by any child class needs to display its specifications (class variables).
+
+    Examples
+    --------
+    >>> class A(SpecPrinter):
+    ...     def __init__(self):  self.a=[1,2,3]; self.b = {'a':1,'b':2.,'c':'3'}
+    >>> A()   # prints out structure of the object
+
+    """
+
+    def full_spec(self, new_line=False):
+        """ Returns a formatted string containing all variables of this class (recursively)
+
+        new_line : bool
+            Whether include new line symbol '\n' or not
+
+        Returns
+        -------
+        str
+            Formatted string with option specifications
+
+        Examples
+        --------
+
+        """
+        s = yaml.dump(self, default_flow_style=not new_line).replace('!!python/object:','').replace('!!python/tuple','')
+        s = s.replace('__main__.','').replace(type(self).__name__ + '.','').replace('null','-')
+        s = s.replace('__main__.','').replace('OptionValuation.','').replace('OptionSeries.','').replace('null','-')
+        if not new_line:
+            s = s.replace(',', ', ').replace('\n', ',').replace(': ', ':').replace('  ', ' ')
+
+        return s
+
+    def __repr__(self):
+        return self.full_spec(new_line=True)
+
+    def __str__(self):
+        return self.full_spec(new_line=True)
+
+
+
