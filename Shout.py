@@ -99,13 +99,15 @@ class Shout(OptionValuation):
         >>> plt.show()
 
         >>> o.calc_px(method='MC', nsteps=1000, npaths=10000, keep_hist=True, seed=1212).px_spec.px
-        11.0548007571
-
-        >>> o.update(right='put').calc_px().px_spec.px
+        11.094278625427911
 
         >>> s = Stock(S0=36, vol=.2)
         >>> o = Shout(ref=s, right='call', K=40, T=1, rf_r=.2, desc='Example from http://core.ac.uk/download/pdf/1568393.pdf')
-        >>> o.calc_px(method='MC', nsteps=1000, npaths=10000, keep_hist=True, seed=1234).px_spec.px
+        >>> o.calc_px(method='LT', nsteps=500, keep_hist=True).px_spec.px
+        5.108705783777672
+
+        >>> o.calc_px(method='MC', nsteps=500, npaths=10000, keep_hist=True, seed=1212).px_spec.px
+        5.6908446205510863
 
        """
         self.seed = seed
@@ -205,7 +207,7 @@ class Shout(OptionValuation):
         [2] Hull, J.C., Options, Futures and Other Derivatives, 9ed, 2014. Prentice Hall, p609.
 
         """
-        from numpy import exp, random, zeros, sqrt, maximum, polyfit, polyval, array, where, mean
+        from numpy import exp, random, zeros, sqrt, maximum, polyfit, polyval, array, where, mean, repeat
         from scipy.stats import norm
 
         n_steps = getattr(self.px_spec, 'nsteps', 3)
@@ -226,10 +228,12 @@ class Shout(OptionValuation):
             S[t,:] = S[t-1,:] * exp((_.rf_r-_.ref.vol**2/2)*dt + _.ref.vol*ran*sqrt(dt))
 
         h = maximum(_.signCP*(S-_.K), 0) # payoff when not shout
-        V = maximum(_.signCP*(S[-1,:]-S), 0) + (S-_.K) # payoff when shout
+        final_payoff = repeat(S[-1,:], n_steps+1, axis=0).reshape(n_paths,n_steps+1)
+        #print(final_payoff.transpose()[0:10,0:10])
+        V = maximum(_.signCP*(final_payoff.transpose()-S), 0) + (S-_.K) # payoff when shout
 
         for t in range (n_steps-1,-1,-1): # valuation process ia similar to American option
-            rg = polyfit(S[t,:], df*array(h[t+1,:]), 5) # regression at time t
+            rg = polyfit(S[t,:], df*array(h[t+1,:]), 3) # regression at time t
             C= polyval(rg, S[t,:]) # continuation values
             h[t,:]= where(V[t,:]>C, V[t,:], h[t+1,:]*df) # exercise decision: shout or not shout
 
@@ -252,3 +256,24 @@ class Shout(OptionValuation):
 
         return self
 
+
+'''
+s = Stock(S0=50, vol=.3)
+o = Shout(ref=s, right='call', K=52, T=2, rf_r=.05, desc='Example from internet')
+print(o.calc_px(method='LT', nsteps=2, keep_hist=True).px_spec.px)
+print(o.calc_px(method='LT', nsteps=500, keep_hist=True).px_spec.px)
+print(o.calc_px(method='MC', nsteps=1000, npaths=10000, keep_hist=True, seed=1212).px_spec.px)
+
+#s = Stock(S0=110, vol=.2, q=.04)
+#o = Shout(ref=s, right='call', K=100, T=.5, rf_r=.05, desc='Example from http://core.ac.uk/download/pdf/1568393.pdf')
+#print(o.calc_px(method='LT', nsteps=50, keep_hist=True).px_spec.px)
+#print(o.update(right='call').calc_px(method='MC', nsteps=1000, npaths=10000, keep_hist=True, seed=2121).px_spec.px)
+
+s = Stock(S0=36, vol=.2)
+o = Shout(ref=s, right='call', K=40, T=1, rf_r=.2, desc='Example from http://core.ac.uk/download/pdf/1568393.pdf')
+print(o.calc_px(method='LT', nsteps=500, keep_hist=True).px_spec.px)
+print(o.calc_px(method='MC', nsteps=500, npaths=10000, keep_hist=True, seed=1212).px_spec.px)
+'''
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
