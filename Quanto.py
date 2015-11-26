@@ -191,7 +191,7 @@ class Quanto(OptionValuation):
         -------
         self: Quanto
 
-        .. sectionauthor::
+        .. sectionauthor:: Runmin Zhang
 
         Note
         ----
