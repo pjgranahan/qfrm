@@ -1,5 +1,8 @@
 from OptionValuation import OptionValuation, PriceSpec, Stock
 from American import American
+from math import sqrt
+from numpy import cumsum, maximum, where, polyval, polyfit, exp, mean, copy
+from numpy.random import normal, seed
 
 
 class Quanto(OptionValuation):
@@ -198,9 +201,6 @@ class Quanto(OptionValuation):
         [1] http://unicreditanduniversities.eu/uploads/assets/QuantoAdjustments_in_the_Presence_of_SV_Giese.pdf
         """
 
-        from math import sqrt
-        from numpy import cumsum, maximum, where, polyval, polyfit, exp, mean, copy
-        from numpy.random import normal, seed
 
         # Verify the input
         try: deg = self.px_spec.deg
