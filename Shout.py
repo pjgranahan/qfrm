@@ -98,16 +98,28 @@ class Shout(OptionValuation):
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
-        >>> o.calc_px(method='MC', nsteps=1000, npaths=10000, keep_hist=True, seed=1212).px_spec.px
-        11.094278625427911
-
+        See example on p.26, p.28 in http://core.ac.uk/download/pdf/1568393.pdf
         >>> s = Stock(S0=36, vol=.2)
-        >>> o = Shout(ref=s, right='call', K=40, T=1, rf_r=.2, desc='Example from http://core.ac.uk/download/pdf/1568393.pdf')
-        >>> o.calc_px(method='LT', nsteps=500, keep_hist=True).px_spec.px
-        5.108705783777672
+        >>> o = Shout(ref=s, right='put', K=40, T=1, rf_r=.2, desc='http://core.ac.uk/download/pdf/1568393.pdf')
+        >>> o.calc_px(method='MC', nsteps=252, npaths=10000, keep_hist=True, seed=1212).px_spec.px
+        4.131257046216974
 
-        >>> o.calc_px(method='MC', nsteps=500, npaths=10000, keep_hist=True, seed=1212).px_spec.px
-        5.6908446205510863
+        >>> o.calc_px(method='MC', nsteps=252, npaths=10000, keep_hist=True, seed=1212).px_spec
+        PriceSpec
+        keep_hist: true
+        method: MC
+        npaths: 10000
+        nsteps: 252
+        px: 4.131257046216974
+        sub_method: Hull p.609
+        <BLANKLINE>
+
+        >>> from pandas import Series;  steps = [10,50,100,150,200,250]
+        >>> O = Series([o.calc_px(method='MC', nsteps=s, npaths=10000, keep_hist=True, seed=1212).px_spec.px for s in steps], steps)
+        >>> O.plot(grid=1, title='MC Price vs nsteps')
+        <matplotlib.axes._subplots.AxesSubplot object at ...>
+        >>> import matplotlib.pyplot as plt
+        >>> plt.show()
 
        """
         self.seed = seed
@@ -203,7 +215,7 @@ class Shout(OptionValuation):
 
         Note
         ----
-        [1] eprints.maths.ox.ac.uk/933/1/lisa_yudaken.pdf
+        [1] http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L4shout.pdf
         [2] Hull, J.C., Options, Futures and Other Derivatives, 9ed, 2014. Prentice Hall, p609.
 
         """
@@ -229,7 +241,7 @@ class Shout(OptionValuation):
 
         h = maximum(_.signCP*(S-_.K), 0) # payoff when not shout
         final_payoff = repeat(S[-1,:], n_steps+1, axis=0).reshape(n_paths,n_steps+1)
-        V = maximum(_.signCP*(final_payoff.transpose()-S), 0) + (S-_.K) # payoff when shout
+        V = maximum(_.signCP*(final_payoff.transpose()-_.K), _.signCP*(S-_.K))# payoff when shout
 
         for t in range (n_steps-1,-1,-1): # valuation process ia similar to American option
             rg = polyfit(S[t,:], df*array(h[t+1,:]), 3) # regression at time t

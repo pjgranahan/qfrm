@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.stats import norm
 from OptionValuation import *
 import matplotlib.pyplot as plt
 
@@ -51,6 +52,7 @@ class Chooser(OptionValuation):
         >>> o = Chooser(ref=s, right='put', K=50, T=1, rf_r=.1, desc= 'Exotic options paper page 297 Table 2 time 0.5')
         >>> print(o.calc_px(tau=6/12, method='BS').px_spec.px)
         6.58789632353
+
         EXOTIC OPTIONS: A CHOOSER OPTION AND ITS PRICING by Raimonda Martinkkute-Kauliene (Dec 2012)
         https://www.dropbox.com/s/r9lvi0uzdehwlm4/101-330-1-PB%20%284%29.pdf?dl=0
 
@@ -58,6 +60,7 @@ class Chooser(OptionValuation):
         >>> o = Chooser(ref=s, right='put', K=50, T=1, rf_r=.1, desc= 'Exotic options paper page 297 Table 2 time 1.00')
         >>> print(o.calc_px(tau=12/12, method='BS').px_spec.px)
         7.62130227383
+
         EXOTIC OPTIONS: A CHOOSER OPTION AND ITS PRICING by Raimonda Martinkkute-Kauliene (Dec 2012)
         https://www.dropbox.com/s/r9lvi0uzdehwlm4/101-330-1-PB%20%284%29.pdf?dl=0
 
@@ -73,54 +76,58 @@ class Chooser(OptionValuation):
 
 
         LT Examples
+        >>> s = Stock(S0=50, vol=0.2, q=0.05)
+        >>> o = Chooser(ref=s, right='put', K=50, T=1, rf_r=.1, desc= 'Exotic options paper page 297 Table 2 time 0.5')
+        >>> o.calc_px(tau=3/12, method='LT', nsteps=2, keep_hist=True).px_spec.px
+        6.755605274510829
 
-        >>> o.calc_px(tau=3/12, method='LT', nsteps=5, keep_hist=True).px_spec.px
-        7.109866570176281
+        EXOTIC OPTIONS: A CHOOSER OPTION AND ITS PRICING by Raimonda Martinkkute-Kauliene (Dec 2012)
+        https://www.dropbox.com/s/r9lvi0uzdehwlm4/101-330-1-PB%20%284%29.pdf?dl=0
 
-        >>> o.px_spec.ref_tree
-        ((50.00000000000001,),
-        (46.19936548599171, 54.11329730833717),
-        (42.687627426164845, 50.0, 58.5649789116098),
-        (39.442826023824665, 46.19936548599171, 54.11329730833716, 63.38288231400874),
-        (36.44467070550122, 42.687627426164845, 50.0, 58.56497891160979, 68.597135098346),
-        (33.67441323880132, 39.442826023824665, 46.19936548599171, 54.11329730833716, 63.38288231400873, 74.24034332153934))
+        >>> o.calc_px(tau=3/12, method='LT', nsteps=2, keep_hist=True).px_spec.ref_tree
+        ((50.0,), (43.40617226972924, 57.595495508445445), (37.68191582218824, 49.99999999999999, 66.3448220572672))
 
         >>> o.calc_px(tau=3/12, method='LT', nsteps=2, keep_hist=False)
         Chooser
         K: 50
-        T: 0.5
+        T: 1
         _right: put
         _signCP: -1
+        desc: Exotic options paper page 297 Table 2 time 0.5
         frf_r: 0
-        px_spec: qfrm.PriceSpec
-        LT_specs:
-            a: 1.0
-            d: 0.8824969025845953
-            df_T: 0.9607894391523232
-            df_dt: 0.9801986733067553
-            dt: 0.25
-            p: 0.4687906266262439
-            u: 1.1331484530668263
-        keep_hist: false
-        method: LT
-        nsteps: 2
-        px: 5.9971272680133465
-        sub_method: binomial tree; Hull Ch.135
-        ref: qfrm.Stock
-        S0: 50
-        curr: null
-        desc: null
-        q: 0.08
-        tkr: null
-        vol: 0.25
-        rf_r: 0.08
-        seed0: null
+        px_spec: PriceSpec
+          LT_specs:
+            a: 1.0253151205244289
+            d: 0.8681234453945849
+            df_T: 0.9048374180359595
+            df_dt: 0.951229424500714
+            dt: 0.5
+            p: 0.5539082889483392
+            u: 1.151909910168909
+          keep_hist: false
+          method: LT
+          nsteps: 2
+          px: 6.755605274510829
+          sub_method: binomial tree; Hull Ch.135
+        ref: Stock
+          S0: 50
+          curr: -
+          desc: -
+          q: 0.05
+          tkr: -
+          vol: 0.2
+        rf_r: 0.1
+        seed0: -
         tau: 0.25
+        <BLANKLINE>
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
-        >>> o = Series([o.update(T=t).calc_px(method='LT', nsteps=5).px_spec.px for t in expiries], expiries)
+        >>> o = Series([o.update(T=t).calc_px(tau=3/12, method='LT', nsteps=2, keep_hist=False).px_spec.px for t in expiries], expiries)
         >>> o.plot(grid=1, title='Price vs expiry (in years)')
+        <matplotlib.axes._subplots.AxesSubplot object at ...>
+        >>> import matplotlib.pyplot as plt
+        >>> plt.show()
 
         See Also
         --------
@@ -136,6 +143,7 @@ class Chooser(OptionValuation):
         Humphreys, Natalia A., ACTS 4302 Principles of Actuarial Models: Financial Economics.
         Lesson 14: All-or-nothing, Gap, Exchange and Chooser Options.
 
+        Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
 
         """
         self.tau = float(tau)
@@ -188,9 +196,6 @@ class Chooser(OptionValuation):
         self: Chooser
 
         .. sectionauthor:: Yen-fei Chen
-
-        .. note::
-        Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
 
         """
         from numpy import cumsum, log, arange, insert, exp, sum, maximum
