@@ -28,12 +28,15 @@ class Quanto(OptionValuation):
                 MC, FD methods require number of simulation paths
         keep_hist : bool
                 If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
-
+        seed: int
+                MC random seed
+        deg: int
+                Degrees in LSM MC method.
         Returns
         -------
         self : Quanto
 
-        .. sectionauthor:: Patrick Granahan
+        .. sectionauthor:: Patrick Granahan, Runmin Zhang
 
         Notes
         -----
@@ -52,7 +55,7 @@ class Quanto(OptionValuation):
         ((1199.999999999993,), (1158.3148318698472, 1243.1853243866492), ... 38364.96926881886, 41175.99589789209))
 
         >>> o.calc_px(method='LT', nsteps=100, keep_hist=False)
-        Quanto.Quanto
+        Quanto
         K: 1200
         T: 2
         _right: call
@@ -99,6 +102,29 @@ class Quanto(OptionValuation):
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
+
+
+        Calculate the price of a Quanto option using MC method. This example comes from Hull ch.30, ex.30.5 (p.701-702)
+        >>> s = Stock(S0=1200, vol=.25, q=0.015)
+        >>> o = Quanto(ref=s, right='call', K=1200, T=2, rf_r=.03, frf_r=0.05)
+        >>> print(o.calc_px(method='MC', nsteps=100, npaths=5000,vol_ex=0.12, correlation=0.2).px_spec.px)
+        179.88546563590577
+
+        Calculate the price of a Quanto option. This example comes from Hull ch.30, problem.30.9.b (p.704)
+        >>> s = Stock(S0=400, vol=.2, q=0.03)
+        >>> o = Quanto(ref=s, right='call', K=400, T=2, rf_r=.06, frf_r=0.04)
+        >>> o.calc_px(method='MC', nsteps=100,npaths=4000, vol_ex=0.06, correlation=0.4).px_spec.px
+        57.363490258590126
+
+        Example of option price convergence (MC method) with increasing paths
+        >>> from pandas import Series
+        >>> expiries = range(1,11)
+        >>> O = Series([o.update(T=t).calc_px(method='MC', nsteps=100, npaths=5000, vol_ex=0.12, correlation=0.2).px_spec.px for t in expiries], expiries)
+        >>> O.plot(grid=1, title='MC Method: Price vs expiry (in years)') # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at ...>
+        >>> import matplotlib.pyplot as plt
+        >>> plt.show()
+
         """
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist,
                                  vol_ex=vol_ex, correlation=correlation,seed=1,deg=deg)
@@ -173,20 +199,17 @@ class Quanto(OptionValuation):
         """
 
         from math import sqrt
-        from numpy import cumsum, maximum, sum, where, polyval, polyfit, exp, random, mean, copy
+        from numpy import cumsum, maximum, where, polyval, polyfit, exp, mean, copy
         from numpy.random import normal, seed
-        from pandas import DataFrame
-        import matplotlib.pyplot as plt
 
-        try: method = self.px_spec.sub_method
-        except TypeError: pass
+        # Verify the input
         try: deg = self.px_spec.deg
         except TypeError: deg = 5
 
         vol_ex = getattr(self.px_spec, 'vol_ex')  # Volatility of the exchange rate
         correlation = getattr(self.px_spec, 'correlation')  # Correlation between asset and exchange rate
-        n_steps = getattr(self.px_spec, 'nsteps', 3)
-        n_paths = getattr(self.px_spec, 'npaths', 3)
+        n_steps = getattr(self.px_spec, 'nsteps', 3) # # of steps
+        n_paths = getattr(self.px_spec, 'npaths', 5000) # of paths in MC simulation
         _ = self
 
 
@@ -197,7 +220,7 @@ class Quanto(OptionValuation):
         foreign_numeraire_dividend_yield = self.frf_r - foreign_numeraire
 
         # Once we have the foreign numeraire dividend yield calculated,
-        # we can price the Quanto option using an American option with specific parameters. Compare the
+        # Follow the LT method. We can price the Quanto option using an American option with specific parameters.
 
         dt = _.T / n_steps; df = exp(-_.frf_r * dt)
         signCP = 1 if _.right.lower()[0] == 'c' else -1
@@ -211,7 +234,6 @@ class Quanto(OptionValuation):
             C = polyval(rg, S[i])              # continuation values.
             v[i] = where(payout[i] > C, payout[i], v[i + 1] * df)  # exercise decision
         v[0] = v[1] * df
-        print(mean(v[0]))
         self.px_spec.add(px=float(mean(v[0])))
 
         return self
@@ -232,8 +254,3 @@ class Quanto(OptionValuation):
 
         return self
 
-s = Stock(S0=1200, vol=.25, q=0.015)
-o = Quanto(ref=s, right='call', K=1200, T=2, rf_r=.03, frf_r=0.05)
-
-print(o.calc_px(method='LT', nsteps=100, vol_ex=0.12, correlation=0.2).px_spec.px)
-o.calc_px(method='MC',nsteps=100,npaths=5000, vol_ex=0.12, correlation=0.2, deg=5).px_spec
