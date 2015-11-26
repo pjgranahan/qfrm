@@ -1,8 +1,9 @@
+import math
 import numpy as np
+from scipy import stats
 from OptionValuation import *
 import matplotlib.pyplot as plt
-from numpy import arange, maximum, sqrt, exp
-from scipy.stats import norm
+
 
 class Shout(OptionValuation):
     """ Shout option class.
@@ -49,49 +50,19 @@ class Shout(OptionValuation):
         http://investexcel.net/shout-options-excel/
         https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=9&cad=rja&uact=8&ved=0ahUKEwjMsfu4n6TJAhVJz2MKHQA_B-MQFghSMAg&url=http%3A%2F%2Fwww.actuarialworkshop.com%2FBinomial%2520Tree.xls&usg=AFQjCNEic5d4DfV5BTKbzkPW2LhzBU0Fdw&sig2=lB14d9wQBxsiqdaXlqTBTw&bvm=bv.108194040,d.eWE
 
-
+        LT Examples
+        ----------------------------------------------------
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Shout(ref=s, right='call', K=52, T=2, rf_r=.05, desc='Example from internet excel spread sheet')
 
-        >>> o.calc_px(method='LT', nsteps=2, keep_hist=True).px_spec.px
+        >>> o.pxLT(nsteps=2, keep_hist=False)
         11.803171356649463
 
-        >>> o.px_spec.ref_tree
-        ((50.000000000000014,), (37.0409110340859, 67.49294037880017), (27.440581804701324, 50.00000000000001, 91.10594001952546))
+        >>> o.calc_px(method='LT', nsteps=2, keep_hist=True).px_spec.opt_tree
+        ((11.803171356649463,), (0.0, 24.34243306821051), (0.0, 0.0, 39.10594001952546))
 
-        >>> o.calc_px(method='LT', nsteps=2, keep_hist=False)
-        Shout
-        K: 52
-        T: 2
-        _right: call
-        _signCP: 1
-        desc: Example from internet excel spread sheet
-        frf_r: 0
-        px_spec: PriceSpec
-          LT_specs:
-            a: 1.051271096
-            d: 0.740818221
-            df_T: 0.904837418
-            df_dt: 0.951229425
-            dt: 1.0
-            p: 0.509740865
-            u: 1.349858808
-          keep_hist: false
-          method: LT
-          nsteps: 2
-          px: 11.803171357
-          sub_method: binomial tree; Hull Ch.13
-        ref: Stock
-          S0: 50
-          curr: -
-          desc: -
-          q: 0
-          tkr: -
-          vol: 0.3
-        rf_r: 0.05
-        seed: -
-        seed0: -
-        <BLANKLINE>
+        >>> o.calc_px(method='LT', nsteps=2, keep_hist=False) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        Shout...px: 11.803171357...
 
         >>> from pandas import Series
         >>> steps = range(1,11)
@@ -101,24 +72,20 @@ class Shout(OptionValuation):
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
+        MC Examples
+        ---------------------------------------------------
         See example on p.26, p.28 in http://core.ac.uk/download/pdf/1568393.pdf
         >>> s = Stock(S0=36, vol=.2)
         >>> o = Shout(ref=s, right='put', K=40, T=1, rf_r=.2, desc='http://core.ac.uk/download/pdf/1568393.pdf')
-        >>> o.calc_px(method='MC', nsteps=252, npaths=10000, keep_hist=True, seed=1212).px_spec.px
+        >>> o.pxMC(nsteps=252, npaths=10000, keep_hist=True, seed=1212)
         4.131257046216974
 
         >>> o.calc_px(method='MC', nsteps=252, npaths=10000, keep_hist=True, seed=1212).px_spec
-        PriceSpec
-        keep_hist: true
-        method: MC
-        npaths: 10000
-        nsteps: 252
-        px: 4.131257046
-        sub_method: Hull p.609
-        <BLANKLINE>
+        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 4.131257046...
 
         >>> from pandas import Series;  steps = [10,50,100,150,200,250]
-        >>> O = Series([o.calc_px(method='MC', nsteps=s, npaths=10000, keep_hist=True, seed=1212).px_spec.px for s in steps], steps)
+        >>> O = Series([o.pxMC(nsteps=s, npaths=10000, keep_hist=True, seed=1212) for s in steps], steps)
         >>> O.plot(grid=1, title='MC Price vs nsteps')# doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
@@ -126,8 +93,7 @@ class Shout(OptionValuation):
 
        """
         self.seed = seed
-        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
-        return getattr(self, '_calc_' + method.upper())()
+        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
 
 
     def _calc_LT(self):
@@ -150,6 +116,8 @@ class Shout(OptionValuation):
 
 
         """
+        from numpy import arange, maximum, sqrt, exp
+        from scipy.stats import norm
 
         keep_hist = getattr(self.px_spec, 'keep_hist', False)
         n = getattr(self.px_spec, 'nsteps', 3)
@@ -268,4 +236,3 @@ class Shout(OptionValuation):
         """
 
         return self
-

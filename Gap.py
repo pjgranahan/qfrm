@@ -1,7 +1,8 @@
+import math
 import numpy as np
+from scipy import stats
 from OptionValuation import *
 import matplotlib.pyplot as plt
-from scipy.stats import norm
 
 class Gap(OptionValuation):
     """ Gap option class.
@@ -176,8 +177,7 @@ class Gap(OptionValuation):
         """
         self.K2 = float(K2)
         self.seed0 = seed
-        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
-        return getattr(self, '_calc_' + method.upper())()
+        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
 
     def _calc_BS(self):
         """ Internal function for option valuation.
@@ -286,6 +286,7 @@ class Gap(OptionValuation):
         ----------------------------------------------
 
         """
+        import numpy as np
         n_steps = getattr(self.px_spec, 'nsteps', 3)
         n_paths = getattr(self.px_spec, 'npaths', 3)
         _ = self
@@ -325,6 +326,3 @@ class Gap(OptionValuation):
 
         return self
 
-if __name__=="__main__":
-    import doctest
-    doctest.testmod()

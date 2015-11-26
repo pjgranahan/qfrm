@@ -1,6 +1,6 @@
-from math import sqrt, exp, log
-from numpy import cumsum, log, arange, insert, exp, sum, maximum
-from scipy.stats import norm
+import math
+import numpy as np
+from scipy import stats
 from OptionValuation import *
 import matplotlib.pyplot as plt
 
@@ -36,7 +36,7 @@ class Chooser(OptionValuation):
         -------------------------------------
         self : Chooser
 
-        .. sectionauthor:: thawda, Yen-fei Chen
+        .. sectionauthor:: Thawda Aung, Yen-fei Chen
 
         Notes
         --------------------------------------
@@ -49,10 +49,10 @@ class Chooser(OptionValuation):
 
 
         BS Examples
-
+        --------------------------------------
         >>> s = Stock(S0=50, vol=0.2, q=0.05)
         >>> o = Chooser(ref=s, right='put', K=50, T=1, rf_r=.1, desc= 'Exotic options paper page 297 Table 2 time 0.5')
-        >>> print(o.calc_px(tau=6/12, method='BS').px_spec.px)
+        >>> o.calc_px(tau=6/12, method='BS').px_spec.px
         6.58789632353
 
         EXOTIC OPTIONS: A CHOOSER OPTION AND ITS PRICING by Raimonda Martinkkute-Kauliene (Dec 2012)
@@ -60,7 +60,7 @@ class Chooser(OptionValuation):
 
         >>> s = Stock(S0=50, vol=0.2, q=0.05)
         >>> o = Chooser(ref=s, right='put', K=50, T=1, rf_r=.1, desc= 'Exotic options paper page 297 Table 2 time 1.00')
-        >>> print(o.calc_px(tau=12/12, method='BS').px_spec.px)
+        >>> o.calc_px(tau=12/12, method='BS').px_spec.px
         7.62130227383
 
         EXOTIC OPTIONS: A CHOOSER OPTION AND ITS PRICING by Raimonda Martinkkute-Kauliene (Dec 2012)
@@ -68,16 +68,17 @@ class Chooser(OptionValuation):
 
         >>> s = Stock(S0=50, vol=0.25, q=0.08)
         >>> o = Chooser(ref=s, right='put', K=50, T=.5, rf_r=.08)
-        >>> print(o.calc_px(tau=3/12, method='BS').px_spec.px)
+        >>> o.calc_px(tau=3/12, method='BS').px_spec.px
         5.77757834387
 
         >>> s = Stock(S0=50, vol=0.2, q=0.02)
         >>> o = Chooser(ref=s, right='call', K=50, T=9/12, rf_r=.06)
-        >>> print(o.calc_px(tau=3/12, method='BS').px_spec.px)
+        >>> o.calc_px(tau=3/12, method='BS').px_spec.px
         5.42052870833
 
 
         LT Examples
+        ---------------------------------------------
         >>> s = Stock(S0=50, vol=0.2, q=0.05)
         >>> o = Chooser(ref=s, right='put', K=50, T=1, rf_r=.1, desc= 'Exotic options paper page 297 Table 2 time 0.5')
         >>> o.calc_px(tau=3/12, method='LT', nsteps=2, keep_hist=True).px_spec.px
@@ -89,39 +90,8 @@ class Chooser(OptionValuation):
         >>> o.calc_px(tau=3/12, method='LT', nsteps=2, keep_hist=True).px_spec.ref_tree
         ((50.0,), (43.40617226972924, 57.595495508445445), (37.68191582218824, 49.99999999999999, 66.3448220572672))
 
-        >>> o.calc_px(tau=3/12, method='LT', nsteps=2, keep_hist=False)
-        Chooser
-        K: 50
-        T: 1
-        _right: put
-        _signCP: -1
-        desc: Exotic options paper page 297 Table 2 time 0.5
-        frf_r: 0
-        px_spec: PriceSpec
-          LT_specs:
-            a: 1.0253151205244289
-            d: 0.8681234453945849
-            df_T: 0.9048374180359595
-            df_dt: 0.951229424500714
-            dt: 0.5
-            p: 0.5539082889483392
-            u: 1.151909910168909
-          keep_hist: false
-          method: LT
-          nsteps: 2
-          px: 6.755605274510829
-          sub_method: binomial tree; Hull Ch.135
-        ref: Stock
-          S0: 50
-          curr: -
-          desc: -
-          q: 0.05
-          tkr: -
-          vol: 0.2
-        rf_r: 0.1
-        seed0: -
-        tau: 0.25
-        <BLANKLINE>
+        >>> o.calc_px(tau=3/12, method='LT', nsteps=2, keep_hist=False)# doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        Chooser...px: 6.755605274510829...
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
@@ -149,8 +119,7 @@ class Chooser(OptionValuation):
 
         """
         self.tau = float(tau)
-        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
-        return getattr(self, '_calc_' + method.upper())()
+        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
 
     def _calc_BS(self):
         """ Internal function for option valuation.
