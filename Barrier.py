@@ -141,9 +141,19 @@ class Barrier(OptionValuation):
 
         All examples below can be verfied in DerivaGem
         >>> s = Stock(S0=50., vol=.3, q=.00)
-        >>> o = Barrier(ref=s,right='put', K=50., T=1., rf_r=.1, desc='down and out call')
+        >>> o = Barrier(ref=s,right='put', K=50., T=1., rf_r=.1, desc='DerviaGem Up and Out Barrier')
         >>> print(o.calc_px(H=60.,knock='up',dir='out',method='MC', nsteps=500 ,rng_seed=0, npaths = 10000).px_spec.px)
         3.076977350845583
+
+        >>> s = Stock(S0=50., vol=.3, q=.00)
+        >>> o = Barrier(ref=s,right='call', K=50., T=1., rf_r=.1, desc='Up and in call')
+        >>> print(o.calc_px(H=60.,knock='up',dir='in',method='MC',rng_seed = 0, nsteps=500 , npaths = 10000).px_spec.px)
+        8.122764096728886
+
+        >>> s = Stock(S0=50., vol=.25, q=.00)
+        >>> o = Barrier(ref=s,right='call', K=45., T=2., rf_r=.3, desc='down and in call')
+        >>> print(o.calc_px(H=35.,knock='down',dir='in',method='MC', rng_seed = 4, nsteps=500 , npaths = 10000).px_spec.px)
+        0.14743918425170133
 
        """
 
@@ -467,10 +477,7 @@ class Barrier(OptionValuation):
                 if knocked == 1:
                     payoff[i] = max(0 , path[0 , NSteps] - K)
             return(norm.fit(np.exp(-r*T) * payoff)[0])
-        if spot <= sb:
-            self.dir = 'out'
-        else:
-            self.dir = 'in'
+
         px = 0
         if self.dir == 'out' and self.right == 'call' and self.knock == 'down':
             px = knockout_call(spot , Sb , K , r , T , sigma , NSteps , NRepl)
