@@ -1,28 +1,14 @@
 from OptionValuation import *
-from scipy.stats import norm
-from math import sqrt, exp, log
+from scipy.stats import *
+from math import *
+
 class ForwardStart(OptionValuation):
     """ ForwardStart option class
 
     Inherits all methods and properties of Optionvalueation class.
     """
 
-    def __init__(self, T_s=1,*args,**kwargs):
-        """ Class constructor
-        User passes parameters to __init__
-
-        T1 : float
-             Required. Indicates the time that the option starts.
-
-        .. sectionauthor:: Runmin Zhang 11/13/2015
-
-        """
-
-        super().__init__(*args,**kwargs)
-        self.T_s = T_s
-
-
-    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
+    def calc_px(self, T_s=1, method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
 
         User passes parameters to calc_px, which saves them to local PriceSpec object
@@ -40,7 +26,8 @@ class ForwardStart(OptionValuation):
                 MC, FD methods require number of simulation paths
         keep_hist : bool
                 If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
-
+        T1 : float
+             Required. Indicates the time that the option starts.
         Returns
         -------
         self : ForwardStart
@@ -58,14 +45,14 @@ class ForwardStart(OptionValuation):
         --------
         #http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
         >>> s = Stock(S0=50, vol=.15,q=0.05)
-        >>> ForwardStart(ref=s, T_s=0.5,right='call', T=0.5, rf_r=.1).calc_px() # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        ForwardStart.ForwardStart
+        >>> ForwardStart(ref=s, right='call', T=0.5, rf_r=.1).calc_px(T_s=0.5) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        ForwardStart
         T: 0.5
-        T_s: 0.5
         _right: call
         _signCP: 1
         frf_r: 0
         px_spec: PriceSpec
+          T_s: 0.5
           keep_hist: false
           method: BS
           px: 2.6287772667343705
@@ -78,20 +65,21 @@ class ForwardStart(OptionValuation):
           vol: 0.15
         rf_r: 0.1
         seed0: -
+        <BLANKLINE>
 
 
 
 
         >>> s = Stock(S0=60, vol=.30,q=0.04)
-        >>> ForwardStart(ref=s, T_s=0.25,K=66,right='call', T=0.75, rf_r=.08).calc_px() #http://www.globalriskguard.com/resources/deriv/fwd_4.pdf
-        ForwardStart.ForwardStart
+        >>> ForwardStart(ref=s, K=66,right='call', T=0.75, rf_r=.08).calc_px(T_s=0.25) #http://www.globalriskguard.com/resources/deriv/fwd_4.pdf
+        ForwardStart
         K: 66
         T: 0.75
-        T_s: 0.25
         _right: call
         _signCP: 1
         frf_r: 0
         px_spec: PriceSpec
+          T_s: 0.25
           keep_hist: false
           method: BS
           px: 4.406454339365007
@@ -108,7 +96,7 @@ class ForwardStart(OptionValuation):
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
-        >>> O = Series([ForwardStart(ref=s, T_s=0.25,K=66,right='call', T=0.75, rf_r=.08).update(T=t).calc_px(method='BS').px_spec.px for t in expiries], expiries)
+        >>> O = Series([ForwardStart(ref=s, K=66,right='call', T=0.75, rf_r=.08).update(T=t).calc_px(method='BS',T_s=0.25).px_spec.px for t in expiries], expiries)
         >>> O.plot(grid=1, title='ForwardStart option Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
 
@@ -116,7 +104,7 @@ class ForwardStart(OptionValuation):
         """
 
 
-        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
+        self.px_spec = PriceSpec(T_s=T_s, method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
         return getattr(self, '_calc_' + method.upper())()
 
 
@@ -144,7 +132,7 @@ class ForwardStart(OptionValuation):
 
             S0   =   float(_.ref.S0)
             T   =   float(_.T)
-            T_s  =   float(_.T_s)
+            T_s  =   float(_.px_spec.T_s)
             vol =   float(_.ref.vol)
             r   =   float(_.rf_r)
             q   =   float(_.ref.q)
