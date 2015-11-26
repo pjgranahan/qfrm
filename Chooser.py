@@ -1,7 +1,9 @@
-import numpy as np
+from math import sqrt, exp, log
+from numpy import cumsum, log, arange, insert, exp, sum, maximum
 from scipy.stats import norm
 from OptionValuation import *
 import matplotlib.pyplot as plt
+
 
 class Chooser(OptionValuation):
     """ Chooser option class.
