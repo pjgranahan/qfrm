@@ -213,6 +213,9 @@ class Bermudan(OptionValuation):
 
         """
 
+        # Get arguments from calc_px
+        npaths = getattr(self.px_spec, 'npaths')
+
         function [value variance MC_error]
         =LSAmericanPutVal(R,N,M,S0,K,sigma,r,T,Beta,W)
         # Uses Longstaff-Schwartz algortihm as outlined in Glasserman’s book
@@ -230,63 +233,99 @@ class Bermudan(OptionValuation):
         # W is a set of N(0,1) random numbers to use, this benefits comparisons.
 
         def payout(stock_price):
+            """
+            The payout of a Bermudan option given a stock_price.
+            Parameters
+            ----------
+            stock_price
+
+            Returns
+            -------
+            payout : float
+                    The payout.
+            """
             payout = max(self.signCP * (stock_price - self.K), 0)
             return payout
 
-        def generate_GBM_paths(npaths, tex, S0, vol, rf_r, q, T):
+        def generate_GBM_paths():
             """
-            Generates a matrix (list of lists) of shape (tex x npaths) paths.
-
-            Parameters
-            ----------
-            npaths : int
-                    Number of simulation paths to generate
-            tex : list
-                    A list of exercise dates.
-                    Must be sorted ascending and the final value is the corresponding vanilla maturity.
-                    If T is not equal the the final value of T, then
-                        the T will take precedence: if T < max(tex) then tex will be truncated to tex[tex < T] and will be
-                        appended to tex.
-                        If T > max(tex) then the largest value of tex will be replaced with T.
-            S0 : float
-                    Stock price today ( or at the time of evaluation), positive number.
-            vol : float
-                    Volatility.
-            rf_r : float
-                    Risk-free rate.
-            q : float
-                    Dividend yield rate.
-            T : float
-                    Maturity time.
-
+            Generates a list of paths (list of lists) of shape (tex * npaths).
 
             Returns
             -------
             paths : list
-                    List of path matrices generated.
+                    List of paths generated.
             """
-
             # Create the zero matrix of paths
-            paths = np.zeros((len(tex), npaths))
+            paths = np.zeros((len(self.tex), npaths))
 
             # Seed the first row
-            paths[0] = S0 * np.ones(len(tex))
+            paths[0] = self.ref.S0 * np.ones(len(self.tex))
 
             # Fill the matrix
-            for i in range(len(tex) - 1):
-                deltaT = tex[i+i] - tex[i]
-                paths[i+1] = paths[i] * np.exp((((rf_r - q) - ((vol**2) / 2)) * deltaT) +
-                                               (vol * np.random.randn(len(tex)) * np.sqrt(deltaT)))
+            for i in range(len(self.tex) - 1):
+                deltaT = self.tex[i+i] - self.tex[i]
+                paths[i+1] = paths[i] * np.exp((((self.rf_r - self.ref.q) - ((self.ref.vol**2) / 2)) * deltaT) +
+                                               (self.ref.vol * np.random.randn(len(self.tex)) * np.sqrt(deltaT)))
 
             return paths
 
+        def Laguerre(R, x):
+            """
+            Generates the weighted Laguerre polynomial solution.
+            Could be made more general by expanding the scope of R, but at potentially reduced speeds.
 
-        # Phase 2 : Use these Beta values to price the
-        # bermudan option along a new set of N2 simulated paths.
-        S=[]
-        X=[]
-        X=generate_GBM_paths(N,M,S0,sigma,r,T,W);
+            Parameters
+            ----------
+            R : int
+                    The R-th element in the Laguerre polynomial sequence
+                    Must be between 0 and 6.
+            x : float
 
+            Returns
+            -------
+            s : float
+                    The solution.
+            """
+            if R == 0:
+                s = 1
+            elif R == 1:
+                s = -x + 1
+            elif R == 2:
+                s = 1/2 * (x**2 -4*x + 2)
+            elif R == 3:
+                s = 1/6 * (-x**3 + 9*x**2 - 18*x + 6)
+            elif R == 4:
+                s = 1/24 * (x**4 - 16*x**3 + 72*x**2 - 96*x + 24)
+            elif R == 5:
+                s = 1/120 * (-x**5 + 25*x**4 - 200*x**3 + 600*x**2 - 600*x + 120)
+            elif R == 6:
+                s = 1/720 * (x**6 - 36*x**5 + 450*x**4 - 2400*x**3 + 5400*x**2 - 4320*x + 720)
+
+            return s
+
+
+        # Generate paths
+        paths = generate_GBM_paths(npaths=npaths, tex=self.tex, S0=self.ref.S0, vol=self.ref.vol, rf_r=self.rf_r, q=self.q, T=self.T)
+
+        # values will store the list of prices; each price comes from a different path
+        prices = []
+
+        # Generate the list of prices by going through every path and, for each exercise date,
+        # seeing if we should exercise or continue
+        for path in range(npaths):
+            for exercise_date in self.tex:
+                continuation_price = 0
+                stock_price = paths[exercise_date, path]  # stock price at the exercise date on a given path
+                for R in range(self.R):
+                    continuation_price = continuation_price + Laguerre(R, stock_price) * beta(exercise_date, R+1)
+                if continuation_price < payout(stock_price) or exercise_date == self.tex[-1]:
+                    prices[path] = np.exp(-((self.rf_r - self.ref.q) * (self.T * (exercise_date / self.tex[-1])))) * payout(stock_price)
+                    break
+
+        # Find the price by averaging the prices, then record it
+        price = np.average(prices)
+        self.px_spec.add(px=price, sub_method='Longstaff-Schwartz')
 
         return self
 
