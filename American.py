@@ -39,145 +39,35 @@ class American(OptionValuation):
         -----
 
         Examples
-        -------
+        --------
 
         >>> s = Stock(S0=50, vol=.3)
         >>> o = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc='7.42840, Hull p.288')
         >>> o.calc_px(method='LT', nsteps=2, keep_hist=True).px_spec.px
         7.42840190270483
-
-        >>> o.px_spec.ref_tree
-        ((50.000000000000014,), (37.0409110340859, 67.49294037880017), (27.440581804701324, 50.00000000000001, 91.10594001952546))
-
-        >>> o.calc_px(method='LT', nsteps=2, keep_hist=False)
-        American
-        K: 52
-        T: 2
-        _right: put
-        _signCP: -1
-        desc: 7.42840, Hull p.288
-        frf_r: 0
-        px_spec: PriceSpec
-          LT_specs:
-            a: 1.0512710963760241
-            d: 0.7408182206817179
-            df_T: 0.9048374180359595
-            df_dt: 0.951229424500714
-            dt: 1.0
-            p: 0.5097408651817704
-            u: 1.3498588075760032
-          keep_hist: false
-          method: LT
-          nsteps: 2
-          px: 7.42840190270483
-          sub_method: binomial tree; Hull Ch.13
-        ref: Stock
-          S0: 50
-          curr: -
-          desc: -
-          q: 0
-          tkr: -
-          vol: 0.3
-        rf_r: 0.05
-        seed0: -
-        <BLANKLINE>
-
+        >>> o.px_spec.ref_tree  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        ((50.000...,), (37.0409110340859, 67.49294037880017), (27.440581804701324, 50.000..., 91.10594001952546))
+        >>> o.calc_px(method='LT', nsteps=2, keep_hist=False)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        American...px: 7.42840190270483...
         >>> s = Stock(S0=30, vol=.3)
         >>> o = American(ref=s, right='call', K=30, T=1., rf_r=.08)
-        >>> o.calc_px(method='BS')
-        American
-        K: 30
-        T: 1.0
-        _right: call
-        _signCP: 1
-        frf_r: 0
-        px_spec: PriceSpec
-          keep_hist: false
-          method: European BSM
-          px: 4.71339376436789
-        ref: Stock
-          S0: 30
-          curr: -
-          desc: -
-          q: 0
-          tkr: -
-          vol: 0.3
-        rf_r: 0.08
-        seed0: -
-        <BLANKLINE>
-        >>> print(o.px_spec)
-        PriceSpec
-        keep_hist: false
-        method: European BSM
-        px: 4.71339376436789
-        <BLANKLINE>
-
-        Below is the verifiable example from Hull and White '01
+        >>> o.calc_px(method='BS')  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        American...px: 4.71339376436789...
+        >>> print(o.px_spec)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 4.71339376436789...
         >>> t = Stock(S0=40, vol=.2)
         >>> z = American(ref=t, right='put', K=35, T=.5833, rf_r=.0488, desc='Example From Hull and White 2001')
-        >>> z.calc_px(method='BS')
-        American
-        K: 35
-        T: 0.5833
-        _right: put
-        _signCP: -1
-        desc: Example From Hull and White 2001
-        frf_r: 0
-        px_spec: PriceSpec
-          keep_hist: false
-          method: BSM
-          px: 0.4326270593553781
-          sub_method: Control Variate
-        ref: Stock
-          S0: 40
-          curr: -
-          desc: -
-          q: 0
-          tkr: -
-          vol: 0.2
-        rf_r: 0.0488
-        seed0: -
-        <BLANKLINE>
-        >>> print(z.px_spec)
-        PriceSpec
-        keep_hist: false
-        method: BSM
-        px: 0.4326270593553781
-        sub_method: Control Variate
-        <BLANKLINE>
-
+        >>> z.calc_px(method='BS')   # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        American...px: 0.4326270593553781...
+        >>> print(z.px_spec)   # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 0.4326270593553781...
         >>> p = Stock(S0=50, vol=.25, q=.02)
         >>> v = American(ref=p, right='call', K=40, T=2, rf_r=.05)
-        >>> print(v.calc_px(method='BS'))
-        American
-        K: 40
-        T: 2
-        _right: call
-        _signCP: 1
-        frf_r: 0
-        px_spec: PriceSpec
-          keep_hist: false
-          method: BSM
-          px: 11.337850838178046
-          sub_method: Black's Approximation
-        ref: Stock
-          S0: 50
-          curr: -
-          desc: -
-          q: 0.02
-          tkr: -
-          vol: 0.25
-        rf_r: 0.05
-        seed0: -
-        <BLANKLINE>
+        >>> print(v.calc_px(method='BS'))  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        American...px: 11.337850838178046...
+        >>> print(v.px_spec)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 11.337850838178046...
 
-        >>> print(v.px_spec)
-        PriceSpec
-        keep_hist: false
-        method: BSM
-        px: 11.337850838178046
-        sub_method: Black's Approximation
-        <BLANKLINE>
         """
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
         return getattr(self, '_calc_' + method.upper())()
@@ -337,21 +227,3 @@ class American(OptionValuation):
         """
 
         return self
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
-
-s = Stock(S0=50, vol=.2)
-o = [0] * 21
-strike = [40] * 21
-for i in range(0, 21):
-    strike[i] += i
-    o[i] = American(ref=s, right='put', K=strike[i], T=1, rf_r=.05).calc_px(method='BS').px_spec.px
-
-plt.plot(strike, o, label='Changing Strike')
-plt.xlabel('Strike Price')
-plt.ylabel("Option Price")
-plt.legend(loc='best')
-plt.title("Changing Strike Price")
-plt.show()
