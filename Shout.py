@@ -256,24 +256,3 @@ class Shout(OptionValuation):
 
         return self
 
-
-'''
-s = Stock(S0=50, vol=.3)
-o = Shout(ref=s, right='call', K=52, T=2, rf_r=.05, desc='Example from internet')
-print(o.calc_px(method='LT', nsteps=2, keep_hist=True).px_spec.px)
-print(o.calc_px(method='LT', nsteps=500, keep_hist=True).px_spec.px)
-print(o.calc_px(method='MC', nsteps=1000, npaths=10000, keep_hist=True, seed=1212).px_spec.px)
-
-#s = Stock(S0=110, vol=.2, q=.04)
-#o = Shout(ref=s, right='call', K=100, T=.5, rf_r=.05, desc='Example from http://core.ac.uk/download/pdf/1568393.pdf')
-#print(o.calc_px(method='LT', nsteps=50, keep_hist=True).px_spec.px)
-#print(o.update(right='call').calc_px(method='MC', nsteps=1000, npaths=10000, keep_hist=True, seed=2121).px_spec.px)
-
-s = Stock(S0=36, vol=.2)
-o = Shout(ref=s, right='call', K=40, T=1, rf_r=.2, desc='Example from http://core.ac.uk/download/pdf/1568393.pdf')
-print(o.calc_px(method='LT', nsteps=500, keep_hist=True).px_spec.px)
-print(o.calc_px(method='MC', nsteps=500, npaths=10000, keep_hist=True, seed=1212).px_spec.px)
-'''
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
