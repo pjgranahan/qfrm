@@ -1,4 +1,9 @@
 from OptionValuation import *
+from math import log, sqrt, exp
+from scipy.stats import norm
+from numpy.random import normal
+from numpy import maximum, mean
+from numpy.random import seed
 
 class Spread(OptionValuation):
     """ Spread option class.
@@ -37,17 +42,17 @@ class Spread(OptionValuation):
         .. sectionauthor:: Scott Morgan
 
         Notes
-        -----
+        ---------
+        Verify Examples: http://www.fintools.com/resources/online-calculators/exotics-calculators/spread/
 
 
         Examples
-        -------
+        ---------------
 
         >>> s1 = Stock(S0=30.,q=0.,vol=.2)
         >>> s2 = Stock(S0=31.,q=0.,vol=.3)
         >>> o = Spread(ref = s1, rf_r = .05, right='call', K=0., T=2., seed0 = 0)
-        >>> o.calc_px(method='BS',S2 = s2,rho=.4)
-        >>> print(o.px_spec.px)
+        >>> o.calc_px(method='BS',S2 = s2,rho=.4).px_spec.px
         5.409907579760095
 
         >>> s1 = Stock(S0=30.,q=0.,vol=.2)
@@ -56,29 +61,33 @@ class Spread(OptionValuation):
         >>> from pandas import Series;  exps = range(1,10)
         >>> O = Series([o.update(T=t).calc_px(method='BS',S2=s2, rho=.4, nsteps = 100, npaths=100).px_spec.px for t in exps], exps)
         >>> O.plot(grid=1, title='Price vs Time to Expiry')
+        <matplotlib.axes._subplots.AxesSubplot object at ... >
         >>> # import matplotlib.pyplot as plt
         >>> # plt.show() # run last two lines to show plot
 
         >>> s1 = Stock(S0=30.,q=0.,vol=.2)
         >>> s2 = Stock(S0=31.,q=0.,vol=.3)
         >>> o = Spread(ref = s1, rf_r = .05, right='call', K=0., T=2., seed0 = 0)
-        >>> o.calc_px(method='MC',S2 = s2,rho=.4,nsteps=1000,npaths=1000)
-        >>> print(o.px_spec.px)
+        >>> o.calc_px(method='MC',S2 = s2,rho=.4,nsteps=1000,npaths=1000).px_spec.px
         5.644473359622987
 
         >>> s1 = Stock(S0=30.,q=0.,vol=.2)
         >>> s2 = Stock(S0=31.,q=0.,vol=.3)
         >>> o = Spread(ref = s1, rf_r = .05, right='put', K=2., T=2., seed0 = 0)
-        >>> o.calc_px(method='MC',S2 = s2,rho=.4,nsteps=1000,npaths=1000)
-        >>> print(o.px_spec.px)
+        >>> o.calc_px(method='MC',S2 = s2,rho=.4,nsteps=1000,npaths=1000).px_spec.px
         5.262902444782136
 
         >>> s1 = Stock(S0=30.,q=0.,vol=.2)
         >>> s2 = Stock(S0=30.,q=0.,vol=.2)
         >>> o = Spread(ref = s1, rf_r = .05, right='put', K=1., T=2., seed0 = 2, desc = 'Perfectly correlated -- present value of 1')
-        >>> o.calc_px(method='MC',S2 = s2,rho=1.,nsteps=1000,npaths=1000)
-        >>> print(o.px_spec.px)
-        0.9048374180359596
+        >>> o.calc_px(method='MC',S2 = s2,rho=1.,nsteps=1000,npaths=1000).px_spec
+        PriceSpec
+        keep_hist: false
+        method: MC
+        npaths: 1000
+        nsteps: 1000
+        px: 0.9048374180359596
+        <BLANKLINE>
 
 
         >>> s1 = Stock(S0=30.,q=0.,vol=.2)
@@ -87,8 +96,8 @@ class Spread(OptionValuation):
         >>> from pandas import Series;  exps = range(1,10)
         >>> O = Series([o.update(T=t).calc_px(method='MC',S2=s2, rho=.4, nsteps = 100, npaths=100).px_spec.px for t in exps], exps)
         >>> O.plot(grid=1, title='Price vs Time to Expiry')
-        >>> # import matplotlib.pyplot as plt
-        >>> # plt.show() # run last two lines to show plot
+        <matplotlib.axes._subplots.AxesSubplot object at ... >
+
 
        """
 
@@ -140,9 +149,6 @@ class Spread(OptionValuation):
 
         """
 
-        from math import log, sqrt, exp
-        from scipy.stats import norm
-
 
         vol = sqrt(self.ref.vol**2 - 2*self.rho*self.ref.vol*self.S2.vol + self.S2.vol**2)
         d1 = (1./(vol*sqrt(self.T)))*log((self.S2.S0*exp(-self.S2.q*self.T))/(self.ref.S0*exp(-self.ref.q*self.T)))
@@ -174,11 +180,6 @@ class Spread(OptionValuation):
         ----
 
         """
-
-        from numpy.random import normal
-        from numpy import maximum, mean
-        from math import sqrt, exp
-        from numpy.random import seed
 
         _ = self.px_spec
         npaths = getattr(_, 'npaths', 3)

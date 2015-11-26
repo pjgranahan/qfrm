@@ -1,6 +1,6 @@
-from scipy.stats import norm
-from numpy import maximum, where, polyval, polyfit, exp, mean, sqrt, zeros, log, arange, random, array
+import numpy as np
 from OptionValuation import *
+import matplotlib.pyplot as plt
 
 class Shout(OptionValuation):
     """ Shout option class.
@@ -101,6 +101,12 @@ class Shout(OptionValuation):
         >>> o.calc_px(method='MC', nsteps=1000, npaths=10000, keep_hist=True, seed=1212).px_spec.px
         11.0548007571
 
+        >>> o.update(right='put').calc_px().px_spec.px
+
+        >>> s = Stock(S0=36, vol=.2)
+        >>> o = Shout(ref=s, right='call', K=40, T=1, rf_r=.2, desc='Example from http://core.ac.uk/download/pdf/1568393.pdf')
+        >>> o.calc_px(method='MC', nsteps=1000, npaths=10000, keep_hist=True, seed=1234).px_spec.px
+
        """
         self.seed = seed
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
@@ -127,6 +133,8 @@ class Shout(OptionValuation):
 
 
         """
+        from numpy import arange, maximum, sqrt, exp
+        from scipy.stats import norm
 
         keep_hist = getattr(self.px_spec, 'keep_hist', False)
         n = getattr(self.px_spec, 'nsteps', 3)
@@ -197,6 +205,9 @@ class Shout(OptionValuation):
         [2] Hull, J.C., Options, Futures and Other Derivatives, 9ed, 2014. Prentice Hall, p609.
 
         """
+        from numpy import exp, random, zeros, sqrt, maximum, polyfit, polyval, array, where, mean
+        from scipy.stats import norm
+
         n_steps = getattr(self.px_spec, 'nsteps', 3)
         n_paths = getattr(self.px_spec, 'npaths', 3)
         _ = self
