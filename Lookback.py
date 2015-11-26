@@ -66,7 +66,7 @@ class Lookback(OptionValuation):
         8.037120139607019
 
         >>> print(o.calc_px(method = 'BS', Sfl = 50.0))
-        Lookback.Lookback
+        Lookback
         K: 50
         T: 0.25
         _right: call
@@ -77,7 +77,7 @@ class Lookback(OptionValuation):
           Sfl: 50.0
           keep_hist: false
           method: BS
-          px: 8.037120139607019
+          px: 8.03712014
           sub_method: Look back, Hull Ch.26
         ref: Stock
           S0: 50
@@ -100,15 +100,14 @@ class Lookback(OptionValuation):
         Sfl: 50.0
         keep_hist: false
         method: BS
-        px: 7.79021925989035
+        px: 7.79021926
         sub_method: Look back, Hull Ch.26
         <BLANKLINE>
 
         >>> from pandas import Series;  expiries = range(1,11)
         >>> O = Series([o.update(T=t).calc_px(method='BS').px_spec.px for t in expiries], expiries)
-        >>> O.plot(grid=1, title='BS Price vs expiry (in years)')
+        >>> O.plot(grid=1, title='BS Price vs expiry (in years)')  # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
-
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
@@ -248,10 +247,12 @@ class Lookback(OptionValuation):
 
         c1 = _.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(a1)
         c2 = _.ref.S0 * math.exp(-_.ref.q * _.T) * (_.ref.vol ** 2) * stats.norm.cdf(-a1) / (2 * (_.rf_r - _.ref.q))
-        c3 = - _.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (stats.norm.cdf(a2) - _.ref.vol ** 2 * math.exp(Y1) * stats.norm.cdf(-a3) / (2 * (_.rf_r - _.ref.q)))
+        c3 = - _.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (stats.norm.cdf(a2) - _.ref.vol ** 2 * math.exp(Y1) * \
+                                                          stats.norm.cdf(-a3) / (2 * (_.rf_r - _.ref.q)))
         c = c1 - c2 + c3
 
-        p1 = self.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (stats.norm.cdf(a1) - _.ref.vol ** 2 * math.exp(Y1) * stats.norm.cdf(-a3) / (2 * (_.rf_r - _.ref.q)))
+        p1 = self.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (stats.norm.cdf(a1) - _.ref.vol ** 2 * math.exp(Y1) * \
+                                                           stats.norm.cdf(-a3) / (2 * (_.rf_r - _.ref.q)))
         p2 = _.ref.S0 * math.exp(-_.ref.q * _.T) * (_.ref.vol ** 2) * stats.norm.cdf(-a2) / (2 * (_.rf_r - _.ref.q))
         p3 = _.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(a2)
         p = p1 + p2 - p3
