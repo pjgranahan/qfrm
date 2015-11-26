@@ -536,14 +536,14 @@ class OptionValuation(OptionSeries):
         >>> from pprint import pprint
         >>> pprint(OptionValuation(ref=Stock(S0=42, vol=.2), right='call', K=40, T=.5, rf_r=.1).LT_specs(2))
         ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        {'a': 1.0253151205244289, 'd': 0.9048374180359595, 'df_T': 0.951229424500714,
-         'df_dt': 0.9753099120283326, 'dt': 0.25, 'p': 0.60138570166548, 'u': 1.1051709180756477}
+        {'a': 1.025315120...'d': 0.904837418...'df_T': 0.951229424...
+         'df_dt': 0.975309912...'dt': 0.25, 'p': 0.601385701...'u': 1.105170918...}
 
         >>> s = Stock(S0=50, vol=.3)
         >>> pprint(OptionValuation(ref=s,right='put', K=52, T=2, rf_r=.05, desc={'See Hull p.288'}).LT_specs(3))
         ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        {'a': 1.033895113513574, 'd': 0.7827444773247475, 'df_T': 0.9048374180359595,
-         'df_dt': 0.9672161004820059, 'dt': 0.6666666666666666, 'p': 0.5075681589595774, 'u': 1.2775561233185384}
+        {'a': 1.033895113...'d': 0.782744477...'df_T': 0.904837418...
+         'df_dt': 0.967216100...'dt': 0.666...'p': 0.507568158...'u': 1.277556123...}
 
          """
         assert isinstance(nsteps, int), 'nsteps must be an integer, >2'
@@ -575,27 +575,29 @@ class OptionValuation(OptionSeries):
         Examples
         --------
 
-        See J.C.Hull OFOD, 9ed, p.289, Fig 13.10, 2-step Binomial tree for American put option.
+        See J.C.Hull, OFOD, 9ed, p.289, Fig 13.10, 2-step Binomial tree for American put option.
         The following produces two trees: stock price progressions and option proce backward induction.
         >>> from qfrm import *;  s = Stock(S0=50, vol=.3)
-        >>> a = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc={'$7.42840, See Hull p.289'})
-        >>> ref_tree = a.calc_px(method='LT', nsteps=20, keep_hist=True).px_spec.ref_tree
-        >>> a.plot_bt(bt=ref_tree, title='Binary tree of stock prices; ' + a.specs) # doctest: +ELLIPSIS
-        <matplotlib.axes._subplots.AxesSubplot object at 0x...>
-        >>> a.plot_bt(bt=a.px_spec.opt_tree, title='Binary tree of option prices; ' + a.specs)# doctest: +ELLIPSIS
-        <matplotlib.axes._subplots.AxesSubplot object at 0x...>
+        >>> a = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc={'px=$7.42840, See Hull p.289'})
+        >>> ref_tree = a.calc_px(method='LT', nsteps=10, keep_hist=True).px_spec.ref_tree
+        >>> a.plot_bt(bt=ref_tree, title='Binary tree of stock prices; ' + a.specs)
+        >>> a.plot_bt(bt=a.px_spec.opt_tree, title='Binary tree of option prices; ' + a.specs)
 
         """
-        # import itertools; ax = None; bt = ((4,), (3, 5), (2, 4, 6), (1, 3, 5, 7))
-
         if ax is None: fig, ax = plt.subplots()
-        if 'fig' in locals():
+        if 'fig' in locals():  # assures tight layout even when plot is manually resized
             def onresize(event):
                 try: plt.tight_layout()
                 except: pass
             cid = fig.canvas.mpl_connect('resize_event', onresize)  # tighten layout on resize event
 
-        def pairs(t):
+        def edges(t):
+            # pairs takes a binary tree:
+            #          import itertools; ax = None; bt = ((4,), (3, 5), (2, 4, 6), (1, 3, 5, 7))
+            # and produces a list of coordinates for each edge, connecting a pair tree nodes:
+            # [[(0, 4), (1, 3)], [(0, 4), (1, 5)], [(1, 3), (2, 2)], [(1, 3), (2, 4)],
+            #  [(1, 5), (2, 4)], [(1, 5), (2, 6)], [(2, 2), (3, 1)], [(2, 2), (3, 3)],
+            #  [(2, 4), (3, 3)], [(2, 4), (3, 5)], [(2, 6), (3, 5)], [(2, 6), (3, 7)]]
             a, b = itertools.tee(t)
             next(b)
             for ind, (t1, t2) in enumerate(zip(a, b)):
@@ -607,21 +609,21 @@ class OptionValuation(OptionSeries):
                     yield [(ind, ele), (ind + 1, n)]
                     nxt = n
 
-        annotated = set()
-        for l in list(pairs(bt)):
+        points = set()
+        for l in edges(bt):
             d = [[p[0] for p in l], [p[1] for p in l]]
             ax.plot(d[0], d[1], 'k--', color='.5')
             for p in l:
-                annotated.add(p)
+                points.add(p)
 
-        for p in annotated:
+        for p in points:
             ax.annotate(str(round(p[1],2)), xy=p, horizontalalignment='center', color='0')
-        # from pprint import pprint as pp
-        # pp(list(pairs(t)),compact=1)
+
         plt.grid()
-        plt.tight_layout();
+        # plt.title(title)
+        plt.text(x=0, y=max(bt[len(bt)-1]), s=title)
+        plt.tight_layout()
         plt.show()
-        plt.title(title)
 
     def plot_px_convergence(self, nsteps_max=50, ax=None, vs=None):
         """ Plots convergence of an option price for different `nsteps` values.
@@ -651,14 +653,15 @@ class OptionValuation(OptionSeries):
         >>> from qfrm import *;  s = Stock(S0=50, vol=.3);
         >>> a = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc={'$7.42840, See Hull p.288'})
         >>> e = European(clone=a)
-        >>> e.plot_px_convergence(nsteps_max=10)  # doctest: +ELLIPSIS
-        >>> a.plot_px_convergence(nsteps_max=10, vs=e)  # doctest: +ELLIPSIS
+        >>> e.plot_px_convergence(nsteps_max=10)
+        >>> a.plot_px_convergence(nsteps_max=10, vs=e)
 
         """
         if ax is None: fig, ax = plt.subplots()
-        if 'fig' in locals():
+        if 'fig' in locals():  # assures tight layout even when plot is manually resized
             def onresize(event):  plt.tight_layout()
-            cid = fig.canvas.mpl_connect('resize_event', onresize)  # tighten layout on resize event
+            try: cid = fig.canvas.mpl_connect('resize_event', onresize)  # tighten layout on resize event
+            except: pass
 
         LT_prices = [self.pxLT(nsteps=n) for n in range(1, nsteps_max + 1)]
 
@@ -668,7 +671,8 @@ class OptionValuation(OptionSeries):
 
         if vs is not None: vs.plot_px_convergence(nsteps_max=nsteps_max, ax=ax)
 
-        plt.tight_layout();
+        try: plt.tight_layout()
+        except: pass
         plt.show()
 
     def plot(self, nsteps_max=10):
@@ -685,16 +689,33 @@ class OptionValuation(OptionSeries):
         This example demonstrates change in (convergence of) price with increasing number of steps of binary tree.
         >>> from qfrm import *; s = Stock(S0=50, vol=.3)
         >>> a = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc={'$7.42840, See Hull p.288'})
-        >>> a.plot(nsteps_max=5) # doctest: +ELLIPSIS
-        <matplotlib.axes._subplots.AxesSubplot object at 0x...>
+        >>> a.plot(nsteps_max=5)
 
         """
-        fig, ax = plt.subplots()
-        def onresize(event):  fig.tight_layout()
-        cid = fig.canvas.mpl_connect('resize_event', onresize)  # tighten layout on resize event
+        fig = plt.figure()
+        ax1 = plt.subplot(221)
+        ax2 = plt.subplot(222)
+        ax3 = plt.subplot(224)
 
-        self.plot_px_convergence(nsteps_max=nsteps_max, ax=ax)
-        plt.tight_layout();
+        if 'fig' in locals():  # assures tight layout even when plot is manually resized
+            def onresize(event):  plt.tight_layout()
+            try: cid = fig.canvas.mpl_connect('resize_event', onresize)  # tighten layout on resize event
+            except: pass
+
+        self.plot_px_convergence(nsteps_max=nsteps_max, ax=ax1)
+
+        if getattr(self.px_spec, 'ref_tree', None) is None:
+            self.calc_px(method='LT', nsteps=nsteps_max, keep_hist=True)
+
+        self.plot_bt(bt=self.px_spec.ref_tree, ax=ax2, title='Binary tree of stock prices; ' + self.specs)
+        self.plot_bt(bt=self.px_spec.opt_tree, ax=ax3, title='Binary tree of option prices; ' + self.specs)
+        # fig, ax = plt.subplots()
+        # def onresize(event):  fig.tight_layout()
+        # cid = fig.canvas.mpl_connect('resize_event', onresize)  # tighten layout on resize event
+        # self.plot_px_convergence(nsteps_max=nsteps_max, ax=ax)
+
+        try: plt.tight_layout()
+        except: pass
         plt.show()
 
     @property
