@@ -1,6 +1,9 @@
 from OptionValuation import *
 from scipy.stats import norm
 from math import sqrt, exp, log
+import numpy as np
+
+
 class ForwardStart(OptionValuation):
     """ ForwardStart option class
 
@@ -189,7 +192,7 @@ class ForwardStart(OptionValuation):
 
         Returns
         -------
-        self: PerpetualAmerican
+        self: ForwardStart
 
         .. sectionauthor::
 
@@ -202,7 +205,7 @@ class ForwardStart(OptionValuation):
 
         Returns
         -------
-        self: PerpetualAmerican
+        self: ForwardStart
 
         .. sectionauthor::
 
@@ -211,54 +214,38 @@ class ForwardStart(OptionValuation):
 
         """
 
+        n_steps = getattr(self.px_spec, 'nsteps', 3)
+        n_paths = getattr(self.px_spec, 'npaths', 3)
+        _ = self
+
+
+        #Make sure no strike price is specified as the strike is unknown at the start of the option
+
+        _.K = _.ref.S0*np.exp((_.rf_r-_.ref.q)*_.T_s)
+
+
+        dt = _.T / n_steps
+        df = exp(-_.rf_r * dt)
+        np.random.seed(1)
         #initialize the price array
         S=np.zeros((n_steps+1,n_paths),'d')
-        S[0,:]=S0
+        S[0,:]=_.ref.S0*np.exp((_.rf_r-_.ref.q)*_.T_s)
+
         for t in range(1,n_steps+1):
 
             #generate random numbers
-            rand=standard_normal(n_paths)
+            rand=np.random.standard_normal(n_paths)
 
-            S[t,:]=S[t-1,:]*exp(((r-((vol**2)/2))*dt)+(vol*rand*sqrt(dt)))
+            S[t,:]=S[t-1,:]*np.exp(((_.rf_r-_.ref.q-((_.ref.vol**2)/2))*dt)+(_.ref.vol*rand*np.sqrt(dt)))
 
         #find the payout at maturity
-        final=maximum(signCP*(S[-1]-K),0)
+        final=np.maximum(_.signCP*(S[-1]-_.K),0)
 
         #discount the expected payoff at maturity to present
-        v0 = (exp(-r*T)*sum(final))/n_paths
+        v0 = (np.exp(-_.rf_r*(_.T+_.T_s))*sum(final))/n_paths
 
-        #array for plotting
-        payout=np.zeros((n_steps+1,n_paths),'d')
+        self.px_spec.add(px=float(v0), sub_method=None)
 
-        for time_1 in range(0,n_steps+1):
-            payout[time_1,:]=maximum(signCP*(S[time_1,:]-K),0)
-        euro_val=np.zeros((n_steps+1,n_paths),'d')
-        for time_2 in range(n_steps,-1,-1):
-
-            euro_val[time_2,:]=payout[-1,:]*np.exp(-r*(n_steps-time_2)*dt)
-        if method == 'naive':
-            title='European'+' '+right+' '+'option value (via naive)'+' '+str(v0)
-            print(title)
-        else:
-            title='European'+' '+right+' '+'option value (via LSM)'+' '+str(v0)
-            print(title)
-        #plotting for European option
-        if plot == 1:
-            time=[]
-            temp=0
-            for d in range(0,n_steps+1):
-                time.append(temp)
-                temp+=dt
-            plt.subplot(2,2,1)
-            plt.plot(time,S)
-            plt.title('stock price realizations (against time steps)')
-            plt.subplot(2,2,3)
-            plt.plot(time,payout)
-            plt.title('payout (against time steps)')
-            plt.subplot(2,2,2)
-            plt.plot(time,euro_val)
-            plt.title(title)
-            plt.show()
         return self
 
     def _calc_FD(self):
@@ -266,7 +253,7 @@ class ForwardStart(OptionValuation):
 
         Returns
         -------
-        self: PerpetualAmerican
+        self: ForwardStart
 
         .. sectionauthor::
 
@@ -277,6 +264,8 @@ class ForwardStart(OptionValuation):
 
         return self
 
-
+s = Stock(S0=50, vol=.15,q=0.05)
+o=ForwardStart(ref=s, T_s=0.5, K=None, right='call', T=0.5, rf_r=.1).calc_px(method='MC',nsteps=365,npaths=1000000)
+print(o.px_spec.px)
 
 
