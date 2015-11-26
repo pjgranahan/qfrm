@@ -1,6 +1,8 @@
 import numpy as np
 from OptionValuation import *
 import matplotlib.pyplot as plt
+from numpy import arange, maximum, sqrt, exp
+from scipy.stats import norm
 
 class Shout(OptionValuation):
     """ Shout option class.
@@ -135,8 +137,6 @@ class Shout(OptionValuation):
 
 
         """
-        from numpy import arange, maximum, sqrt, exp
-        from scipy.stats import norm
 
         keep_hist = getattr(self.px_spec, 'keep_hist', False)
         n = getattr(self.px_spec, 'nsteps', 3)
@@ -156,10 +156,13 @@ class Shout(OptionValuation):
 
             O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
             S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
+
+            #payoff of shout
             Shout = self.signCP * S / exp(self.ref.q * tleft) * norm.cdf(self.signCP * d1) - \
                     self.signCP * S / exp(self.rf_r * tleft) * norm.cdf(self.signCP * d2) + \
                     self.signCP * (S - self.K) / exp(self.rf_r * tleft)
 
+            #final payoff is the maximum of shout or not shout
             Payout = maximum(Shout, 0)
             O = maximum(O, Payout)
 
@@ -171,8 +174,6 @@ class Shout(OptionValuation):
         self.px_spec.add(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
                         LT_specs=_, ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
 
-        #self.px_spec.add(px=float(out), sub_method='binomial tree; Hull Ch.26.12',
-        #                 LT_specs=_, ref_tree=S_tree, opt_tree=O_tree)
 
         return self
 
