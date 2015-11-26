@@ -43,7 +43,7 @@ class Chooser(OptionValuation):
 
         Examples
         -------
-        ===============================================================================================
+
 
         BS Examples
 
@@ -70,7 +70,6 @@ class Chooser(OptionValuation):
         >>> o = Chooser(ref=s, right='call', K=50, T=9/12, rf_r=.06)
         >>> print(o.calc_px(tau=3/12, method='BS').px_spec.px)
         5.42052870833
-        ===============================================================================================
 
 
         LT Examples
@@ -170,7 +169,6 @@ class Chooser(OptionValuation):
 
         _ = self
 
-
         d2 = (log(_.ref.S0/_.K) + ((_.rf_r - _.ref.q  - _.ref.vol**2/2)*_.T) ) / ( _.ref.vol * sqrt(_.T))
         d1 =  d2 + _.ref.vol * sqrt(_.T)
 
@@ -195,7 +193,7 @@ class Chooser(OptionValuation):
         Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
 
         """
-        from numpy import cumsum, log, arange, insert, exp, sqrt, sum, maximum
+        from numpy import cumsum, log, arange, insert, exp, sum, maximum
 
         n = getattr(self.px_spec, 'nsteps', 3)
         _ = self.LT_specs(n)

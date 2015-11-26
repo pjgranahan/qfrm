@@ -71,7 +71,7 @@ class Gap(OptionValuation):
         less than the trigger price.
 
         Examples
-        -------
+        --------
 
         >>> s = Stock(S0=500000, vol=.2)
         >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='Hull p.601 Example 26.1')
