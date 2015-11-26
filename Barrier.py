@@ -1,6 +1,9 @@
 from OptionValuation import *
 from scipy.stats import norm
-from numpy import exp, log, sqrt
+from numpy import arange, maximum, log, exp, sqrt, minimum
+from sympy import binomial
+from math import ceil, floor
+from European import European
 
 class Barrier(OptionValuation):
     """ European option class.
@@ -79,12 +82,10 @@ class Barrier(OptionValuation):
         >>> # SEE NOTES for verification
         >>> s = Stock(S0=95., vol=.25, q=.00)
         >>> o = Barrier(ref=s, right='put', K=100., T=1., rf_r=.1, desc='down and in put')
-        >>> print(o.calc_px(method='LT',H=90.,knock='down',dir='in',nsteps=1050, keep_hist=False).px_spec.px)
-        >>> print(o.px_spec)
-
+        >>> o.calc_px(method='LT',H=90.,knock='down',dir='in',nsteps=1050, keep_hist=False).px_spec.px
         7.104101924957116
-
-        qfrm.PriceSpec
+        >>> o.px_spec
+        PriceSpec
         LT_specs:
           a: 1.0000952426305294
           d: 0.9923145180146982
@@ -98,30 +99,27 @@ class Barrier(OptionValuation):
         nsteps: 1050
         px: 7.104101924957116
         sub_method: in out parity
+        <BLANKLINE>
 
 
         >>> s = Stock(S0=95., vol=.25, q=.00)
         >>> o = Barrier(ref=s, right='call', K=100., T=2., rf_r=.1, desc='down and out call')
         >>> print(o.calc_px(method='LT', H=87.,knock='down',dir='out',nsteps=1050, keep_hist=False).px_spec.px)
-
         11.549805549495334
 
         >>> s = Stock(S0=95., vol=.25, q=.00)
         >>> o = Barrier(ref=s, right='put', K=100., T=2., rf_r=.1, desc='up and out put')
         >>> print(o.calc_px(method='LT', nsteps=1050, H=105.,knock='up',dir='out', keep_hist=False).px_spec.px)
-
         3.2607593764427434
 
         >>> s = Stock(S0=95., vol=.25, q=.00)
         >>> o = Barrier(ref=s, right='call', K=100., T=2., rf_r=.1, desc='up and in call')
         >>> print(o.calc_px(method='LT',H=105.,knock='up',dir='in', nsteps=1050, keep_hist=False).px_spec.px)
-
         20.037733657756565
 
         >>> s = Stock(S0=95., vol=.25, q=.00)
         >>> o = Barrier(ref=s, right='call', K=100., T=2., rf_r=.1, desc='up and in call')
         >>> print(o.calc_px(method='LT',H=105.,knock='up',dir='in', nsteps=10, keep_hist=False).px_spec.px)
-
         20.040606033552542
 
 
@@ -260,7 +258,6 @@ class Barrier(OptionValuation):
         elif self.knock == 'up':
             s = -1
 
-        from numpy import arange, maximum, log, exp, sqrt, minimum
 
         keep_hist = getattr(self.px_spec, 'keep_hist', False)
         n = getattr(self.px_spec, 'nsteps', 3)
@@ -298,8 +295,6 @@ class Barrier(OptionValuation):
             return self
 
 
-        from sympy import binomial
-        from math import ceil, floor
 
         k = int(ceil(log(self.K/(self.ref.S0*_['d']**n))/log(_['u']/_['d'])))
         h = int(floor(log(self.H/(self.ref.S0*_['d']**n))/log(_['u']/_['d'])))
@@ -314,7 +309,6 @@ class Barrier(OptionValuation):
 
         elif self.dir == 'in' and self.right == 'call' and self.knock == 'up':
 
-            from European import European
             o = European(ref=self.ref, right='call', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
             call_px = o.calc_px(method='BS').px_spec.px   # save interim results to self.px_spec. Equivalent to repr(o)
             in_px = call_px - out_px
@@ -324,7 +318,6 @@ class Barrier(OptionValuation):
 
         elif self.dir == 'in' and self.right == 'put' and self.knock == 'up':
 
-            from European import European
             o = European(ref=self.ref, right='put', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
             put_px = o.calc_px(method='BS').px_spec.px   # save interim results to self.px_spec. Equivalent to repr(o)
             in_px = put_px - out_px
@@ -333,7 +326,6 @@ class Barrier(OptionValuation):
 
         elif self.dir == 'in' and self.right == 'put' and self.knock == 'down':
 
-            from European import European
             o = European(ref=self.ref, right='put', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
             put_px = o.calc_px(method='BS').px_spec.px   # save interim results to self.px_spec. Equivalent to repr(o)
             in_px = put_px - out_px
