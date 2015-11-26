@@ -108,7 +108,7 @@ class Bermudan(OptionValuation):
         >>> ax.grid()
         >>> ax.legend() 
         <...>
-        >>> plt.show()        
+        # >>> plt.show()
 
         MC example #1 - Verifiable example #1: See reference [1], section 5.1 and table 5.1 with arguments N=10^2, R=3
 
@@ -137,7 +137,7 @@ class Bermudan(OptionValuation):
         if nsteps != None:
             knsteps = knsteps * nsteps 
         nsteps = knsteps
-        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
+        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, R=R)
         return getattr(self, '_calc_' + method.upper())()
 
     def _calc_LT(self):
@@ -215,6 +215,7 @@ class Bermudan(OptionValuation):
 
         # Get arguments from calc_px
         npaths = getattr(self.px_spec, 'npaths')
+        R = getattr(self.px_spec, 'R')
 
         def payout(stock_price):
             """
@@ -244,13 +245,13 @@ class Bermudan(OptionValuation):
             paths = np.zeros((len(self.tex), npaths))
 
             # Seed the first row
-            paths[0] = self.ref.S0 * np.ones(len(self.tex))
+            paths[0] = self.ref.S0 * np.ones(npaths)
 
             # Fill the matrix
             for i in range(len(self.tex) - 1):
-                deltaT = self.tex[i+i] - self.tex[i]
+                deltaT = self.tex[i+1] - self.tex[i]
                 paths[i+1] = paths[i] * np.exp((((self.rf_r - self.ref.q) - ((self.ref.vol**2) / 2)) * deltaT) +
-                                               (self.ref.vol * np.random.randn(len(self.tex)) * np.sqrt(deltaT)))
+                                               (self.ref.vol * np.random.randn(npaths) * np.sqrt(deltaT)))
 
             return paths
 
@@ -308,26 +309,26 @@ class Bermudan(OptionValuation):
                     A tex * R matrix (list of lists) holding the betas.
             """
             # betas is a tex * R matrix
-            betas = np.zeros((len(self.tex), self.R))
+            betas = np.zeros((len(self.tex), R))
 
             # B_psi_psi is a square matrix
-            B_psi_psi = np.zeros((self.R, self.R))
+            B_psi_psi = np.zeros((R, R))
 
             # B_V_psi is a R * npaths matrix
-            B_V_psi = np.zeros((self.R, npaths))
+            B_V_psi = np.zeros((R, npaths))
 
             # Step backwards through the exercise dates
             for exercise_date in reversed(self.tex):
 
                 # Fill B_psi_psi
-                for i in range(self.R):
-                    for s in range(self.R):
+                for i in range(R):
+                    for s in range(R):
                         laguerre_list_1 = [Laguerre(i, paths[exercise_date][path]) for path in npaths]
                         laguerre_list_2 = [Laguerre(s, paths[exercise_date][path]) for path in npaths]
                         B_psi_psi[i[s]] = np.average(np.multiply(laguerre_list_1, laguerre_list_2))
 
                 # Fill B_V_psi
-                for i in range(self.R):
+                for i in range(R):
                     prices = [payout(paths[exercise_date][path]) for path in npaths]
                     laguerre_list = [Laguerre(i, paths[exercise_date][path]) for path in npaths]
                     B_V_psi[i] = np.average(np.multiply(prices, laguerre_list))
@@ -354,7 +355,7 @@ class Bermudan(OptionValuation):
             for exercise_date in self.tex:
                 continuation_price = 0
                 stock_price = paths[exercise_date][path]  # stock price at the exercise date on a given path
-                for R in range(self.R):
+                for R in range(R):
                     continuation_price += Laguerre(R, stock_price) * betas[exercise_date][R]
                 if continuation_price < payout(stock_price) or exercise_date == self.tex[-1]:
                     prices[path] = np.exp(-((self.rf_r - self.ref.q) * (self.T * exercise_date / self.tex[-1]))) * payout(stock_price)
@@ -383,3 +384,6 @@ class Bermudan(OptionValuation):
         return self
 
 
+s = Stock(S0=11, vol=.4)
+o = Bermudan(ref=s, right='put', K=15, T=1, rf_r=.05, desc="in-the-money Bermudan put")
+o.calc_px(method='MC', R=3, npaths=10**2, tex=list([(i+1)/10 for i in range(10)])).px_spec.px
