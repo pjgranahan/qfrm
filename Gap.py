@@ -16,7 +16,7 @@ class Gap(OptionValuation):
         Passes additional arguments to OptionValuation class
 
         Parameters
-        ----------
+        ---------------------------------------
         on : Numeric Vector
                 A vector of number of steps to be used in binomial tree averaging, vector of positive intergers
         dir : string
@@ -26,7 +26,7 @@ class Gap(OptionValuation):
 
 
         Returns
-        -------
+        -----------------------------------------
         self : Gap
 
         .. sectionauthor:: Thawda Aung
@@ -46,7 +46,7 @@ class Gap(OptionValuation):
         but a wrapper function calc_px().
 
         Parameters
-        ----------
+        --------------------------------------------------
         K2 : float
                 The trigger price.
         method : str
@@ -59,7 +59,7 @@ class Gap(OptionValuation):
                 If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
 
         Returns
-        -------
+        -----------------------------------------------------
         self : Gap
 
         .. sectionauthor:: Yen-fei Chen
@@ -72,7 +72,7 @@ class Gap(OptionValuation):
         less than the trigger price.
 
         Examples
-        --------
+        ----------------------------------------------------------
 
         >>> s = Stock(S0=500000, vol=.2)
         >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='Hull p.601 Example 26.1')
@@ -84,11 +84,25 @@ class Gap(OptionValuation):
         >>> o.calc_px(K2=50, method='BS').px_spec.px
         2.266910325361735
 
-        >>> s = Stock(S0=50, vol=.2)
-        >>> o = Gap(ref=s, right='put', K=57, T=1, rf_r=.09)
-        >>> o.calc_px(K2=50, method='BS').px_spec.px
-        4.360987885821741
+        >>> o.calc_px(K2=50, method='BS').px_spec
+        PriceSpec
+        d1: 0.55
+        d2: 0.35
+        keep_hist: false
+        method: BS
+        px: 2.266910325
+        px_call: 2.266910325
+        px_put: 4.360987886
+        sub_method: standard; Hull p.335
+        <BLANKLINE>
 
+        >>> from pandas import Series
+        >>> expiries = range(1,11)
+        >>> o = Series([o.update(T=t).calc_px(K2=50, method='BS').px_spec.px for t in expiries], expiries)
+        >>> o.plot(grid=1, title='BS Price vs expiry (in years)') # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at ...>
+        >>> import matplotlib.pyplot as plt
+        >>> plt.show()
 
 
         LT Examples..
@@ -153,7 +167,7 @@ class Gap(OptionValuation):
 
 
         See Also
-        --------
+        ---------------------------------------------------------
         [1] http://www.actuarialbookstore.com/samples/3MFE-BRE-12FSM%20Sample%20_4-12-12.pdf
         [2] https://www.ma.utexas.edu/users/mcudina/Lecture14_3_4_5.pdf
 
@@ -169,13 +183,13 @@ class Gap(OptionValuation):
         """ Internal function for option valuation.
 
         Returns
-        -------
+        --------------------------------------------------
         self: Gap
 
         .. sectionauthor:: Yen-fei Chen
 
         Note
-        ----
+        ------------------------------------------------------
 
         """
         from scipy.stats import norm
@@ -202,7 +216,7 @@ class Gap(OptionValuation):
         Large step sizes should be used for optimal accuracy but may take a minute or so.
 
         Returns
-        -------
+        -------------------------------------------
         self: Gap
         :param
                 on : Numeric Vector
@@ -263,13 +277,13 @@ class Gap(OptionValuation):
         """ Internal function for option valuation.
 
         Returns
-        -------
+        ----------------------------------------------
         self: Gap
 
         .. sectionauthor:: Mengyan Xie
 
         Note
-        ----
+        ----------------------------------------------
 
         """
         n_steps = getattr(self.px_spec, 'nsteps', 3)
@@ -310,3 +324,7 @@ class Gap(OptionValuation):
         """
 
         return self
+
+if __name__=="__main__":
+    import doctest
+    doctest.testmod()

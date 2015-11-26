@@ -18,7 +18,7 @@ class Chooser(OptionValuation):
         but a wrapper function calc_px().
 
         Parameters
-        ----------
+        ------------------------------------------------
         tau : float
                 Time to choose whether this option is a call or put.
         method : str
@@ -31,19 +31,19 @@ class Chooser(OptionValuation):
                 If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
 
         Returns
-        -------
+        -------------------------------------
         self : Chooser
 
         .. sectionauthor:: thawda, Yen-fei Chen
 
         Notes
-        -----
+        --------------------------------------
         An option contract that allows the holder to decide whether it is a call or put prior to
         the expiration date. Chooser options usually have the same exercise price and expiration
         date regardless of what decision the holder ultimately makes.
 
         Examples
-        -------
+        --------------------------------------
 
 
         BS Examples
@@ -130,7 +130,7 @@ class Chooser(OptionValuation):
         >>> plt.show()
 
         See Also
-        --------
+        -----------------------------------------------
         Hull, John C.,Options, Futures and Other Derivatives, 9ed, 2014. Prentice Hall. ISBN 978-0-13-345631-8.
         http://www-2.rotman.utoronto.ca/~hull/ofod/index.html
 
@@ -192,7 +192,7 @@ class Chooser(OptionValuation):
         """ Internal function for option valuation.
 
         Returns
-        -------
+        ----------------------------------------
         self: Chooser
 
         .. sectionauthor:: Yen-fei Chen
@@ -233,13 +233,13 @@ class Chooser(OptionValuation):
         """ Internal function for option valuation.
 
         Returns
-        -------
+        ------------------------------------------------------
         self: Chooser
 
         .. sectionauthor::
 
         Notes
-        -----
+        -----------------------------------------------------
 
 
         """
@@ -249,7 +249,7 @@ class Chooser(OptionValuation):
         """ Internal function for option valuation.
 
         Returns
-        -------
+        ---------------------------------------------------
         self: Chooser
 
         .. sectionauthor::

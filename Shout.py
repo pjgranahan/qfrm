@@ -19,7 +19,7 @@ class Shout(OptionValuation):
         but a wrapper function calc_px().
 
         Parameters
-        ----------
+        ----------------------------------
         method : str
                 Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
         nsteps : int
@@ -32,19 +32,19 @@ class Shout(OptionValuation):
                 Seed number for Monte Carlo simulation
 
         Returns
-        -------
+        ------------------------------------
         self : Shout
 
         .. sectionauthor:: Mengyan Xie
 
         Notes
-        -----
+        ----------------------------------------
         Verification of Shout option: http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L4shout.pdf
         Hull Ch26.12 P609
 
-        -------
-        Examples
 
+        Examples
+        ----------------------------------------------------
         This two excel spreadsheet price shout option.
         http://investexcel.net/shout-options-excel/
         https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=9&cad=rja&uact=8&ved=0ahUKEwjMsfu4n6TJAhVJz2MKHQA_B-MQFghSMAg&url=http%3A%2F%2Fwww.actuarialworkshop.com%2FBinomial%2520Tree.xls&usg=AFQjCNEic5d4DfV5BTKbzkPW2LhzBU0Fdw&sig2=lB14d9wQBxsiqdaXlqTBTw&bvm=bv.108194040,d.eWE
@@ -113,13 +113,13 @@ class Shout(OptionValuation):
         method: MC
         npaths: 10000
         nsteps: 252
-        px: 4.131257046216974
+        px: 4.131257046
         sub_method: Hull p.609
         <BLANKLINE>
 
         >>> from pandas import Series;  steps = [10,50,100,150,200,250]
         >>> O = Series([o.calc_px(method='MC', nsteps=s, npaths=10000, keep_hist=True, seed=1212).px_spec.px for s in steps], steps)
-        >>> O.plot(grid=1, title='MC Price vs nsteps')
+        >>> O.plot(grid=1, title='MC Price vs nsteps')# doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
