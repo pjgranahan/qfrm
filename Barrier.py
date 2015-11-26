@@ -29,6 +29,8 @@ class Barrier(OptionValuation):
                 MC, FD methods require number of simulation paths
         keep_hist : bool
                 If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
+        H: float
+                Barrier price
 
         Returns
         -------
@@ -71,11 +73,11 @@ class Barrier(OptionValuation):
         >>> o.calc_px(method='BS',H=90.,knock='up',dir='in').px_spec.px
         10.52559600411976
 
-        >>> from pandas import Series;  expiries = range(1,11)
+        >>> from pandas import Series
+        >>> expiries = range(1,11)
         >>> O = Series([o.update(T=t).calc_px(method='BS').px_spec.px for t in expiries], expiries)
-        >>> O.plot(grid=1, title='BS Price vs expiry (in years)')
+        >>> O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
-
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
@@ -186,9 +188,11 @@ class Barrier(OptionValuation):
                       - _.ref.S0*exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*norm.cdf(y1) + \
                       _.K*exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*norm.cdf(y1-_.ref.vol*sqrt(_.T))
                 cdi = c - cdo
-                cui = _.ref.S0*norm.cdf(x1)*exp(-_.ref.q*_.T) - _.K*exp(-_.rf_r*_.T)*norm.cdf(x1-_.ref.vol*sqrt(_.T)) - \
+                cui = _.ref.S0*norm.cdf(x1)*exp(-_.ref.q*_.T) -\
+                      _.K*exp(-_.rf_r*_.T)*norm.cdf(x1-_.ref.vol*sqrt(_.T)) - \
                       _.ref.S0*exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*(norm.cdf(-y)-norm.cdf(-y1)) + \
-                      _.K*exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*(norm.cdf(-y+_.ref.vol*sqrt(_.T))-norm.cdf(-y1+_.ref.vol*sqrt(_.T)))
+                      _.K*exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*(norm.cdf(-y+_.ref.vol*sqrt(_.T))-\
+                                                                      norm.cdf(-y1+_.ref.vol*sqrt(_.T)))
                 cuo = c - cui
         # Consider Put Option
         # Two Situations: H<=K vs H>K
@@ -200,13 +204,16 @@ class Barrier(OptionValuation):
                 pdo = 0
                 pdi = p
             else:
-                puo = -_.ref.S0*norm.cdf(-x1)*exp(-_.ref.q*_.T) + _.K*exp(-_.rf_r*_.T)*norm.cdf(-x1+_.ref.vol*sqrt(_.T)) + \
+                puo = -_.ref.S0*norm.cdf(-x1)*exp(-_.ref.q*_.T) + \
+                      _.K*exp(-_.rf_r*_.T)*norm.cdf(-x1+_.ref.vol*sqrt(_.T)) + \
                       _.ref.S0*exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*norm.cdf(-y1) - \
                       _.K*exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*norm.cdf(-y1+_.ref.vol*sqrt(_.T))
                 pui = p - puo
-                pdi = -_.ref.S0*norm.cdf(-x1)*exp(-_.ref.q*_.T) + _.K*exp(-_.rf_r*_.T)*norm.cdf(-x1+_.ref.vol*sqrt(_.T)) + \
+                pdi = -_.ref.S0*norm.cdf(-x1)*exp(-_.ref.q*_.T) +\
+                      _.K*exp(-_.rf_r*_.T)*norm.cdf(-x1+_.ref.vol*sqrt(_.T)) + \
                       _.ref.S0*exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*(norm.cdf(y)-norm.cdf(y1)) - \
-                      _.K*exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*(norm.cdf(y-_.ref.vol*sqrt(_.T)) - norm.cdf(y1-_.ref.vol*sqrt(_.T)))
+                      _.K*exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*(norm.cdf(y-_.ref.vol*sqrt(_.T)) -\
+                                                                      norm.cdf(y1-_.ref.vol*sqrt(_.T)))
                 pdo = p - pdi
 
         if (_.right == 'call'):

@@ -15,7 +15,7 @@ class PerpetualAmerican(OptionValuation):
 
 
         Parameters
-        ----------
+        --------------
         method : str
                 Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
         nsteps : int
@@ -26,20 +26,20 @@ class PerpetualAmerican(OptionValuation):
                 If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
 
         Returns
-        -------
+        ----------
         self : PerpetualAmerican
 
         .. sectionauthor:: Tianyi Yao
 
         Notes
-        -----
+        ---------
         In finance, a perpetual American option is a special type of American option which deos not have a
         maturity date.
 
         Formula reference: Hull P.599 Perpetual American
 
         Examples
-        -------
+        ------------
 
         Use the Black-Scholes model to price a perpetual American option
 
@@ -62,7 +62,7 @@ class PerpetualAmerican(OptionValuation):
         <BLANKLINE>
 
         >>> print(o.calc_px(method='BS'))  #display more properties of the option
-        PerpetualAmerican.PerpetualAmerican
+        PerpetualAmerican
         K: 50
         T: 1
         _right: call
@@ -89,7 +89,7 @@ class PerpetualAmerican(OptionValuation):
         8.67627928986901
 
         >>> print(o.update(right='put').calc_px()) #display full specification
-        PerpetualAmerican.PerpetualAmerican
+        PerpetualAmerican
         K: 50
         T: 1
         _right: put
@@ -123,7 +123,7 @@ class PerpetualAmerican(OptionValuation):
         13.427262534976805
 
         >>> print(o.update(right='put').calc_px())
-        PerpetualAmerican.PerpetualAmerican
+        PerpetualAmerican
         K: 50
         T: 1
         _right: put
@@ -167,13 +167,13 @@ class PerpetualAmerican(OptionValuation):
         """ Internal function for option valuation.
 
         Returns
-        -------
+        ----------
         self: PerpetualAmerican
 
         .. sectionauthor:: Tianyi Yao
 
         Note
-        ----
+        -------
 
         """
 
