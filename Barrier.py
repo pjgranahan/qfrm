@@ -54,26 +54,25 @@ class Barrier(OptionValuation):
         >>> s = Stock(S0=50., vol=.25, q=.00)
         >>> o = Barrier(ref=s,right='call', K=45., T=2., rf_r=.1, desc='down and out call')
         >>> o.calc_px(H=35.,knock='down',dir='out',method='BS').px_spec.px
-        14.474414799617568
+        14.575239483680027
 
         >>> o.calc_px(H=35.,knock='down',dir='out',method='BS').px_spec
         PriceSpec
         keep_hist: false
         method: BS
-        px: 14.4744148
-        rng_seed: 1
+        px: 14.575239483680027
         sub_method: standard; Hull p.604
         <BLANKLINE>
 
         >>> s = Stock(S0=35., vol=.1, q=.1)
         >>> o = Barrier(ref=s, right='put', K=45., T=2.5, rf_r=.1, desc='up and out put')
         >>> o.calc_px(H=50.,knock='up',method='BS',dir='out').px_spec.px
-        7.9017320504487305
+        7.904177446424047
 
         >>> s = Stock(S0=85., vol=.35, q=.05)
         >>> o = Barrier(ref=s, right='call', K=80., T=.5, rf_r=.05, desc='up and in call')
         >>> o.calc_px(method='BS',H=90.,knock='up',dir='in').px_spec.px
-        10.536077751285479
+        10.52559600411976
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
@@ -187,7 +186,7 @@ class Barrier(OptionValuation):
         c = _.ref.S0*exp(-_.ref.q*_.T)*norm.cdf(d1) - _.K*exp(-_.rf_r*_.T)*norm.cdf(d2)
         p = _.K*exp(-_.rf_r*_.T)*norm.cdf(-d2) - _.ref.S0*exp(-_.ref.q*_.T)*norm.cdf(-d1)
 
-        l = (_.rf_r-_.ref.q+(_.ref.vol**2)/2)/(_.ref.vol**2)
+        l = (_.rf_r-_.ref.q+_.ref.vol**2)/(_.ref.vol**2)
         y = log((_.H**2)/(_.ref.S0*_.K))/(_.ref.vol*sqrt(_.T)) + l*_.ref.vol*sqrt(_.T)
         x1 = log(_.ref.S0/_.H)/(_.ref.vol*sqrt(_.T)) + l*_.ref.vol*sqrt(_.T)
         y1 = log(_.H/_.ref.S0)/(_.ref.vol*sqrt(_.T)) + l*_.ref.vol*sqrt(_.T)
@@ -220,7 +219,7 @@ class Barrier(OptionValuation):
         else:
             if (_.H>_.K):
                 pui = -_.ref.S0*exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*norm.cdf(-y) + \
-                      _.K*exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*norm.cdf(-y+_.ref.vol*sqrt(_.T))
+                      _.K*exp(-_.rf_r*_.T)*((_.H/_.ref.S0)*(2*l-2))*norm.cdf(-y+_.ref.vol*sqrt(_.T))
                 puo = p - pui
                 pdo = 0
                 pdi = p
@@ -247,18 +246,18 @@ class Barrier(OptionValuation):
                 if (_.dir == 'in'):
                     px = cui
                 else:
-                    px = cuo
+                    px = cdi
         else:
             if (_.knock == 'down'):
                 if (_.dir == 'in'):
                     px = pdi
                 else:
-                    px = pdo
+                    px = pdi
             else:
                 if (_.dir == 'in'):
                     px = pui
                 else:
-                    px = puo
+                    px = pdi
 
         self.px_spec.add(px=float(px), sub_method='standard; Hull p.604')
 
