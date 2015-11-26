@@ -269,7 +269,7 @@ class SpecPrinter:
     <BLANKLINE>
     """
 
-    def full_spec(self, new_line=False):
+    def full_spec(self, new_line=False, float_precision=9):
         """ Returns a formatted string containing all variables of this class (recursively)
 
         new_line : bool
@@ -281,6 +281,13 @@ class SpecPrinter:
             Formatted string with option specifications
 
         """
+
+        def float_representer(dumper, value):
+            # Source:  http://pyyaml.org/browser/pyyaml/trunk/lib/yaml/representer.py#L187
+            text = str(round(value, float_precision))
+            return dumper.represent_scalar(u'tag:yaml.org,2002:float', text)
+        yaml.add_representer(float, float_representer)
+
         s = yaml.dump(self, default_flow_style=not new_line).replace('!!python/object:','').replace('!!python/tuple','')
         s = s.replace('__main__.','').replace(type(self).__name__ + '.','').replace('null','-')
         s = s.replace('__main__.','').replace('OptionValuation.','').replace('OptionSeries.','').replace('null','-')
