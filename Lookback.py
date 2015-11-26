@@ -66,7 +66,7 @@ class Lookback(OptionValuation):
         8.037120139607019
 
         >>> print(o.calc_px(method = 'BS', Sfl = 50.0))
-        Lookback.Lookback
+        Lookback
         K: 50
         T: 0.25
         _right: call
@@ -77,7 +77,7 @@ class Lookback(OptionValuation):
           Sfl: 50.0
           keep_hist: false
           method: BS
-          px: 8.037120139607019
+          px: 8.03712014
           sub_method: Look back, Hull Ch.26
         ref: Stock
           S0: 50
@@ -100,15 +100,14 @@ class Lookback(OptionValuation):
         Sfl: 50.0
         keep_hist: false
         method: BS
-        px: 7.79021925989035
+        px: 7.79021926
         sub_method: Look back, Hull Ch.26
         <BLANKLINE>
 
         >>> from pandas import Series;  expiries = range(1,11)
         >>> O = Series([o.update(T=t).calc_px(method='BS').px_spec.px for t in expiries], expiries)
-        >>> O.plot(grid=1, title='BS Price vs expiry (in years)')
+        >>> O.plot(grid=1, title='BS Price vs expiry (in years)')  # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
-
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
@@ -148,17 +147,13 @@ class Lookback(OptionValuation):
         >>> o.calc_px(method='LT', nsteps=50, keep_hist=False).px_spec.px
         6.436996102693329
 
-        >>> # Example of option price development (LT method) with increasing maturities
-        >>> from pandas import Series;  expiries = range(1,11)
-        >>> s = Stock(S0=100., vol=.015, q=.0)
-        >>> o = Lookback(ref=s, right='call', T=3, K=30, rf_r=.01, desc='Hull p607')
+        >>> from pandas import Series
+        >>> expiries = range(1,11)
         >>> O = Series([o.update(T=t).calc_px(method='LT', nsteps=5).px_spec.px for t in expiries], expiries)
-        >>> O.plot(grid=1, title='Price vs expiry (in years)')
+        >>> O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
-
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
-
        """
 
         #self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, Sfl = Sfl)
@@ -195,20 +190,26 @@ class Lookback(OptionValuation):
         S_tree = S
         K_tree = S
 
+        # Compute the Strike Tree
         for i in range(0, n, 1):
             if (self.signCP == -1):
                 K = tuple(_['u'] * array(S)) + (S[len(S)-1],)
             else:
                 K = (S[0],) + tuple(_['d'] * array(S))
             S = tuple(_['u'] * array(S)) + (_['d']*S[len(S)-1],)
+            # The Spot Tree
             S_tree = (tuple([float(s) for s in S]),) + S_tree
+            # The Strike Tree
             K_tree = (tuple([float(k) for k in K]),) + K_tree
 
+        # The terminal stock price
         ST = self.ref.S0 * _['d'] ** arange(n, -1, -1) * _['u'] ** arange(0, n + 1)
         K = K_tree[0]
+        # The payoff tree
         O = maximum(self.signCP * (ST - K), 0)
         O_tree = (tuple([float(o) for o in O]),)
 
+        # Generate the Payoff tree
         for i in range(n, 0, -1):
             O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
             O_tree = (tuple([float(o) for o in O]),) + O_tree
@@ -229,6 +230,7 @@ class Lookback(OptionValuation):
 
         Note
         ----
+        Hull Book p.607
         Formular: https://en.wikipedia.org/wiki/Lookback_option
 
 
@@ -246,10 +248,12 @@ class Lookback(OptionValuation):
 
         c1 = _.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(a1)
         c2 = _.ref.S0 * math.exp(-_.ref.q * _.T) * (_.ref.vol ** 2) * stats.norm.cdf(-a1) / (2 * (_.rf_r - _.ref.q))
-        c3 = - _.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (stats.norm.cdf(a2) - _.ref.vol ** 2 * math.exp(Y1) * stats.norm.cdf(-a3) / (2 * (_.rf_r - _.ref.q)))
+        c3 = - _.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (stats.norm.cdf(a2) - _.ref.vol ** 2 * math.exp(Y1) * \
+                                                          stats.norm.cdf(-a3) / (2 * (_.rf_r - _.ref.q)))
         c = c1 - c2 + c3
 
-        p1 = self.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (stats.norm.cdf(a1) - _.ref.vol ** 2 * math.exp(Y1) * stats.norm.cdf(-a3) / (2 * (_.rf_r - _.ref.q)))
+        p1 = self.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (stats.norm.cdf(a1) - _.ref.vol ** 2 * math.exp(Y1) * \
+                                                           stats.norm.cdf(-a3) / (2 * (_.rf_r - _.ref.q)))
         p2 = _.ref.S0 * math.exp(-_.ref.q * _.T) * (_.ref.vol ** 2) * stats.norm.cdf(-a2) / (2 * (_.rf_r - _.ref.q))
         p3 = _.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(a2)
         p = p1 + p2 - p3

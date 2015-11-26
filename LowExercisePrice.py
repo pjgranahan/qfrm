@@ -1,7 +1,6 @@
 from OptionValuation import *
-from scipy.stats import norm
-from math import sqrt, exp, log
-from numpy import cumsum, log, arange, insert, exp, sqrt, sum, maximum
+from scipy.stats import *
+from numpy import *
 
 class LowExercisePrice(OptionValuation):
     """ LowExercisePrice option class.
@@ -40,7 +39,7 @@ class LowExercisePrice(OptionValuation):
         >>> s = Stock(S0=19.6, vol=.21)
         >>> o = LowExercisePrice(ref=s,T=5, rf_r=.05)
         >>> o.calc_px(method='LT',nsteps=4)
-        LowExercisePrice.LowExercisePrice
+        LowExercisePrice
         T: 5
         frf_r: 0
         px_spec: PriceSpec

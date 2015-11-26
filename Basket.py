@@ -45,6 +45,8 @@ class Basket(OptionValuation):
         The examples can be verified at:
           http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=panier.html
         The results might differ a little due to the simulations.
+        Since it takes time to run more paths and steps, the number of simulations is not very large in examples.
+        To improve accuracy, please improve the npaths and nsteps.
 
         Examples
         -------
@@ -52,13 +54,13 @@ class Basket(OptionValuation):
         >>> s = Stock(S0=(42,55,75), vol=(.20,.30,.50))
         >>> o = Basket(ref=s, right='call', K=40, T=.5, rf_r=.1, desc='Hull p.612')
 
-        >>> o.calc_px(method='MC',mu=(0.05,0.1,0.05),weight=(0.3,0.5,0.2),corr=[[1,0,0],[0,1,0],[0,0,1]],npaths=100,nsteps=100).px_spec   # save interim results to self.px_spec. Equivalent to repr(o)
+        >>> o.calc_px(method='MC',mu=(0.05,0.1,0.05),weight=(0.3,0.5,0.2),corr=[[1,0,0],[0,1,0],[0,0,1]],npaths=10,nsteps=100).px_spec   # save interim results to self.px_spec. Equivalent to repr(o)
         PriceSpec
         keep_hist: false
         method: MC
-        npaths: 100
+        npaths: 10
         nsteps: 100
-        px: 15.317306061147164
+        px: 15.317306061147171
         sub_method: standard; Hull p.612
         <BLANKLINE>
 
@@ -74,15 +76,14 @@ class Basket(OptionValuation):
         >>> o.calc_px(method='MC',mu=(0.06,0.05),weight=(0.4,0.6),corr=[[1,0.7],[0.7,1]],npaths=10,nsteps=1000).px_spec.px
         7.236146325452368
 
-        >>> s = Stock(S0=(30,50), vol=(.20,.15))
-        >>> o = Basket(ref=s, right='call', K=55, T=3, rf_r=.05, desc='Hull p.612')
-        >>> from pandas import Series;  expiries = range(6,11)
-        >>> O = Series([o.update(T=t).calc_px(method='MC',mu=(0.06,0.05),weight=(0.4,0.6),corr=[[1,0.7],[0.7,1]],npaths=100,nsteps=1000).px_spec.px for t in expiries], expiries)
-        >>> O.plot(grid=1, title='Price vs expiry (in years)')
+        >>> from pandas import Series
+        >>> expiries = range(1,11)
+        >>> O = Series([o.update(T=t).calc_px(method='MC',mu=(0.06,0.05),weight=(0.4,0.6),corr=[[1,0.7],[0.7,1]],npaths=2,nsteps=3).px_spec.px for t in expiries], expiries)
+        >>> O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
-
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
+
 
         """
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
@@ -140,6 +141,7 @@ class Basket(OptionValuation):
 
         _ = self
 
+        # Define the parameters
         S0 = _.ref.S0
         vol = _.ref.vol
         mu = _.mu
@@ -147,14 +149,17 @@ class Basket(OptionValuation):
         nsteps = _.nsteps
         npaths = _.npaths
 
+        # Compute Deltat and number of assets
         deltat = _.T/nsteps
         Nasset = len(vol)
 
+        # Compute the stock price at t
         def calS(St,mu,sigma,param):
             deltaS = mu*St*deltat + sigma*St*param*sqrt(deltat)
             S_update = St+deltaS
             return(S_update.item())
 
+        # Generate one path
         def one_path(S0,mu,vol,param):
             S0 = (S0,)
             for i in range(nsteps):
@@ -162,23 +167,27 @@ class Basket(OptionValuation):
                 S0 = S0 + (calS(S0[len(S0)-1],mu,vol,parami),)
             return(S0)
 
+        # Define n paths matrix
         priceNpath = ()
 
-
+        # Compute covariance matrix from correlation matrix
         covM = dot(dot(diag(vol),(corrM)),diag(vol))
 
+        # Set seed
         seed(10987)
+        # Generate random numbers
         param = multivariate_normal(repeat(0,Nasset),covM,nsteps)
         param = tuple(zip(*param))
 
+        # Generate N paths
         for i in range(npaths):
             price = list(map(one_path,S0,mu,vol,param))
             wprice = transpose(matrix(price))*transpose(matrix(_.weight))
             wprice = tuple(wprice.ravel().tolist()[0])
             priceNpath = priceNpath + (wprice,)
 
+        # Terminal Payoff
         payoff = max(0,_.signCP*(mean(tuple(zip(*priceNpath))[nsteps])-_.K))
-
 
         self.px_spec.add(px=float(payoff*exp(-_.rf_r*_.T)), sub_method='standard; Hull p.612')
 

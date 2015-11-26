@@ -1,6 +1,8 @@
 import numpy as np
 from OptionValuation import *
 import matplotlib.pyplot as plt
+from numpy import arange, maximum, sqrt, exp
+from scipy.stats import norm
 
 class Shout(OptionValuation):
     """ Shout option class.
@@ -49,7 +51,7 @@ class Shout(OptionValuation):
 
 
         >>> s = Stock(S0=50, vol=.3)
-        >>> o = Shout(ref=s, right='call', K=52, T=2, rf_r=.05, desc='Example from internet')
+        >>> o = Shout(ref=s, right='call', K=52, T=2, rf_r=.05, desc='Example from internet excel spread sheet')
 
         >>> o.calc_px(method='LT', nsteps=2, keep_hist=True).px_spec.px
         11.803171356649463
@@ -58,28 +60,27 @@ class Shout(OptionValuation):
         ((50.000000000000014,), (37.0409110340859, 67.49294037880017), (27.440581804701324, 50.00000000000001, 91.10594001952546))
 
         >>> o.calc_px(method='LT', nsteps=2, keep_hist=False)
-        Shout.Shout
+        Shout
         K: 52
         T: 2
         _right: call
         _signCP: 1
-        desc: Example from internet
+        desc: Example from internet excel spread sheet
         frf_r: 0
         px_spec: PriceSpec
           LT_specs:
-            a: 1.0512710963760241
-            d: 0.7408182206817179
-            df_T: 0.9048374180359595
-            df_dt: 0.951229424500714
+            a: 1.051271096
+            d: 0.740818221
+            df_T: 0.904837418
+            df_dt: 0.951229425
             dt: 1.0
-            p: 0.5097408651817704
-            u: 1.3498588075760032
+            p: 0.509740865
+            u: 1.349858808
           keep_hist: false
           method: LT
           nsteps: 2
-          px: 11.803171356649463
+          px: 11.803171357
           sub_method: binomial tree; Hull Ch.13
-        q: 0.0
         ref: Stock
           S0: 50
           curr: -
@@ -88,12 +89,14 @@ class Shout(OptionValuation):
           tkr: -
           vol: 0.3
         rf_r: 0.05
+        seed: -
         seed0: -
         <BLANKLINE>
 
-        >>> from pandas import Series;  steps = range(1,11)
+        >>> from pandas import Series
+        >>> steps = range(1,11)
         >>> O = Series([o.calc_px(method='LT', nsteps=s).px_spec.px for s in steps], steps)
-        >>> O.plot(grid=1, title='LT Price vs nsteps')
+        >>> O.plot(grid=1, title='LT Price vs nsteps') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
@@ -135,8 +138,6 @@ class Shout(OptionValuation):
 
 
         """
-        from numpy import arange, maximum, sqrt, exp
-        from scipy.stats import norm
 
         keep_hist = getattr(self.px_spec, 'keep_hist', False)
         n = getattr(self.px_spec, 'nsteps', 3)
@@ -156,10 +157,13 @@ class Shout(OptionValuation):
 
             O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
             S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
+
+            #payoff of shout
             Shout = self.signCP * S / exp(self.ref.q * tleft) * norm.cdf(self.signCP * d1) - \
                     self.signCP * S / exp(self.rf_r * tleft) * norm.cdf(self.signCP * d2) + \
                     self.signCP * (S - self.K) / exp(self.rf_r * tleft)
 
+            #final payoff is the maximum of shout or not shout
             Payout = maximum(Shout, 0)
             O = maximum(O, Payout)
 
@@ -171,8 +175,6 @@ class Shout(OptionValuation):
         self.px_spec.add(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
                         LT_specs=_, ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
 
-        #self.px_spec.add(px=float(out), sub_method='binomial tree; Hull Ch.26.12',
-        #                 LT_specs=_, ref_tree=S_tree, opt_tree=O_tree)
 
         return self
 
@@ -229,7 +231,6 @@ class Shout(OptionValuation):
 
         h = maximum(_.signCP*(S-_.K), 0) # payoff when not shout
         final_payoff = repeat(S[-1,:], n_steps+1, axis=0).reshape(n_paths,n_steps+1)
-        #print(final_payoff.transpose()[0:10,0:10])
         V = maximum(_.signCP*(final_payoff.transpose()-S), 0) + (S-_.K) # payoff when shout
 
         for t in range (n_steps-1,-1,-1): # valuation process ia similar to American option
@@ -237,7 +238,7 @@ class Shout(OptionValuation):
             C= polyval(rg, S[t,:]) # continuation values
             h[t,:]= where(V[t,:]>C, V[t,:], h[t+1,:]*df) # exercise decision: shout or not shout
 
-        self.px_spec.add(px=mean(h[0,:]), sub_method='Hull p.609')
+        self.px_spec.add(px=float(mean(h[0,:])), sub_method='Hull p.609')
         return self
 
     def _calc_FD(self):
