@@ -60,7 +60,7 @@ class Basket(OptionValuation):
         method: MC
         npaths: 10
         nsteps: 100
-        px: 15.317306061147171
+        px: 15.317306061
         sub_method: standard; Hull p.612
         <BLANKLINE>
 
