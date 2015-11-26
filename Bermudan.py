@@ -216,22 +216,6 @@ class Bermudan(OptionValuation):
         # Get arguments from calc_px
         npaths = getattr(self.px_spec, 'npaths')
 
-        function [value variance MC_error]
-        =LSAmericanPutVal(R,N,M,S0,K,sigma,r,T,Beta,W)
-        # Uses Longstaff-Schwartz algortihm as outlined in Glasserman’s book
-        # Generate a set of paths, and use the Betas (presumable obtained from
-        # regression) to evaluate the price of an American put option.
-        # Weighted Laguerre polynomials are used as the basis functions.
-        #R Number of basis functions
-        #N Number of paths used in evaluation
-        #M Number of exercise dates (approximate American with Bermudan)
-        # S0 is initial asset value
-        # K is strike of the put
-        # sigma is volatility
-        # r is risk free rate
-        # T is expiry time
-        # W is a set of N(0,1) random numbers to use, this benefits comparisons.
-
         def payout(stock_price):
             """
             The payout of a Bermudan option given a stock_price.
@@ -301,26 +285,79 @@ class Bermudan(OptionValuation):
                 s = 1/120 * (-x**5 + 25*x**4 - 200*x**3 + 600*x**2 - 600*x + 120)
             elif R == 6:
                 s = 1/720 * (x**6 - 36*x**5 + 450*x**4 - 2400*x**3 + 5400*x**2 - 4320*x + 720)
+            else:
+                s = 0
+                raise "R is out of range."
+
+            # Weight s according to the Longstaff-Schwartz algorithm
+            s *= np.exp(-0.5 * x)
 
             return s
 
+        def betas(paths):
+            """
+            Generates the discounted betas used in the Longstaff-Schwartz algorithm using a regression.
+            Parameters
+            ----------
+            paths : list
+                    List of paths produced by generate_GBM_paths
+
+            Returns
+            -------
+            betas : list
+                    A tex * R matrix (list of lists) holding the betas.
+            """
+            # betas is a tex * R matrix
+            betas = np.zeros((len(self.tex), self.R))
+
+            # B_psi_psi is a square matrix
+            B_psi_psi = np.zeros((self.R, self.R))
+
+            # B_V_psi is a R * npaths matrix
+            B_V_psi = np.zeros((self.R, npaths))
+
+            # Step backwards through the exercise dates
+            for exercise_date in reversed(self.tex):
+
+                # Fill B_psi_psi
+                for i in range(self.R):
+                    for s in range(self.R):
+                        laguerre_list_1 = [Laguerre(i, paths[exercise_date][path]) for path in npaths]
+                        laguerre_list_2 = [Laguerre(s, paths[exercise_date][path]) for path in npaths]
+                        B_psi_psi[i[s]] = np.average(np.multiply(laguerre_list_1, laguerre_list_2))
+
+                # Fill B_V_psi
+                for i in range(self.R):
+                    prices = [payout(paths[exercise_date][path]) for path in npaths]
+                    laguerre_list = [Laguerre(i, paths[exercise_date][path]) for path in npaths]
+                    B_V_psi[i] = np.average(np.multiply(prices, laguerre_list))
+
+                # Fill betas
+                betas[exercise_date] = np.inv(B_psi_psi) * np.transpose(B_V_psi)
+
+                # Discount betas
+                betas[exercise_date] *= np.exp(-((self.rf_r - self.ref.q) * (self.T * exercise_date / self.tex[-1])))
+
+            return betas
 
         # Generate paths
-        paths = generate_GBM_paths(npaths=npaths, tex=self.tex, S0=self.ref.S0, vol=self.ref.vol, rf_r=self.rf_r, q=self.q, T=self.T)
+        paths = generate_GBM_paths()
+
+        # Generate betas
+        betas = betas(paths)
 
         # values will store the list of prices; each price comes from a different path
         prices = []
 
-        # Generate the list of prices by going through every path and, for each exercise date,
-        # seeing if we should exercise or continue
+        # Fill prices
         for path in range(npaths):
             for exercise_date in self.tex:
                 continuation_price = 0
-                stock_price = paths[exercise_date, path]  # stock price at the exercise date on a given path
+                stock_price = paths[exercise_date][path]  # stock price at the exercise date on a given path
                 for R in range(self.R):
-                    continuation_price = continuation_price + Laguerre(R, stock_price) * beta(exercise_date, R+1)
+                    continuation_price += Laguerre(R, stock_price) * betas[exercise_date][R]
                 if continuation_price < payout(stock_price) or exercise_date == self.tex[-1]:
-                    prices[path] = np.exp(-((self.rf_r - self.ref.q) * (self.T * (exercise_date / self.tex[-1])))) * payout(stock_price)
+                    prices[path] = np.exp(-((self.rf_r - self.ref.q) * (self.T * exercise_date / self.tex[-1]))) * payout(stock_price)
                     break
 
         # Find the price by averaging the prices, then record it
