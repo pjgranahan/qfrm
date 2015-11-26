@@ -1,4 +1,9 @@
 from OptionValuation import *
+import numpy as np
+from math import exp, sqrt, log, floor
+from scipy.interpolate import interp1d
+from scipy.stats import norm
+
 
 
 class Asian(OptionValuation):
@@ -44,64 +49,62 @@ class Asian(OptionValuation):
         >>> # SEE NOTES to verify first two examples
         >>> s = Stock(S0=30, vol=.3, q = .02)
         >>> o = Asian(ref=s, right='call', K=29, T=1., rf_r=.08, desc='Example from Internet - Call')
-        >>> o.calc_px()
-        >>> print(o.px_spec)
-
-            qfrm.PriceSpec
-            keep_hist: false
-            method: BSM
-            px: 2.777361112923389
-            sub_method: Geometric
+        >>> o.calc_px().px_spec
+        PriceSpec
+        keep_hist: false
+        method: BSM
+        px: 2.777361112923389
+        sub_method: Geometric
+        <BLANKLINE>
 
         >>> s = Stock(S0=30, vol=.3, q = .02)
         >>> o = Asian(ref=s, right='put', K=29, T=1., rf_r=.08, desc='Example from Internet - Put')
-        >>> o.calc_px()
-        >>> print(o.px_spec)
-
-            qfrm.PriceSpec
-            keep_hist: false
-            method: BSM
-            px: 1.2240784465431602
-            sub_method: Geometric
+        >>> o.calc_px().px_spec
+        PriceSpec
+        keep_hist: false
+        method: BSM
+        px: 1.2240784465431602
+        sub_method: Geometric
+        <BLANKLINE>
 
         >>> s = Stock(S0=30, vol=.3, q = .02)
         >>> o = Asian(ref=s, right='put', K=30., T=1., rf_r=.08)
-        >>> o.calc_px()
-        >>> print(o.px_spec)
+        >>> o.calc_px().px_spec
+        PriceSpec
+        keep_hist: false
+        method: BSM
+        px: 1.6341047993229445
+        sub_method: Geometric
+        <BLANKLINE>
 
-            qfrm.PriceSpec
-            keep_hist: false
-            method: BSM
-            px: 1.6341047993229445
-            sub_method: Geometric
 
         >>> s = Stock(S0=20, vol=.3, q = .00)
         >>> o = Asian(ref=s, right='put', K=21., T=1., rf_r=.08)
-        >>> o.calc_px()
-        >>> print(o.px_spec)
+        >>> o.calc_px().px_spec
+        PriceSpec
+        keep_hist: false
+        method: BSM
+        px: 1.489497403315955
+        sub_method: Geometric
+        <BLANKLINE>
 
-            qfrm.PriceSpec
-            keep_hist: false
-            method: BSM
-            px: 1.489497403315955
-            sub_method: Geometric
 
         >>> s = Stock(S0=20, vol=.3, q = .00)
         >>> o = Asian(ref=s, right='put', K=21., T=2., rf_r=.08)
-        >>> o.calc_px()
-        >>> print(o.px_spec)
-
-            qfrm.PriceSpec
-            keep_hist: false
-            method: BSM
-            px: 1.6162118076748948
-            sub_method: Geometric
+        >>> o.calc_px().px_spec
+        PriceSpec
+        keep_hist: false
+        method: BSM
+        px: 1.6162118076748948
+        sub_method: Geometric
+        <BLANKLINE>
 
         >>> s = Stock(S0=20, vol=.3, q = .00)
         >>> o = Asian(ref=s, right='put', K=21., T=2., rf_r=.08)
         >>> from pandas import Series;  exps = range(1,10)
         >>> O = Series([o.update(T=t).calc_px(method='BS').px_spec.px for t in exps], exps)
-        >>> O.plot(grid=1, title='Price vs Time to Expiry')
+        >>> O.plot(grid=1, title='Price vs Time to Expiry') # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at ... >
         >>> # import matplotlib.pyplot as plt
         >>> # plt.show() # run last two lines to show plot
 
@@ -130,10 +133,7 @@ class Asian(OptionValuation):
         http://phys.columbia.edu/~klassen/asian.pdf
 
         """
-        #Imports
-        import numpy as np
-        from math import exp, sqrt, log, floor
-        from scipy.interpolate import interp1d
+
 
         #helper function
         def interpolate(xArr, yArr, x):
@@ -311,12 +311,6 @@ class Asian(OptionValuation):
         assert S >= 0, 'S must be >= 0'
         assert r >= 0, 'r must be >= 0'
         assert q >= 0, 'q must be >= 0'
-
-        # Imports
-        from math import exp
-        from math import log
-        from math import sqrt
-        from scipy.stats import norm
 
         # Parameters for Value Calculation (see link in docstring)
         a = .5 * (r - q - (vol ** 2) / 6.)
