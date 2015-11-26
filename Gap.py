@@ -161,7 +161,7 @@ class Gap(OptionValuation):
 
         """
         self.K2 = float(K2)
-        self.seed = seed
+        self.seed0 = seed
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
         return getattr(self, '_calc_' + method.upper())()
 
@@ -278,7 +278,7 @@ class Gap(OptionValuation):
 
         dt = _.T / n_steps
         df = np.exp(-_.rf_r * dt)
-        np.random.seed(_.seed)
+        np.random.seed(_.seed0)
 
         # stock price paths
         S = _.ref.S0 * np.exp(np.cumsum(np.random.normal((_.rf_r - 0.5 * _.ref.vol ** 2) * dt, _.ref.vol * np.sqrt(dt),\
