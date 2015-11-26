@@ -120,18 +120,18 @@ class Lookback(OptionValuation):
         >>> o.px_spec
         PriceSpec
         LT_specs:
-          a: 1.0002500312526044
-          d: 0.99750312239746
-          df_T: 0.9753099120283326
-          df_dt: 0.999750031247396
+          a: 1.000250031
+          d: 0.997503122
+          df_T: 0.975309912
+          df_dt: 0.999750031
           dt: 0.0025
-          p: 0.54938119875659
-          u: 1.0025031276057952
+          p: 0.549381199
+          u: 1.002503128
         Sfl: 50.0
         keep_hist: false
         method: LT
         nsteps: 100
-        px: 1.829899147224415
+        px: 1.829899147
         sub_method: binomial tree; Hull Ch.13
         <BLANKLINE>
 
