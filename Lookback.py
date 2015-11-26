@@ -148,17 +148,13 @@ class Lookback(OptionValuation):
         >>> o.calc_px(method='LT', nsteps=50, keep_hist=False).px_spec.px
         6.436996102693329
 
-        >>> # Example of option price development (LT method) with increasing maturities
-        >>> from pandas import Series;  expiries = range(1,11)
-        >>> s = Stock(S0=100., vol=.015, q=.0)
-        >>> o = Lookback(ref=s, right='call', T=3, K=30, rf_r=.01, desc='Hull p607')
+        >>> from pandas import Series
+        >>> expiries = range(1,11)
         >>> O = Series([o.update(T=t).calc_px(method='LT', nsteps=5).px_spec.px for t in expiries], expiries)
-        >>> O.plot(grid=1, title='Price vs expiry (in years)')
+        >>> O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
-
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
-
        """
 
         #self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, Sfl = Sfl)
@@ -195,20 +191,26 @@ class Lookback(OptionValuation):
         S_tree = S
         K_tree = S
 
+        # Compute the Strike Tree
         for i in range(0, n, 1):
             if (self.signCP == -1):
                 K = tuple(_['u'] * array(S)) + (S[len(S)-1],)
             else:
                 K = (S[0],) + tuple(_['d'] * array(S))
             S = tuple(_['u'] * array(S)) + (_['d']*S[len(S)-1],)
+            # The Spot Tree
             S_tree = (tuple([float(s) for s in S]),) + S_tree
+            # The Strike Tree
             K_tree = (tuple([float(k) for k in K]),) + K_tree
 
+        # The terminal stock price
         ST = self.ref.S0 * _['d'] ** arange(n, -1, -1) * _['u'] ** arange(0, n + 1)
         K = K_tree[0]
+        # The payoff tree
         O = maximum(self.signCP * (ST - K), 0)
         O_tree = (tuple([float(o) for o in O]),)
 
+        # Generate the Payoff tree
         for i in range(n, 0, -1):
             O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
             O_tree = (tuple([float(o) for o in O]),) + O_tree
