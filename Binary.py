@@ -11,7 +11,7 @@ class Binary(OptionValuation):
     Inherits all methods and properties of OptionValuation class.
     """
 
-    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, payout_type="asset_or_nothing", Q=0.0):
+    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, payout_type="asset-or-nothing", Q=0.0):
         """ Wrapper function that calls appropriate valuation method.
 
         User passes parameters to calc_px, which saves them to local PriceSpec object
@@ -30,9 +30,9 @@ class Binary(OptionValuation):
         keep_hist : bool
                 If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
         payout_type : str
-                Required. Indicates whether the binary option is: "asset_or_nothing", "cash_or_nothing"
+                Required. Indicates whether the binary option is: "asset-or-nothing", "cash-or-nothing"
         Q : float
-                Required if payout_type is "cash_or_nothing". Used in pricing a cash or nothing binary option.
+                Required if payout_type is "cash-or-nothing". Used in pricing a cash or nothing binary option.
 
         Returns
         ------------
@@ -62,63 +62,64 @@ class Binary(OptionValuation):
 
         >>> s = Stock(S0=42, vol=.20)
         >>> o = Binary(ref=s, right='put', K=40, T=.5, rf_r=.1)
-        >>> o.calc_px(method='BS', payout_type="asset_or_nothing").px_spec
+        >>> o.calc_px(method='BS', payout_type="asset-or-nothing").px_spec #doctest: +ELLIPSIS
         PriceSpec
         Q: 0.0
-        d1: 0.7692626281060315
-        d2: 0.627841271868722
+        d1: 0.76926...
+        d2: 0.62784...
         keep_hist: false
         method: BS
-        payout_type: asset_or_nothing
-        px: 9.276485780407903
-        px_call: 32.7235142195921
-        px_put: 9.276485780407903
-        sub_method: asset_or_nothing
+        payout_type: asset-or-nothing
+        px: 9.27648...
+        px_call: 32.723...
+        px_put: 9.2764...
+        sub_method: asset-or-nothing
         <BLANKLINE>
 
         Access the attributes in other ways
 
-        >>> o.px_spec.px, o.px_spec.d1, o.px_spec.d2, o.px_spec.method, o.px_spec.sub_method
-        (9.276485780407903, 0.7692626281060315, 0.627841271868722, 'BS', 'asset_or_nothing')
+        >>> o.px_spec.px, o.px_spec.d1, o.px_spec.d2, o.px_spec.method, o.px_spec.sub_method #doctest: +ELLIPSIS
+        (9.276485..., 0.76926262..., 0.62784127..., 'BS', 'asset-or-nothing')
 
         Change the option to be a call
 
-        >>> o.update(right='call').calc_px().px_spec.px
-        32.7235142195921
+        >>> o.update(right='call').calc_px().px_spec.px #doctest: +ELLIPSIS
+        32.723514...
 
         Use the Black-Scholes model to price a cash-or-nothing binary option. Verifiable using DerivaGem.
 
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05)
-        >>> o.calc_px(method='BS', payout_type="cash_or_nothing", Q=1000).px_spec
+        >>> o.calc_px(method='BS', payout_type="cash-or-nothing", Q=1000).px_spec #doctest: +ELLIPSIS
         PriceSpec
         Q: 1000
-        d1: 0.9737886891259003
-        d2: 0.5495246204139719
+        d1: 0.973788...
+        d2: 0.549524...
         keep_hist: false
         method: BS
-        payout_type: cash_or_nothing
-        px: 641.2377052315655
-        px_call: 641.2377052315655
-        px_put: 263.59971280439396
-        sub_method: cash_or_nothing
+        payout_type: cash-or-nothing
+        px: 641.2377...
+        px_call: 641.237...
+        px_put: 263.5997...
+        sub_method: cash-or-nothing
         <BLANKLINE>
 
         Access the attributes in other ways
 
-        >>> o.px_spec.px, o.px_spec.d1, o.px_spec.d2, o.px_spec.method, o.px_spec.sub_method
-        (641.2377052315655, 0.9737886891259003, 0.5495246204139719, 'BS', 'cash_or_nothing')
+        >>> o.px_spec.px, o.px_spec.d1, o.px_spec.d2, o.px_spec.method, o.px_spec.sub_method #doctest: +ELLIPSIS
+        (641.23770..., 0.9737886..., 0.549524..., 'BS', 'cash-or-nothing')
 
         Change the option to be a put
 
-        >>> o.update(right='put').calc_px().px_spec.px
-        8.2540367580782
+        >>> o.update(right='put').calc_px().px_spec.px #doctest: +ELLIPSIS
+        8.25403...
 
         Example of option price development (BS method) with increasing maturities
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
-        >>> O = Series([o.update(T=t).calc_px(method='BS', payout_type="cash_or_nothing", Q=1000).px_spec.px for t in expiries], expiries)
+        >>> O = Series([o.update(T=t).calc_px(method='BS', \
+        payout_type="cash-or-nothing", Q=1000).px_spec.px for t in expiries], expiries)
         >>> O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
@@ -131,7 +132,7 @@ class Binary(OptionValuation):
 
 
         Examples using _calc_LT()
-        -----------
+        -------------------------------
 
         Notes
         -------
@@ -143,31 +144,33 @@ class Binary(OptionValuation):
         Use a binomial tree model to price a cash-or-nothing binary option
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05, desc='call @641.237 put @263.6  DerivaGem')
-        >>> print(o.calc_px(method='LT', nsteps=365, payout_type="cash_or_nothing", Q=1000).px_spec.px) #option price
-        640.4359248459538
+        >>> print(o.calc_px(method='LT', nsteps=365, \
+        payout_type="cash-or-nothing", Q=1000).px_spec.px)#doctest: +ELLIPSIS
+        640.43592...
 
-        >>> print(o.calc_px(method='LT', nsteps=365, payout_type="cash_or_nothing", Q=1000).px_spec)  #option specs
+        >>> print(o.calc_px(method='LT', nsteps=365, \
+        payout_type="cash-or-nothing", Q=1000).px_spec)  # doctest: +ELLIPSIS
         PriceSpec
         LT_specs:
-          a: 1.000274010136661
-          d: 0.9780377638923582
-          df_T: 0.9048374180359595
-          df_dt: 0.9997260649243266
-          dt: 0.005479452054794521
-          p: 0.50061742719424
-          u: 1.022455407059373
+          a: 1.000274...
+          d: 0.978037...
+          df_T: 0.90483...
+          df_dt: 0.99972...
+          dt: 0.0054794...
+          p: 0.5006174...
+          u: 1.02245540...
         Q: 1000
         keep_hist: false
         method: LT
         nsteps: 365
-        payout_type: cash_or_nothing
-        px: 640.4359248459538
-        sub_method: cash_or_nothing
+        payout_type: cash-or-nothing
+        px: 640.435924...
+        sub_method: cash-or-nothing
         <BLANKLINE>
 
         Another way to view the specification of the binomial tree
 
-        >>> print(o.calc_px(method='LT', nsteps=365, payout_type="cash_or_nothing", Q=1000))  #option specs
+        >>> print(o.calc_px(method='LT', nsteps=365, payout_type="cash-or-nothing", Q=1000))  # doctest: +ELLIPSIS
         Binary
         K: 40
         T: 2
@@ -177,20 +180,20 @@ class Binary(OptionValuation):
         frf_r: 0
         px_spec: PriceSpec
           LT_specs:
-            a: 1.000274010136661
-            d: 0.9780377638923582
-            df_T: 0.9048374180359595
-            df_dt: 0.9997260649243266
-            dt: 0.005479452054794521
-            p: 0.50061742719424
-            u: 1.022455407059373
+            a: 1.00027...
+            d: 0.9780...
+            df_T: 0.904...
+            df_dt: 0.99972...
+            dt: 0.005479...
+            p: 0.50061...
+            u: 1.02245...
           Q: 1000
           keep_hist: false
           method: LT
           nsteps: 365
-          payout_type: cash_or_nothing
-          px: 640.4359248459538
-          sub_method: cash_or_nothing
+          payout_type: cash-or-nothing
+          px: 640.4359...
+          sub_method: cash-or-nothing
         ref: Stock
           S0: 50
           curr: -
@@ -202,57 +205,58 @@ class Binary(OptionValuation):
         seed0: -
         <BLANKLINE>
 
-        For the purpose of illustration, I only use a 2-step tree to display, where the option price here is not accurate
+        For the purpose of illustration, I only use a 2-step tree to display, \
+        where the option price here is not accurate
         #the reference tree
-        >>> print(o.calc_px(method='LT', nsteps=2, payout_type="cash_or_nothing", Q=1000, \
-        keep_hist=True).px_spec.ref_tree)
-        ((50.000000000000014,), (37.0409110340859, 67.49294037880017), (27.440581804701324, 50.00000000000001, 91.10594001952546))
+        >>> print(o.calc_px(method='LT', nsteps=2, payout_type="cash-or-nothing", Q=1000, \
+        keep_hist=True).px_spec.ref_tree) #doctest: +ELLIPSIS
+        ((50.0000...,), (37.0409..., 67.49294...), (27.44058..., 50.000000..., 91.10594...))
 
         #the option value tree
-        >>> print(o.calc_px(method='LT', nsteps=2, payout_type="cash_or_nothing", Q=1000, \
-        keep_hist=True).px_spec.opt_tree)
-        ((687.3561078226671,), (484.8805098313515, 951.229424500714), (0.0, 1000.0, 1000.0))
+        >>> print(o.calc_px(method='LT', nsteps=2, payout_type="cash-or-nothing", Q=1000, \
+        keep_hist=True).px_spec.opt_tree) # doctest: +ELLIPSIS
+        ((687.35610...,), (484.88050..., 951.2294...), (0.0, 1000.0, 1000.0))
 
         Another way to display option price
-        >>> print((o.pxLT(nsteps=365, keep_hist=True, payout_type='cash_or_nothing',Q=1000)))
-        640.4359248450264
+        >>> print((o.pxLT(nsteps=365, keep_hist=True, payout_type='cash-or-nothing',Q=1000))) #doctest: +ELLIPSIS
+        640.43592...
 
-        >>> print((o.px_spec.px, o.px_spec.method))  # alternative attribute access)
-        (640.4359248450264, 'LT')
+        >>> print((o.px_spec.px, o.px_spec.method))  # doctest: +ELLIPSIS
+        (640.43592..., 'LT')
 
         >>> print(Binary(clone=o, right='put', desc='call @641.237 put @263.6  DerivaGem').calc_px(method='LT',\
-        nsteps=365, payout_type='cash_or_nothing',Q=1000).px_spec.px) #change to a put option
-        264.40149319130967
+        nsteps=365, payout_type='cash-or-nothing',Q=1000).px_spec.px) #doctest: +ELLIPSIS
+        264.4014...
 
 
         Use a binomial tree model to price an asset-or-nothing binary option
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05, desc='call @41.74 put @8.254 DerivaGem')
-        >>> print(o.calc_px(method='LT', nsteps=365, payout_type="asset_or_nothing").px_spec.px) #option price
-        41.717204143389715
+        >>> print(o.calc_px(method='LT', nsteps=365, payout_type="asset-or-nothing").px_spec.px) #doctest: +ELLIPSIS
+        41.71720...
 
-        >>> print(o.calc_px(method='LT', nsteps=365, payout_type="asset_or_nothing").px_spec)  #option specs
+        >>> print(o.calc_px(method='LT', nsteps=365, payout_type="asset-or-nothing").px_spec)  #doctest: +ELLIPSIS
         PriceSpec
         LT_specs:
-          a: 1.000274010136661
-          d: 0.9780377638923582
-          df_T: 0.9048374180359595
-          df_dt: 0.9997260649243266
-          dt: 0.005479452054794521
-          p: 0.50061742719424
-          u: 1.022455407059373
+          a: 1.0002...
+          d: 0.97803...
+          df_T: 0.9048...
+          df_dt: 0.9997...
+          dt: 0.005479...
+          p: 0.50061742...
+          u: 1.0224554...
         Q: 0.0
         keep_hist: false
         method: LT
         nsteps: 365
-        payout_type: asset_or_nothing
-        px: 41.717204143389715
-        sub_method: asset_or_nothing
+        payout_type: asset-or-nothing
+        px: 41.7172...
+        sub_method: asset-or-nothing
         <BLANKLINE>
 
         Another way to view the specification of the binomial tree
 
-        >>> print(o.calc_px(method='LT', nsteps=365, payout_type="asset_or_nothing"))  #option specs
+        >>> print(o.calc_px(method='LT', nsteps=365, payout_type="asset-or-nothing"))  #doctest: +ELLIPSIS
         Binary
         K: 40
         T: 2
@@ -262,20 +266,20 @@ class Binary(OptionValuation):
         frf_r: 0
         px_spec: PriceSpec
           LT_specs:
-            a: 1.000274010136661
-            d: 0.9780377638923582
-            df_T: 0.9048374180359595
-            df_dt: 0.9997260649243266
-            dt: 0.005479452054794521
-            p: 0.50061742719424
-            u: 1.022455407059373
+            a: 1.0002...
+            d: 0.978037...
+            df_T: 0.90483...
+            df_dt: 0.9997...
+            dt: 0.0054794...
+            p: 0.50061...
+            u: 1.022455...
           Q: 0.0
           keep_hist: false
           method: LT
           nsteps: 365
-          payout_type: asset_or_nothing
-          px: 41.717204143389715
-          sub_method: asset_or_nothing
+          payout_type: asset-or-nothing
+          px: 41.717204...
+          sub_method: asset-or-nothing
         ref: Stock
           S0: 50
           curr: -
@@ -287,43 +291,43 @@ class Binary(OptionValuation):
         seed0: -
         <BLANKLINE>
 
-        For the purpose of illustration, I only use a 2-step tree to display, where the option price here is not accurate
+        For the purpose of illustration, I only use a 2-step tree to display, \
+        where the option price here is not accurate
 
-        >>> print(o.calc_px(method='LT', nsteps=2, payout_type="asset_or_nothing", \
-        keep_hist=True).px_spec.ref_tree)
-        ((50.000000000000014,), (37.0409110340859, 67.49294037880017), (27.440581804701324, 50.00000000000001, 91.10594001952546))
+        >>> print(o.calc_px(method='LT', nsteps=2, payout_type="asset-or-nothing", \
+        keep_hist=True).px_spec.ref_tree) #doctest: +ELLIPSIS
+        ((50.0000...,), (37.0409..., 67.49294...), (27.440581..., 50.000000..., 91.1059400...))
 
-        >>> print(o.calc_px(method='LT', nsteps=2, payout_type="asset_or_nothing", \
-        keep_hist=True).px_spec.opt_tree)
-        ((44.03218631609853,), (24.244025491567577, 67.49294037880017), (0.0, 50.00000000000001, 91.10594001952546))
+        >>> print(o.calc_px(method='LT', nsteps=2, payout_type="asset-or-nothing", \
+        keep_hist=True).px_spec.opt_tree)#doctest: +ELLIPSIS
+        ((44.0321...,), (24.24402..., 67.4929403...), (0.0, 50.0000000..., 91.105940...))
 
         Another way to display option price
-        >>> print((o.pxLT(nsteps=365, keep_hist=True, payout_type='asset_or_nothing')))
-        41.71720414332934
+        >>> print((o.pxLT(nsteps=365, keep_hist=True, payout_type='asset-or-nothing')))#doctest: +ELLIPSIS
+        41.71720...
 
-        >>> print((o.px_spec.px, o.px_spec.method))  # alternative attribute access)
-        (41.71720414332934, 'LT')
+        >>> print((o.px_spec.px, o.px_spec.method))  #doctest: +ELLIPSIS
+        (41.7172..., 'LT')
 
         >>> print(Binary(clone=o, right='put', desc='call @41.74 put @8.254 DerivaGem').calc_px(method='LT',\
-        nsteps=365, payout_type='asset_or_nothing').px_spec.px) #change to a put option
-        8.282795856682807
+        nsteps=365, payout_type='asset-or-nothing').px_spec.px) #doctest: +ELLIPSIS
+        8.28279...
 
 
         Example of option price development (LT method) with increasing maturities
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
-        >>> O = Series([o.update(T=t).calc_px(method='LT', nsteps=365, payout_type="cash_or_nothing", \
+        >>> O = Series([o.update(T=t).calc_px(method='LT', nsteps=365, payout_type="cash-or-nothing", \
         Q=1000).px_spec.px for t in expiries], expiries)
         >>> O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
         """
-        self.px_spec = PriceSpec(method=method, sub_method=payout_type, nsteps=nsteps, npaths=npaths,
-                                 keep_hist=keep_hist, payout_type=payout_type, Q=Q)
-        return getattr(self, '_calc_' + method.upper())()
 
+        return super().calc_px(method=method, sub_method=payout_type, nsteps=nsteps, \
+                               npaths=npaths, keep_hist=keep_hist, payout_type=payout_type, Q=Q)
     def _calc_BS(self):
         """ Internal function for option valuation.
 
@@ -348,7 +352,7 @@ class Binary(OptionValuation):
         d2 = d1 - (self.ref.vol * math.sqrt(self.T))
 
         # Price the asset-or-nothing binary option
-        if payout_type == "asset_or_nothing":
+        if payout_type == "asset-or-nothing":
             # Calculate the discount
             discount = self.ref.S0 * math.exp(-self.ref.q * self.T)
 
@@ -357,7 +361,7 @@ class Binary(OptionValuation):
             px_put = discount * scipy.stats.norm.cdf(-d1)
 
         # Price the cash-or-nothing binary option
-        elif payout_type == "cash_or_nothing":
+        elif payout_type == "cash-or-nothing":
             # Calculate the discount
             discount = Q * math.exp(-self.rf_r * self.T)
 
@@ -404,7 +408,7 @@ class Binary(OptionValuation):
         _ = self.LT_specs(n)
 
         #Compute final nodes for asset_or_nothing payout type
-        if payout_type == 'asset_or_nothing':
+        if payout_type == 'asset-or-nothing':
             S = self.ref.S0 * _['d'] ** np.arange(n, -1, -1) * _['u'] ** np.arange(0, n + 1) #Termial asset price
             O = np.maximum(self.signCP * (S - self.K), 0)           #terminal option value
             for ind in range(0,len(O)):
@@ -435,7 +439,8 @@ class Binary(OptionValuation):
             out = O_tree[0][0]
         else:
             csl = np.insert(np.cumsum(np.log(np.arange(n) + 1)), 0, 0)
-            tmp = csl[n] - csl - csl[::-1] + np.log(_['p']) * np.arange(n + 1) + np.log(1 - _['p']) * np.arange(n + 1)[::-1]
+            tmp = csl[n] - csl - csl[::-1] + np.log(_['p']) * np.arange(n + 1) + \
+                  np.log(1 - _['p']) * np.arange(n + 1)[::-1]
             out = (_['df_T'] * sum(np.exp(tmp) * tuple(O)))
 
 
