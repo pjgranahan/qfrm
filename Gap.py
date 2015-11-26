@@ -287,18 +287,3 @@ class Gap(OptionValuation):
         """
 
         return self
-'''
-s = Stock(S0=50, vol=.2)
-o = Gap(ref=s, right='call', K=57, T=1, rf_r=.09)
-print(o.calc_px(K2=50, method='BS').px_spec)
-from pandas import Series
-expiries = range(1,11)
-O = Series([o.update(T=t).calc_px(K2=50, method='BS').px_spec.px for t in expiries], expiries)
-O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
-
-import matplotlib.pyplot as plt
-plt.show()
-'''
-if __name__=="__main__":
-    import doctest
-    doctest.testmod()
