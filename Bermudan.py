@@ -233,9 +233,9 @@ class Bermudan(OptionValuation):
             payout = max(self.signCP * (stock_price - self.K), 0)
             return payout
 
-        def generate_GBM_paths(npaths, tex, S0, vol, rf_r, T):
+        def generate_GBM_paths(npaths, tex, S0, vol, rf_r, q, T):
             """
-            Generates a list of npaths x tex path matrices.
+            Generates a matrix (list of lists) of shape (tex x npaths) paths.
 
             Parameters
             ----------
@@ -254,6 +254,8 @@ class Bermudan(OptionValuation):
                     Volatility.
             rf_r : float
                     Risk-free rate.
+            q : float
+                    Dividend yield rate.
             T : float
                     Maturity time.
 
@@ -264,7 +266,17 @@ class Bermudan(OptionValuation):
                     List of path matrices generated.
             """
 
-            paths = np.zeros((npaths, len(tex)))
+            # Create the zero matrix of paths
+            paths = np.zeros((len(tex), npaths))
+
+            # Seed the first row
+            paths[0] = S0 * np.ones(len(tex))
+
+            # Fill the matrix
+            for i in range(len(tex) - 1):
+                deltaT = tex[i+i] - tex[i]
+                paths[i+1] = paths[i] * np.exp((((rf_r - q) - ((vol**2) / 2)) * deltaT) +
+                                               (vol * np.random.randn(len(tex)) * np.sqrt(deltaT)))
 
             return paths
 
