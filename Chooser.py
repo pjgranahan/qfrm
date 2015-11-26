@@ -47,56 +47,42 @@ class Chooser(OptionValuation):
         Examples
         --------------------------------------
 
-
         BS Examples
         --------------------------------------
-        >>> s = Stock(S0=50, vol=0.2, q=0.05)
-        >>> o = Chooser(ref=s, right='put', K=50, T=1, rf_r=.1, desc= 'Exotic options paper page 297 Table 2 time 0.5')
-        >>> o.calc_px(tau=6/12, method='BS').px_spec.px
-        6.58789632353
-
         EXOTIC OPTIONS: A CHOOSER OPTION AND ITS PRICING by Raimonda Martinkkute-Kauliene (Dec 2012)
         https://www.dropbox.com/s/r9lvi0uzdehwlm4/101-330-1-PB%20%284%29.pdf?dl=0
+        >>> s = Stock(S0=50, vol=0.2, q=0.05)
+        >>> o = Chooser(ref=s, right='put', K=50, T=1, rf_r=.1, desc= 'Exotic options paper page 297 Table 2 time 0.5')
+        >>> o.pxBS(tau=6/12)
+        6.5878963235321955
 
         >>> s = Stock(S0=50, vol=0.2, q=0.05)
         >>> o = Chooser(ref=s, right='put', K=50, T=1, rf_r=.1, desc= 'Exotic options paper page 297 Table 2 time 1.00')
-        >>> o.calc_px(tau=12/12, method='BS').px_spec.px
-        7.62130227383
-
-        EXOTIC OPTIONS: A CHOOSER OPTION AND ITS PRICING by Raimonda Martinkkute-Kauliene (Dec 2012)
-        https://www.dropbox.com/s/r9lvi0uzdehwlm4/101-330-1-PB%20%284%29.pdf?dl=0
+        >>> o.pxBS(tau=12/12)
+        7.6213022738289808
 
         >>> s = Stock(S0=50, vol=0.25, q=0.08)
         >>> o = Chooser(ref=s, right='put', K=50, T=.5, rf_r=.08)
-        >>> o.calc_px(tau=3/12, method='BS').px_spec.px
-        5.77757834387
-
-        >>> s = Stock(S0=50, vol=0.2, q=0.02)
-        >>> o = Chooser(ref=s, right='call', K=50, T=9/12, rf_r=.06)
-        >>> o.calc_px(tau=3/12, method='BS').px_spec.px
-        5.42052870833
-
+        >>> o.pxBS(tau=3/12)
+        5.7775783438734258
 
         LT Examples
         ---------------------------------------------
         >>> s = Stock(S0=50, vol=0.2, q=0.05)
         >>> o = Chooser(ref=s, right='put', K=50, T=1, rf_r=.1, desc= 'Exotic options paper page 297 Table 2 time 0.5')
-        >>> o.calc_px(tau=3/12, method='LT', nsteps=2, keep_hist=True).px_spec.px
+        >>> o.pxLT(tau=3/12, nsteps=2)
         6.755605274510829
-
-        EXOTIC OPTIONS: A CHOOSER OPTION AND ITS PRICING by Raimonda Martinkkute-Kauliene (Dec 2012)
-        https://www.dropbox.com/s/r9lvi0uzdehwlm4/101-330-1-PB%20%284%29.pdf?dl=0
 
         >>> o.calc_px(tau=3/12, method='LT', nsteps=2, keep_hist=True).px_spec.ref_tree
         ((50.0,), (43.40617226972924, 57.595495508445445), (37.68191582218824, 49.99999999999999, 66.3448220572672))
 
-        >>> o.calc_px(tau=3/12, method='LT', nsteps=2, keep_hist=False)# doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        Chooser...px: 6.755605274510829...
+        >>> o.calc_px(tau=3/12, method='LT', nsteps=2, keep_hist=True).px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 6.755605275...
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
-        >>> o = Series([o.update(T=t).calc_px(tau=3/12, method='LT', nsteps=2, keep_hist=False).px_spec.px for t in expiries], expiries)
-        >>> o.plot(grid=1, title='Price vs expiry (in years)')
+        >>> o = Series([o.update(T=t).pxLT(tau=3/12, nsteps=2) for t in expiries], expiries)
+        >>> o.plot(grid=1, title='Price vs expiry (in years)')# doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
@@ -125,22 +111,10 @@ class Chooser(OptionValuation):
         """ Internal function for option valuation.
 
         Returns
-        -------
+        -------------------------------------------
         self: Chooser BS method
-        Please see the examples above
+
         .. section author:: Thawda Aung, Yen-fei Chen
-
-        References :
-        Hull, John C.,Options, Futures and Other Derivatives, 9ed, 2014. Prentice Hall. ISBN 978-0-13-345631-8.
-        http://www-2.rotman.utoronto.ca/~hull/ofod/index.html
-
-        Huang Espen G., Option Pricing Formulas, 2ed. http://down.cenet.org.cn/upfile/10/20083212958160.pdf
-
-        Wee, Lim Tiong, MFE5010 Exotic Options,Notes for Lecture 4 Chooser option.
-        http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L4chooser.pdf
-
-        Humphreys, Natalia A., ACTS 4302 Principles of Actuarial Models: Financial Economics. Lesson 14: All-or-nothing,
-         Gap, Exchange and Chooser Options.
 
         """
         from scipy.stats import norm
@@ -227,3 +201,7 @@ class Chooser(OptionValuation):
 
         """
         return self
+
+if __name__=="__main__":
+    import doctest
+    doctest.testmod()
