@@ -1,3 +1,4 @@
+import yaml
 import numbers
 import numpy as np
 
@@ -11,13 +12,20 @@ class Util():
     """
     @staticmethod
     def is_iterable(x):
-        """
-        Checks if x is iterable.
-        :param x: any object
-        :type x: object
-        :return: True if x is iterable, False otherwise
-        :rtype: bool
-        :Exmaple:
+        """ Checks if x is iterable.
+
+        Parameters
+        ----------
+        x : object
+            any object
+
+        Returns
+        -------
+        bool
+            True if x is iterable, False otherwise
+
+        Exmaples
+        --------
 
         >>> Util.is_iterable(1)
         False
@@ -36,39 +44,51 @@ class Util():
 
     @staticmethod
     def is_number(x):
-        """
-        Checks if x is numeric (float, int, complex, ...)
-        :param x: any object
-        :type x: object
-        :return:  True, if x is numeric; False otherwise.
-        :rtype: bool
-        ..seealso:: Stackoverflow: how-can-i-check-if-my-python-object-is-a-number
+        """ Checks if x is numeric (float, int, complex, ...)
+
+        Parameters
+        ----------
+        x : object
+            any object
+
+        Returns
+        -------
+        bool
+            True, if x is numeric; False otherwise.
+
         """
         return isinstance(x, numbers.Number)
 
     @staticmethod
     def are_numbers(x):
         """ Checks if x is an iterable of numbers.
-        :param x: any object
-        :type x: object
-        :return: True if x is iterable, False otherwise
-        :rtype: bool
 
-        :Example:
+        Parameters
+        ----------
+        x : object
+            any object (value, iterable,...) that need to be verified as being numberic or not
 
-        >>> Util.arenumbers(5)
+        Returns
+        -------
+        bool
+            True if x is iterable, False otherwise
+
+        Examples
+        --------
+
+        >>> Util.are_numbers(5)
         False
 
-        >>> Util.arenumbers([1,'blah',3.])
+        >>> Util.are_numbers([1,'blah',3.])
         False
 
-        >>> Util.arenumbers([1,'2',3.])
+        >>> Util.are_numbers([1,'2',3.])
         False
 
-        >>> Util.arenumbers((1, 2., 3. + 4j, 5.4321))
+        >>> Util.are_numbers((1, 2., 3. + 4j, 5.4321))
         True
 
-        >>> Util.arenumbers({1, 2., 3. + 4j, 5.4321})
+        >>> Util.are_numbers({1, 2., 3. + 4j, 5.4321})
         True
 
         """
@@ -81,49 +101,32 @@ class Util():
     def are_bins(x):
         return Util.are_non_negative(x) and Util.is_monotonic(x)
 
-    # @staticmethod
-    # def to_tuple(x):
-    #     """ Converts an iterable (of numbers) or a number to a tuple of floats.
-    #
-    #     :param x: any iterable object of numbers or a number
-    #     :type x:  numeric|iterable
-    #     :return:  tuple of floats
-    #     :rtype: tuple
-    #     """
-    #     assert Util.is_number(x) or Util.is_iterable(x), 'to_tuple() failed: input must be iterable or a number.'
-    #     return (float(x),) if Util.is_number(x) else tuple((float(y)) for y in x)
-
-    @staticmethod
-    def round_tuple(t, ndigits=5):
-        """ Rounds tuple of numbers to ndigits.
-        returns a tuple of rounded floats. Used for printing output.
-        :param t: tuple
-        :type t:
-        :param ndigits: number of decimal (incl. period) to keep
-        :type ndigits: int
-        :return: tuple of rounded numbers
-        :rtype: Tuple[float,...,float]
-        """
-        assert False, 'round_tuple() method is absolete. Use round()'
-        # return tuple(round(float(x), ndigits) for x in t)
-
     @staticmethod
     def cpn2cf(cpn=6, freq=2, ttm=2.1):
         """ Converts regular coupon payment specification to a series of cash flows indexed by time to cash flow (ttcf).
 
-        :param cpn:     annual coupon payment in $
-        :type cpn:      float|int
-        :param freq:    payment frequency, per anum
-        :type freq:     float|int
-        :param ttm:     time to maturity of a bond, in years
-        :type ttm:      float|int
-        :return:        dictionary of cash flows (tuple) and their respective times to cf (tuple)
-        :rtype:         dict('ttcf'=tuple, 'cf'=tuple)
-        .. seealso:: stackoverflow.com/questions/114214/class-method-differences-in-python-bound-unbound-and-static
-        :Example:
+        Parameters
+        ----------
+        cpn : float, int
+            annual coupon payment in $
+        freq : float, int
+            payment frequency, per anum
+        ttm : float, int
+            time to maturity of a bond, in years
+
+        Returns
+        -------
+        dict('ttcf'=tuple, 'cf'=tuple)
+            dictionary of cash flows (tuple) and their respective times to cf (tuple)
+
+
+        Examples
+        --------
 
         >>> # convert $6 semiannula (SA) coupon bond payments to indexed cash flows
-        >>> Util.cpn2cf(6,2,2.1)  # returns {'cf': (3.0, 3.0, 3.0, 3.0, 103.0),  'ttcf': (0.1, 0.6, 1.1, 1.6, 2.1)}
+        >>> Util.cpn2cf(6,2,2.1)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        {'cf': (3.0, 3.0, 3.0, 3.0, 103.0), 'ttcf': (0.1..., 0.6..., 1.1, 1.6, 2.1)}
+
         """
 
 
@@ -142,9 +145,15 @@ class Util():
         """ Attempts to simplify x to a tuple (if x is a more complex data type) or just singleton.
         Basically, demotes to a simpler object, if possible.
 
-        :param x:   any object
-        :type x:    any
-        :return:    original object or tuple or value of a singleton
+        Parameters
+        ----------
+        x : object
+            any object
+
+        Returns
+        -------
+        object
+            original object or tuple or value of a singleton
         """
 
         if Util.is_iterable(x):
@@ -175,49 +184,116 @@ class Util():
         return Util.are_same_sign(x, 1, True)
 
     @staticmethod
-    def round(x, prec=5, to_tuple=False):  #, to_float=False):
+    def round(x, prec=5, to_tuple=False):
         """ Recirsively rounds an iterable to the desired precision.
-        :param x: tuple
-        :type x: iterable
-        :param prec: number of decimal (incl. period) to keep
-        :type prec: int
-        :param to_tuple: indicates whether to keep original data type or convert output to tuple
-        :type to_tuple: bool
-        :return: tuple of rounded numbers
-        :rtype: Tuple[float,...,float]
-        :Example:
+
+        Parameters
+        ----------
+        x : iterable
+            iterable of numbers
+        prec : int
+            number of decimal (incl. period) to keep
+        to_tuple: bool
+            indicates whether to keep original data type or convert output to tuple
+
+        Returns
+        -------
+        Tuple[float,...,float]
+            tuple of rounded numbers
+
+        Examples
+        --------
 
         >>> x = (1, 1/3, 1/7,[1/11, 1/13, {1/19, 1/29}]);  import numpy as np; a = np.array(x)
         >>> Util.round(x)
+        (1, 0.33333, 0.14286, [0.09091, 0.07692, {0.03448, 0.05263}])
         >>> Util.round(x, to_tuple=True)
-        >>> Util.round(np.array(x))
-        >>> Util.round(np.array, to_tuple=True)
+        (1, 0.33333, 0.14286, (0.09091, 0.07692, (0.03448, 0.05263)))
 
-        .. seealso::
-            http://stackoverflow.com/questions/24642669/python-quickest-way-to-round-every-float-in-nested-list-of-tuples
         """
         if to_tuple: x = Util.to_tuple(x)
         try:
-            return round(x, prec) #if to_float else round(x, prec)
+            return round(x, prec)
         except TypeError:
             return type(x)(Util.round(y, prec) for y in x)
 
     @staticmethod
     def to_tuple(a, leaf_as_float=False):
-        """
-        Recursively converts a iterable (and arrays) to tuple.
-        :param a: variable to be converted to tuple
-        :type a:  iterable|array
-        :return:  tuple
-        :rtype:  tuple
-        :Example:
+        """ Recursively converts a iterable (and arrays) to tuple.
 
-        >>> import numpy as np;  np.array; x = (1, 1/3, 1/7,[1/11, 1/13, {1/19, 1/29}]); a = np.array(x)
-        >>> Util.to_tuple(x)
-        >>> Util.to_tuple(a)
+        Parameters
+        ----------
+        a : array, iterable
+            variable to be converted to tuple
 
-        .. seealso::
-            http://stackoverflow.com/questions/10016352/convert-numpy-array-to-tuple
+        Returns
+        -------
+        tuple
+
+        Examples
+        --------
+
+        >>> import numpy as np; x = (1, 1/3, 1/7,[1/11, 1/13, {1/19, 1/29}]); a = np.array(x)
+        >>> Util.to_tuple(x)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        (1, 0.333..., 0.142857142..., (0.0909...,  0.076923076...,  (0.034482758..., 0.052631578...)))
+        >>> Util.to_tuple(a)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        (1, 0.333..., 0.142857142..., (0.0909...,  0.076923076...,  (0.034482758..., 0.052631578...)))
+
+        Notes
+        --------
+        http://stackoverflow.com/questions/10016352/convert-numpy-array-to-tuple
         """
         try:  return tuple((Util.to_tuple(i)) for i in a)
         except TypeError: return float(a) if leaf_as_float else a
+
+
+class SpecPrinter:
+    """ Helper class for printing class's internal variables.
+
+    This is a base class that is inherited by any child class needs to display its specifications (class variables).
+
+    Examples
+    --------
+    >>> class A(SpecPrinter):
+    ...     def __init__(self):  self.a=[1,2,3]; self.b = {'a':1,'b':2.,'c':'3'}
+    >>> A()   # prints out structure of the object
+    Util.A
+    a:
+    - 1
+    - 2
+    - 3
+    b:
+      a: 1
+      b: 2.0
+      c: '3'
+    <BLANKLINE>
+    """
+
+    def full_spec(self, new_line=False):
+        """ Returns a formatted string containing all variables of this class (recursively)
+
+        new_line : bool
+            Whether include new line symbol '\n' or not
+
+        Returns
+        -------
+        str
+            Formatted string with option specifications
+
+        """
+        s = yaml.dump(self, default_flow_style=not new_line).replace('!!python/object:','').replace('!!python/tuple','')
+        s = s.replace('__main__.','').replace(type(self).__name__ + '.','').replace('null','-')
+        s = s.replace('__main__.','').replace('OptionValuation.','').replace('OptionSeries.','').replace('null','-')
+        if not new_line:
+            s = s.replace(',', ', ').replace('\n', ',').replace(': ', ':').replace('  ', ' ')
+
+        return s
+
+    def __repr__(self):
+        return self.full_spec(new_line=True)
+
+    def __str__(self):
+        return self.full_spec(new_line=True)
+
+
+

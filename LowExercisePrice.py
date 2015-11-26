@@ -30,18 +30,20 @@ class LowExercisePrice(OptionValuation):
 
         Examples
         --------
+        #From DeriGem. S0=5, K=0.01, vol=0.30, T=4, rf_r=0.1, Steps=4, BSM European Call
         >>> s = Stock(S0=5, vol=.30)
         >>> o = LowExercisePrice(ref=s,T=4, rf_r=.10)
-        >>> o.calc_px(method='BS',nsteps=4,keep_hist=False).px_spec.px # From DeriGem. S0=5, K=0.01, vol=0.30, T=4, rf_r=0.1, Steps=4, BSM European Call
+        >>> o.calc_px(method='BS',nsteps=4,keep_hist=False).px_spec.px
         4.993296799539643
+        >>>
 
         >>> s = Stock(S0=19.6, vol=.21)
         >>> o = LowExercisePrice(ref=s,T=5, rf_r=.05)
         >>> o.calc_px(method='LT',nsteps=4)
-        LowExercisePrice
+        LowExercisePrice.LowExercisePrice
         T: 5
         frf_r: 0
-        px_spec: qfrm.PriceSpec
+        px_spec: PriceSpec
           LT_specs:
             a: 1.0644944589178593
             d: 0.7907391503193345
@@ -55,22 +57,20 @@ class LowExercisePrice(OptionValuation):
           nsteps: 4
           px: 19.592211992169272
           sub_method: Binomial tree with the strike price is $0.01; Hull Ch.135
-        ref: qfrm.Stock
+        ref: Stock
           S0: 19.6
-          curr: null
-          desc: null
+          curr: -
+          desc: -
           q: 0
-          tkr: null
+          tkr: -
           vol: 0.21
         rf_r: 0.05
-        seed0: null
-
+        seed0: -
+        <BLANKLINE>
         >>> s = Stock(S0=19.6, vol=.30)
         >>> o = LowExercisePrice(ref=s,T=5, rf_r=.10)
         >>> o.calc_px(method='LT',nsteps=2,keep_hist=True).px_spec.ref_tree  # prints reference tree
-        ((19.600000000000005,),
-         (12.196974354006297, 31.496335800182806),
-         (7.59011139756568, 19.6, 50.613222899891674))
+        ((19.600000000000005,), (12.196974354006297, 31.496335800182806), (7.59011139756568, 19.6, 50.613222899891674))
 
         >>> s = Stock(S0=5, vol=.30)
         >>> o = LowExercisePrice(ref=s,T=2, rf_r=.10)

@@ -1,8 +1,6 @@
-from scipy import stats
-import warnings
 import numpy as np
-import math
 from OptionValuation import *
+import matplotlib.pyplot as plt
 
 class Shout(OptionValuation):
     """ Shout option class.
@@ -10,14 +8,7 @@ class Shout(OptionValuation):
     Inherits all methods and properties of OptionValuation class.
     """
 
-    def __init__(self,q=0.0,*args,**kwargs):
-
-
-        super().__init__(*args,**kwargs)
-        self.q = q
-
-
-    def calc_px(self, method='LT', nsteps=None, npaths=None, keep_hist=False):
+    def calc_px(self, method='LT', nsteps=None, npaths=None, keep_hist=False, seed=None):
         """ Wrapper function that calls appropriate valuation method.
 
         User passes parameters to calc_px, which saves them to local PriceSpec object
@@ -35,7 +26,8 @@ class Shout(OptionValuation):
                 MC, FD methods require number of simulation paths
         keep_hist : bool
                 If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
-
+        seed : int
+                Seed number for Monte Carlo simulation
 
         Returns
         -------
@@ -99,8 +91,6 @@ class Shout(OptionValuation):
         seed0: -
         <BLANKLINE>
 
-
-
         >>> from pandas import Series;  steps = range(1,11)
         >>> O = Series([o.calc_px(method='LT', nsteps=s).px_spec.px for s in steps], steps)
         >>> O.plot(grid=1, title='LT Price vs nsteps')
@@ -108,9 +98,21 @@ class Shout(OptionValuation):
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
-       """
+        >>> o.calc_px(method='MC', nsteps=1000, npaths=10000, keep_hist=True, seed=1212).px_spec.px
+        11.094278625427911
 
-        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
+        >>> s = Stock(S0=36, vol=.2)
+        >>> o = Shout(ref=s, right='call', K=40, T=1, rf_r=.2, desc='Example from http://core.ac.uk/download/pdf/1568393.pdf')
+        >>> o.calc_px(method='LT', nsteps=500, keep_hist=True).px_spec.px
+        5.108705783777672
+
+        >>> o.calc_px(method='MC', nsteps=500, npaths=10000, keep_hist=True, seed=1212).px_spec.px
+        5.6908446205510863
+
+       """
+        self.seed = seed
+        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
+        return getattr(self, '_calc_' + method.upper())()
 
 
     def _calc_LT(self):
@@ -133,7 +135,8 @@ class Shout(OptionValuation):
 
 
         """
-        from numpy import arange, maximum, log, exp, sqrt
+        from numpy import arange, maximum, sqrt, exp
+        from scipy.stats import norm
 
         keep_hist = getattr(self.px_spec, 'keep_hist', False)
         n = getattr(self.px_spec, 'nsteps', 3)
@@ -148,14 +151,14 @@ class Shout(OptionValuation):
         for i in range(n, 0, -1):
             left = n - i + 1
             tleft = left * _['dt']
-            d1 = (0 + (self.rf_r + self.ref.vol ** 2 / 2) * tleft) / (self.ref.vol * math.sqrt(tleft))
-            d2 = d1 - self.ref.vol * math.sqrt(tleft)
+            d1 = (0 + (self.rf_r + self.ref.vol ** 2 / 2) * tleft) / (self.ref.vol * sqrt(tleft))
+            d2 = d1 - self.ref.vol * sqrt(tleft)
 
             O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
             S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
-            Shout = self.signCP * S / math.exp(self.ref.q * tleft) * stats.norm.cdf(self.signCP * d1) - \
-                    self.signCP * S / math.exp(self.rf_r * tleft) * stats.norm.cdf(self.signCP * d2) + \
-                    self.signCP * (S - self.K) / math.exp(self.rf_r * tleft)
+            Shout = self.signCP * S / exp(self.ref.q * tleft) * norm.cdf(self.signCP * d1) - \
+                    self.signCP * S / exp(self.rf_r * tleft) * norm.cdf(self.signCP * d2) + \
+                    self.signCP * (S - self.K) / exp(self.rf_r * tleft)
 
             Payout = maximum(Shout, 0)
             O = maximum(O, Payout)
@@ -196,12 +199,45 @@ class Shout(OptionValuation):
         -------
         self: Shout
 
-        .. sectionauthor::
+        .. sectionauthor:: Yen-fei Chen
 
         Note
         ----
+        [1] eprints.maths.ox.ac.uk/933/1/lisa_yudaken.pdf
+        [2] Hull, J.C., Options, Futures and Other Derivatives, 9ed, 2014. Prentice Hall, p609.
 
         """
+        from numpy import exp, random, zeros, sqrt, maximum, polyfit, polyval, array, where, mean, repeat
+        from scipy.stats import norm
+
+        n_steps = getattr(self.px_spec, 'nsteps', 3)
+        n_paths = getattr(self.px_spec, 'npaths', 3)
+        _ = self
+
+        dt = _.T / n_steps
+        df = exp(-_.rf_r * dt)
+        random.seed(_.seed)
+
+        h = zeros((n_steps+1, n_paths) ,'d') # option value matrix
+        S = zeros((n_steps+1, n_paths) ,'d') # stock price matrix
+        S[0,:] = _.ref.S0 # initial value
+
+        # stock price paths
+        for t in range(1,n_steps+1):
+            ran = norm.rvs(loc=0, scale=1, size=n_paths) # pseudo - random numbers
+            S[t,:] = S[t-1,:] * exp((_.rf_r-_.ref.vol**2/2)*dt + _.ref.vol*ran*sqrt(dt))
+
+        h = maximum(_.signCP*(S-_.K), 0) # payoff when not shout
+        final_payoff = repeat(S[-1,:], n_steps+1, axis=0).reshape(n_paths,n_steps+1)
+        #print(final_payoff.transpose()[0:10,0:10])
+        V = maximum(_.signCP*(final_payoff.transpose()-S), 0) + (S-_.K) # payoff when shout
+
+        for t in range (n_steps-1,-1,-1): # valuation process ia similar to American option
+            rg = polyfit(S[t,:], df*array(h[t+1,:]), 3) # regression at time t
+            C= polyval(rg, S[t,:]) # continuation values
+            h[t,:]= where(V[t,:]>C, V[t,:], h[t+1,:]*df) # exercise decision: shout or not shout
+
+        self.px_spec.add(px=mean(h[0,:]), sub_method='Hull p.609')
         return self
 
     def _calc_FD(self):
@@ -219,3 +255,4 @@ class Shout(OptionValuation):
         """
 
         return self
+
