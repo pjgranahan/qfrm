@@ -20,7 +20,7 @@ class Binary(OptionValuation):
         but a wrapper function calc_px().
 
         Parameters
-        ----------
+        ---------------
         method : str
                 Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
         nsteps : int
@@ -35,13 +35,13 @@ class Binary(OptionValuation):
                 Required if payout_type is "cash_or_nothing". Used in pricing a cash or nothing binary option.
 
         Returns
-        -------
+        ------------
         self : Binary
 
         .. sectionauthor:: Patrick Granahan, Tianyi Yao
 
         Notes
-        -----
+        ----------
         In finance, a binary option is a type of option in which the payoff can take only two possible outcomes,
         either some fixed monetary amount (or a precise predefined quantity or units of some asset) or nothing at all
         (in contrast to ordinary financial options that typically have a continuous spectrum of payoff)...
@@ -52,11 +52,11 @@ class Binary(OptionValuation):
         And if the stock is trading at $100, the money is returned to the purchaser. [1]
 
         References
-        ----------
+        -------------
         [1] https://en.wikipedia.org/wiki/Binary_option
 
         Examples
-        -------
+        ------------
 
         Use the Black-Scholes model to price an asset-or-nothing binary option. Verifiable using DerivaGem.
 
@@ -131,7 +131,7 @@ class Binary(OptionValuation):
 
 
         Examples using _calc_LT()
-        -------
+        -----------
 
         Notes
         -------
@@ -168,7 +168,7 @@ class Binary(OptionValuation):
         Another way to view the specification of the binomial tree
 
         >>> print(o.calc_px(method='LT', nsteps=365, payout_type="cash_or_nothing", Q=1000))  #option specs
-        Binary.Binary
+        Binary
         K: 40
         T: 2
         _right: call
@@ -224,7 +224,7 @@ class Binary(OptionValuation):
         nsteps=365, payout_type='cash_or_nothing',Q=1000).px_spec.px) #change to a put option
         264.40149319130967
 
-        -------------------------------------
+
         Use a binomial tree model to price an asset-or-nothing binary option
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05, desc='call @41.74 put @8.254 DerivaGem')
@@ -253,7 +253,7 @@ class Binary(OptionValuation):
         Another way to view the specification of the binomial tree
 
         >>> print(o.calc_px(method='LT', nsteps=365, payout_type="asset_or_nothing"))  #option specs
-        Binary.Binary
+        Binary
         K: 40
         T: 2
         _right: call
@@ -328,7 +328,7 @@ class Binary(OptionValuation):
         """ Internal function for option valuation.
 
         Returns
-        -------
+        ----------
         self: Binary
 
         .. sectionauthor:: Patrick Granahan
@@ -381,7 +381,7 @@ class Binary(OptionValuation):
         """ Internal function for option valuation.
 
         Returns
-        -------
+        ---------
         self: Binary
 
         .. sectionauthor:: Tianyi Yao
