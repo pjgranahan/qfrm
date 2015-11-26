@@ -19,7 +19,7 @@ class ForwardStart(OptionValuation):
         but a wrapper function calc_px().
 
         Parameters
-        ----------
+        -------------
         method : str
                 Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
         nsteps : int
@@ -28,14 +28,14 @@ class ForwardStart(OptionValuation):
                 MC, FD methods require number of simulation paths
         keep_hist : bool
                 If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
-        T1 : float
+        T_s : float
              Required. Indicates the time that the option starts.
         Returns
-        -------
+        ----------
         self : ForwardStart
 
         Notes
-        -----
+        -------
         [1] https://en.wikipedia.org/wiki/Forward_start_option  -- WikiPedia: Forward start option
         [2] http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf -- How to pricing forward start opions, resource for Example 1
         [3] http://www.globalriskguard.com/resources/deriv/fwd_4.pdf -- How to pricing forward start opions, resource for Example 2
@@ -44,7 +44,7 @@ class ForwardStart(OptionValuation):
 
 
         Examples
-        --------
+        -----------
         #http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
         >>> s = Stock(S0=50, vol=.15,q=0.05)
         >>> ForwardStart(ref=s, right='call', T=0.5, rf_r=.1).calc_px(T_s=0.5) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
@@ -114,7 +114,7 @@ class ForwardStart(OptionValuation):
         """ Internal function for option valuation.
 
         Returns
-        -------
+        ---------
         self: ForwardStart
 
         .. sectionauthor:: Runmin Zhang
@@ -178,7 +178,7 @@ class ForwardStart(OptionValuation):
         """ Internal function for option valuation.
 
         Returns
-        -------
+        ---------
         self: ForwardStart
 
         .. sectionauthor::
@@ -191,32 +191,34 @@ class ForwardStart(OptionValuation):
         """ Internal function for option valuation.
 
         Returns
-        -------
+        ---------
         self: ForwardStart
 
-        .. sectionauthor::
+        .. sectionauthor:: Tianyi Yao
 
         Note
         ----
+        [1] http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
 
         """
 
+        #extract MC parameters
         n_steps = getattr(self.px_spec, 'nsteps', 3)
         n_paths = getattr(self.px_spec, 'npaths', 3)
         _ = self
 
 
-        #Make sure no strike price is specified as the strike is unknown at the start of the option
+        #Make sure strike price is set to the expected underlying price at T_S
 
-        _.K = _.ref.S0*np.exp((_.rf_r-_.ref.q)*_.T_s)
+        _.K = _.ref.S0*np.exp((_.rf_r-_.ref.q)*_.px_spec.T_s)
 
 
         dt = _.T / n_steps
-        df = exp(-_.rf_r * dt)
+        df = np.exp(-_.rf_r * dt)
         np.random.seed(1)
         #initialize the price array
         S=np.zeros((n_steps+1,n_paths),'d')
-        S[0,:]=_.ref.S0*np.exp((_.rf_r-_.ref.q)*_.T_s)
+        S[0,:]=_.ref.S0*np.exp((_.rf_r-_.ref.q)*_.px_spec.T_s)
 
         for t in range(1,n_steps+1):
 
@@ -229,7 +231,7 @@ class ForwardStart(OptionValuation):
         final=np.maximum(_.signCP*(S[-1]-_.K),0)
 
         #discount the expected payoff at maturity to present
-        v0 = (np.exp(-_.rf_r*(_.T+_.T_s))*sum(final))/n_paths
+        v0 = (np.exp(-_.rf_r*(_.T+_.px_spec.T_s))*sum(final))/n_paths
 
         self.px_spec.add(px=float(v0), sub_method=None)
 
@@ -239,7 +241,7 @@ class ForwardStart(OptionValuation):
         """ Internal function for option valuation.
 
         Returns
-        -------
+        ---------
         self: ForwardStart
 
         .. sectionauthor::
@@ -252,7 +254,9 @@ class ForwardStart(OptionValuation):
         return self
 
 s = Stock(S0=50, vol=.15,q=0.05)
-o=ForwardStart(ref=s, T_s=0.5, K=None, right='call', T=0.5, rf_r=.1).calc_px(method='MC',nsteps=365,npaths=1000000)
+o=ForwardStart(ref=s, K=None, right='call', T=0.5, rf_r=.1, \
+               desc='example from page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf'\
+               ).calc_px(method='MC',nsteps=365,npaths=10000,T_s=0.5)
 print(o.px_spec.px)
 
 
