@@ -1,6 +1,7 @@
 from OptionValuation import *
-from scipy.stats import norm
-from math import sqrt, exp, log
+from scipy.stats import *
+from math import *
+
 class ForwardStart(OptionValuation):
     """ ForwardStart option class
 
