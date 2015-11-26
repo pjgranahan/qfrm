@@ -229,7 +229,6 @@ class Shout(OptionValuation):
 
         h = maximum(_.signCP*(S-_.K), 0) # payoff when not shout
         final_payoff = repeat(S[-1,:], n_steps+1, axis=0).reshape(n_paths,n_steps+1)
-        #print(final_payoff.transpose()[0:10,0:10])
         V = maximum(_.signCP*(final_payoff.transpose()-S), 0) + (S-_.K) # payoff when shout
 
         for t in range (n_steps-1,-1,-1): # valuation process ia similar to American option
@@ -237,7 +236,7 @@ class Shout(OptionValuation):
             C= polyval(rg, S[t,:]) # continuation values
             h[t,:]= where(V[t,:]>C, V[t,:], h[t+1,:]*df) # exercise decision: shout or not shout
 
-        self.px_spec.add(px=mean(h[0,:]), sub_method='Hull p.609')
+        self.px_spec.add(px=float(mean(h[0,:])), sub_method='Hull p.609')
         return self
 
     def _calc_FD(self):
