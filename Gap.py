@@ -83,12 +83,25 @@ class Gap(OptionValuation):
         >>> o.calc_px(K2=50, method='BS').px_spec.px
         2.266910325361735
 
-        >>> s = Stock(S0=50, vol=.2)
-        >>> o = Gap(ref=s, right='put', K=57, T=1, rf_r=.09)
-        >>> o.calc_px(K2=50, method='BS').px_spec.px
-        4.360987885821741
+        >>> o.calc_px(K2=50, method='BS').px_spec
+        PriceSpec
+        d1: 0.5499999999999999
+        d2: 0.3499999999999999
+        keep_hist: false
+        method: BS
+        px: 2.266910325361735
+        px_call: 2.266910325361735
+        px_put: 4.360987885821741
+        sub_method: standard; Hull p.335
+        <BLANKLINE>
 
-
+        >>> from pandas import Series
+        >>> expiries = range(1,11)
+        >>> O = Series([o.update(T=t).calc_px(K2=50, method='BS').px_spec.px for t in expiries], expiries)
+        >>> O.plot(grid=1, title='Price vs expiry (in years)')
+        >>> import matplotlib.pyplot as plt
+        >>> plt.show()
+        <matplotlib.axes._subplots.AxesSubplot object at ...>
 
         LT Examples..
 
@@ -97,18 +110,18 @@ class Gap(OptionValuation):
         >>> s = Stock(S0=500000, vol=.2,  q = 0)
         >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, on = (90000,)*23, desc = 'HULL p. 601 Exp 26.1')
         >>> o.calc_px(K2=350000, nsteps = 22, method='LT').px_spec.px
-        1895.80129679
+        1895.8012967929049
 
 
         >>> s = Stock(S0=50, vol=.2,  q = 0)
         >>> o = Gap(ref=s, right='call', K=57, T=1, rf_r=.09, on = (90000,)*23)
         >>> o.calc_px(K2=50, nsteps = 22, method='LT').px_spec.px
-        2.27490242761
+        2.2749024276146068
 
         >>> s = Stock(S0=50, vol=.2,  q = 0)
         >>> o = Gap(ref=s, right='put', K=57, T=1, rf_r=.09, on = (90000,)*23)
         >>> o.calc_px(K2=50, nsteps = 22, method='LT').px_spec.px
-        4.36897999796
+        4.3689799979566706
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
@@ -197,9 +210,9 @@ class Gap(OptionValuation):
         4.36897999796
 
 
-        >>>s = Stock(S0=500000, vol=.2)
-        >>>o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05)
-        >>>print(o.calc_px(K2=350000, method='LT').px_spec.px)
+        >>> s = Stock(S0=500000, vol=.2)
+        >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05)
+        >>> print(o.calc_px(K2=350000, method='LT').px_spec.px)
         """
         from scipy.stats import norm
         from math import sqrt, exp , log
@@ -274,3 +287,18 @@ class Gap(OptionValuation):
         """
 
         return self
+'''
+s = Stock(S0=50, vol=.2)
+o = Gap(ref=s, right='call', K=57, T=1, rf_r=.09)
+print(o.calc_px(K2=50, method='BS').px_spec)
+from pandas import Series
+expiries = range(1,11)
+O = Series([o.update(T=t).calc_px(K2=50, method='BS').px_spec.px for t in expiries], expiries)
+O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
+
+import matplotlib.pyplot as plt
+plt.show()
+'''
+if __name__=="__main__":
+    import doctest
+    doctest.testmod()
