@@ -46,7 +46,7 @@ class European(OptionValuation):
         >>> o = European(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @0.81, put @4.76, Hull p.339')
         >>> o.calc_px(method='BS').px_spec   # save interim results to self.px_spec. Equivalent to repr(o)
         ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PriceSpec...px: 0.808599372...
+        PriceSpec...px: 0.808599373...
 
         >>> (o.px_spec.px, o.px_spec.d1, o.px_spec.d2, o.px_spec.method)  # alternative attribute access
         (0.8085993729000922, 0.7692626281060315, 0.627841271868722, 'BS')
@@ -74,7 +74,7 @@ class European(OptionValuation):
         ((53.39471637496134,), (5.062315192620067, 100.66143225703827), (0.0, 10.0, 189.3362341097378))
 
         >>> o.calc_px(method='LT', nsteps=2)   # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        European...px: 53.39471637496135...
+        European...px: 53.394716375...
 
         """
 
