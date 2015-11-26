@@ -230,6 +230,7 @@ class Lookback(OptionValuation):
 
         Note
         ----
+        Hull Book p.607
         Formular: https://en.wikipedia.org/wiki/Lookback_option
 
 
