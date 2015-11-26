@@ -140,6 +140,7 @@ class Binary(OptionValuation):
 
         DerivaGem software, Binary option (both cash_or_nothing and asset_or_nothing)
 
+        Please note that the following LT examples will only generate results that matches the
 
         Use a binomial tree model to price a cash-or-nothing binary option
         >>> s = Stock(S0=50, vol=.3)

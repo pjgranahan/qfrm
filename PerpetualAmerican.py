@@ -156,7 +156,7 @@ class PerpetualAmerican(OptionValuation):
         >>> plt.show()
 
         """
-        
+
         return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
 
 
