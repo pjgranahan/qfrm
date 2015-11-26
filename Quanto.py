@@ -1,8 +1,8 @@
 from OptionValuation import OptionValuation, PriceSpec, Stock
 from American import American
-from math import sqrt
-from numpy import cumsum, maximum, where, polyval, polyfit, exp, mean, copy
-from numpy.random import normal, seed
+from math import *
+from numpy import *
+from numpy.random import *
 
 
 class Quanto(OptionValuation):
