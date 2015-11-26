@@ -315,7 +315,7 @@ class Bermudan(OptionValuation):
             B_psi_psi = np.zeros((R, R))
 
             # B_V_psi is a R * npaths matrix
-            B_V_psi = np.zeros((R, npaths))
+            B_V_psi = np.zeros((R, 1))
 
             # Step backwards through the exercise dates
             for exercise_date in reversed(self.tex):
@@ -323,18 +323,18 @@ class Bermudan(OptionValuation):
                 # Fill B_psi_psi
                 for i in range(R):
                     for s in range(R):
-                        laguerre_list_1 = [Laguerre(i, paths[exercise_date][path]) for path in npaths]
-                        laguerre_list_2 = [Laguerre(s, paths[exercise_date][path]) for path in npaths]
-                        B_psi_psi[i[s]] = np.average(np.multiply(laguerre_list_1, laguerre_list_2))
+                        laguerre_list_1 = [Laguerre(i, paths[exercise_date][path]) for path in range(npaths)]
+                        laguerre_list_2 = [Laguerre(s, paths[exercise_date][path]) for path in range(npaths)]
+                        B_psi_psi[i][s] = np.average(np.multiply(laguerre_list_1, laguerre_list_2))
 
                 # Fill B_V_psi
                 for i in range(R):
-                    prices = [payout(paths[exercise_date][path]) for path in npaths]
-                    laguerre_list = [Laguerre(i, paths[exercise_date][path]) for path in npaths]
+                    prices = [payout(paths[exercise_date][path]) for path in range(npaths)]
+                    laguerre_list = [Laguerre(i, paths[exercise_date][path]) for path in range(npaths)]
                     B_V_psi[i] = np.average(np.multiply(prices, laguerre_list))
 
                 # Fill betas
-                betas[exercise_date] = np.inv(B_psi_psi) * np.transpose(B_V_psi)
+                betas[exercise_date] = np.dot(np.linalg.inv(B_psi_psi), np.transpose(B_V_psi))
 
                 # Discount betas
                 betas[exercise_date] *= np.exp(-((self.rf_r - self.ref.q) * (self.T * exercise_date / self.tex[-1])))
