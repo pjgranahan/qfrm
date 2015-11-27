@@ -228,7 +228,7 @@ class Bermudan(OptionValuation):
 
             Returns
             -------
-            payout : ndarray
+            payout : numpy.matrix
                     The vector of payouts.
             """
             payout = np.maximum(self.signCP * (stock_price - self.K), 0)
@@ -240,8 +240,8 @@ class Bermudan(OptionValuation):
 
             Returns
             -------
-            paths : list
-                    List of paths generated.
+            paths : numpy.matrix
+                    Matrix of paths generated.
             """
             # Create the zero matrix of paths
             paths = np.zeros((len(self.tex), npaths))
@@ -255,7 +255,7 @@ class Bermudan(OptionValuation):
                 paths[i+1] = paths[i] * np.exp((((self.rf_r - self.ref.q) - ((self.ref.vol**2) / 2)) * deltaT) +
                                                (self.ref.vol * np.random.randn(npaths) * np.sqrt(deltaT)))
 
-            return paths
+            return np.matrix(paths)
 
         def Laguerre(R, x):
             """
@@ -279,6 +279,9 @@ class Bermudan(OptionValuation):
             phi : numpy.matrix
                     A vector of solutions.
             """
+            # Convert x to an ndarray, so that this method is readable
+            x = np.asarray(x)
+
             if R == 0:
                 phi = 1
             elif R == 1:
@@ -299,6 +302,7 @@ class Bermudan(OptionValuation):
 
             # Weight s according to the Longstaff-Schwartz algorithm
             phi *= np.exp(-0.5 * x)
+            # phi = np.multiply(phi, np.exp(np.multiply(-0.5, x)))
 
             return np.matrix(phi)
 
@@ -333,7 +337,7 @@ class Bermudan(OptionValuation):
             # Initialize laguerre_matrix as an empty matrix (dimensions npaths * R)
             laguerre_matrix = np.matrix(np.zeros((npaths, R)))
 
-            prices = payout(paths[self.tex[-1], :])
+            prices = payout(paths[self.tex[-1], :].getH())
 
             # Step backwards through the exercise dates
             # (this reverse enumeration drawn from http://galvanist.com/post/53478841501/python-reverse-enumerate)
@@ -343,18 +347,13 @@ class Bermudan(OptionValuation):
                 # Fill the laguerre_matrix
                 for i in range(R):
                     # Select the laguerre solutions as a column
-                    # laguerre_column = np.transpose(Laguerre(i, np.transpose(paths[exercise_date, :])))
-                    laguerre_column = Laguerre(i, np.transpose(paths[exercise_date, :]))
-                    # print(laguerre_column)
-                    # print(laguerre_matrix)
-                    # print(laguerre_matrix.shape, laguerre_column.shape)
-                    # import sys
-                    # sys.stdout.flush()
-                    laguerre_matrix[:, i] = laguerre_column.getH()
+                    laguerre_column = Laguerre(i, paths[exercise_date, :].getH())
+                    laguerre_matrix[:, i] = laguerre_column
 
                 B_phi_phi = laguerre_matrix.getH() * laguerre_matrix
                 B_prices_phi = laguerre_matrix.getH() * prices
-                betas[index] = np.divide(B_phi_phi, B_prices_phi)
+                betas[index] = np.linalg.solve(B_phi_phi, B_prices_phi)
+                # betas[index] = B_phi_phi / B_prices_phi
 
             # # Step backwards through the exercise dates
             # for exercise_date in reversed(self.tex):
