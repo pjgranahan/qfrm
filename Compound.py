@@ -140,7 +140,7 @@ class Compound(OptionValuation):
         vol = self.o.ref.vol
         Smax = 2*self.o.ref.S0
         r = self.o.rf_r
-        q = 0
+        q = .0
         dt = T/(N+0.0)
         dS = Smax/(M+0.0)
         N = int(T/dt)
@@ -155,19 +155,34 @@ class Compound(OptionValuation):
         def c(j):
             return .5*dt*((vol**2)*(j**2)+(r-q)*j)
 
-        temp = self.o
+        #print(self.o)
+        #print(self.o.calc_px(method='LT',nsteps=20).px_spec.px)
+
         self.o.T = T_left
+        self.o.ref.S0 = Smax
+        #print(self.o.T)
+        Smax_price = self.o.calc_px(method='LT',nsteps = 30).px_spec.px
+        #print(Smax)
+        #print(Smax_price)
+        self.o.ref.S0 = 0
+        Smin_price = self.o.calc_px(method='LT',nsteps = 30).px_spec.px
 
         # replace with LT Price for each one
         for i in range(0,M+1):
             self.o.ref.S0 = dS*i
-            x[N,i] = np.maximum(signCP*(self.o.calc_px(method='LT',nsteps = 20).px_spec.px-K),0)
+            x[N,i] = np.maximum(signCP*(self.o.calc_px(method='LT',nsteps = 30).px_spec.px-K),0)
             #print(x[N,i])
 
         #x[N,:] = np.matrix(np.maximum(signCP*(np.linspace(dS*M,0,num=M+1,endpoint=True) - K),0) ).\
             #transpose().transpose()
 
-        x[:,0] = np.matrix(list(map(lambda i: (np.maximum(signCP*(Smax - K*np.exp(-r*(N-i)*dt)),0)), range(0,N+1)))).transpose()
+        # replace with LT price for each one
+        if signCP == 1:
+            x[:,0] = np.matrix(list(map(lambda i: (np.maximum(signCP*(Smax_price - K),0)*np.exp(-r*(N-i)*dt)), \
+                                        range(0,N+1)))).transpose()
+        else:
+            x[:,M] = np.matrix(list(map(lambda i: (np.maximum(signCP*(Smin_price - K),0)*np.exp(-r*(N-i)*dt)), \
+                                        range(0,N+1)))).transpose()
 
         for i in np.arange(N-1,-1,-1):
             for k in range(1,M):
@@ -179,7 +194,7 @@ class Compound(OptionValuation):
         print(x[0,M-self.o.ref.S0/dS])
         return self
 
-s = Stock(S0=90, vol=.12, q=.04)
-o = European(ref=s, right='call', K=80, T=.5, rf_r=.05, desc='7.42840, Hull p.288')
-o2 = Compound(right='call',T=.25, K = 20)
-o2.calc_px(method='FD',option=o,npaths=100,nsteps = 10000)
+s = Stock(S0=55., vol=.40, q=.00)
+o = European(ref=s, right='put', K=50., T=12./12., rf_r=.1, desc='7.42840, Hull p.288')
+o2 = Compound(right='call',T=5./12., K = 5.)
+o2.calc_px(method='FD',option=o,npaths=100,nsteps = 700)
