@@ -15,9 +15,9 @@ class European(OptionValuation):
         """ Wrapper function that calls appropriate valuation method.
 
         User passes parameters to calc_px, which saves them to local PriceSpec object
-        and calls specific pricing function (_calc_BS,...).
+        and calls specific pricing function (``_calc_BS``,...).
         This makes significantly less docstrings to write, since user is not interfacing pricing functions,
-        but a wrapper function calc_px().
+        but a wrapper function ``calc_px()``.
 
         Parameters
         ----------
@@ -32,15 +32,11 @@ class European(OptionValuation):
 
         Returns
         -------
-        self : European
-
-        .. sectionauthor:: Oleg Melnikov
-
-        Notes
-        -----
+        European
+            Returned object contains specifications and calculated price in embedded PriceSpec object.
 
         Examples
-        -------
+        --------
 
         >>> s = Stock(S0=42, vol=.20)
         >>> o = European(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @0.81, put @4.76, Hull p.339')
@@ -76,6 +72,9 @@ class European(OptionValuation):
         >>> o.calc_px(method='LT', nsteps=2)   # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         European...px: 53.394716375...
 
+
+        :Authors:
+            Oleg Melnikov <xisreal@gmail.com>
         """
 
         return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
@@ -83,12 +82,10 @@ class European(OptionValuation):
     def _calc_BS(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: European
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor:: Oleg Melnikov
-
+        :Authors:
+            Oleg Melnikov <xisreal@gmail.com>
         """
 
         _ = self
@@ -111,15 +108,10 @@ class European(OptionValuation):
     def _calc_LT(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: European
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor:: Oleg Melnikov
-
-        .. note::
-        Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
-
+        :Authors:
+            Oleg Melnikov <xisreal@gmail.com>
         """
 
         n = getattr(self.px_spec, 'nsteps', 3)
@@ -155,27 +147,20 @@ class European(OptionValuation):
     def _calc_MC(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: European
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor::
-
-        Notes
-        -----
-        Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
-
+        :Authors:
+            Oleg Melnikov <xisreal@gmail.com>
         """
         return self
 
     def _calc_FD(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: European
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor::
-
+        :Authors:
+            Oleg Melnikov <xisreal@gmail.com>
         """
         return self
+
