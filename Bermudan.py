@@ -59,6 +59,7 @@ class Bermudan(OptionValuation):
         References
         ----------
         [1] http://eprints.maths.ox.ac.uk/789/1/Thom.pdf
+        [2] http://eprints.maths.ox.ac.uk/934/1/longyun_chen.pdf
 
         Examples
         --------
@@ -222,14 +223,15 @@ class Bermudan(OptionValuation):
             The payout of a Bermudan option given a stock_price.
             Parameters
             ----------
-            stock_price
+            stock_price : list
+                A vector of stock prices
 
             Returns
             -------
-            payout : float
-                    The payout.
+            payout : ndarray
+                    The vector of payouts.
             """
-            payout = max(self.signCP * (stock_price - self.K), 0)
+            payout = np.maximum(self.signCP * (stock_price - self.K), 0)
             return payout
 
         def generate_GBM_paths():
@@ -257,7 +259,7 @@ class Bermudan(OptionValuation):
 
         def Laguerre(R, x):
             """
-            Generates the weighted Laguerre polynomial solution.
+            Generates the weighted Laguerre polynomial [1] solution.
             Could be made more general by expanding the scope of R, but at potentially reduced speeds.
 
             Parameters
@@ -265,35 +267,40 @@ class Bermudan(OptionValuation):
             R : int
                     The R-th element in the Laguerre polynomial sequence
                     Must be between 0 and 6.
-            x : float
+            x : list
+                A vector of values to solve for.
+
+            References
+            ----------
+            [1] https://en.wikipedia.org/wiki/Laguerre_polynomials
 
             Returns
             -------
-            s : float
-                    The solution.
+            phi : numpy.matrix
+                    A vector of solutions.
             """
             if R == 0:
-                s = 1
+                phi = 1
             elif R == 1:
-                s = -x + 1
+                phi = -x + 1
             elif R == 2:
-                s = 1/2 * (x**2 -4*x + 2)
+                phi = 1/2 * (x**2 -4*x + 2)
             elif R == 3:
-                s = 1/6 * (-x**3 + 9*x**2 - 18*x + 6)
+                phi = 1/6 * (-x**3 + 9*x**2 - 18*x + 6)
             elif R == 4:
-                s = 1/24 * (x**4 - 16*x**3 + 72*x**2 - 96*x + 24)
+                phi = 1/24 * (x**4 - 16*x**3 + 72*x**2 - 96*x + 24)
             elif R == 5:
-                s = 1/120 * (-x**5 + 25*x**4 - 200*x**3 + 600*x**2 - 600*x + 120)
+                phi = 1/120 * (-x**5 + 25*x**4 - 200*x**3 + 600*x**2 - 600*x + 120)
             elif R == 6:
-                s = 1/720 * (x**6 - 36*x**5 + 450*x**4 - 2400*x**3 + 5400*x**2 - 4320*x + 720)
+                phi = 1/720 * (x**6 - 36*x**5 + 450*x**4 - 2400*x**3 + 5400*x**2 - 4320*x + 720)
             else:
-                s = 0
-                raise "R is out of range."
+                phi = 0
+                raise Exception("R is out of range.")
 
             # Weight s according to the Longstaff-Schwartz algorithm
-            s *= np.exp(-0.5 * x)
+            phi *= np.exp(-0.5 * x)
 
-            return s
+            return np.matrix(phi)
 
         def betas(paths):
             """
@@ -309,35 +316,69 @@ class Bermudan(OptionValuation):
                     A tex * R matrix (list of lists) holding the betas.
             """
             # betas is a tex * R matrix
-            betas = np.zeros((len(self.tex), R))
+            # betas = np.zeros((len(self.tex), R))
+            betas = np.matrix(np.zeros((len(self.tex), R)))
 
-            # B_psi_psi is a square matrix
-            B_psi_psi = np.zeros((R, R))
+            # B_psi_psi is a square R * R matrix
+            # B_psi_psi = np.zeros((R, R))
+            # Initialize B_phi_phi as an empty square matrix (dimensions R * R)
+            B_phi_phi = np.matrix(np.zeros((R, R)))
 
-            # B_V_psi is a R * npaths matrix
-            B_V_psi = np.zeros((R, 1))
+            # B_V_psi is a R * 1 row vector
+            # B_V_psi = np.zeros((R, 1))
+            # B_psi_V = []
+            # Initialize B_prices_phi as an empty matrix (dimensions 1 * R)
+            B_prices_phi = np.matrix(np.zeros((1, R)))
+
+            # Initialize laguerre_matrix as an empty matrix (dimensions npaths * R)
+            laguerre_matrix = np.matrix(np.zeros((npaths, R)))
+
+            prices = payout(paths[self.tex[-1], :])
 
             # Step backwards through the exercise dates
-            for exercise_date in reversed(self.tex):
+            # (this reverse enumeration drawn from http://galvanist.com/post/53478841501/python-reverse-enumerate)
+            indicies = reversed(range(len(self.tex)))
+            for index, exercise_date in zip(indicies, reversed(self.tex)):
 
-                # Fill B_psi_psi
+                # Fill the laguerre_matrix
                 for i in range(R):
-                    for s in range(R):
-                        laguerre_list_1 = [Laguerre(i, paths[exercise_date][path]) for path in range(npaths)]
-                        laguerre_list_2 = [Laguerre(s, paths[exercise_date][path]) for path in range(npaths)]
-                        B_psi_psi[i][s] = np.average(np.multiply(laguerre_list_1, laguerre_list_2))
+                    # Select the laguerre solutions as a column
+                    # laguerre_column = np.transpose(Laguerre(i, np.transpose(paths[exercise_date, :])))
+                    laguerre_column = Laguerre(i, np.transpose(paths[exercise_date, :]))
+                    # print(laguerre_column)
+                    # print(laguerre_matrix)
+                    # print(laguerre_matrix.shape, laguerre_column.shape)
+                    # import sys
+                    # sys.stdout.flush()
+                    laguerre_matrix[:, i] = laguerre_column.getH()
 
-                # Fill B_V_psi
-                for i in range(R):
-                    prices = [payout(paths[exercise_date][path]) for path in range(npaths)]
-                    laguerre_list = [Laguerre(i, paths[exercise_date][path]) for path in range(npaths)]
-                    B_V_psi[i] = np.average(np.multiply(prices, laguerre_list))
+                B_phi_phi = laguerre_matrix.getH() * laguerre_matrix
+                B_prices_phi = laguerre_matrix.getH() * prices
+                betas[index] = np.divide(B_phi_phi, B_prices_phi)
 
-                # Fill betas
-                betas[exercise_date] = np.dot(np.linalg.inv(B_psi_psi), np.transpose(B_V_psi))
+            # # Step backwards through the exercise dates
+            # for exercise_date in reversed(self.tex):
+            #
+            #     # Fill B_psi_psi
+            #     for i in range(R):
+            #         for s in range(R):
+            #             laguerre_list_1 = Laguerre(i, paths[exercise_date])
+            #             laguerre_list_2 = Laguerre(s, paths[exercise_date])
+            #             B_psi_psi[i][s] = np.average(np.multiply(laguerre_list_1, laguerre_list_2))
+            #
+            #     # Fill B_V_psi
+            #     for i in range(R):
+            #         prices = payout(paths[exercise_date])
+            #         laguerre_list = Laguerre(i, paths[exercise_date])
+            #         B_V_psi[i] = np.average(np.multiply(prices, laguerre_list))
+            #
+            #     # Fill betas
+            #     betas[exercise_date] = np.dot(np.linalg.inv(B_psi_psi), np.transpose(B_V_psi))
+            #
+            #     # Discount betas
+            #     betas[exercise_date] *= np.exp(-((self.rf_r - self.ref.q) * (self.T * exercise_date / self.tex[-1])))
 
-                # Discount betas
-                betas[exercise_date] *= np.exp(-((self.rf_r - self.ref.q) * (self.T * exercise_date / self.tex[-1])))
+            print(betas)
 
             return betas
 
@@ -386,4 +427,4 @@ class Bermudan(OptionValuation):
 
 s = Stock(S0=11, vol=.4)
 o = Bermudan(ref=s, right='put', K=15, T=1, rf_r=.05, desc="in-the-money Bermudan put")
-o.calc_px(method='MC', R=3, npaths=10**2, tex=list([(i+1)/10 for i in range(10)])).px_spec.px
+o.calc_px(method='MC', R=3, npaths=5**1, tex=list([(i+1)/10 for i in range(10)])).px_spec.px
