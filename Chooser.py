@@ -76,7 +76,8 @@ class Chooser(OptionValuation):
         >>> o.calc_px(tau=3/12, method='LT', nsteps=2, keep_hist=True).px_spec.ref_tree
         ((50.0,), (43.40617226972924, 57.595495508445445), (37.68191582218824, 49.99999999999999, 66.3448220572672))
 
-        >>> o.calc_px(tau=3/12, method='LT', nsteps=2, keep_hist=True).px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.calc_px(tau=3/12, method='LT', nsteps=2, keep_hist=True).px_spec
+        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         PriceSpec...px: 6.755605275...
 
         >>> from pandas import Series
@@ -128,7 +129,8 @@ class Chooser(OptionValuation):
         d2n = (log(_.ref.S0/_.K) + (_.rf_r - _.ref.q) * _.T - _.ref.vol**2 * _.tau /2) / ( _.ref.vol * sqrt(_.tau))
         d1n = d2n + _.ref.vol * sqrt(_.tau)
 
-        px = _.ref.S0 * exp(-_.ref.q * _.T) * norm.cdf(d1) - _.K* exp(-_.rf_r * _.T ) * norm.cdf(d2) + _.K* exp(-_.rf_r * _.T ) * norm.cdf(-d2n)  - _.ref.S0* exp(-_.ref.q * _.T) * norm.cdf(-d1n)
+        px = _.ref.S0 * exp(-_.ref.q * _.T) * norm.cdf(d1) - _.K* exp(-_.rf_r * _.T ) * norm.cdf(d2) +\
+             _.K* exp(-_.rf_r * _.T ) * norm.cdf(-d2n)  - _.ref.S0* exp(-_.ref.q * _.T) * norm.cdf(-d1n)
         self.px_spec.add(px=px, d1=d1, d2=d2)
 
         return self
