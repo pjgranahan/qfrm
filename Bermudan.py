@@ -1,5 +1,4 @@
 from qfrm import *
-from numpy import arange, maximum
 
 
 class Bermudan(OptionValuation):
@@ -8,8 +7,8 @@ class Bermudan(OptionValuation):
     Inherits all methods and properties of OptionValuation class.
     """
 
-    def calc_px(self, method='LT', tex=(.12,.24,.46,.9,.91,.92,.93,.94,.95,.96,.97,.98,.99, 1.),
-        nsteps=None, npaths=None, keep_hist=False, R=3):
+    def calc_px(self, method='LT', tex=(.12, .24, .46, .9, .91, .92, .93, .94, .95, .96, .97, .98, .99, 1.),
+                nsteps=None, npaths=None, keep_hist=False, R=3):
         """ Wrapper function that calls appropriate valuation method.
 
         User passes parameters to calc_px, which saves them to local PriceSpec object
@@ -135,11 +134,11 @@ class Bermudan(OptionValuation):
         if self.T < T:
             tex = tuple(asarray(tex)[asarray(tex) < self.T]) + (self.T,)
         if self.T > T:
-            tex = tex[:-1] + (self.T,)            
+            tex = tex[:-1] + (self.T,)
         self.tex = tex
-        knsteps = max(tuple(map(lambda i: int(T/(tex[i+1]-tex[i])), range(len(tex)-1))))
+        knsteps = max(tuple(map(lambda i: int(T / (tex[i + 1] - tex[i])), range(len(tex) - 1))))
         if nsteps != None:
-            knsteps = knsteps * nsteps 
+            knsteps = knsteps * nsteps
         nsteps = knsteps
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, R=R)
         return getattr(self, '_calc_' + method.upper())()
@@ -158,8 +157,8 @@ class Bermudan(OptionValuation):
         keep_hist = getattr(self.px_spec, 'keep_hist', False)
         n = getattr(self.px_spec, 'nsteps', 3)
         _ = self.LT_specs(n)
-        
-        #Redo tree steps 
+
+        #Redo tree steps
 
         S = self.ref.S0 * _['d'] ** arange(n, -1, -1) * _['u'] ** arange(0, n + 1)  # terminal stock prices
         O = maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
@@ -169,11 +168,11 @@ class Bermudan(OptionValuation):
         # tree = ([float(s) for s in S], [float(o) for o in O],)
 
         for i in range(n, 0, -1):
-            O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices 
+            O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices
             #(@time step=i-1)
             S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
             Payout = maximum(self.signCP * (S - self.K), 0)   # payout at time step i-1 (moving backward in time)
-            if i*_['dt'] in self.tex:   #The Bermudan condition: exercise only at scheduled times         
+            if i*_['dt'] in self.tex:   #The Bermudan condition: exercise only at scheduled times
                 O = maximum(O, Payout)
             # tree = tree + ((S, O),)
             S_tree = (tuple([float(s) for s in S]),) + S_tree
@@ -255,9 +254,9 @@ class Bermudan(OptionValuation):
 
             # Fill the matrix
             for i in range(len(self.tex) - 1):
-                deltaT = self.tex[i+1] - self.tex[i]
-                paths[i+1] = paths[i] * np.exp((((self.rf_r - self.ref.q) - ((self.ref.vol**2) / 2)) * deltaT) +
-                                               (self.ref.vol * np.random.randn(npaths) * np.sqrt(deltaT)))
+                deltaT = self.tex[i + 1] - self.tex[i]
+                paths[i + 1] = paths[i] * np.exp((((self.rf_r - self.ref.q) - ((self.ref.vol ** 2) / 2)) * deltaT) +
+                                                 (self.ref.vol * np.random.randn(npaths) * np.sqrt(deltaT)))
 
             return np.matrix(paths)
 
@@ -298,15 +297,15 @@ class Bermudan(OptionValuation):
             elif R == 1:
                 phi = -x + 1
             elif R == 2:
-                phi = 1/2 * (x**2 - 4*x + 2)
+                phi = 1 / 2 * (x ** 2 - 4 * x + 2)
             elif R == 3:
-                phi = 1/6 * (-x**3 + 9*x**2 - 18*x + 6)
+                phi = 1 / 6 * (-x ** 3 + 9 * x ** 2 - 18 * x + 6)
             elif R == 4:
-                phi = 1/24 * (x**4 - 16*x**3 + 72*x**2 - 96*x + 24)
+                phi = 1 / 24 * (x ** 4 - 16 * x ** 3 + 72 * x ** 2 - 96 * x + 24)
             elif R == 5:
-                phi = 1/120 * (-x**5 + 25*x**4 - 200*x**3 + 600*x**2 - 600*x + 120)
+                phi = 1 / 120 * (-x ** 5 + 25 * x ** 4 - 200 * x ** 3 + 600 * x ** 2 - 600 * x + 120)
             elif R == 6:
-                phi = 1/720 * (x**6 - 36*x**5 + 450*x**4 - 2400*x**3 + 5400*x**2 - 4320*x + 720)
+                phi = 1 / 720 * (x ** 6 - 36 * x ** 5 + 450 * x ** 4 - 2400 * x ** 3 + 5400 * x ** 2 - 4320 * x + 720)
             else:
                 phi = 0
                 raise Exception("R is out of range.")
@@ -337,7 +336,7 @@ class Bermudan(OptionValuation):
             laguerre_matrix = np.matrix(np.zeros((npaths, R)))
 
             # Prices is a matrix (dimensions npaths * 1) that holds the prices for each path
-            prices = payout(paths[len(self.tex)-1, :].getH())
+            prices = payout(paths[len(self.tex) - 1, :].getH())
 
             # Step backwards through the exercise dates
             for exercise_date_index in reversed(range(len(self.tex))):
@@ -386,7 +385,7 @@ class Bermudan(OptionValuation):
 
                 # If the continuation price is less than the payout, or we have reached the last exercise date,
                 # we have found the price for this path.
-                if continuation_price < payout(stock_price) or exercise_date == len(self.tex)-1:
+                if continuation_price < payout(stock_price) or exercise_date == len(self.tex) - 1:
                     discount = np.exp(-(self.rf_r - self.ref.q) * (self.T * self.tex[exercise_date] / self.tex[-1]))
                     prices[path] = discount * payout(stock_price)
                     break
