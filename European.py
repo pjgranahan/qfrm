@@ -51,15 +51,15 @@ class European(OptionValuation):
         >>> (o.px_spec.px, o.px_spec.d1, o.px_spec.d2, o.px_spec.method)  # alternative attribute access
         (0.8085993729000922, 0.7692626281060315, 0.627841271868722, 'BS')
 
-        >>> o.update(right='call').calc_px().px_spec.px  # change option object to a put
+        >>> o.update(right='call').pxBS()  # change option object to a put
         4.759422392871532
 
-        >>> European(clone=o, K=41, desc='Ex. copy params; new strike.').calc_px(method='LT').px_spec.px
+        >>> European(clone=o, K=41, desc='Ex. copy params; new strike.').pxLT()
         4.2270039114413125
 
         >>> s = Stock(S0=810, vol=.2, q=.02)
         >>> o = European(ref=s, right='call', K=800, T=.5, rf_r=.05, desc='53.39, Hull p.291')
-        >>> o.calc_px(method='LT', nsteps=3).px_spec.px  # option price from a 3-step tree (that's 2 time intervals)
+        >>> o.pxLT(nsteps=3)  # option price from a 3-step tree (that's 2 time intervals)
         59.867529937506426
 
         >>> o.pxLT(nsteps=3, keep_hist=True)  # option price from a 3-step tree (that's 2 time intervals)
