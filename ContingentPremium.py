@@ -109,6 +109,11 @@ class ContingentPremium(OptionValuation):
 
 
         """
+        d2 = (math.log(self.ref.S0 / self.K) + (self.rf_r - self.ref.q - .5 * self.ref.vol ** 2) * self.T) / (
+            self.ref.vol * math.sqrt(self.T))
+        d1 = d2 + self.ref.vol * math.sqrt(self.T)
+        Q = self.ref.S0 * math.exp((self.rf_r - self.ref.q) * self.T) * scipy.stats.norm.cdf(d1) / \
+            scipy.stats.norm.cdf(d2) - self.K
 
     def _calc_LT(self):
         """ Internal function for option valuation.
@@ -179,6 +184,13 @@ class ContingentPremium(OptionValuation):
 
         .. sectionauthor:: Andrew Weatherly
 
+        References
+        ----------
+
+        http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2contingent.pdf -
+        This has verifiable example. Note that they actually calculated the example incorrectly. They had a d_1 value of
+        .4771 when it was actually supposed to be .422092. You can check this on your own and recalculate the option
+        price that they give. It should be roughly .00095 instead of .01146
 
         """
         np.random.seed(getattr(self.px_spec, 'Seed', 3))
