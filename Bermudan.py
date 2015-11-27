@@ -320,7 +320,7 @@ class Bermudan(OptionValuation):
                     A tex * R matrix (list of lists) holding the betas.
             """
 
-            # Initialize betas as an empty matrix (dimensions R * tex)
+            # Initialize betas as an empty matrix (dimensions R * (tex - 1))
             betas = np.matrix(np.zeros((R, len(self.tex))))
 
             # Initialize B_phi_phi as an empty square matrix (dimensions R * R)
@@ -335,9 +335,10 @@ class Bermudan(OptionValuation):
             prices = payout(paths[len(self.tex)-1, :].getH())
 
             # Step backwards through the exercise dates
-            # (this reverse enumeration drawn from http://galvanist.com/post/53478841501/python-reverse-enumerate)
-            indicies = reversed(range(len(self.tex)))
-            for exercise_date_index, _ in zip(indicies, reversed(self.tex)):
+            for exercise_date_index in reversed(range(len(self.tex))):
+                # Skip the first exercise date
+                if exercise_date_index == 0:
+                    break
 
                 # Fill the laguerre_matrix
                 for i in range(R):
@@ -345,46 +346,17 @@ class Bermudan(OptionValuation):
                     laguerre_column = Laguerre(i, paths[exercise_date_index, :].getH())
                     laguerre_matrix[:, i] = laguerre_column
 
-                print(laguerre_matrix.shape)
-
                 # B_phi_phi is a square matrix (dimensions R * R)
                 B_phi_phi = laguerre_matrix.getH() * laguerre_matrix
-                print(B_phi_phi.shape)
 
                 # B_prices_phi is a matrix (dimensions 1 * R)
                 B_prices_phi = laguerre_matrix.getH() * prices
-                print(B_prices_phi.shape)
 
-                # print(np.linalg.solve(B_phi_phi, B_prices_phi).shape)
-                print(betas.shape)
-                print(exercise_date_index)
                 betas[:, exercise_date_index] = np.linalg.solve(B_phi_phi, B_prices_phi)
-                print("Finished one exercise date!")
-                # betas[exercise_date_index] = B_phi_phi / B_prices_phi
 
-            # # Step backwards through the exercise dates
-            # for exercise_date in reversed(self.tex):
-            #
-            #     # Fill B_psi_psi
-            #     for i in range(R):
-            #         for s in range(R):
-            #             laguerre_list_1 = Laguerre(i, paths[exercise_date])
-            #             laguerre_list_2 = Laguerre(s, paths[exercise_date])
-            #             B_psi_psi[i][s] = np.average(np.multiply(laguerre_list_1, laguerre_list_2))
-            #
-            #     # Fill B_V_psi
-            #     for i in range(R):
-            #         prices = payout(paths[exercise_date])
-            #         laguerre_list = Laguerre(i, paths[exercise_date])
-            #         B_V_psi[i] = np.average(np.multiply(prices, laguerre_list))
-            #
-            #     # Fill betas
-            #     betas[exercise_date] = np.dot(np.linalg.inv(B_psi_psi), np.transpose(B_V_psi))
-            #
-            #     # Discount betas
-            #     betas[exercise_date] *= np.exp(-((self.rf_r - self.ref.q) * (self.T * exercise_date / self.tex[-1])))
+            betas = np.delete(betas, 0, 1)
 
-            print(betas)
+            # print(betas)
 
             return betas
 
@@ -395,17 +367,18 @@ class Bermudan(OptionValuation):
         betas = betas(paths)
 
         # values will store the list of prices; each price comes from a different path
-        prices = []
+        prices = np.zeros(npaths)
 
         # Fill prices
         for path in range(npaths):
-            for exercise_date in self.tex:
+            for exercise_date in range(len(self.tex)):
                 continuation_price = 0
-                stock_price = paths[exercise_date][path]  # stock price at the exercise date on a given path
+                stock_price = paths[exercise_date, path] # stock price at the exercise date on a given path
                 for R in range(R):
-                    continuation_price += Laguerre(R, stock_price) * betas[exercise_date][R]
-                if continuation_price < payout(stock_price) or exercise_date == self.tex[-1]:
-                    prices[path] = np.exp(-((self.rf_r - self.ref.q) * (self.T * exercise_date / self.tex[-1]))) * payout(stock_price)
+                    continuation_price += Laguerre(R, stock_price) * betas[exercise_date, R]
+                if continuation_price < payout(stock_price) or exercise_date == len(self.tex)-1:
+                    discount = np.exp(-(self.rf_r - self.ref.q) * (self.T * self.tex[exercise_date] / self.tex[-1]))
+                    prices[path] = discount * payout(stock_price)
                     break
 
         # Find the price by averaging the prices, then record it
@@ -433,4 +406,4 @@ class Bermudan(OptionValuation):
 
 s = Stock(S0=11, vol=.4)
 o = Bermudan(ref=s, right='put', K=15, T=1, rf_r=.05, desc="in-the-money Bermudan put")
-o.calc_px(method='MC', R=3, npaths=5**1, tex=list([(i+1)/10 for i in range(10)])).px_spec.px
+print(o.calc_px(method='MC', R=3, npaths=5**1, tex=list([(i+1)/10 for i in range(10)])).px_spec.px)
