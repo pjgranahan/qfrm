@@ -70,7 +70,7 @@ class ForwardStart(OptionValuation):
         rf_r=.08).update(T=t).calc_px(method='BS',T_s=0.25).px_spec.px for t in expiries], expiries)
         >>> O.plot(grid=1, title='ForwardStart option Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
-
+        >>> plt.show()
 
 
 

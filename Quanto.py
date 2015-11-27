@@ -1,8 +1,7 @@
-from OptionValuation import OptionValuation, PriceSpec, Stock
-from American import American
-from math import *
-from numpy import *
-from numpy.random import *
+from OptionValuation import *
+from American import *
+import numpy as np
+import numpy.random as rnd
 
 
 class Quanto(OptionValuation):
@@ -39,13 +38,16 @@ class Quanto(OptionValuation):
         -------
         self : Quanto
 
-        .. sectionauthor:: Patrick Granahan, Runmin Zhang
+
+        Authors
+        -------
+        Patrick Granahan, Runmin Zhang
 
         Notes
         -----
 
         Examples
-        -------
+        --------
 
         Calculate the price of a Quanto option. This example comes from Hull ch.30, ex.30.5 (p.701-702)
 
@@ -57,36 +59,8 @@ class Quanto(OptionValuation):
         >>> o.px_spec.ref_tree # doctest: +ELLIPSIS
         ((1199.999999999993,), (1158.3148318698472, 1243.1853243866492), ... 38364.96926881886, 41175.99589789209))
 
-        >>> o.calc_px(method='LT', nsteps=100, keep_hist=False)
-        Quanto
-        K: 1200
-        T: 2
-        _right: call
-        _signCP: 1
-        frf_r: 0.05
-        px_spec: PriceSpec
-          LT_specs:
-            a: 1.0003000450045003
-            d: 0.965262359891545
-            df_T: 0.9048374180359595
-            df_dt: 0.999000499833375
-            dt: 0.02
-            p: 0.49540447909174495
-            u: 1.0359877703222138
-          keep_hist: false
-          method: LT
-          nsteps: 100
-          px: 172.20505562521683
-          sub_method: binomial tree; Hull Ch.13
-        ref: Stock
-          S0: 1200
-          curr: -
-          desc: -
-          q: 0.015
-          tkr: -
-          vol: 0.25
-        rf_r: 0.03
-        seed0: -
+        >>> o.calc_px(method='LT', nsteps=100, keep_hist=False) # doctest: +ELLIPSIS,+NORMALIZE_WHITESPACE
+        Quanto...px: 172.205...
         <BLANKLINE>
 
         Calculate the price of a Quanto option. This example comes from Hull ch.30, problem.30.9.b (p.704)
@@ -100,13 +74,15 @@ class Quanto(OptionValuation):
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
-        >>> O = Series([o.update(T=t).calc_px(method='LT', nsteps=100, vol_ex=0.12, correlation=0.2).px_spec.px for t in expiries], expiries)
+        >>> O = Series([o.update(T=t).calc_px(method='LT', nsteps=100, vol_ex=0.12, correlation=0.2).px_spec.px \
+        for t in expiries], expiries)
         >>> O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
-
+        MC Examples
+        -----------
         Calculate the price of a Quanto option using MC method. This example comes from Hull ch.30, ex.30.5 (p.701-702)
         >>> s = Stock(S0=1200, vol=.25, q=0.015)
         >>> o = Quanto(ref=s, right='call', K=1200, T=2, rf_r=.03, frf_r=0.05)
@@ -122,16 +98,16 @@ class Quanto(OptionValuation):
         Example of option price convergence (MC method) with increasing paths
         >>> from pandas import Series
         >>> expiries = range(1,11)
-        >>> O = Series([o.update(T=t).calc_px(method='MC', nsteps=100, npaths=5000, vol_ex=0.12, correlation=0.2).px_spec.px for t in expiries], expiries)
+        >>> O = Series([o.update(T=t).calc_px(method='MC', nsteps=100, npaths=5000, vol_ex=0.12, correlation=0.2)\
+        .px_spec.px for t in expiries], expiries)
         >>> O.plot(grid=1, title='MC Method: Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
         """
-        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist,
-                                 vol_ex=vol_ex, correlation=correlation,seed=1,deg=deg)
-        return getattr(self, '_calc_' + method.upper())()
+        return super().calc_px(method=method, nsteps=nsteps, \
+                               npaths=npaths, keep_hist=keep_hist,vol_ex=vol_ex, correlation=correlation,seed=1,deg=deg)
 
     def _calc_LT(self):
         """ Internal function for option valuation.
@@ -222,19 +198,21 @@ class Quanto(OptionValuation):
         # Once we have the foreign numeraire dividend yield calculated,
         # Follow the LT method. We can price the Quanto option using an American option with specific parameters.
 
-        dt = _.T / n_steps; df = exp(-_.frf_r * dt)
+        dt = _.T / n_steps; df = np.exp(-_.frf_r * dt)
         signCP = 1 if _.right.lower()[0] == 'c' else -1
 
-        seed(_.px_spec.seed)
-        S = _.ref.S0 * exp(cumsum(normal((_.frf_r-foreign_numeraire_dividend_yield- 0.5 * _.ref.vol ** 2) * dt, _.ref.vol * sqrt(dt), (n_steps + 1, n_paths)), axis=0)); S[0] = _.ref.S0
-        payout = maximum(signCP * (S - _.K), 0); v = copy(payout)  # terminal payouts
+        rnd.seed(_.px_spec.seed)
+        S = _.ref.S0 * np.exp\
+            (np.cumsum(rnd.normal((_.frf_r-foreign_numeraire_dividend_yield- 0.5 * _.ref.vol ** 2) * dt,\
+                                  _.ref.vol * np.sqrt(dt), (n_steps + 1, n_paths)), axis=0)); S[0] = _.ref.S0
+        payout = np.maximum(signCP * (S - _.K), 0); v = np.copy(payout)  # terminal payouts
 
         for i in range(n_steps - 1, 0, -1):    # American Option Valuation by Backwards Induction
-            rg = polyfit(S[i], v[i + 1] * df, deg)      # fit 5th degree polynomial to PV of current inner values
-            C = polyval(rg, S[i])              # continuation values.
-            v[i] = where(payout[i] > C, payout[i], v[i + 1] * df)  # exercise decision
+            rg = np.polyfit(S[i], v[i + 1] * df, deg)      # fit 5th degree polynomial to PV of current inner values
+            C = np.polyval(rg, S[i])              # continuation values.
+            v[i] = np.where(payout[i] > C, payout[i], v[i + 1] * df)  # exercise decision
         v[0] = v[1] * df
-        self.px_spec.add(px=float(mean(v[0])))
+        self.px_spec.add(px=float(np.mean(v[0])))
 
         return self
 
