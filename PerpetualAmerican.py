@@ -47,6 +47,9 @@ class PerpetualAmerican(OptionValuation):
         All the examples below can be verified by this online tools: http://www.coggit.com/freetools
         R package: PerpetualBS.R
 
+
+
+        This examples below can be verified by this online tools: http://www.coggit.com/freetools
         >>> s = Stock(S0=50, vol=.3, q=0.01)
         >>> o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.08, \
         desc='call @37.19 put @8.68 example from Internet')
@@ -54,96 +57,43 @@ class PerpetualAmerican(OptionValuation):
         >>> print(o.calc_px(method='BS').px_spec.px) # doctest: +ELLIPSIS
         37.19067...
 
-        >>> print(o.calc_px(method="BS").px_spec)  # doctest: +ELLIPSIS
-        PriceSpec
-        keep_hist: false
-        method: BS
-        px: 37.1906...
+        >>> print(o.calc_px(method="BS").px_spec)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 37.1906...
         <BLANKLINE>
 
-        >>> print(o.calc_px(method='BS'))  # doctest: +ELLIPSIS
-        PerpetualAmerican
-        K: 50
-        T: 1
-        _right: call
-        _signCP: 1
-        desc: call @37.19 put @8.68 example from Internet
-        frf_r: 0
-        px_spec: PriceSpec
-          keep_hist: false
-          method: BS
-          px: 37.19067...
-        ref: Stock
-          S0: 50
-          curr: -
-          desc: -
-          q: 0.01
-          tkr: -
-          vol: 0.3
-        rf_r: 0.08
-        seed0: -
+        >>> print(o.calc_px(method='BS'))  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PerpetualAmerican...px: 37.1906...
         <BLANKLINE>
 
-        Change the option to a put
+
+
+        Change the option to a put, can verified by this online tools: http://www.coggit.com/freetools
         >>> print(o.update(right='put').calc_px().px_spec.px) # doctest: +ELLIPSIS
         8.67627...
 
-        >>> print(o.update(right='put').calc_px()) # doctest: +ELLIPSIS
-        PerpetualAmerican
-        K: 50
-        T: 1
-        _right: put
-        _signCP: -1
-        desc: call @37.19 put @8.68 example from Internet
-        frf_r: 0
-        px_spec: PriceSpec
-          keep_hist: false
-          method: BS
-          px: 8.67627...
-        ref: Stock
-          S0: 50
-          curr: -
-          desc: -
-          q: 0.01
-          tkr: -
-          vol: 0.3
-        rf_r: 0.08
-        seed0: -
+        >>> print(o.update(right='put').calc_px()) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PerpetualAmerican...px: 8.67627...
         <BLANKLINE>
 
+
+
         Another example with different dividend and risk free interest rate
+        This examples below can be verified by this online tools: http://www.coggit.com/freetools
         >>> s = Stock(S0=50, vol=.3, q=0.02)
         >>> o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.05, \
         desc='call @27.47 put @13.43 example from Internet')
         >>> print(o.calc_px(method='BS').px_spec.px) # doctest: +ELLIPSIS
         27.46559...
 
-        Change the option to a put
+        Change the option to a put, can be verified by this online tools: http://www.coggit.com/freetools
         >>> print(o.update(right='put').calc_px().px_spec.px)# doctest: +ELLIPSIS
         13.42726...
 
-        >>> print(o.update(right='put').calc_px())# doctest: +ELLIPSIS
-        PerpetualAmerican
-        K: 50
-        T: 1
-        _right: put
-        _signCP: -1
-        desc: call @27.47 put @13.43 example from Internet
-        frf_r: 0
-        px_spec: PriceSpec
-          keep_hist: false
-          method: BS
-          px: 13.427262...
-        ref: Stock
-          S0: 50
-          curr: -
-          desc: -
-          q: 0.02
-          tkr: -
-          vol: 0.3
-        rf_r: 0.05
-        seed0: -
+        >>> print(o.update(right='put').calc_px())# doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PerpetualAmerican...px: 13.42726...
         <BLANKLINE>
+
+
 
         # Example of option price development (BS method) with increasing maturities (This would give a horizontal line\
         because this perpetual American option does not have an expiry)
@@ -156,7 +106,7 @@ class PerpetualAmerican(OptionValuation):
         >>> plt.show()
 
         """
-        
+
         return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
 
 
