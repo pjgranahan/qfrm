@@ -2,6 +2,9 @@ from OptionValuation import *
 from math import sqrt
 from numpy import cumsum, maximum, sum,  exp, mean, zeros, log
 from numpy.random import normal, seed
+from math import exp as mexp
+from math import log as mlog
+from scipy.stats import norm
 
 class Asian(OptionValuation):
     """ SHORT DESCRIPTION: Asian option class.
@@ -81,52 +84,72 @@ class Asian(OptionValuation):
 
         >>> # SEE NOTES to verify first two examples
         >>> s = Stock(S0=30, vol=.3, q = .02)
-        >>> o = Asian(ref=s, right='call', K=29, T=1., rf_r=.08, desc='Example from Internet - Call')
-        >>> o.calc_px().px_spec
+        >>> o = Asian(ref=s, right='call', K=29, T=1., rf_r=.08, desc='http://investexcel.net/asian-options-excel/ - GEO Call')
+        >>> o.calc_px(method='BS').px_spec
         PriceSpec
         keep_hist: false
         method: BSM
-        px: 2.777361112923389
+        npaths: 10000
+        nsteps: 3
+        px: 2.777361113
+        rng_seed: 1
+        strike: K
         sub_method: Geometric
         <BLANKLINE>
 
         >>> s = Stock(S0=30, vol=.3, q = .02)
-        >>> o = Asian(ref=s, right='put', K=29, T=1., rf_r=.08, desc='Example from Internet - Put')
-        >>> o.calc_px().px_spec
+        >>> o = Asian(ref=s, right='put', K=29, T=1., rf_r=.08, desc='http://investexcel.net/asian-options-excel/ - GEO Put')
+        >>> o.calc_px(method='BS').px_spec
         PriceSpec
         keep_hist: false
         method: BSM
-        px: 1.2240784465431602
+        npaths: 10000
+        nsteps: 3
+        px: 1.224078447
+        rng_seed: 1
+        strike: K
         sub_method: Geometric
-        <BLANKLINE
+        <BLANKLINE>
 
         >>> s = Stock(S0=30, vol=.3, q = .02)
         >>> o = Asian(ref=s, right='put', K=30., T=1., rf_r=.08)
-        >>> o.calc_px().px_spec
+        >>> o.calc_px(method='BS').px_spec
         PriceSpec
         keep_hist: false
         method: BSM
-        px: 1.6341047993229445
+        npaths: 10000
+        nsteps: 3
+        px: 1.634104799
+        rng_seed: 1
+        strike: K
         sub_method: Geometric
         <BLANKLINE>
 
         >>> s = Stock(S0=20, vol=.3, q = .00)
         >>> o = Asian(ref=s, right='put', K=21., T=1., rf_r=.08)
-        >>> o.calc_px().px_spec
+        >>> o.calc_px(method='BS').px_spec
         PriceSpec
         keep_hist: false
         method: BSM
-        px: 1.489497403315955
+        npaths: 10000
+        nsteps: 3
+        px: 1.489497403
+        rng_seed: 1
+        strike: K
         sub_method: Geometric
         <BLANKLINE>
 
         >>> s = Stock(S0=20, vol=.3, q = .00)
         >>> o = Asian(ref=s, right='put', K=21., T=2., rf_r=.08)
-        >>> o.calc_px().px_spec
+        >>> o.calc_px(method='BS').px_spec
         PriceSpec
         keep_hist: false
         method: BSM
-        px: 1.6162118076748948
+        npaths: 10000
+        nsteps: 3
+        px: 1.616211808
+        rng_seed: 1
+        strike: K
         sub_method: Geometric
         <BLANKLINE>
 
@@ -135,7 +158,7 @@ class Asian(OptionValuation):
         >>> from pandas import Series;  exps = range(1,10)
         >>> O = Series([o.update(T=t).calc_px(method='BS').px_spec.px for t in exps], exps)
         >>> O.plot(grid=1, title='Price vs Time to Expiry') # doctest: +ELLIPSIS
-        <matplotlib.axes._subplots.AxesSubplot object at ... >
+        <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> # import matplotlib.pyplot as plt
         >>> # plt.show() # run last two lines to show plot
         
@@ -415,24 +438,21 @@ class Asian(OptionValuation):
         assert q >= 0, 'q must be >= 0'
 
         # Imports
-        from math import exp
-        from math import log
-        from math import sqrt
-        from scipy.stats import norm
+
 
         # Parameters for Value Calculation (see link in docstring)
         a = .5 * (r - q - (vol ** 2) / 6.)
         vola = vol / sqrt(3.)
-        d1 = (log(S * exp(a * T) / K) + (vola ** 2) * .5 * T) / (vola * sqrt(T))
+        d1 = (mlog(S * mexp(a * T) / K) + (vola ** 2) * .5 * T) / (vola * sqrt(T))
         d2 = d1 - vola * sqrt(T)
 
         # Calculate the value of the option using the BS Equation
         if right == 'call':
-            px = S * exp((a - r) * T) * norm.cdf(d1) - K * exp(-r * T) * norm.cdf(d2)
+            px = S * mexp((a - r) * T) * norm.cdf(d1) - K * mexp(-r * T) * norm.cdf(d2)
             self.px_spec.add(px=float(px), method='BSM', sub_method='Geometric')
 
         else:
-            px = K * exp(-r * T) * norm.cdf(-d2) - S * exp((a - r) * T) * norm.cdf(-d1)
+            px = K * mexp(-r * T) * norm.cdf(-d2) - S * mexp((a - r) * T) * norm.cdf(-d1)
             self.px_spec.add(px=float(px), method='BSM', sub_method='Geometric')
         return self
 

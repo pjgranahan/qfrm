@@ -60,8 +60,8 @@ class Spread(OptionValuation):
         >>> o = Spread(ref = s1, rf_r = .05, right='put', K=0., T=2., seed0 = 0)
         >>> from pandas import Series;  exps = range(1,10)
         >>> O = Series([o.update(T=t).calc_px(method='BS',S2=s2, rho=.4, nsteps = 100, npaths=100).px_spec.px for t in exps], exps)
-        >>> O.plot(grid=1, title='Price vs Time to Expiry')
-        <matplotlib.axes._subplots.AxesSubplot object at ... >
+        >>> O.plot(grid=1, title='Price vs Time to Expiry') # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> # import matplotlib.pyplot as plt
         >>> # plt.show() # run last two lines to show plot
 
@@ -86,7 +86,7 @@ class Spread(OptionValuation):
         method: MC
         npaths: 1000
         nsteps: 1000
-        px: 0.9048374180359596
+        px: 0.904837418
         <BLANKLINE>
 
 
@@ -95,8 +95,8 @@ class Spread(OptionValuation):
         >>> o = Spread(ref = s1, rf_r = .05, right='put', K=2., T=2., seed0 = 0)
         >>> from pandas import Series;  exps = range(1,10)
         >>> O = Series([o.update(T=t).calc_px(method='MC',S2=s2, rho=.4, nsteps = 100, npaths=100).px_spec.px for t in exps], exps)
-        >>> O.plot(grid=1, title='Price vs Time to Expiry')
-        <matplotlib.axes._subplots.AxesSubplot object at ... >
+        >>> O.plot(grid=1, title='Price vs Time to Expiry') # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at ...>
 
 
        """

@@ -90,17 +90,18 @@ class Barrier(OptionValuation):
         >>> o.px_spec
         PriceSpec
         LT_specs:
-          a: 1.0000952426305294
-          d: 0.9923145180146982
-          df_T: 0.9048374180359595
-          df_dt: 0.9999047664397653
-          dt: 0.0009523809523809524
-          p: 0.5042435843778115
-          u: 1.0077450060900832
+          a: 1.000095243
+          d: 0.992314518
+          df_T: 0.904837418
+          df_dt: 0.999904766
+          dt: 0.000952381
+          p: 0.504243584
+          u: 1.007745006
         keep_hist: false
         method: LT
         nsteps: 1050
-        px: 7.104101924957116
+        px: 7.104101925
+        rng_seed: 1
         sub_method: in out parity
         <BLANKLINE>
 
@@ -131,7 +132,8 @@ class Barrier(OptionValuation):
         >>> o = Barrier(ref=s, right='call', K=100., T=2., rf_r=.1, desc='up and in call')
         >>> from pandas import Series;  steps = range(3,250)
         >>> O = Series([o.calc_px(method='LT', nsteps=s).px_spec.px for s in steps], steps)
-        >>> O.plot(grid=1, title='Price vs Steps')
+        >>> O.plot(grid=1, title='Price vs Steps') # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> # import matplotlib.pyplot as plt
         >>> # plt.show() # uncomment these two rows to actually show plots
 
