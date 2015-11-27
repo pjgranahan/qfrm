@@ -68,17 +68,17 @@ class Gap(OptionValuation):
         .. sectionauthor:: Yen-fei Chen
 
         Notes
-        -----
+        --------
         A gap option has a strike price, K1 , and a trigger price, K2 . The trigger price
         determines whether or not the gap option will have a nonzero payoff. The strike price
         determines the amount of the nonzero payoff. The strike price may be greater than or
         less than the trigger price.
 
         Examples
-        ----------------------------------------------------------
+        --------
 
         BS Examples
-        ----------------------------------------------------------
+        --------
         >>> s = Stock(S0=500000, vol=.2)
         >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='Hull p.601 Example 26.1')
         >>> o.pxBS(K2=350000)
@@ -101,7 +101,7 @@ class Gap(OptionValuation):
         >>> plt.show()
 
         LT Examples
-        ----------------------------------------------------------
+        --------
         >>> s = Stock(S0=500000, vol=.2,  q = 0)
         >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, on = (90000,)*23, desc = 'HULL p. 601 Exp 26.1')
         >>> o.calc_px(K2=350000, nsteps = 22, method='LT').px_spec.px
@@ -124,7 +124,7 @@ class Gap(OptionValuation):
 
 
         MC Examples
-        ----------------------------------------------------------------
+        --------
         Because different number of seed, npaths and nsteps will influence the option price. The result of MC method may
         not as accurate as BSM and LT method.
 

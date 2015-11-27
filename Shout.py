@@ -19,7 +19,7 @@ class Shout(OptionValuation):
         but a wrapper function calc_px().
 
         Parameters
-        ----------------------------------
+        --------
         method : str
                 Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
         nsteps : int
@@ -32,25 +32,25 @@ class Shout(OptionValuation):
                 Seed number for Monte Carlo simulation
 
         Returns
-        ------------------------------------
+        --------
         self : Shout
 
         .. sectionauthor:: Mengyan Xie
 
         Notes
-        ----------------------------------------
+        --------
         Verification of Shout option: http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L4shout.pdf
         Hull Ch26.12 P609
 
 
         Examples
-        ----------------------------------------------------
+        --------
         This two excel spreadsheet price shout option.
         http://investexcel.net/shout-options-excel/
         https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=9&cad=rja&uact=8&ved=0ahUKEwjMsfu4n6TJAhVJz2MKHQA_B-MQFghSMAg&url=http%3A%2F%2Fwww.actuarialworkshop.com%2FBinomial%2520Tree.xls&usg=AFQjCNEic5d4DfV5BTKbzkPW2LhzBU0Fdw&sig2=lB14d9wQBxsiqdaXlqTBTw&bvm=bv.108194040,d.eWE
 
         LT Examples
-        ----------------------------------------------------
+        --------
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Shout(ref=s, right='call', K=52, T=2, rf_r=.05, desc='Example from internet excel spread sheet')
 
@@ -72,7 +72,7 @@ class Shout(OptionValuation):
         >>> plt.show()
 
         MC Examples
-        ---------------------------------------------------
+        --------
         See example on p.26, p.28 in http://core.ac.uk/download/pdf/1568393.pdf
         >>> s = Stock(S0=36, vol=.2)
         >>> o = Shout(ref=s, right='put', K=40, T=1, rf_r=.2, desc='http://core.ac.uk/download/pdf/1568393.pdf')

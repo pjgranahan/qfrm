@@ -55,12 +55,15 @@ class Lookback(OptionValuation):
            QFRM R Package, Lookback Option
            Hull P608 Example
 
-        Notes: The LT method might not generate the same result with BS
-               To improve the accuracy, the number of steps can be added
+        The LT method might not generate the same result with BS
+        To improve the accuracy, the number of steps can be added
 
         -------
         Examples
+        --------
 
+        BS Examples
+        --------
         >>> s = Stock(S0=50, vol=.4, q=.0)
         >>> o = Lookback(ref=s, right='call', K=50, T=0.25, rf_r=.1, desc='Example from Hull Ch.26 Example 26.2 (p608)')
         >>> o.pxBS(Sfl = 50.0)
@@ -91,6 +94,8 @@ class Lookback(OptionValuation):
         >>> plt.show()
 
 
+        LT Examples
+        --------
         >>> s = Stock(S0=35., vol=.05, q=.00)
         >>> o = Lookback(ref=s, right='call', K=30, T=0.25, rf_r=.1, desc='Hull p607')
         >>> o.calc_px(method='LT', nsteps=100, keep_hist=False).px_spec.px
