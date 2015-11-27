@@ -311,7 +311,7 @@ class Bermudan(OptionValuation):
             Generates the discounted betas used in the Longstaff-Schwartz algorithm using a regression.
             Parameters
             ----------
-            paths : list
+            paths : numpy.matrix
                     List of paths produced by generate_GBM_paths
 
             Returns
@@ -319,41 +319,48 @@ class Bermudan(OptionValuation):
             betas : list
                     A tex * R matrix (list of lists) holding the betas.
             """
-            # betas is a tex * R matrix
-            # betas = np.zeros((len(self.tex), R))
-            betas = np.matrix(np.zeros((len(self.tex), R)))
 
-            # B_psi_psi is a square R * R matrix
-            # B_psi_psi = np.zeros((R, R))
+            # Initialize betas as an empty matrix (dimensions R * tex)
+            betas = np.matrix(np.zeros((R, len(self.tex))))
+
             # Initialize B_phi_phi as an empty square matrix (dimensions R * R)
-            B_phi_phi = np.matrix(np.zeros((R, R)))
+            # B_phi_phi = np.matrix(np.zeros((R, R)))
 
-            # B_V_psi is a R * 1 row vector
-            # B_V_psi = np.zeros((R, 1))
-            # B_psi_V = []
             # Initialize B_prices_phi as an empty matrix (dimensions 1 * R)
-            B_prices_phi = np.matrix(np.zeros((1, R)))
+            # B_prices_phi = np.matrix(np.zeros((1, R)))
 
             # Initialize laguerre_matrix as an empty matrix (dimensions npaths * R)
             laguerre_matrix = np.matrix(np.zeros((npaths, R)))
 
-            prices = payout(paths[self.tex[-1], :].getH())
+            prices = payout(paths[len(self.tex)-1, :].getH())
 
             # Step backwards through the exercise dates
             # (this reverse enumeration drawn from http://galvanist.com/post/53478841501/python-reverse-enumerate)
             indicies = reversed(range(len(self.tex)))
-            for index, exercise_date in zip(indicies, reversed(self.tex)):
+            for exercise_date_index, _ in zip(indicies, reversed(self.tex)):
 
                 # Fill the laguerre_matrix
                 for i in range(R):
                     # Select the laguerre solutions as a column
-                    laguerre_column = Laguerre(i, paths[exercise_date, :].getH())
+                    laguerre_column = Laguerre(i, paths[exercise_date_index, :].getH())
                     laguerre_matrix[:, i] = laguerre_column
 
+                print(laguerre_matrix.shape)
+
+                # B_phi_phi is a square matrix (dimensions R * R)
                 B_phi_phi = laguerre_matrix.getH() * laguerre_matrix
+                print(B_phi_phi.shape)
+
+                # B_prices_phi is a matrix (dimensions 1 * R)
                 B_prices_phi = laguerre_matrix.getH() * prices
-                betas[index] = np.linalg.solve(B_phi_phi, B_prices_phi)
-                # betas[index] = B_phi_phi / B_prices_phi
+                print(B_prices_phi.shape)
+
+                # print(np.linalg.solve(B_phi_phi, B_prices_phi).shape)
+                print(betas.shape)
+                print(exercise_date_index)
+                betas[:, exercise_date_index] = np.linalg.solve(B_phi_phi, B_prices_phi)
+                print("Finished one exercise date!")
+                # betas[exercise_date_index] = B_phi_phi / B_prices_phi
 
             # # Step backwards through the exercise dates
             # for exercise_date in reversed(self.tex):
