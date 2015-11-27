@@ -1,10 +1,9 @@
 from OptionValuation import *
 from scipy.stats import norm
-from numpy import arange, maximum, log, exp, sqrt, minimum
+from numpy import arange, maximum, log, exp, sqrt, minimum , random, zeros
 from sympy import binomial
 from math import ceil, floor
 from European import European
-import numpy as np
 
 class Barrier(OptionValuation):
     """ European option class.
@@ -393,19 +392,19 @@ class Barrier(OptionValuation):
         K = _.K
         T = _.T
         rng_seed =  int(self.px_spec.rng_seed)
-        np.random.seed(rng_seed)
+        random.seed(rng_seed)
 
 
         def AssetPaths(spot, r , sigma , T , num_steps , num_sims):
         #np.random.seed(seed)
 
-            sim_paths = np.zeros((num_sims , num_steps + 1))
+            sim_paths = zeros((num_sims , num_steps + 1))
             sim_paths[:,0] = spot
             dt = T / num_steps
             for i in range(int(num_sims)):
                 for j in range(1,int(num_steps +1) ):
-                    wt = np.random.randn()
-                    sim_paths[i,j] = sim_paths[i , j -1] * np.exp((r - 0.5 * sigma **2)  * dt + sigma * np.sqrt(dt) * wt)
+                    wt = random.randn()
+                    sim_paths[i,j] = sim_paths[i , j -1] * exp((r - 0.5 * sigma **2)  * dt + sigma * sqrt(dt) * wt)
 
             return(sim_paths)
 
@@ -425,22 +424,22 @@ class Barrier(OptionValuation):
             return(knocked)
 
         def knockedout_put(spot , Sb , K , r , T , sigma , NSteps, NRepl):
-            payoff = np.zeros((NRepl , 1))
+            payoff = zeros((NRepl , 1))
             for i in range(NRepl):
                 path = AssetPaths( spot , r , sigma , T , NSteps , 1)
                 knocked = barrierCrossing(spot , Sb , path)
                 if knocked == 0:
                     payoff[i] = max(0 , K - path[0,NSteps ])
-            return(norm.fit(np.exp(-r*T) * payoff)[0])
+            return(norm.fit(exp(-r*T) * payoff)[0])
 
         def knockedin_put(spot , Sb , K , r , T , sigma , NSteps, NRepl):
-            payoff = np.zeros((NRepl , 1))
+            payoff = zeros((NRepl , 1))
             for i in range(NRepl):
                 path = AssetPaths( spot , r , sigma , T , NSteps , 1)
                 knocked = barrierCrossing(spot , Sb , path)
                 if knocked == 1:
                     payoff[i] = max(0 , K - path[0,NSteps])
-            return(norm.fit(np.exp(-r*T) * payoff)[0])
+            return(norm.fit(exp(-r*T) * payoff)[0])
 
         def barrierCrossing(spot , sb , path):
             if sb < spot:
@@ -459,25 +458,25 @@ class Barrier(OptionValuation):
 
 
         def knockout_call(spot , Sb , K , r , T , sigma , NSteps , NRepl):
-            payoff = np.zeros((NRepl , 1))
+            payoff = zeros((NRepl , 1))
 
             for i in range(NRepl):
                 path = AssetPaths(spot , r , sigma , T , NSteps , 1 )
                 knocked = barrierCrossing(spot , Sb , path)
                 if knocked == 0:
                     payoff[i] = max(0 , path[0 , NSteps] - K)
-            return(norm.fit(np.exp(-r*T) * payoff)[0])
+            return(norm.fit(exp(-r*T) * payoff)[0])
 
 
         def knockin_call(spot , Sb , K , r , T , sigma , NSteps , NRepl):
-            payoff = np.zeros((NRepl , 1))
+            payoff = zeros((NRepl , 1))
 
             for i in range(NRepl):
                 path = AssetPaths(spot , r , sigma , T , NSteps , 1 )
                 knocked = barrierCrossing(spot , Sb , path)
                 if knocked == 1:
                     payoff[i] = max(0 , path[0 , NSteps] - K)
-            return(norm.fit(np.exp(-r*T) * payoff)[0])
+            return(norm.fit(exp(-r*T) * payoff)[0])
 
         px = 0
         if self.dir == 'out' and self.right == 'call' and self.knock == 'down':
