@@ -8,7 +8,7 @@ class Bermudan(OptionValuation):
     Inherits all methods and properties of OptionValuation class.
     """
 
-    def calc_px(self, method='LT', tex=(.12,.24,.46,.9,.91,.92,.93,.94,.95,.96,.97,.98,.99, 1.), \
+    def calc_px(self, method='LT', tex=(.12,.24,.46,.9,.91,.92,.93,.94,.95,.96,.97,.98,.99, 1.),
         nsteps=None, npaths=None, keep_hist=False, R=3):
         """ Wrapper function that calls appropriate valuation method.
 
@@ -54,6 +54,9 @@ class Bermudan(OptionValuation):
         The Bermudan option is a modified American with restricted early-exercise dates. Due to this restriction, 
         Bermudans are named as such as they are "between" American and European options in exercisability, and as 
         this module demonstrates, in price.
+
+        For our Monte Carlo pricing, we use the Longstaff-Schwartz algorithm. Our implementation is drawn heavily from
+        this paper [1], while our method for generating the betas is drawn heavily from this paper [2].
 
 
         References
@@ -211,7 +214,7 @@ class Bermudan(OptionValuation):
 
         Note
         ----
-
+        Uses the Longstaff-Schwartz algorithm.
         """
 
         # Get arguments from calc_px
@@ -220,10 +223,11 @@ class Bermudan(OptionValuation):
 
         def payout(stock_price):
             """
-            The payout of a Bermudan option given a stock_price.
+            Calculates the payout of a Bermudan option at a given stock_price.
+
             Parameters
             ----------
-            stock_price : list
+            stock_price : numpy.matrix
                 A vector of stock prices
 
             Returns
@@ -236,7 +240,7 @@ class Bermudan(OptionValuation):
 
         def generate_GBM_paths():
             """
-            Generates a list of paths (list of lists) of shape (tex * npaths).
+            Generates a matrix (dimensions tex * npaths) of paths.
 
             Returns
             -------
@@ -262,13 +266,19 @@ class Bermudan(OptionValuation):
             Generates the weighted Laguerre polynomial [1] solution.
             Could be made more general by expanding the scope of R, but at potentially reduced speeds.
 
+            For the Longstaff-Schwartz algorithm, we need a set of basis functions that are
+                - complete
+                - linearly independent
+            The Weighted Laguerre polynomials satisfy these properties, and we will use them as our basis functions in
+            the same way Longstaff and Schwartz chose them.
+
             Parameters
             ----------
             R : int
                     The R-th element in the Laguerre polynomial sequence
                     Must be between 0 and 6.
-            x : list
-                A vector of values to solve for.
+            x : numpy.matrix
+                    A vector of values to solve for.
 
             References
             ----------
@@ -282,12 +292,13 @@ class Bermudan(OptionValuation):
             # Convert x to an ndarray, so that this method is readable
             x = np.asarray(x)
 
+            # The explicit solutions for R=0-6
             if R == 0:
                 phi = 1
             elif R == 1:
                 phi = -x + 1
             elif R == 2:
-                phi = 1/2 * (x**2 -4*x + 2)
+                phi = 1/2 * (x**2 - 4*x + 2)
             elif R == 3:
                 phi = 1/6 * (-x**3 + 9*x**2 - 18*x + 6)
             elif R == 4:
@@ -302,13 +313,13 @@ class Bermudan(OptionValuation):
 
             # Weight s according to the Longstaff-Schwartz algorithm
             phi *= np.exp(-0.5 * x)
-            # phi = np.multiply(phi, np.exp(np.multiply(-0.5, x)))
 
             return np.matrix(phi)
 
         def betas(paths):
             """
             Generates the discounted betas used in the Longstaff-Schwartz algorithm using a regression.
+
             Parameters
             ----------
             paths : numpy.matrix
@@ -316,23 +327,18 @@ class Bermudan(OptionValuation):
 
             Returns
             -------
-            betas : list
+            betas : numpy.matrix
                     A tex * R matrix (list of lists) holding the betas.
             """
-
             # Initialize betas as an empty matrix (dimensions R * (tex - 1))
             betas = np.matrix(np.zeros((R, len(self.tex))))
 
-            # Initialize B_phi_phi as an empty square matrix (dimensions R * R)
-            # B_phi_phi = np.matrix(np.zeros((R, R)))
-
-            # Initialize B_prices_phi as an empty matrix (dimensions 1 * R)
-            # B_prices_phi = np.matrix(np.zeros((1, R)))
-
-            # Initialize laguerre_matrix as an empty matrix (dimensions npaths * R)
+            # Laguerre_matrix is a matrix (dimensions npaths * R) that will hold the coefficients
             laguerre_matrix = np.matrix(np.zeros((npaths, R)))
 
+            # Prices is a matrix (dimensions npaths * 1) that holds the prices for each path
             prices = payout(paths[len(self.tex)-1, :].getH())
+            print(prices.shape)
 
             # Step backwards through the exercise dates
             for exercise_date_index in reversed(range(len(self.tex))):
@@ -352,11 +358,11 @@ class Bermudan(OptionValuation):
                 # B_prices_phi is a matrix (dimensions 1 * R)
                 B_prices_phi = laguerre_matrix.getH() * prices
 
+                # Solve the system of equations and store the betas
                 betas[:, exercise_date_index] = np.linalg.solve(B_phi_phi, B_prices_phi)
 
+            # Trim the empty column off the front of betas
             betas = np.delete(betas, 0, 1)
-
-            # print(betas)
 
             return betas
 
@@ -366,24 +372,29 @@ class Bermudan(OptionValuation):
         # Generate betas
         betas = betas(paths)
 
-        # values will store the list of prices; each price comes from a different path
+        # Prices will store the price found at each path
         prices = np.zeros(npaths)
 
         # Fill prices
         for path in range(npaths):
             for exercise_date in range(len(self.tex)):
+
+                # Find the continuation price
                 continuation_price = 0
-                stock_price = paths[exercise_date, path] # stock price at the exercise date on a given path
+                stock_price = paths[exercise_date, path]  # stock price at the exercise date on a given path
                 for R in range(R):
                     continuation_price += Laguerre(R, stock_price) * betas[exercise_date, R]
+
+                # If the continuation price is less than the payout, or we have reached the last exercise date,
+                # we have found the price for this path.
                 if continuation_price < payout(stock_price) or exercise_date == len(self.tex)-1:
                     discount = np.exp(-(self.rf_r - self.ref.q) * (self.T * self.tex[exercise_date] / self.tex[-1]))
                     prices[path] = discount * payout(stock_price)
                     break
 
-        # Find the price by averaging the prices, then record it
+        # Find the average price across all the paths, then record it
         price = np.average(prices)
-        self.px_spec.add(px=price, sub_method='Longstaff-Schwartz')
+        self.px_spec.add(px=price, sub_method='Longstaff-Schwartz', prices=prices)
 
         return self
 
@@ -402,8 +413,3 @@ class Bermudan(OptionValuation):
         """
 
         return self
-
-
-s = Stock(S0=11, vol=.4)
-o = Bermudan(ref=s, right='put', K=15, T=1, rf_r=.05, desc="in-the-money Bermudan put")
-print(o.calc_px(method='MC', R=3, npaths=5**1, tex=list([(i+1)/10 for i in range(10)])).px_spec.px)
