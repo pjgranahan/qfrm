@@ -46,18 +46,22 @@ class ForwardStart(OptionValuation):
 
         Examples
         --------
+        BS Examples
+        -----------
         #http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
         >>> s = Stock(S0=50, vol=.15,q=0.05)
-        >>> ForwardStart(ref=s, right='call', T=0.5, \
-        rf_r=.1).calc_px(T_s=0.5) #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        ForwardStart...px: 2.62877...
+        >>> o=ForwardStart(ref=s, K=50,right='call', T=0.5, \
+        rf_r=.1).calc_px(method='BS',T_s=0.5)
+        >>> print(o.px_spec.px) #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        2.62877...
         <BLANKLINE>
 
-        #http://www.globalriskguard.com/resources/deriv/fwd_4.pdf
+
         >>> s = Stock(S0=60, vol=.30,q=0.04)
-        >>> ForwardStart(ref=s, K=66,right='call', T=0.75, \
-        rf_r=.08).calc_px(T_s=0.25) #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        ForwardStart...px: 4.40645...
+        >>> o=ForwardStart(ref=s, K=66,right='call', T=0.75, \
+        rf_r=.08).calc_px(method='BS',T_s=0.25)
+        >>> print(o.px_spec) #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 6.760...
         <BLANKLINE>
 
         >>> from pandas import Series
@@ -74,7 +78,7 @@ class ForwardStart(OptionValuation):
         -------------------------------------
 
         Notes
-        -------
+        -----
         Verification of examples: page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
 
         Please note that the following MC examples will only generate results that matches the output of online source\
@@ -167,6 +171,10 @@ class ForwardStart(OptionValuation):
             print('Input error. right should be string')
             return False
 
+        #Make sure strike price is set to the expected underlying price at T_S
+
+
+
         try:
 
             S0   =   float(_.ref.S0)
@@ -179,17 +187,19 @@ class ForwardStart(OptionValuation):
             print('Input error. S, T, T1, vol, r, q should be floats.')
             return False
 
+        _.K = _.ref.S0*np.exp((_.rf_r-_.ref.q)*_.px_spec.T_s)
+
         try:
-            K = float(_.K)
+            K = _.ref.S0*np.exp((_.rf_r-_.ref.q)*_.px_spec.T_s)
         except:
-            K = S0
+            print('Input error. K is None.')
+
 
         assert right in ['c','p'], 'right should be either "call" or "put" '
         assert vol >= 0, 'vol >=0'
         assert T > 0, 'T > 0'
         assert T_s >=0, 'T_s >= 0'
         assert S0 >= 0, 'S >= 0'
-        assert K >= 0, 'K >= 0'
         assert r >= 0, 'r >= 0'
         assert q >= 0, 'q >= 0'
 
@@ -197,19 +207,19 @@ class ForwardStart(OptionValuation):
 
 
         # Parameters in BSM
-        d1 = (math.log(S0/K)+(r-q+vol**2/2)*T)/(vol*math.sqrt(T))
+        d1 = ((r-q+vol**2/2)*T)/(vol*math.sqrt(T))
         d2 = d1 - vol*math.sqrt(T)
 
 
         # Calculate the option price
-        if right == 'c':
-            px = (S0*math.exp(-q*T)*scipy.stats.norm.cdf(d1)-\
-                  K*math.exp(-r*T)*scipy.stats.norm.cdf(d2))*math.exp(-q*T_s)
-        elif right == 'p':
-            px = (K*math.exp(-r*T)*scipy.stats.norm.cdf(-d2)-\
-                  S0*math.exp(-q*T)*scipy.stats.norm.cdf(-d1))*math.exp(-q*T_s)
+        if right=='c':
+            px = S0*math.exp(-q*T_s)*( math.exp(-q*T)*scipy.stats.norm.cdf(d1)\
+                                       -math.exp(-r*T)*scipy.stats.norm.cdf(d2) )
+        elif right=='p':
+            px = S0*math.exp(-q*T_s)*( -math.exp(-q*T)*scipy.stats.norm.cdf(-d1)\
+                                       +math.exp(-r*T)*scipy.stats.norm.cdf(-d2) )
 
-        self.px_spec.add(px=float(Util.demote(px)), method='BS', sub_method=None)
+        self.px_spec.add(px=float(px), method='BS', sub_method=None)
         return self
 
 
@@ -294,9 +304,6 @@ class ForwardStart(OptionValuation):
         """
 
         return self
-
-
-
 
 
 
