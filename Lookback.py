@@ -239,6 +239,12 @@ class Lookback(OptionValuation):
         _ = self
         # Compute Parameters
 
+
+        # The payoff from a floating lookback call is the amount that the final asset price exceeds the minimum asset
+        # price achieved during the life of the option.
+        # The payoff from a floating lookback put is the amount by which the maximum asset price achieved during the
+        # life of the option exceeds the final asset price
+
         S_new = _.ref.S0 / _.px_spec.Sfl if _.signCP == 1 else _.px_spec.Sfl / _.ref.S0
 
         a1 = (math.log(S_new) + (_.signCP * (_.rf_r - _.ref.q) + _.ref.vol ** 2 / 2) * _.T) / (_.ref.vol * math.sqrt(_.T))
