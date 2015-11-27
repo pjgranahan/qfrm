@@ -245,19 +245,24 @@ class Lookback(OptionValuation):
         # The payoff from a floating lookback put is the amount by which the maximum asset price achieved during the
         # life of the option exceeds the final asset price
 
+        # compute the new stock price
         S_new = _.ref.S0 / _.px_spec.Sfl if _.signCP == 1 else _.px_spec.Sfl / _.ref.S0
 
+        # compute each a and c parameters from Hull p607
         a1 = (math.log(S_new) + (_.signCP * (_.rf_r - _.ref.q) + _.ref.vol ** 2 / 2) * _.T) / (_.ref.vol * math.sqrt(_.T))
         a2 = a1 - _.ref.vol * math.sqrt(_.T)
         a3 = (math.log(S_new) + _.signCP * (-_.rf_r + _.ref.q + _.ref.vol ** 2 / 2) * _.T) / (_.ref.vol * math.sqrt(_.T))
         Y1 = _.signCP * (-2 * (_.rf_r - _.ref.q - _.ref.vol ** 2 / 2) * math.log(S_new)) / (_.ref.vol ** 2)
 
+        # compute call option price
         c1 = _.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(a1)
         c2 = _.ref.S0 * math.exp(-_.ref.q * _.T) * (_.ref.vol ** 2) * stats.norm.cdf(-a1) / (2 * (_.rf_r - _.ref.q))
         c3 = - _.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (stats.norm.cdf(a2) - _.ref.vol ** 2 * math.exp(Y1) * \
                                                           stats.norm.cdf(-a3) / (2 * (_.rf_r - _.ref.q)))
+
         c = c1 - c2 + c3
 
+        # compute put option price
         p1 = self.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (stats.norm.cdf(a1) - _.ref.vol ** 2 * math.exp(Y1) * \
                                                            stats.norm.cdf(-a3) / (2 * (_.rf_r - _.ref.q)))
         p2 = _.ref.S0 * math.exp(-_.ref.q * _.T) * (_.ref.vol ** 2) * stats.norm.cdf(-a2) / (2 * (_.rf_r - _.ref.q))
