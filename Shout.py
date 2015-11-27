@@ -4,7 +4,6 @@ from scipy import stats
 from OptionValuation import *
 import matplotlib.pyplot as plt
 
-
 class Shout(OptionValuation):
     """ Shout option class.
 
@@ -20,7 +19,7 @@ class Shout(OptionValuation):
         but a wrapper function calc_px().
 
         Parameters
-        ----------------------------------
+        --------
         method : str
                 Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
         nsteps : int
@@ -33,28 +32,30 @@ class Shout(OptionValuation):
                 Seed number for Monte Carlo simulation
 
         Returns
-        ------------------------------------
+        --------
         self : Shout
 
         .. sectionauthor:: Mengyan Xie
 
         Notes
-        ----------------------------------------
+        --------
         Verification of Shout option: http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L4shout.pdf
         Hull Ch26.12 P609
 
 
         Examples
-        ----------------------------------------------------
+        --------
         This two excel spreadsheet price shout option.
         http://investexcel.net/shout-options-excel/
-        https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=9&cad=rja&uact=8&ved=0ahUKEwjMsfu4n6TJAhVJz2MKHQA_B-MQFghSMAg&url=http%3A%2F%2Fwww.actuarialworkshop.com%2FBinomial%2520Tree.xls&usg=AFQjCNEic5d4DfV5BTKbzkPW2LhzBU0Fdw&sig2=lB14d9wQBxsiqdaXlqTBTw&bvm=bv.108194040,d.eWE
+        https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=9&cad=rja&uact=8&
+        ved=0ahUKEwjMsfu4n6TJAhVJz2MKHQA_B-MQFghSMAg&url=http%3A%2F%2Fwww.actuarialworkshop.com
+        %2FBinomial%2520Tree.xls&usg=AFQjCNEic5d4DfV5BTKbzkPW2LhzBU0Fdw&sig2=lB14d9wQ
+        BxsiqdaXlqTBTw&bvm=bv.108194040,d.eWE
 
         LT Examples
-        ----------------------------------------------------
+        --------
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Shout(ref=s, right='call', K=52, T=2, rf_r=.05, desc='Example from internet excel spread sheet')
-
         >>> o.pxLT(nsteps=2, keep_hist=False)
         11.803171356649463
 
@@ -73,7 +74,7 @@ class Shout(OptionValuation):
         >>> plt.show()
 
         MC Examples
-        ---------------------------------------------------
+        --------
         See example on p.26, p.28 in http://core.ac.uk/download/pdf/1568393.pdf
         >>> s = Stock(S0=36, vol=.2)
         >>> o = Shout(ref=s, right='put', K=40, T=1, rf_r=.2, desc='http://core.ac.uk/download/pdf/1568393.pdf')
@@ -116,16 +117,15 @@ class Shout(OptionValuation):
 
 
         """
-        from numpy import arange, maximum, sqrt, exp
-        from scipy.stats import norm
+
 
         keep_hist = getattr(self.px_spec, 'keep_hist', False)
         n = getattr(self.px_spec, 'nsteps', 3)
         _ = self.LT_specs(n)
 
         # Get the Price based on Binomial Tree
-        S = self.ref.S0 * _['d'] ** arange(n, -1, -1) * _['u'] ** arange(0, n + 1)  # terminal stock prices
-        O = maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
+        S = self.ref.S0 * _['d'] ** np.arange(n, -1, -1) * _['u'] ** np.arange(0, n + 1)  # terminal stock prices
+        O = np.maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
 
         # The end node of tree
         S_tree = (tuple([float(s) for s in S]),)  # use tuples of floats (instead of numpy.float)
@@ -137,8 +137,8 @@ class Shout(OptionValuation):
             # Left time until duration
             tleft = left * _['dt']
             # d1 and d2 from BS model
-            d1 = (0 + (self.rf_r + self.ref.vol ** 2 / 2) * tleft) / (self.ref.vol * sqrt(tleft))
-            d2 = d1 - self.ref.vol * sqrt(tleft)
+            d1 = (0 + (self.rf_r + self.ref.vol ** 2 / 2) * tleft) / (self.ref.vol * np.sqrt(tleft))
+            d2 = d1 - self.ref.vol * np.sqrt(tleft)
 
             # payoff of not shout
             O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
@@ -146,13 +146,13 @@ class Shout(OptionValuation):
             S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
 
             # payoff of shout
-            Shout = self.signCP * S / exp(self.ref.q * tleft) * norm.cdf(self.signCP * d1) - \
-                    self.signCP * S / exp(self.rf_r * tleft) * norm.cdf(self.signCP * d2) + \
-                    self.signCP * (S - self.K) / exp(self.rf_r * tleft)
+            Shout = self.signCP * S / np.exp(self.ref.q * tleft) * stats.norm.cdf(self.signCP * d1) - \
+                    self.signCP * S / np.exp(self.rf_r * tleft) * stats.norm.cdf(self.signCP * d2) + \
+                    self.signCP * (S - self.K) / np.exp(self.rf_r * tleft)
 
             # final payoff is the maximum of shout or not shout
-            Payout = maximum(Shout, 0)
-            O = maximum(O, Payout)
+            Payout = np.maximum(Shout, 0)
+            O = np.maximum(O, Payout)
 
             S_tree = (tuple([float(s) for s in S]),) + S_tree
             O_tree = (tuple([float(o) for o in O]),) + O_tree

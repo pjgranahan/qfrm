@@ -3,6 +3,8 @@ import numpy as np
 from scipy import stats
 from OptionValuation import *
 import matplotlib.pyplot as plt
+from scipy.stats import norm
+from math import sqrt, exp, log
 
 class Gap(OptionValuation):
     """ Gap option class.
@@ -66,17 +68,17 @@ class Gap(OptionValuation):
         .. sectionauthor:: Yen-fei Chen
 
         Notes
-        -----
+        --------
         A gap option has a strike price, K1 , and a trigger price, K2 . The trigger price
         determines whether or not the gap option will have a nonzero payoff. The strike price
         determines the amount of the nonzero payoff. The strike price may be greater than or
         less than the trigger price.
 
         Examples
-        ----------------------------------------------------------
+        --------
 
         BS Examples
-        ----------------------------------------------------------
+        --------
         >>> s = Stock(S0=500000, vol=.2)
         >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='Hull p.601 Example 26.1')
         >>> o.pxBS(K2=350000)
@@ -87,7 +89,7 @@ class Gap(OptionValuation):
         >>> o.pxBS(K2=50)
         2.266910325361735
 
-        >>> o.o.calc_px(K2=50, method='BS').px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.calc_px(K2=50, method='BS').px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         PriceSpec...px: 2.266910325...
 
         >>> from pandas import Series
@@ -99,7 +101,7 @@ class Gap(OptionValuation):
         >>> plt.show()
 
         LT Examples
-        ----------------------------------------------------------
+        --------
         >>> s = Stock(S0=500000, vol=.2,  q = 0)
         >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, on = (90000,)*23, desc = 'HULL p. 601 Exp 26.1')
         >>> o.calc_px(K2=350000, nsteps = 22, method='LT').px_spec.px
@@ -117,23 +119,24 @@ class Gap(OptionValuation):
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
-        >>> o = Series([o.update(T=t).calc_px(method='LT', nsteps=5).px_spec.px for t in expiries], expiries)
+        >>> o = Series([o.update(T=t).calc_px(method='LT', K2 = 50, nsteps=5).px_spec.px for t in expiries], expiries)
         >>> o.plot(grid=1, title='Price vs expiry (in years)')
 
 
         MC Examples
-        ----------------------------------------------------------------
-        Because different number of seed, npaths and nsteps will influence the option price. The result of MC method may
-        not as accurate as BSM and LT method.
+        --------
+        Because different number of seed, npaths and nsteps will influence the option price. The result of MC method
+        may not as accurate as BSM and LT method.
 
         >>> s = Stock(S0=500000, vol=.2)
         >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='Hull p.601 Example 26.1')
-        >>> o.calc_px(K2=350000, method='MC',seed=1, npaths=1000, nsteps=998).px_spec.px
+        >>> o.pxMC(K2=350000,seed=1, npaths=1000, nsteps=998)
         1895.6442963600562
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
-        >>> O = Series([o.update(T=t).calc_px(K2 = 350000,method='MC',seed=1, npaths=2,nsteps=3).px_spec.px for t in expiries], expiries)
+        >>> O = Series([o.update(T=t).calc_px(K2 = 350000,method='MC',seed=1, npaths=2,nsteps=3).px_spec.px \
+        for t in expiries], expiries)
         >>> O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
@@ -173,8 +176,7 @@ class Gap(OptionValuation):
         ------------------------------------------------------
 
         """
-        from scipy.stats import norm
-        from math import sqrt, exp, log
+
 
         _ = self
         d1 = (log(_.ref.S0 / _.K2) + (_.rf_r - _.ref.q + _.ref.vol ** 2 / 2.) * _.T)/(_.ref.vol * sqrt(_.T))
@@ -206,14 +208,12 @@ class Gap(OptionValuation):
         .. sectionauthor:: Thawda Aung
 
         References :
-        Hull, John C., Options, Futures and Other Derivatives, 9ed, 2014. Prentice Hall. ISBN 978-0-13-345631-8. http://www-2.rotman.utoronto.ca/~hull/ofod/index.html.
+        Hull, John C., Options, Futures and Other Derivatives, 9ed, 2014. Prentice Hall. ISBN 978-0-13-345631-8.
+        http://www-2.rotman.utoronto.ca/~hull/ofod/index.html.
         Humphreys, Natalia. University of Dallas.
 
 
         """
-        from scipy.stats import norm
-        from math import sqrt, exp , log
-        import numpy as np
 
         n = getattr(self.px_spec ,'nsteps', 5)
         assert len(self.on) > n , 'nsteps must be less than the vector on'
@@ -277,8 +277,8 @@ class Gap(OptionValuation):
         np.random.seed(_.seed0)
 
         # Stock price paths
-        S = _.ref.S0 * np.exp(np.cumsum(np.random.normal((_.rf_r - 0.5 * _.ref.vol ** 2) * dt, _.ref.vol * np.sqrt(dt),\
-            (n_steps + 1, n_paths)), axis=0))
+        S = _.ref.S0 * np.exp(np.cumsum(np.random.normal((_.rf_r - 0.5 * _.ref.vol ** 2) * dt,\
+                                                         _.ref.vol * np.sqrt(dt), (n_steps + 1, n_paths)), axis=0))
         S[0] = _.ref.S0
         s2 = S
 

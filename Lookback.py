@@ -2,6 +2,7 @@ from scipy import stats
 import warnings
 import numpy as np
 import math
+from numpy import array, maximum, arange
 
 from OptionValuation import *
 
@@ -54,55 +55,30 @@ class Lookback(OptionValuation):
            QFRM R Package, Lookback Option
            Hull P608 Example
 
-        Notes: The LT method might not generate the same result with BS
-               To improve the accuracy, the number of steps can be added
+        The LT method might not generate the same result with BS
+        To improve the accuracy, the number of steps can be added
 
         -------
         Examples
+        --------
 
+        BS Examples
+        --------
         >>> s = Stock(S0=50, vol=.4, q=.0)
         >>> o = Lookback(ref=s, right='call', K=50, T=0.25, rf_r=.1, desc='Example from Hull Ch.26 Example 26.2 (p608)')
-        >>> print(o.calc_px(method = 'BS', Sfl = 50.0).px_spec.px)
+        >>> o.pxBS(Sfl = 50.0)
         8.037120139607019
 
-        >>> print(o.calc_px(method = 'BS', Sfl = 50.0))
-        Lookback
-        K: 50
-        T: 0.25
-        _right: call
-        _signCP: 1
-        desc: Example from Hull Ch.26 Example 26.2 (p608)
-        frf_r: 0
-        px_spec: PriceSpec
-          Sfl: 50.0
-          keep_hist: false
-          method: BS
-          px: 8.03712014
-          sub_method: Look back, Hull Ch.26
-        ref: Stock
-          S0: 50
-          curr: -
-          desc: -
-          q: 0.0
-          tkr: -
-          vol: 0.4
-        rf_r: 0.1
-        seed0: -
-        <BLANKLINE>
+        >>> o.calc_px(method = 'BS', Sfl = 50.0) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        Lookback...px: 8.03712014...
 
         >>> s = Stock(S0=50, vol=.4, q=.0)
         >>> o = Lookback(ref=s, right='put', K=50, T=0.25, rf_r=.1, desc='Example from Internet')
-        >>> print(o.calc_px(method = 'BS', Sfl = 50.0).px_spec.px)
+        >>> o.pxBS(Sfl = 50.0)
         7.79021925989035
 
-        >>> print(o.px_spec)
-        PriceSpec
-        Sfl: 50.0
-        keep_hist: false
-        method: BS
-        px: 7.79021926
-        sub_method: Look back, Hull Ch.26
-        <BLANKLINE>
+        >>> o.px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 7.79021926...
 
         >>> from pandas import Series;  expiries = range(1,11)
         >>> O = Series([o.update(T=t).calc_px(method='BS').px_spec.px for t in expiries], expiries)
@@ -112,39 +88,25 @@ class Lookback(OptionValuation):
         >>> plt.show()
 
 
+        LT Examples
+        --------
         >>> s = Stock(S0=35., vol=.05, q=.00)
         >>> o = Lookback(ref=s, right='call', K=30, T=0.25, rf_r=.1, desc='Hull p607')
-        >>> o.calc_px(method='LT', nsteps=100, keep_hist=False).px_spec.px
+        >>> o.pxLT(nsteps=100,keep_hist=False, Sfl = 50.0)
         1.829899147224415
 
-        >>> o.px_spec
-        PriceSpec
-        LT_specs:
-          a: 1.000250031
-          d: 0.997503122
-          df_T: 0.975309912
-          df_dt: 0.999750031
-          dt: 0.0025
-          p: 0.549381199
-          u: 1.002503128
-        Sfl: 50.0
-        keep_hist: false
-        method: LT
-        nsteps: 100
-        px: 1.829899147
-        sub_method: binomial tree; Hull Ch.13
-        <BLANKLINE>
-
+        >>> o.px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 1.829899147...
 
         >>> s = Stock(S0=50., vol=.4, q=.0)
         >>> o = Lookback(ref=s, right='call', T=3/12, K=30, rf_r=.1, desc='Hull p607')
-        >>> o.calc_px(method='LT', nsteps=1000, keep_hist=False).px_spec.px
+        >>> o.pxLT(nsteps=1000,keep_hist=False, Sfl = 50.0)
         8.13575890392886
 
 
         >>> s = Stock(S0=100., vol=.02, q=.0)
         >>> o = Lookback(ref=s, right='call', T=3, K=30, rf_r=.01, desc='Hull p607')
-        >>> o.calc_px(method='LT', nsteps=50, keep_hist=False).px_spec.px
+        >>> o.pxLT(nsteps=50,keep_hist=False, Sfl = 50.0)
         6.436996102693329
 
         >>> from pandas import Series
@@ -156,8 +118,6 @@ class Lookback(OptionValuation):
         >>> plt.show()
        """
 
-        #self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, Sfl = Sfl)
-        #return getattr(self, '_calc_' + method.upper())()
         return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, Sfl = Sfl)
 
     def _calc_LT(self):
@@ -179,7 +139,7 @@ class Lookback(OptionValuation):
 
         """
 
-        from numpy import array, maximum, arange
+
 
         keep_hist = getattr(self.px_spec, 'keep_hist', False)
         n = getattr(self.px_spec, 'nsteps', 3)
@@ -214,7 +174,7 @@ class Lookback(OptionValuation):
             O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
             O_tree = (tuple([float(o) for o in O]),) + O_tree
 
-        self.px_spec.add(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
+        self.px_spec.add(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',\
                         LT_specs=_, ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
 
         return self
@@ -249,9 +209,11 @@ class Lookback(OptionValuation):
         S_new = _.ref.S0 / _.px_spec.Sfl if _.signCP == 1 else _.px_spec.Sfl / _.ref.S0
 
         # compute each a and c parameters from Hull p607
-        a1 = (math.log(S_new) + (_.signCP * (_.rf_r - _.ref.q) + _.ref.vol ** 2 / 2) * _.T) / (_.ref.vol * math.sqrt(_.T))
+        a1 = (math.log(S_new) + (_.signCP * (_.rf_r - _.ref.q) + _.ref.vol ** 2 / 2) * _.T) / \
+             (_.ref.vol * math.sqrt(_.T))
         a2 = a1 - _.ref.vol * math.sqrt(_.T)
-        a3 = (math.log(S_new) + _.signCP * (-_.rf_r + _.ref.q + _.ref.vol ** 2 / 2) * _.T) / (_.ref.vol * math.sqrt(_.T))
+        a3 = (math.log(S_new) + _.signCP * (-_.rf_r + _.ref.q + _.ref.vol ** 2 / 2) * _.T) / \
+             (_.ref.vol * math.sqrt(_.T))
         Y1 = _.signCP * (-2 * (_.rf_r - _.ref.q - _.ref.vol ** 2 / 2) * math.log(S_new)) / (_.ref.vol ** 2)
 
         # compute call option price

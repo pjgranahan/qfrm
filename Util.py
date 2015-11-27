@@ -3,7 +3,7 @@ import numbers
 import numpy as np
 
 class Util():
-    """ A collection of utility functions, most of which are static methods, i.e. can be called as Util.isiterable().
+    """ A collection of utility functions, most of which are static methods, i.e. can be called as Util.is_iterable().
 
     FYI: Decorator @staticmethod allows use of functions without initializing an object
     Ex. we can use Util.demote(x) instead of Util().demote(x). It's faster.
@@ -137,7 +137,7 @@ class Util():
         c = float(cpn)/freq   # coupon payment per period, $
 
         ttcf = tuple((float(x) for x in np.arange(start, end, period)))        # times to cash flows (tuple of floats)
-        cf = tuple(map(lambda i: c if i < (len(ttcf) - 1) else c + 100, range(len(ttcf)))) # cash flows (tuple of floats)
+        cf = tuple(map(lambda i: c if i < (len(ttcf) - 1) else c + 100, range(len(ttcf)))) # cash flows(tuple of floats)
         return {'ttcf': ttcf, 'cf': cf}
 
     @staticmethod
