@@ -84,7 +84,8 @@ class Asian(OptionValuation):
 
         >>> # SEE NOTES to verify first two examples
         >>> s = Stock(S0=30, vol=.3, q = .02)
-        >>> o = Asian(ref=s, right='call', K=29, T=1., rf_r=.08, desc='http://investexcel.net/asian-options-excel/ - GEO Call')
+        >>> o = Asian(ref=s, right='call', K=29, T=1., rf_r=.08, \
+        desc='http://investexcel.net/asian-options-excel/ - GEO Call')
         >>> o.calc_px(method='BS').px_spec
         PriceSpec
         keep_hist: false
@@ -98,7 +99,8 @@ class Asian(OptionValuation):
         <BLANKLINE>
 
         >>> s = Stock(S0=30, vol=.3, q = .02)
-        >>> o = Asian(ref=s, right='put', K=29, T=1., rf_r=.08, desc='http://investexcel.net/asian-options-excel/ - GEO Put')
+        >>> o = Asian(ref=s, right='put', K=29, T=1., rf_r=.08, \
+        desc='http://investexcel.net/asian-options-excel/ - GEO Put')
         >>> o.calc_px(method='BS').px_spec
         PriceSpec
         keep_hist: false
@@ -410,7 +412,8 @@ class Asian(OptionValuation):
         Note
         ----
 
-        Formulae: http://homepage.ntu.edu.tw/~jryanwang/course/Financial%20Computation%20or%20Financial%20Engineering%20(graduate%20level)/FE_Ch10%20Asian%20Options.pdf
+        Formulae: http://homepage.ntu.edu.tw/~jryanwang/course/Financial%20Computation%20or%20Financial% \
+        20Engineering%20(graduate%20level)/FE_Ch10%20Asian%20Options.pdf
 
         """
 
