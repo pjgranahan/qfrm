@@ -267,7 +267,7 @@ class Gap(OptionValuation):
         ----------------------------------------------
 
         """
-        import numpy as np
+        # Get parameters of steps and paths
         n_steps = getattr(self.px_spec, 'nsteps', 3)
         n_paths = getattr(self.px_spec, 'npaths', 3)
         _ = self
@@ -276,16 +276,21 @@ class Gap(OptionValuation):
         df = np.exp(-_.rf_r * dt)
         np.random.seed(_.seed0)
 
-        # stock price paths
+        # Stock price paths
         S = _.ref.S0 * np.exp(np.cumsum(np.random.normal((_.rf_r - 0.5 * _.ref.vol ** 2) * dt, _.ref.vol * np.sqrt(dt),\
             (n_steps + 1, n_paths)), axis=0))
         S[0] = _.ref.S0
         s2 = S
+
+        # When the stock price is greater than K2
         V = np.maximum(_.signCP * (S - _.K2), 0)
+
+        # The payout is signCP * (S - K1)
         payout = np.maximum(_.signCP * (s2 - _.K), 0) #payout
         h = np.where(V > 0.0, payout, V) # payout if V > 0.0, payout else 0.0
 
-        for t in range(n_steps-1, -1, -1): # valuation process ia similar to American option
+        # Add the time value of each steps
+        for t in range(n_steps-1, -1, -1):
             h[t,:] = h[t+1,:] * df
 
         self.px_spec.add(px=float(np.mean(h[0,:])), sub_method='Hull p.601')
