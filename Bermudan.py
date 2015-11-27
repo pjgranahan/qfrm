@@ -338,7 +338,6 @@ class Bermudan(OptionValuation):
 
             # Prices is a matrix (dimensions npaths * 1) that holds the prices for each path
             prices = payout(paths[len(self.tex)-1, :].getH())
-            print(prices.shape)
 
             # Step backwards through the exercise dates
             for exercise_date_index in reversed(range(len(self.tex))):
