@@ -175,6 +175,34 @@ class ContingentPremium(OptionValuation):
 
 
         """
+        n = getattr(self.px_spec, 'nsteps', 3)
+        npaths = getattr(self.px_spec, 'npaths', 3)
+        dt = self.T / n
+        df = math.exp(-self.rf_r * dt)
+        S = self.ref.S0 * math.exp(math.cumsum(scipy.stats.normal((self.rf_r - 0.5 * self.ref.vol ** 2) * dt,
+            self.ref.vol * math.sqrt(dt), (n + 1, npaths)), axis=0))
+        S[0] = self.ref.S0
+        payout = np.maximum(self.signCP * (S - K), 0); v = np.copy(payout)  # terminal payouts
+        for i in range(n - 1, -1, -1):
+            v[i] = v[i + 1] * df
+        vanilla = np.mean(v[0])
+
+        def binary(Q):
+            #  Calculate d1 and d2
+            d1 = ((math.log(self.ref.S0 / self.K)) + ((self.rf_r - self.ref.q + self.ref.vol ** 2 / 2) * self.T)) / (
+                self.ref.vol * math.sqrt(self.T))
+            d2 = d1 - (self.ref.vol * math.sqrt(self.T))
+            # Calculate the discount
+            discount = Q * math.exp(-self.rf_r * self.T)
+            # Compute the put and call price
+            px_call = discount * scipy.stats.norm.cdf(d2)
+            px_put = discount * scipy.stats.norm.cdf(-d2)
+            px = px_call if self.signCP == 1 else px_put if self.signCP == -1 else None
+            return px - vanilla
+
+        option_price = scipy.optimize.root(binary, vanilla, method='hybr') #finds the binary price that we need
+        option_price = option_price.x
+        self.px_spec.add(px=float(Util.demote(option_price)), method='MC', sub_method='Monte Carlo Simulation')
         return self
 
     def _calc_FD(self):
