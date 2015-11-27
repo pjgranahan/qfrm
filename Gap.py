@@ -5,6 +5,7 @@ from OptionValuation import *
 import matplotlib.pyplot as plt
 from scipy.stats import norm
 from math import sqrt, exp, log
+import numpy as np
 
 class Gap(OptionValuation):
     """ Gap option class.
@@ -303,12 +304,39 @@ class Gap(OptionValuation):
         -------
         self: Gap
 
-        .. sectionauthor:: Oleg Melnikov
+
+        Author
+        ------
+        Runmin Zhang
 
         Note
         ----
-
         """
+        # Get parameters
+        time_steps = getattr(self.px_spec, 'nsteps', 10)
+        px_paths = getattr(self.px_spec, 'nsteps', 10)
+
+        _ = self
+        vol = _.ref.vol
+        ttm = _.T
+        on = self.on
+        r = _.rf_r
+        q = _.ref.q
+        S0 = _.ref.S0
+        sign = _.signCP
+        K2 = _.K2
+        K = _.K
+
+        # Set boundary conditions.
+        S_max = 10*S0
+        S_min = 0
+
+        stock_px = np.zeros(time_steps,px_paths)
+        d_px = S_max/px_paths
+        d_t = ttm/time_steps
+
+        stock_px 
+
 
         return self
 
