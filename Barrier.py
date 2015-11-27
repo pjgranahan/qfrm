@@ -481,28 +481,61 @@ class Barrier(OptionValuation):
 
         px = 0
         if self.dir == 'out' and self.right == 'call' and self.knock == 'down':
-            px = knockout_call(spot , Sb , K , r , T , sigma , NSteps , NRepl)
+            if spot > Sb:
+                px = knockout_call(spot , Sb , K , r , T , sigma , NSteps , NRepl)
+            else:
+                o = European(ref=self.ref, right='call', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
+                px = o.calc_px(method='BS').px_spec.px
 
         elif self.dir == 'in' and self.right == 'call' and self.knock == 'down':
-            px = knockin_call(spot , Sb , K , r , T , sigma , NSteps , NRepl)
+            if spot > Sb:
+                px = knockin_call(spot , Sb , K , r , T , sigma , NSteps , NRepl)
+            else:
+                o = European(ref=self.ref, right='call', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
+                px = o.calc_px(method='BS').px_spec.px
+                # px = o.European(ref=s,right='call', K=K, T=T, rf_r=r)
 
         elif self.dir == 'in' and self.right == 'put' and self.knock == 'down':
-            px = knockedin_put(spot , Sb , K , r , T , sigma , NSteps , NRepl)
+            if spot > Sb:
+                px = knockedin_put(spot , Sb , K , r , T , sigma , NSteps , NRepl)
+            else:
+                o = European(ref=self.ref, right='put', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
+                px = o.calc_px(method='BS').px_spec.px
 
         elif self.dir == 'out' and self.right == 'put' and self.knock == 'down':
-            px = knockedout_put(spot , Sb , K , r, T , sigma , NSteps , NRepl)
+            if spot > Sb:
+                px = knockedout_put(spot , Sb , K , r, T , sigma , NSteps , NRepl)
+            else:
+                o = European(ref=self.ref, right='put', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
+                px = o.calc_px(method='BS').px_spec.px
 
         elif self.dir == 'out' and self.right == 'call' and self.knock == 'up':
-            px = knockout_call(spot , Sb , K , r , T , sigma , NSteps , NRepl)
+            if spot < Sb:
+                px = knockout_call(spot , Sb , K , r , T , sigma , NSteps , NRepl)
+            else:
+                o = European(ref=self.ref, right='call', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
+                px = o.calc_px(method='BS').px_spec.px
 
         elif self.dir == 'in' and self.right == 'call' and self.knock == 'up':
-            px = knockin_call(spot , Sb , K , r , T , sigma , NSteps , NRepl)
+            if spot < Sb:
+                px = knockin_call(spot , Sb , K , r , T , sigma , NSteps , NRepl)
+            else:
+                o = European(ref=self.ref, right='call', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
+                px = o.calc_px(method='BS').px_spec.px
 
         elif self.dir == 'in' and self.right == 'put' and self.knock == 'up':
-            px = knockedin_put(spot , Sb , K , r , T , sigma , NSteps , NRepl)
+            if spot < Sb:
+                px = knockedin_put(spot , Sb , K , r , T , sigma , NSteps , NRepl)
+            else:
+                o = European(ref=self.ref, right='put', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
+                px = o.calc_px(method='BS').px_spec.px
 
         elif self.dir == 'out' and self.right == 'put' and self.knock == 'up':
-            px = knockedout_put(spot , Sb , K , r, T , sigma , NSteps , NRepl)
+            if spot < Sb:
+                px = knockedout_put(spot , Sb , K , r, T , sigma , NSteps , NRepl)
+            else:
+                o = European(ref=self.ref, right='put', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
+                px = o.calc_px(method='BS').px_spec.px
 
         self.px_spec.add(px=float(px), sub_method='Monte Carlo Simulation')
 
