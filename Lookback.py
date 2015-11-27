@@ -77,14 +77,8 @@ class Lookback(OptionValuation):
         >>> o.pxBS(Sfl = 50.0)
         7.79021925989035
 
-        >>> print(o.px_spec)
-        PriceSpec
-        Sfl: 50.0
-        keep_hist: false
-        method: BS
-        px: 7.79021926
-        sub_method: Look back, Hull Ch.26
-        <BLANKLINE>
+        >>> o.px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 7.79021926...
 
         >>> from pandas import Series;  expiries = range(1,11)
         >>> O = Series([o.update(T=t).calc_px(method='BS').px_spec.px for t in expiries], expiries)
@@ -98,37 +92,21 @@ class Lookback(OptionValuation):
         --------
         >>> s = Stock(S0=35., vol=.05, q=.00)
         >>> o = Lookback(ref=s, right='call', K=30, T=0.25, rf_r=.1, desc='Hull p607')
-        >>> o.calc_px(method='LT', nsteps=100, keep_hist=False).px_spec.px
+        >>> o.pxLT(nsteps=100,keep_hist=False, Sfl = 50.0)
         1.829899147224415
 
-        >>> o.px_spec
-        PriceSpec
-        LT_specs:
-          a: 1.000250031
-          d: 0.997503122
-          df_T: 0.975309912
-          df_dt: 0.999750031
-          dt: 0.0025
-          p: 0.549381199
-          u: 1.002503128
-        Sfl: 50.0
-        keep_hist: false
-        method: LT
-        nsteps: 100
-        px: 1.829899147
-        sub_method: binomial tree; Hull Ch.13
-        <BLANKLINE>
-
+        >>> o.px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 1.829899147...
 
         >>> s = Stock(S0=50., vol=.4, q=.0)
         >>> o = Lookback(ref=s, right='call', T=3/12, K=30, rf_r=.1, desc='Hull p607')
-        >>> o.calc_px(method='LT', nsteps=1000, keep_hist=False).px_spec.px
+        >>> o.pxLT(nsteps=1000,keep_hist=False, Sfl = 50.0)
         8.13575890392886
 
 
         >>> s = Stock(S0=100., vol=.02, q=.0)
         >>> o = Lookback(ref=s, right='call', T=3, K=30, rf_r=.01, desc='Hull p607')
-        >>> o.calc_px(method='LT', nsteps=50, keep_hist=False).px_spec.px
+        >>> o.pxLT(nsteps=50,keep_hist=False, Sfl = 50.0)
         6.436996102693329
 
         >>> from pandas import Series
@@ -140,8 +118,6 @@ class Lookback(OptionValuation):
         >>> plt.show()
        """
 
-        #self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, Sfl = Sfl)
-        #return getattr(self, '_calc_' + method.upper())()
         return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, Sfl = Sfl)
 
     def _calc_LT(self):

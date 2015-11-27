@@ -89,7 +89,7 @@ class Gap(OptionValuation):
         >>> o.pxBS(K2=50)
         2.266910325361735
 
-        >>> o.o.calc_px(K2=50, method='BS').px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.calc_px(K2=50, method='BS').px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         PriceSpec...px: 2.266910325...
 
         >>> from pandas import Series
@@ -119,7 +119,7 @@ class Gap(OptionValuation):
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
-        >>> o = Series([o.update(T=t).calc_px(method='LT', nsteps=5).px_spec.px for t in expiries], expiries)
+        >>> o = Series([o.update(T=t).calc_px(method='LT', K2 = 50, nsteps=5).px_spec.px for t in expiries], expiries)
         >>> o.plot(grid=1, title='Price vs expiry (in years)')
 
 
@@ -130,7 +130,7 @@ class Gap(OptionValuation):
 
         >>> s = Stock(S0=500000, vol=.2)
         >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='Hull p.601 Example 26.1')
-        >>> o.calc_px(K2=350000, method='MC',seed=1, npaths=1000, nsteps=998).px_spec.px
+        >>> o.pxMC(K2=350000,seed=1, npaths=1000, nsteps=998)
         1895.6442963600562
 
         >>> from pandas import Series

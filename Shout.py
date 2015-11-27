@@ -56,7 +56,6 @@ class Shout(OptionValuation):
         --------
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Shout(ref=s, right='call', K=52, T=2, rf_r=.05, desc='Example from internet excel spread sheet')
-
         >>> o.pxLT(nsteps=2, keep_hist=False)
         11.803171356649463
 
