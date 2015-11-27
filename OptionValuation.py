@@ -114,7 +114,8 @@ class Stock(SpecPrinter):
 class OptionSeries(SpecPrinter):
     """ Object representing an option series.
 
-    This class describes the option specs outside of valuation. so, it doesn't contain interest rates needed for pricing.
+    This class describes the option specs outside of valuation.
+    So, it doesn't contain interest rates needed for pricing.
     This class can be used for plotting and evaluating option packages (strategies like bull spread, straddle, ...).
     It can also be inherited by classes that require an important extension - option valuation.
 

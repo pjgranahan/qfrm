@@ -1,8 +1,8 @@
+import math
 import numpy as np
+from scipy import stats
 from OptionValuation import *
 import matplotlib.pyplot as plt
-from numpy import arange, maximum, sqrt, exp
-from scipy.stats import norm
 
 class Shout(OptionValuation):
     """ Shout option class.
@@ -19,7 +19,7 @@ class Shout(OptionValuation):
         but a wrapper function calc_px().
 
         Parameters
-        ----------
+        --------
         method : str
                 Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
         nsteps : int
@@ -32,66 +32,38 @@ class Shout(OptionValuation):
                 Seed number for Monte Carlo simulation
 
         Returns
-        -------
+        --------
         self : Shout
 
         .. sectionauthor:: Mengyan Xie
 
         Notes
-        -----
+        --------
         Verification of Shout option: http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L4shout.pdf
         Hull Ch26.12 P609
 
-        -------
-        Examples
 
+        Examples
+        --------
         This two excel spreadsheet price shout option.
         http://investexcel.net/shout-options-excel/
-        https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=9&cad=rja&uact=8&ved=0ahUKEwjMsfu4n6TJAhVJz2MKHQA_B-MQFghSMAg&url=http%3A%2F%2Fwww.actuarialworkshop.com%2FBinomial%2520Tree.xls&usg=AFQjCNEic5d4DfV5BTKbzkPW2LhzBU0Fdw&sig2=lB14d9wQBxsiqdaXlqTBTw&bvm=bv.108194040,d.eWE
+        https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=9&cad=rja&uact=8&
+        ved=0ahUKEwjMsfu4n6TJAhVJz2MKHQA_B-MQFghSMAg&url=http%3A%2F%2Fwww.actuarialworkshop.com
+        %2FBinomial%2520Tree.xls&usg=AFQjCNEic5d4DfV5BTKbzkPW2LhzBU0Fdw&sig2=lB14d9wQ
+        BxsiqdaXlqTBTw&bvm=bv.108194040,d.eWE
 
-
+        LT Examples
+        --------
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Shout(ref=s, right='call', K=52, T=2, rf_r=.05, desc='Example from internet excel spread sheet')
-
-        >>> o.calc_px(method='LT', nsteps=2, keep_hist=True).px_spec.px
+        >>> o.pxLT(nsteps=2, keep_hist=False)
         11.803171356649463
 
-        >>> o.px_spec.ref_tree
-        ((50.000000000000014,), (37.0409110340859, 67.49294037880017), (27.440581804701324, 50.00000000000001, 91.10594001952546))
+        >>> o.calc_px(method='LT', nsteps=2, keep_hist=True).px_spec.opt_tree
+        ((11.803171356649463,), (0.0, 24.34243306821051), (0.0, 0.0, 39.10594001952546))
 
-        >>> o.calc_px(method='LT', nsteps=2, keep_hist=False)
-        Shout
-        K: 52
-        T: 2
-        _right: call
-        _signCP: 1
-        desc: Example from internet excel spread sheet
-        frf_r: 0
-        px_spec: PriceSpec
-          LT_specs:
-            a: 1.051271096
-            d: 0.740818221
-            df_T: 0.904837418
-            df_dt: 0.951229425
-            dt: 1.0
-            p: 0.509740865
-            u: 1.349858808
-          keep_hist: false
-          method: LT
-          nsteps: 2
-          px: 11.803171357
-          sub_method: binomial tree; Hull Ch.13
-        ref: Stock
-          S0: 50
-          curr: -
-          desc: -
-          q: 0
-          tkr: -
-          vol: 0.3
-        rf_r: 0.05
-        seed: -
-        seed0: -
-        <BLANKLINE>
+        >>> o.calc_px(method='LT', nsteps=2, keep_hist=False) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        Shout...px: 11.803171357...
 
         >>> from pandas import Series
         >>> steps = range(1,11)
@@ -101,21 +73,28 @@ class Shout(OptionValuation):
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
-        >>> o.calc_px(method='MC', nsteps=1000, npaths=10000, keep_hist=True, seed=1212).px_spec.px
-        11.094278625427911
-
+        MC Examples
+        --------
+        See example on p.26, p.28 in http://core.ac.uk/download/pdf/1568393.pdf
         >>> s = Stock(S0=36, vol=.2)
-        >>> o = Shout(ref=s, right='call', K=40, T=1, rf_r=.2, desc='Example from http://core.ac.uk/download/pdf/1568393.pdf')
-        >>> o.calc_px(method='LT', nsteps=500, keep_hist=True).px_spec.px
-        5.108705783777672
+        >>> o = Shout(ref=s, right='put', K=40, T=1, rf_r=.2, desc='http://core.ac.uk/download/pdf/1568393.pdf')
+        >>> o.pxMC(nsteps=252, npaths=10000, keep_hist=True, seed=1212)
+        4.131257046216974
 
-        >>> o.calc_px(method='MC', nsteps=500, npaths=10000, keep_hist=True, seed=1212).px_spec.px
-        5.6908446205510863
+        >>> o.calc_px(method='MC', nsteps=252, npaths=10000, keep_hist=True, seed=1212).px_spec
+        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 4.131257046...
+
+        >>> from pandas import Series;  steps = [10,50,100,150,200,250]
+        >>> O = Series([o.pxMC(nsteps=s, npaths=10000, keep_hist=True, seed=1212) for s in steps], steps)
+        >>> O.plot(grid=1, title='MC Price vs nsteps')# doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at ...>
+        >>> import matplotlib.pyplot as plt
+        >>> plt.show()
 
        """
         self.seed = seed
-        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
-        return getattr(self, '_calc_' + method.upper())()
+        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
 
 
     def _calc_LT(self):
@@ -139,33 +118,41 @@ class Shout(OptionValuation):
 
         """
 
+
         keep_hist = getattr(self.px_spec, 'keep_hist', False)
         n = getattr(self.px_spec, 'nsteps', 3)
         _ = self.LT_specs(n)
 
-        S = self.ref.S0 * _['d'] ** arange(n, -1, -1) * _['u'] ** arange(0, n + 1)  # terminal stock prices
-        O = maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
+        # Get the Price based on Binomial Tree
+        S = self.ref.S0 * _['d'] ** np.arange(n, -1, -1) * _['u'] ** np.arange(0, n + 1)  # terminal stock prices
+        O = np.maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
 
+        # The end node of tree
         S_tree = (tuple([float(s) for s in S]),)  # use tuples of floats (instead of numpy.float)
         O_tree = (tuple([float(o) for o in O]),)
 
         for i in range(n, 0, -1):
+            # Left number until duration
             left = n - i + 1
+            # Left time until duration
             tleft = left * _['dt']
-            d1 = (0 + (self.rf_r + self.ref.vol ** 2 / 2) * tleft) / (self.ref.vol * sqrt(tleft))
-            d2 = d1 - self.ref.vol * sqrt(tleft)
+            # d1 and d2 from BS model
+            d1 = (0 + (self.rf_r + self.ref.vol ** 2 / 2) * tleft) / (self.ref.vol * np.sqrt(tleft))
+            d2 = d1 - self.ref.vol * np.sqrt(tleft)
 
+            # payoff of not shout
             O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
+            # spot tree
             S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
 
-            #payoff of shout
-            Shout = self.signCP * S / exp(self.ref.q * tleft) * norm.cdf(self.signCP * d1) - \
-                    self.signCP * S / exp(self.rf_r * tleft) * norm.cdf(self.signCP * d2) + \
-                    self.signCP * (S - self.K) / exp(self.rf_r * tleft)
+            # payoff of shout
+            Shout = self.signCP * S / np.exp(self.ref.q * tleft) * stats.norm.cdf(self.signCP * d1) - \
+                    self.signCP * S / np.exp(self.rf_r * tleft) * stats.norm.cdf(self.signCP * d2) + \
+                    self.signCP * (S - self.K) / np.exp(self.rf_r * tleft)
 
-            #final payoff is the maximum of shout or not shout
-            Payout = maximum(Shout, 0)
-            O = maximum(O, Payout)
+            # final payoff is the maximum of shout or not shout
+            Payout = np.maximum(Shout, 0)
+            O = np.maximum(O, Payout)
 
             S_tree = (tuple([float(s) for s in S]),) + S_tree
             O_tree = (tuple([float(o) for o in O]),) + O_tree
@@ -205,7 +192,7 @@ class Shout(OptionValuation):
 
         Note
         ----
-        [1] eprints.maths.ox.ac.uk/933/1/lisa_yudaken.pdf
+        [1] http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L4shout.pdf
         [2] Hull, J.C., Options, Futures and Other Derivatives, 9ed, 2014. Prentice Hall, p609.
 
         """
@@ -231,7 +218,7 @@ class Shout(OptionValuation):
 
         h = maximum(_.signCP*(S-_.K), 0) # payoff when not shout
         final_payoff = repeat(S[-1,:], n_steps+1, axis=0).reshape(n_paths,n_steps+1)
-        V = maximum(_.signCP*(final_payoff.transpose()-S), 0) + (S-_.K) # payoff when shout
+        V = maximum(_.signCP*(final_payoff.transpose()-_.K), _.signCP*(S-_.K))# payoff when shout
 
         for t in range (n_steps-1,-1,-1): # valuation process ia similar to American option
             rg = polyfit(S[t,:], df*array(h[t+1,:]), 3) # regression at time t
@@ -256,4 +243,3 @@ class Shout(OptionValuation):
         """
 
         return self
-
