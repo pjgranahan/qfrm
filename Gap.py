@@ -125,8 +125,8 @@ class Gap(OptionValuation):
 
         MC Examples
         --------
-        Because different number of seed, npaths and nsteps will influence the option price. The result of MC method may
-        not as accurate as BSM and LT method.
+        Because different number of seed, npaths and nsteps will influence the option price. The result of MC method
+        may not as accurate as BSM and LT method.
 
         >>> s = Stock(S0=500000, vol=.2)
         >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='Hull p.601 Example 26.1')
