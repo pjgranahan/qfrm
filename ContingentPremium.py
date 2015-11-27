@@ -59,10 +59,10 @@ class ContingentPremium(OptionValuation):
 
         >>> s = Stock(S0=1/97, vol=.2, q=.032)
         >>> o = ContingentPremium(ref=s, right='call', K=1/100, T=.25, rf_r=.059)
-        >>> o.calc_px(method='MC', nsteps=500, npaths=1000, keep_hist=False, Seed=4).px_spec.px
-        0.0009259010407675393
-        >>> o.calc_px(method='MC', nsteps=500, npaths=1000, keep_hist=False, Seed=4)  # doctest: +ELLIPSIS
-        ContingentPremium...px: 0.000925901...
+        >>> o.calc_px(method='MC', nsteps=5, npaths=1000, keep_hist=False, Seed=0).px_spec.px
+        0.0009809635535918107
+        >>> o.calc_px(method='MC', nsteps=5, npaths=1000, keep_hist=False, Seed=0)  # doctest: +ELLIPSIS
+        ContingentPremium...px: 0.000980964...
 
         >>> s = Stock(S0=45, vol=.3, q=.02)
         >>> o = ContingentPremium(ref=s, right='call', K=52, T=3, rf_r=.05)
