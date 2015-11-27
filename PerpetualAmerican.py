@@ -51,17 +51,17 @@ class PerpetualAmerican(OptionValuation):
         >>> o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.08, \
         desc='call @37.19 put @8.68 example from Internet')
 
-        >>> print(o.calc_px(method='BS').px_spec.px) #print the option price with the above specification
-        37.190676833752335
+        >>> print(o.calc_px(method='BS').px_spec.px) # doctest: +ELLIPSIS
+        37.19067...
 
-        >>> print(o.calc_px(method="BS").px_spec)  #display the specification of the perpetual American option
+        >>> print(o.calc_px(method="BS").px_spec)  # doctest: +ELLIPSIS
         PriceSpec
         keep_hist: false
         method: BS
-        px: 37.190676833752335
+        px: 37.1906...
         <BLANKLINE>
 
-        >>> print(o.calc_px(method='BS'))  #display more properties of the option
+        >>> print(o.calc_px(method='BS'))  # doctest: +ELLIPSIS
         PerpetualAmerican
         K: 50
         T: 1
@@ -72,7 +72,7 @@ class PerpetualAmerican(OptionValuation):
         px_spec: PriceSpec
           keep_hist: false
           method: BS
-          px: 37.190676833752335
+          px: 37.19067...
         ref: Stock
           S0: 50
           curr: -
@@ -85,10 +85,10 @@ class PerpetualAmerican(OptionValuation):
         <BLANKLINE>
 
         Change the option to a put
-        >>> print(o.update(right='put').calc_px().px_spec.px)
-        8.67627928986901
+        >>> print(o.update(right='put').calc_px().px_spec.px) # doctest: +ELLIPSIS
+        8.67627...
 
-        >>> print(o.update(right='put').calc_px()) #display full specification
+        >>> print(o.update(right='put').calc_px()) # doctest: +ELLIPSIS
         PerpetualAmerican
         K: 50
         T: 1
@@ -99,7 +99,7 @@ class PerpetualAmerican(OptionValuation):
         px_spec: PriceSpec
           keep_hist: false
           method: BS
-          px: 8.67627928986901
+          px: 8.67627...
         ref: Stock
           S0: 50
           curr: -
@@ -115,14 +115,14 @@ class PerpetualAmerican(OptionValuation):
         >>> s = Stock(S0=50, vol=.3, q=0.02)
         >>> o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.05, \
         desc='call @27.47 put @13.43 example from Internet')
-        >>> print(o.calc_px(method='BS').px_spec.px)
-        27.465595636754223
+        >>> print(o.calc_px(method='BS').px_spec.px) # doctest: +ELLIPSIS
+        27.46559...
 
         Change the option to a put
-        >>> print(o.update(right='put').calc_px().px_spec.px)
-        13.427262534976805
+        >>> print(o.update(right='put').calc_px().px_spec.px)# doctest: +ELLIPSIS
+        13.42726...
 
-        >>> print(o.update(right='put').calc_px())
+        >>> print(o.update(right='put').calc_px())# doctest: +ELLIPSIS
         PerpetualAmerican
         K: 50
         T: 1
@@ -133,7 +133,7 @@ class PerpetualAmerican(OptionValuation):
         px_spec: PriceSpec
           keep_hist: false
           method: BS
-          px: 13.427262534976805
+          px: 13.427262...
         ref: Stock
           S0: 50
           curr: -
@@ -156,8 +156,8 @@ class PerpetualAmerican(OptionValuation):
         >>> plt.show()
 
         """
-        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
-        return getattr(self, '_calc_' + method.upper())()
+        
+        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
 
 
 
