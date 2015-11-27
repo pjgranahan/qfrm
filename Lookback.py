@@ -198,7 +198,7 @@ class Lookback(OptionValuation):
             O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
             O_tree = (tuple([float(o) for o in O]),) + O_tree
 
-        self.px_spec.add(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
+        self.px_spec.add(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',\
                         LT_specs=_, ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
 
         return self
@@ -233,9 +233,11 @@ class Lookback(OptionValuation):
         S_new = _.ref.S0 / _.px_spec.Sfl if _.signCP == 1 else _.px_spec.Sfl / _.ref.S0
 
         # compute each a and c parameters from Hull p607
-        a1 = (math.log(S_new) + (_.signCP * (_.rf_r - _.ref.q) + _.ref.vol ** 2 / 2) * _.T) / (_.ref.vol * math.sqrt(_.T))
+        a1 = (math.log(S_new) + (_.signCP * (_.rf_r - _.ref.q) + _.ref.vol ** 2 / 2) * _.T) / \
+             (_.ref.vol * math.sqrt(_.T))
         a2 = a1 - _.ref.vol * math.sqrt(_.T)
-        a3 = (math.log(S_new) + _.signCP * (-_.rf_r + _.ref.q + _.ref.vol ** 2 / 2) * _.T) / (_.ref.vol * math.sqrt(_.T))
+        a3 = (math.log(S_new) + _.signCP * (-_.rf_r + _.ref.q + _.ref.vol ** 2 / 2) * _.T) / \
+             (_.ref.vol * math.sqrt(_.T))
         Y1 = _.signCP * (-2 * (_.rf_r - _.ref.q - _.ref.vol ** 2 / 2) * math.log(S_new)) / (_.ref.vol ** 2)
 
         # compute call option price

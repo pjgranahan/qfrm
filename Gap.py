@@ -135,7 +135,8 @@ class Gap(OptionValuation):
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
-        >>> O = Series([o.update(T=t).calc_px(K2 = 350000,method='MC',seed=1, npaths=2,nsteps=3).px_spec.px for t in expiries], expiries)
+        >>> O = Series([o.update(T=t).calc_px(K2 = 350000,method='MC',seed=1, npaths=2,nsteps=3).px_spec.px \
+        for t in expiries], expiries)
         >>> O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
@@ -207,7 +208,8 @@ class Gap(OptionValuation):
         .. sectionauthor:: Thawda Aung
 
         References :
-        Hull, John C., Options, Futures and Other Derivatives, 9ed, 2014. Prentice Hall. ISBN 978-0-13-345631-8. http://www-2.rotman.utoronto.ca/~hull/ofod/index.html.
+        Hull, John C., Options, Futures and Other Derivatives, 9ed, 2014. Prentice Hall. ISBN 978-0-13-345631-8.
+        http://www-2.rotman.utoronto.ca/~hull/ofod/index.html.
         Humphreys, Natalia. University of Dallas.
 
 
@@ -275,8 +277,8 @@ class Gap(OptionValuation):
         np.random.seed(_.seed0)
 
         # Stock price paths
-        S = _.ref.S0 * np.exp(np.cumsum(np.random.normal((_.rf_r - 0.5 * _.ref.vol ** 2) * dt, _.ref.vol * np.sqrt(dt),\
-            (n_steps + 1, n_paths)), axis=0))
+        S = _.ref.S0 * np.exp(np.cumsum(np.random.normal((_.rf_r - 0.5 * _.ref.vol ** 2) * dt,\
+                                                         _.ref.vol * np.sqrt(dt), (n_steps + 1, n_paths)), axis=0))
         S[0] = _.ref.S0
         s2 = S
 
