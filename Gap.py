@@ -3,6 +3,8 @@ import numpy as np
 from scipy import stats
 from OptionValuation import *
 import matplotlib.pyplot as plt
+from scipy.stats import norm
+from math import sqrt, exp, log
 
 class Gap(OptionValuation):
     """ Gap option class.
@@ -173,8 +175,7 @@ class Gap(OptionValuation):
         ------------------------------------------------------
 
         """
-        from scipy.stats import norm
-        from math import sqrt, exp, log
+
 
         _ = self
         d1 = (log(_.ref.S0 / _.K2) + (_.rf_r - _.ref.q + _.ref.vol ** 2 / 2.) * _.T)/(_.ref.vol * sqrt(_.T))
@@ -211,9 +212,6 @@ class Gap(OptionValuation):
 
 
         """
-        from scipy.stats import norm
-        from math import sqrt, exp , log
-        import numpy as np
 
         n = getattr(self.px_spec ,'nsteps', 5)
         assert len(self.on) > n , 'nsteps must be less than the vector on'

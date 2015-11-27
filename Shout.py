@@ -4,7 +4,6 @@ from scipy import stats
 from OptionValuation import *
 import matplotlib.pyplot as plt
 
-
 class Shout(OptionValuation):
     """ Shout option class.
 
@@ -116,16 +115,15 @@ class Shout(OptionValuation):
 
 
         """
-        from numpy import arange, maximum, sqrt, exp
-        from scipy.stats import norm
+
 
         keep_hist = getattr(self.px_spec, 'keep_hist', False)
         n = getattr(self.px_spec, 'nsteps', 3)
         _ = self.LT_specs(n)
 
         # Get the Price based on Binomial Tree
-        S = self.ref.S0 * _['d'] ** arange(n, -1, -1) * _['u'] ** arange(0, n + 1)  # terminal stock prices
-        O = maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
+        S = self.ref.S0 * _['d'] ** np.arange(n, -1, -1) * _['u'] ** np.arange(0, n + 1)  # terminal stock prices
+        O = np.maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
 
         # The end node of tree
         S_tree = (tuple([float(s) for s in S]),)  # use tuples of floats (instead of numpy.float)
@@ -137,8 +135,8 @@ class Shout(OptionValuation):
             # Left time until duration
             tleft = left * _['dt']
             # d1 and d2 from BS model
-            d1 = (0 + (self.rf_r + self.ref.vol ** 2 / 2) * tleft) / (self.ref.vol * sqrt(tleft))
-            d2 = d1 - self.ref.vol * sqrt(tleft)
+            d1 = (0 + (self.rf_r + self.ref.vol ** 2 / 2) * tleft) / (self.ref.vol * np.sqrt(tleft))
+            d2 = d1 - self.ref.vol * np.sqrt(tleft)
 
             # payoff of not shout
             O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
@@ -146,13 +144,13 @@ class Shout(OptionValuation):
             S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
 
             # payoff of shout
-            Shout = self.signCP * S / exp(self.ref.q * tleft) * norm.cdf(self.signCP * d1) - \
-                    self.signCP * S / exp(self.rf_r * tleft) * norm.cdf(self.signCP * d2) + \
-                    self.signCP * (S - self.K) / exp(self.rf_r * tleft)
+            Shout = self.signCP * S / np.exp(self.ref.q * tleft) * stats.norm.cdf(self.signCP * d1) - \
+                    self.signCP * S / np.exp(self.rf_r * tleft) * stats.norm.cdf(self.signCP * d2) + \
+                    self.signCP * (S - self.K) / np.exp(self.rf_r * tleft)
 
             # final payoff is the maximum of shout or not shout
-            Payout = maximum(Shout, 0)
-            O = maximum(O, Payout)
+            Payout = np.maximum(Shout, 0)
+            O = np.maximum(O, Payout)
 
             S_tree = (tuple([float(s) for s in S]),) + S_tree
             O_tree = (tuple([float(o) for o in O]),) + O_tree

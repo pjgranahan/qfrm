@@ -2,6 +2,7 @@ from scipy import stats
 import warnings
 import numpy as np
 import math
+from numpy import array, maximum, arange
 
 from OptionValuation import *
 
@@ -62,37 +63,15 @@ class Lookback(OptionValuation):
 
         >>> s = Stock(S0=50, vol=.4, q=.0)
         >>> o = Lookback(ref=s, right='call', K=50, T=0.25, rf_r=.1, desc='Example from Hull Ch.26 Example 26.2 (p608)')
-        >>> print(o.calc_px(method = 'BS', Sfl = 50.0).px_spec.px)
+        >>> o.pxBS(Sfl = 50.0)
         8.037120139607019
 
-        >>> print(o.calc_px(method = 'BS', Sfl = 50.0))
-        Lookback
-        K: 50
-        T: 0.25
-        _right: call
-        _signCP: 1
-        desc: Example from Hull Ch.26 Example 26.2 (p608)
-        frf_r: 0
-        px_spec: PriceSpec
-          Sfl: 50.0
-          keep_hist: false
-          method: BS
-          px: 8.03712014
-          sub_method: Look back, Hull Ch.26
-        ref: Stock
-          S0: 50
-          curr: -
-          desc: -
-          q: 0.0
-          tkr: -
-          vol: 0.4
-        rf_r: 0.1
-        seed0: -
-        <BLANKLINE>
+        >>> o.calc_px(method = 'BS', Sfl = 50.0) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        Lookback...px: 8.03712014...
 
         >>> s = Stock(S0=50, vol=.4, q=.0)
         >>> o = Lookback(ref=s, right='put', K=50, T=0.25, rf_r=.1, desc='Example from Internet')
-        >>> print(o.calc_px(method = 'BS', Sfl = 50.0).px_spec.px)
+        >>> o.pxBS(Sfl = 50.0)
         7.79021925989035
 
         >>> print(o.px_spec)
@@ -179,7 +158,7 @@ class Lookback(OptionValuation):
 
         """
 
-        from numpy import array, maximum, arange
+
 
         keep_hist = getattr(self.px_spec, 'keep_hist', False)
         n = getattr(self.px_spec, 'nsteps', 3)
