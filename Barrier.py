@@ -1,8 +1,8 @@
 from OptionValuation import *
 from scipy.stats import norm
 from numpy import arange, maximum, log, exp, sqrt, minimum , random, zeros
-from sympy import binomial
-from math import ceil, floor
+from scipy.special import binom
+from math import ceil, floor, factorial
 from European import European
 
 class Barrier(OptionValuation):
@@ -154,7 +154,7 @@ class Barrier(OptionValuation):
 
         >>> s = Stock(S0=50., vol=.25, q=.00)
         >>> o = Barrier(ref=s,right='call', K=45., T=2., rf_r=.3, desc='down and in call')
-        >>> print(o.calc_px(H=35.,knock='down',dir='in',method='MC', rng_seed = 4, nsteps=500 , npaths = 10000).px_spec.px)
+        >>> o.calc_px(H=35.,knock='down',dir='in',method='MC', rng_seed = 4, nsteps=500 , npaths = 10000).px_spec.px
         0.14743918425170133
 
        """
@@ -275,7 +275,8 @@ class Barrier(OptionValuation):
         .. sectionauthor:: Scott Morgan
 
         .. note::
-        Binomial Trees for Barrier Options:   http://homepage.ntu.edu.tw/~jryanwang/course/Financial%20Computation%20or%20Financial%20Engineering%20(graduate%20level)/FE_Ch08%20Barrier%20Option.pdf
+        Binomial Trees for Barrier Options:   http://homepage.ntu.edu.tw/~jryanwang/course/Financial \
+        %20Computation%20or%20Financial%20Engineering%20(graduate%20level)/FE_Ch08%20Barrier%20Option.pdf
         In-Out Parity: http://www.iam.uni-bonn.de/people/ankirchner/lectures/OP_WS1314/OP_chap_nine.pdf
         Verify Examples: http://www.fintools.com/resources/online-calculators/exotics-calculators/exoticscalc-barrier/
 
@@ -286,6 +287,7 @@ class Barrier(OptionValuation):
             s = 1
         elif self.knock == 'up':
             s = -1
+
 
 
         keep_hist = getattr(self.px_spec, 'keep_hist', False)
@@ -313,8 +315,9 @@ class Barrier(OptionValuation):
 
         out_px = float(Util.demote(O))
 
+
         # self.px_spec = PriceSpec(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
-        #                 LT_specs=_, ref_tree = S_tree if save_tree else None, opt_tree = O_tree if save_tree else None)
+        #              LT_specs=_, ref_tree = S_tree if save_tree else None, opt_tree = O_tree if save_tree else None)
 
         if self.dir == 'out':
 
@@ -327,7 +330,8 @@ class Barrier(OptionValuation):
 
         k = int(ceil(log(self.K/(self.ref.S0*_['d']**n))/log(_['u']/_['d'])))
         h = int(floor(log(self.H/(self.ref.S0*_['d']**n))/log(_['u']/_['d'])))
-        l = list(map(lambda j: binomial(n,n-2*h+j)*(_['p']**j)*((1-_['p'])**(n-j))*(self.ref.S0*(_['u']**j)*(_['d']**(n-j))-self.K),range(k,n+1)))
+        l = list(map(lambda j: binom(n,n-2*h+j)*(_['p']**j)*((1-_['p'])**(n-j))* \
+                               (self.ref.S0*(_['u']**j)*(_['d']**(n-j))-self.K),range(k,n+1)))
         down_in_call = exp(-self.rf_r*self.T)*sum(l)
 
 

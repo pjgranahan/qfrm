@@ -59,7 +59,8 @@ class Spread(OptionValuation):
         >>> s2 = Stock(S0=31.,q=0.,vol=.3)
         >>> o = Spread(ref = s1, rf_r = .05, right='put', K=0., T=2., seed0 = 0)
         >>> from pandas import Series;  exps = range(1,10)
-        >>> O = Series([o.update(T=t).calc_px(method='BS',S2=s2, rho=.4, nsteps = 100, npaths=100).px_spec.px for t in exps], exps)
+        >>> O = Series([o.update(T=t).calc_px(method='BS',S2=s2, rho=.4, nsteps = 100, npaths=100).px_spec.px \
+        for t in exps], exps)
         >>> O.plot(grid=1, title='Price vs Time to Expiry') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> # import matplotlib.pyplot as plt
@@ -79,7 +80,8 @@ class Spread(OptionValuation):
 
         >>> s1 = Stock(S0=30.,q=0.,vol=.2)
         >>> s2 = Stock(S0=30.,q=0.,vol=.2)
-        >>> o = Spread(ref = s1, rf_r = .05, right='put', K=1., T=2., seed0 = 2, desc = 'Perfectly correlated -- present value of 1')
+        >>> o = Spread(ref = s1, rf_r = .05, right='put', K=1., T=2., seed0 = 2, \
+        desc = 'Perfectly correlated -- present value of 1')
         >>> o.calc_px(method='MC',S2 = s2,rho=1.,nsteps=1000,npaths=1000).px_spec
         PriceSpec
         keep_hist: false
@@ -94,7 +96,8 @@ class Spread(OptionValuation):
         >>> s2 = Stock(S0=31.,q=0.,vol=.3)
         >>> o = Spread(ref = s1, rf_r = .05, right='put', K=2., T=2., seed0 = 0)
         >>> from pandas import Series;  exps = range(1,10)
-        >>> O = Series([o.update(T=t).calc_px(method='MC',S2=s2, rho=.4, nsteps = 100, npaths=100).px_spec.px for t in exps], exps)
+        >>> O = Series([o.update(T=t).calc_px(method='MC',S2=s2, rho=.4, nsteps = 100, npaths=100).px_spec.px \
+        for t in exps], exps)
         >>> O.plot(grid=1, title='Price vs Time to Expiry') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
 
