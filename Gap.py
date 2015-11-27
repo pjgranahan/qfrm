@@ -1,6 +1,10 @@
+import math
 import numpy as np
+from scipy import stats
 from OptionValuation import *
 import matplotlib.pyplot as plt
+from scipy.stats import norm
+from math import sqrt, exp, log
 
 class Gap(OptionValuation):
     """ Gap option class.
@@ -15,7 +19,7 @@ class Gap(OptionValuation):
         Passes additional arguments to OptionValuation class
 
         Parameters
-        ----------
+        ---------------------------------------
         on : Numeric Vector
                 A vector of number of steps to be used in binomial tree averaging, vector of positive intergers
         dir : string
@@ -25,7 +29,7 @@ class Gap(OptionValuation):
 
 
         Returns
-        -------
+        -----------------------------------------
         self : Gap
 
         .. sectionauthor:: Thawda Aung
@@ -36,7 +40,7 @@ class Gap(OptionValuation):
 
         super().__init__(*args,**kwargs)
 
-    def calc_px(self, K2=None, method='BS', nsteps=None, npaths=None, keep_hist=False):
+    def calc_px(self, K2=None, method='BS', nsteps=None, npaths=None, keep_hist=False, seed=None):
         """ Wrapper function that calls appropriate valuation method.
 
         User passes parameters to calc_px, which saves them to local PriceSpec object
@@ -45,7 +49,7 @@ class Gap(OptionValuation):
         but a wrapper function calc_px().
 
         Parameters
-        ----------
+        --------------------------------------------------
         K2 : float
                 The trigger price.
         method : str
@@ -58,13 +62,13 @@ class Gap(OptionValuation):
                 If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
 
         Returns
-        -------
+        -----------------------------------------------------
         self : Gap
 
         .. sectionauthor:: Yen-fei Chen
 
         Notes
-        -----
+        --------
         A gap option has a strike price, K1 , and a trigger price, K2 . The trigger price
         determines whether or not the gap option will have a nonzero payoff. The strike price
         determines the amount of the nonzero payoff. The strike price may be greater than or
@@ -73,75 +77,106 @@ class Gap(OptionValuation):
         Examples
         --------
 
+        BS Examples
+        --------
         >>> s = Stock(S0=500000, vol=.2)
         >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='Hull p.601 Example 26.1')
-        >>> o.calc_px(K2=350000, method='BS').px_spec.px
+        >>> o.pxBS(K2=350000)
         1895.6889443965902
 
         >>> s = Stock(S0=50, vol=.2)
         >>> o = Gap(ref=s, right='call', K=57, T=1, rf_r=.09)
-        >>> o.calc_px(K2=50, method='BS').px_spec.px
+        >>> o.pxBS(K2=50)
         2.266910325361735
 
-        >>> s = Stock(S0=50, vol=.2)
-        >>> o = Gap(ref=s, right='put', K=57, T=1, rf_r=.09)
-        >>> o.calc_px(K2=50, method='BS').px_spec.px
-        4.360987885821741
+        >>> o.calc_px(K2=50, method='BS').px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 2.266910325...
 
+        >>> from pandas import Series
+        >>> expiries = range(1,11)
+        >>> o = Series([o.update(T=t).calc_px(K2=50, method='BS').px_spec.px for t in expiries], expiries)
+        >>> o.plot(grid=1, title='BS Price vs expiry (in years)') # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at ...>
+        >>> import matplotlib.pyplot as plt
+        >>> plt.show()
 
-
-        LT Examples..
-
-        This might take about 1-4 mins depending on your CPU
-
+        LT Examples
+        --------
         >>> s = Stock(S0=500000, vol=.2,  q = 0)
         >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, on = (90000,)*23, desc = 'HULL p. 601 Exp 26.1')
         >>> o.calc_px(K2=350000, nsteps = 22, method='LT').px_spec.px
-        1895.80129679
-
+        1895.8012967929049
 
         >>> s = Stock(S0=50, vol=.2,  q = 0)
         >>> o = Gap(ref=s, right='call', K=57, T=1, rf_r=.09, on = (90000,)*23)
         >>> o.calc_px(K2=50, nsteps = 22, method='LT').px_spec.px
-        2.27490242761
+        2.2749024276146068
 
         >>> s = Stock(S0=50, vol=.2,  q = 0)
         >>> o = Gap(ref=s, right='put', K=57, T=1, rf_r=.09, on = (90000,)*23)
         >>> o.calc_px(K2=50, nsteps = 22, method='LT').px_spec.px
-        4.36897999796
+        4.3689799979566706
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
-        >>> o = Series([o.update(T=t).calc_px(method='LT', nsteps=5).px_spec.px for t in expiries], expiries)
+        >>> o = Series([o.update(T=t).calc_px(method='LT', K2 = 50, nsteps=5).px_spec.px for t in expiries], expiries)
         >>> o.plot(grid=1, title='Price vs expiry (in years)')
 
-        See Also
+
+        MC Examples
         --------
+        Because different number of seed, npaths and nsteps will influence the option price. The result of MC method
+        may not as accurate as BSM and LT method.
+
+        >>> s = Stock(S0=500000, vol=.2)
+        >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='Hull p.601 Example 26.1')
+        >>> o.pxMC(K2=350000,seed=1, npaths=1000, nsteps=998)
+        1895.6442963600562
+
+        >>> from pandas import Series
+        >>> expiries = range(1,11)
+        >>> O = Series([o.update(T=t).calc_px(K2 = 350000,method='MC',seed=1, npaths=2,nsteps=3).px_spec.px \
+        for t in expiries], expiries)
+        >>> O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at ...>
+        >>> import matplotlib.pyplot as plt
+        >>> plt.show()
+
+        >>> s = Stock(S0=50, vol=.2)
+        >>> o = Gap(ref=s, right='call', K=57, T=1, rf_r=.09)
+        >>> o.calc_px(K2=50, method='MC',seed=2, npaths=101, nsteps=90).px_spec.px
+        2.258897568193636
+
+        >>> s = Stock(S0=50, vol=.2)
+        >>> o = Gap(ref=s, right='put', K=57, T=1, rf_r=.09)
+        >>> o.calc_px(K2=50, method='MC',seed=2, npaths=250, nsteps=100).px_spec
+        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 4.35362028...
+
+        See Also
+        ---------------------------------------------------------
         [1] http://www.actuarialbookstore.com/samples/3MFE-BRE-12FSM%20Sample%20_4-12-12.pdf
         [2] https://www.ma.utexas.edu/users/mcudina/Lecture14_3_4_5.pdf
 
-
-
         """
         self.K2 = float(K2)
-        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
-        return getattr(self, '_calc_' + method.upper())()
+        self.seed0 = seed
+        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
 
     def _calc_BS(self):
         """ Internal function for option valuation.
 
         Returns
-        -------
+        --------------------------------------------------
         self: Gap
 
         .. sectionauthor:: Yen-fei Chen
 
         Note
-        ----
+        ------------------------------------------------------
 
         """
-        from scipy.stats import norm
-        from math import sqrt, exp, log
+
 
         _ = self
         d1 = (log(_.ref.S0 / _.K2) + (_.rf_r - _.ref.q + _.ref.vol ** 2 / 2.) * _.T)/(_.ref.vol * sqrt(_.T))
@@ -164,7 +199,7 @@ class Gap(OptionValuation):
         Large step sizes should be used for optimal accuracy but may take a minute or so.
 
         Returns
-        -------
+        -------------------------------------------
         self: Gap
         :param
                 on : Numeric Vector
@@ -173,37 +208,12 @@ class Gap(OptionValuation):
         .. sectionauthor:: Thawda Aung
 
         References :
-        Hull, John C., Options, Futures and Other Derivatives, 9ed, 2014. Prentice Hall. ISBN 978-0-13-345631-8. http://www-2.rotman.utoronto.ca/~hull/ofod/index.html.
+        Hull, John C., Options, Futures and Other Derivatives, 9ed, 2014. Prentice Hall. ISBN 978-0-13-345631-8.
+        http://www-2.rotman.utoronto.ca/~hull/ofod/index.html.
         Humphreys, Natalia. University of Dallas.
 
-        LT Examples..
 
-        This might take about 1-4 mins depending on your CPU
-
-        >>> s = Stock(S0=500000, vol=.2,  q = 0)
-        >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, on = (90000,)*23, desc = 'HULL p. 601 Exp 26.1')
-        >>> print(o.calc_px(K2=350000, nsteps = 22, method='LT').px_spec.px)
-        1895.80129679
-
-
-        >>> s = Stock(S0=50, vol=.2,  q = 0)
-        >>> o = Gap(ref=s, right='call', K=57, T=1, rf_r=.09, on = (90000,)*23)
-        >>> print(o.calc_px(K2=50, nsteps = 22, method='LT').px_spec.px)
-        2.27490242761
-
-        >>> s = Stock(S0=50, vol=.2,  q = 0)
-        >>> o = Gap(ref=s, right='put', K=57, T=1, rf_r=.09, on = (90000,)*23)
-        >>> print(o.calc_px(K2=50, nsteps = 22, method='LT').px_spec.px)
-        4.36897999796
-
-
-        >>>s = Stock(S0=500000, vol=.2)
-        >>>o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05)
-        >>>print(o.calc_px(K2=350000, method='LT').px_spec.px)
         """
-        from scipy.stats import norm
-        from math import sqrt, exp , log
-        import numpy as np
 
         n = getattr(self.px_spec ,'nsteps', 5)
         assert len(self.on) > n , 'nsteps must be less than the vector on'
@@ -248,15 +258,42 @@ class Gap(OptionValuation):
         """ Internal function for option valuation.
 
         Returns
-        -------
+        ----------------------------------------------
         self: Gap
 
-        .. sectionauthor:: Oleg Melnikov
+        .. sectionauthor:: Mengyan Xie
 
         Note
-        ----
+        ----------------------------------------------
 
         """
+        # Get parameters of steps and paths
+        n_steps = getattr(self.px_spec, 'nsteps', 3)
+        n_paths = getattr(self.px_spec, 'npaths', 3)
+        _ = self
+
+        dt = _.T / n_steps
+        df = np.exp(-_.rf_r * dt)
+        np.random.seed(_.seed0)
+
+        # Stock price paths
+        S = _.ref.S0 * np.exp(np.cumsum(np.random.normal((_.rf_r - 0.5 * _.ref.vol ** 2) * dt,\
+                                                         _.ref.vol * np.sqrt(dt), (n_steps + 1, n_paths)), axis=0))
+        S[0] = _.ref.S0
+        s2 = S
+
+        # When the stock price is greater than K2
+        V = np.maximum(_.signCP * (S - _.K2), 0)
+
+        # The payout is signCP * (S - K1)
+        payout = np.maximum(_.signCP * (s2 - _.K), 0) #payout
+        h = np.where(V > 0.0, payout, V) # payout if V > 0.0, payout else 0.0
+
+        # Add the time value of each steps
+        for t in range(n_steps-1, -1, -1):
+            h[t,:] = h[t+1,:] * df
+
+        self.px_spec.add(px=float(np.mean(h[0,:])), sub_method='Hull p.601')
         return self
 
     def _calc_FD(self):
@@ -274,3 +311,4 @@ class Gap(OptionValuation):
         """
 
         return self
+

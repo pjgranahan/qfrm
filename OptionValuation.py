@@ -114,7 +114,8 @@ class Stock(SpecPrinter):
 class OptionSeries(SpecPrinter):
     """ Object representing an option series.
 
-    This class describes the option specs outside of valuation. so, it doesn't contain interest rates needed for pricing.
+    This class describes the option specs outside of valuation.
+    So, it doesn't contain interest rates needed for pricing.
     This class can be used for plotting and evaluating option packages (strategies like bull spread, straddle, ...).
     It can also be inherited by classes that require an important extension - option valuation.
 
@@ -776,7 +777,7 @@ class OptionValuation(OptionSeries):
 
         >>> from qfrm import *; European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').calc_px()
         ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        European ... px: 3.444364288840312 ...
+        European ... px: 3.444364289 ...
 
         """
         if self.style is None:
