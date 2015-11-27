@@ -62,18 +62,8 @@ class Binary(OptionValuation):
 
         >>> s = Stock(S0=42, vol=.20)
         >>> o = Binary(ref=s, right='put', K=40, T=.5, rf_r=.1)
-        >>> o.calc_px(method='BS', payout_type="asset-or-nothing").px_spec #doctest: +ELLIPSIS
-        PriceSpec
-        Q: 0.0
-        d1: 0.76926...
-        d2: 0.62784...
-        keep_hist: false
-        method: BS
-        payout_type: asset-or-nothing
-        px: 9.27648...
-        px_call: 32.723...
-        px_put: 9.2764...
-        sub_method: asset-or-nothing
+        >>> o.calc_px(method='BS', payout_type="asset-or-nothing").px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 9.27648...
         <BLANKLINE>
 
         Access the attributes in other ways
@@ -90,18 +80,9 @@ class Binary(OptionValuation):
 
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05)
-        >>> o.calc_px(method='BS', payout_type="cash-or-nothing", Q=1000).px_spec #doctest: +ELLIPSIS
-        PriceSpec
-        Q: 1000
-        d1: 0.973788...
-        d2: 0.549524...
-        keep_hist: false
-        method: BS
-        payout_type: cash-or-nothing
-        px: 641.2377...
-        px_call: 641.237...
-        px_put: 263.5997...
-        sub_method: cash-or-nothing
+        >>> o.calc_px(method='BS', \
+        payout_type="cash-or-nothing", Q=1000).px_spec# doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 641.2377...
         <BLANKLINE>
 
         Access the attributes in other ways
@@ -132,82 +113,43 @@ class Binary(OptionValuation):
 
 
         Examples using _calc_LT()
-        -------------------------------
+        ----------------------------------------------
 
         Notes
         -------
-        Verification of examples
+        Verification of examples: DerivaGem software, Binary option (both cash_or_nothing and asset_or_nothing)
 
-        DerivaGem software, Binary option (both cash_or_nothing and asset_or_nothing)
+        Please note that the following LT examples will only generate results that matches the output of DerivaGem\
+        if we use nsteps=365. For fast runtime purpose, I use nsteps=10 in the following examples, which may\
+        not generate results that match the output of DerivaGem
 
-        Please note that the following LT examples will only generate results that matches the
+
 
         Use a binomial tree model to price a cash-or-nothing binary option
+
+        The following example will generate px = 640.43592... with nsteps = 365, which can be verified by GerivaGem.
+        However, for the purpose if fast runtime, I use nstep = 10 in all following examples, whose result does not
+        match verification. If you want to verify my code, please use nsteps = 365.
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05, desc='call @641.237 put @263.6  DerivaGem')
-        >>> print(o.calc_px(method='LT', nsteps=365, \
+        >>> print(o.calc_px(method='LT', nsteps=10, \
         payout_type="cash-or-nothing", Q=1000).px_spec.px)#doctest: +ELLIPSIS
-        640.43592...
+        572.29947...
 
-        >>> print(o.calc_px(method='LT', nsteps=365, \
-        payout_type="cash-or-nothing", Q=1000).px_spec)  # doctest: +ELLIPSIS
-        PriceSpec
-        LT_specs:
-          a: 1.000274...
-          d: 0.978037...
-          df_T: 0.90483...
-          df_dt: 0.99972...
-          dt: 0.0054794...
-          p: 0.5006174...
-          u: 1.02245540...
-        Q: 1000
-        keep_hist: false
-        method: LT
-        nsteps: 365
-        payout_type: cash-or-nothing
-        px: 640.435924...
-        sub_method: cash-or-nothing
+        >>> print(o.calc_px(method='LT', nsteps=10, \
+        payout_type="cash-or-nothing", Q=1000).px_spec)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 572.29947...
         <BLANKLINE>
 
         Another way to view the specification of the binomial tree
 
-        >>> print(o.calc_px(method='LT', nsteps=365, payout_type="cash-or-nothing", Q=1000))  # doctest: +ELLIPSIS
-        Binary
-        K: 40
-        T: 2
-        _right: call
-        _signCP: 1
-        desc: call @641.237 put @263.6  DerivaGem
-        frf_r: 0
-        px_spec: PriceSpec
-          LT_specs:
-            a: 1.00027...
-            d: 0.9780...
-            df_T: 0.904...
-            df_dt: 0.99972...
-            dt: 0.005479...
-            p: 0.50061...
-            u: 1.02245...
-          Q: 1000
-          keep_hist: false
-          method: LT
-          nsteps: 365
-          payout_type: cash-or-nothing
-          px: 640.4359...
-          sub_method: cash-or-nothing
-        ref: Stock
-          S0: 50
-          curr: -
-          desc: -
-          q: 0
-          tkr: -
-          vol: 0.3
-        rf_r: 0.05
-        seed0: -
+        >>> print(o.calc_px(method='LT', nsteps=10, \
+        payout_type="cash-or-nothing", Q=1000))  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        Binary...px: 572.29947...
         <BLANKLINE>
 
         For the purpose of illustration, I only use a 2-step tree to display, \
-        where the option price here is not accurate
+        where the option price here is not accurate. This is just for viewing purpose.
         #the reference tree
         >>> print(o.calc_px(method='LT', nsteps=2, payout_type="cash-or-nothing", Q=1000, \
         keep_hist=True).px_spec.ref_tree) #doctest: +ELLIPSIS
@@ -218,78 +160,46 @@ class Binary(OptionValuation):
         keep_hist=True).px_spec.opt_tree) # doctest: +ELLIPSIS
         ((687.35610...,), (484.88050..., 951.2294...), (0.0, 1000.0, 1000.0))
 
+
         Another way to display option price
-        >>> print((o.pxLT(nsteps=365, keep_hist=True, payout_type='cash-or-nothing',Q=1000))) #doctest: +ELLIPSIS
-        640.43592...
+        The following example will generate px = 640.43592... with nsteps = 365, which can be verified by GerivaGem.
+        However, for the purpose if fast runtime, I use nstep = 10 in all following examples, whose result does not
+        match verification. If you want to verify my code, please use nsteps = 365.
+        >>> print((o.pxLT(nsteps=10, keep_hist=True, \
+        payout_type='cash-or-nothing',Q=1000))) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        572.29947...
 
         >>> print((o.px_spec.px, o.px_spec.method))  # doctest: +ELLIPSIS
-        (640.43592..., 'LT')
+        (572.29947..., 'LT')
 
+        The following example will generate px = 264.4014... with nsteps = 365, which can be verified by GerivaGem.
+        However, for the purpose if fast runtime, I use nstep = 10 in all following examples, whose result does not
+        match verification. If you want to verify my code, please use nsteps = 365.
         >>> print(Binary(clone=o, right='put', desc='call @641.237 put @263.6  DerivaGem').calc_px(method='LT',\
-        nsteps=365, payout_type='cash-or-nothing',Q=1000).px_spec.px) #doctest: +ELLIPSIS
-        264.4014...
+        nsteps=10, payout_type='cash-or-nothing',Q=1000).px_spec.px) #doctest: +ELLIPSIS
+        332.5379...
 
 
         Use a binomial tree model to price an asset-or-nothing binary option
+
+        The following example will generate px = 41.71720... with nsteps = 365, which can be verified by GerivaGem.
+        However, for the purpose if fast runtime, I use nstep = 10 in all following examples, whose result does not
+        match verification. If you want to verify my code, please use nsteps = 365.
+
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05, desc='call @41.74 put @8.254 DerivaGem')
-        >>> print(o.calc_px(method='LT', nsteps=365, payout_type="asset-or-nothing").px_spec.px) #doctest: +ELLIPSIS
-        41.71720...
+        >>> print(o.calc_px(method='LT', nsteps=10, payout_type="asset-or-nothing").px_spec.px) #doctest: +ELLIPSIS
+        39.0098...
 
-        >>> print(o.calc_px(method='LT', nsteps=365, payout_type="asset-or-nothing").px_spec)  #doctest: +ELLIPSIS
-        PriceSpec
-        LT_specs:
-          a: 1.0002...
-          d: 0.97803...
-          df_T: 0.9048...
-          df_dt: 0.9997...
-          dt: 0.005479...
-          p: 0.50061742...
-          u: 1.0224554...
-        Q: 0.0
-        keep_hist: false
-        method: LT
-        nsteps: 365
-        payout_type: asset-or-nothing
-        px: 41.7172...
-        sub_method: asset-or-nothing
+        >>> print(o.calc_px(method='LT', nsteps=10, \
+        payout_type="asset-or-nothing").px_spec)# doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 39.0098...
         <BLANKLINE>
 
         Another way to view the specification of the binomial tree
-
-        >>> print(o.calc_px(method='LT', nsteps=365, payout_type="asset-or-nothing"))  #doctest: +ELLIPSIS
-        Binary
-        K: 40
-        T: 2
-        _right: call
-        _signCP: 1
-        desc: call @41.74 put @8.254 DerivaGem
-        frf_r: 0
-        px_spec: PriceSpec
-          LT_specs:
-            a: 1.0002...
-            d: 0.978037...
-            df_T: 0.90483...
-            df_dt: 0.9997...
-            dt: 0.0054794...
-            p: 0.50061...
-            u: 1.022455...
-          Q: 0.0
-          keep_hist: false
-          method: LT
-          nsteps: 365
-          payout_type: asset-or-nothing
-          px: 41.717204...
-          sub_method: asset-or-nothing
-        ref: Stock
-          S0: 50
-          curr: -
-          desc: -
-          q: 0
-          tkr: -
-          vol: 0.3
-        rf_r: 0.05
-        seed0: -
+        >>> print(o.calc_px(method='LT', nsteps=10, \
+        payout_type="asset-or-nothing"))# doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        Binary...px: 39.0098...
         <BLANKLINE>
 
         For the purpose of illustration, I only use a 2-step tree to display, \
@@ -304,22 +214,28 @@ class Binary(OptionValuation):
         ((44.0321...,), (24.24402..., 67.4929403...), (0.0, 50.0000000..., 91.105940...))
 
         Another way to display option price
-        >>> print((o.pxLT(nsteps=365, keep_hist=True, payout_type='asset-or-nothing')))#doctest: +ELLIPSIS
-        41.71720...
+        The following example will generate px = 39.0098... with nsteps = 365, which can be verified by GerivaGem.
+        However, for the purpose if fast runtime, I use nstep = 10 in all following examples, whose result does not
+        match verification. If you want to verify my code, please use nsteps = 365.
+        >>> print((o.pxLT(nsteps=10, keep_hist=True, payout_type='asset-or-nothing')))#doctest: +ELLIPSIS
+        39.0098...
 
         >>> print((o.px_spec.px, o.px_spec.method))  #doctest: +ELLIPSIS
-        (41.7172..., 'LT')
+        (39.0098..., 'LT')
 
+        The following example will generate px = 8.28279... with nsteps = 365, which can be verified by GerivaGem.
+        However, for the purpose if fast runtime, I use nstep = 10 in all following examples, whose result does not
+        match verification. If you want to verify my code, please use nsteps = 365.
         >>> print(Binary(clone=o, right='put', desc='call @41.74 put @8.254 DerivaGem').calc_px(method='LT',\
-        nsteps=365, payout_type='asset-or-nothing').px_spec.px) #doctest: +ELLIPSIS
-        8.28279...
+        nsteps=10, payout_type='asset-or-nothing').px_spec.px) #doctest: +ELLIPSIS
+        10.9901...
 
 
         Example of option price development (LT method) with increasing maturities
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
-        >>> O = Series([o.update(T=t).calc_px(method='LT', nsteps=365, payout_type="cash-or-nothing", \
+        >>> O = Series([o.update(T=t).calc_px(method='LT', nsteps=10, payout_type="cash-or-nothing", \
         Q=1000).px_spec.px for t in expiries], expiries)
         >>> O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
