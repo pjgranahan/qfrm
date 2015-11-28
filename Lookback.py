@@ -44,7 +44,6 @@ class Lookback(OptionValuation):
         -------
         self : Lookback
 
-        .. sectionauthor:: Mengyan Xie, Hanting Li
 
         Notes
         -----
@@ -116,6 +115,10 @@ class Lookback(OptionValuation):
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
+
+        :Authors:
+            Mengyan Xie
+            Hanting Li <hl45@rice.edu>
        """
 
         return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, Sfl = Sfl)
@@ -127,7 +130,8 @@ class Lookback(OptionValuation):
         -------
         self: Look back
 
-        .. sectionauthor:: Hanting Li
+        :Authors:
+            Hanting Li <hl45@rice.edu>
 
         .. note::
         Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
