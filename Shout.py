@@ -38,7 +38,7 @@ class Shout(OptionValuation):
         :Authors:
             Mengyan Xie <xiemengy@gmail.com>
             Hanting Li
-            Yen-fei Chen
+            Yen-fei Chen <yensfly@gmail.com>
 
         Notes
         -----
@@ -193,7 +193,7 @@ class Shout(OptionValuation):
         self: Shout
 
         :Authors:
-            Yen-fei Chen
+            Yen-fei Chen <yensfly@gmail.com>
 
         Note
         ----

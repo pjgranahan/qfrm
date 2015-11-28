@@ -157,7 +157,9 @@ class Gap(OptionValuation):
         [2] https://www.ma.utexas.edu/users/mcudina/Lecture14_3_4_5.pdf
 
         :Authors:
-            Yen-fei Chen, Thawda Aung, Mengyan Xie
+            Yen-fei Chen <yensfly@gmail.com>
+            Thawda Aung
+            Mengyan Xie <xiemengy@gmail.com>
 
         """
         self.K2 = float(K2)
@@ -170,7 +172,7 @@ class Gap(OptionValuation):
         See ``calc_px()`` for complete documentation.
 
         :Authors:
-            Yen-fei Chen
+            Yen-fei Chen <yensfly@gmail.com>
         """
         from scipy.stats import norm
         from math import sqrt, exp, log
@@ -258,7 +260,7 @@ class Gap(OptionValuation):
         See ``calc_px()`` for complete documentation.
 
         :Authors:
-            Mengyan Xie
+            Mengyan Xie <xiemengy@gmail.com>
         """
         # Get parameters of steps and paths
         n_steps = getattr(self.px_spec, 'nsteps', 3)
