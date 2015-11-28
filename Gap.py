@@ -341,22 +341,22 @@ class Gap(OptionValuation):
         # sign=1
         # style='a'
 
-        # >>> s = Stock(S0=500000, vol=.2)
-        # >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='Hull p.601 Example 26.1')
-        # >>> o.pxBS(K2=350000)
-        # 1895.6889443965902
+        # >>> s = Stock(S0=50, vol=.2)
+        # >>> o = Gap(ref=s, right='call', K=57, T=1, rf_r=.09)
+        # >>> o.calc_px(K2=50, method='MC',seed=2, npaths=101, nsteps=90).px_spec.px
+        # 2.258897568193636
         vol=.2
         ttm=1
-        r=0.05
+        r=0.09
         q=0.0
-        K=400
-        K2=350
-        S0=500
-        sign=-1
+        K=57
+        K2=50
+        S0=50
+        sign=1
         style='e'
 
-        time_steps=50
-        px_paths=50
+        time_steps=30
+        px_paths=45
 
         # Set boundary conditions.
         # S_max = 2.4
@@ -388,14 +388,14 @@ class Gap(OptionValuation):
                 a=( -0.5*(r-q)*j_px*d_t + 0.5*vol**2*j_px**2*d_t)/(1+r*d_t)
                 b=( 1-vol**2*j_px**2*d_t )/( 1+r*d_t )
                 c=(0.5*(r-q)*j_px*d_t+0.5*vol**2*j_px**2*d_t)/(1+r*d_t)
-                f_px[i_time,j_px]=(a*f_px[i_time+1,j_px-1] + b*f_px[i_time+1,j_px] + c*f_px[i_time+1,j_px+1])
+                f_px[i_time,j_px]=np.maximum((a*f_px[i_time+1,j_px-1] + b*f_px[i_time+1,j_px] + c*f_px[i_time+1,j_px+1]),0)
 
-                #if style=='a':
+                # if style=='a':
                 #    f_px[i_time,j_px]=(sign==1)*np.maximum(f_px[i_time,j_px],np.maximum(j_px*d_px-K2,0))\
                 #                      +(sign==-1)*np.maximum(f_px[i_time,j_px],np.maximum(-j_px*d_px+K2,0))
                # f_px[i_time,j_px] = np.maximum()
 
-        f_px.round(3)
+        f_px[0,S0/d_px+1]
 
         px=f_px[0,int(round(S0/d_px,0))]
         self.px_spec.add(px=float(px))
