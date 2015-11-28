@@ -99,15 +99,14 @@ class ForwardStart(OptionValuation):
         >>> o=ForwardStart(ref=s, K=100, right='call', T=0.5, rf_r=.1, \
                desc='example from page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf'\
                ).calc_px(method='MC',nsteps=10,npaths=10,T_s=0.5) #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        >>> print(o.px_spec.px)#doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.px_spec.px#doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         3.434189...
 
         The following example uses the same parameter as the example above, but uses pxMC()
         >>> s = Stock(S0=50, vol=.15,q=0.05)
         >>> o=ForwardStart(ref=s, K=100, right='call', T=0.5, rf_r=.1, \
-               desc='example from page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf'\
-               ).pxMC(nsteps=10,npaths=10,T_s=0.5)#doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        >>> print(o)#doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+               desc='example from page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf')
+        >>> o.pxMC(nsteps=10,npaths=10,T_s=0.5)#doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         3.434189...
 
 
@@ -121,14 +120,13 @@ class ForwardStart(OptionValuation):
         >>> o=ForwardStart(ref=s, K=100, right='call', T=0.5, rf_r=.1, \
                desc='example from http://investexcel.net/forward-start-options/'\
                ).calc_px(method='MC',nsteps=10,npaths=10,T_s=0.5)
-        >>> print(o.update(right='put').calc_px(method='MC',\
-        nsteps=10,npaths=10,T_s=0.5).px_spec.px) #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.update(right='put').calc_px(method='MC',\
+        nsteps=10,npaths=10,T_s=0.5).px_spec.px #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         1.27965...
 
-        >>> print(o.update(right='put').calc_px(method='MC',\
-        nsteps=10,npaths=10,T_s=0.5).px_spec) #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.update(right='put').calc_px(method='MC',\
+        nsteps=10,npaths=10,T_s=0.5).px_spec #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         PriceSpec...px: 1.27965...
-        <BLANKLINE>
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
