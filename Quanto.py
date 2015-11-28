@@ -1,7 +1,6 @@
-from OptionValuation import *
-from American import *
-import numpy as np
 import numpy.random as rnd
+
+from American import *
 
 
 class Quanto(OptionValuation):
@@ -10,7 +9,8 @@ class Quanto(OptionValuation):
     Inherits all methods and properties of OptionValuation class.
     """
 
-    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, vol_ex=0.0, correlation=0.0, seed=1,deg=5):
+    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, vol_ex=0.0, correlation=0.0, seed=1,
+                deg=5):
         """ Wrapper function that calls appropriate valuation method.
 
         User passes parameters to calc_px, which saves them to local PriceSpec object
@@ -22,6 +22,10 @@ class Quanto(OptionValuation):
 
         Parameters
         ----------
+        correlation : float
+                LT. The correlation between the asset and the exchange rate.
+        vol_ex : float
+                LT. Volatility of the exchange rate.
         method : str
                 Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
         nsteps : int
@@ -34,14 +38,10 @@ class Quanto(OptionValuation):
                 MC random seed
         deg: int
                 Degrees in LSM MC method.
+
         Returns
         -------
         self : Quanto
-
-
-        Authors
-        -------
-        Patrick Granahan, Runmin Zhang
 
         Notes
         -----
@@ -49,37 +49,43 @@ class Quanto(OptionValuation):
         Examples
         --------
 
-        Calculate the price of a Quanto option. This example comes from Hull ch.30, ex.30.5 (p.701-702)
+        LT Examples
+        -----------
+
+        Example #1: Calculate the price of a Quanto option.
 
         >>> s = Stock(S0=1200, vol=.25, q=0.015)
         >>> o = Quanto(ref=s, right='call', K=1200, T=2, rf_r=.03, frf_r=0.05)
-        >>> o.calc_px(method='LT', nsteps=100, vol_ex=0.12, correlation=0.2, keep_hist=True).px_spec.px
+        >>> o.pxLT(nsteps=10, vol_ex=0.12, correlation=0.2, keep_hist=True)
+        176.29699901666874
+
+        Example #2: Access the tree
+
+        >>> o.px_spec.ref_tree  # doctest: +ELLIPSIS
+        ((1199.9999999999995,), ... 3670.601501648697))
+
+        Example #3 (verifiable from Hull ch.30, ex.30.5 (p.701-702)): Calculate the price of a Quanto option.
+        Uncomment to run (number of paths required is too high for doctests)
+
+        # >>> s = Stock(S0=1200, vol=.25, q=0.015)
+        # >>> o = Quanto(ref=s, right='call', K=1200, T=2, rf_r=.03, frf_r=0.05)
+        # >>> o.pxLT(nsteps=100, vol_ex=0.12, correlation=0.2, keep_hist=True)
         179.82607364328157
 
-        >>> o.px_spec.ref_tree # doctest: +ELLIPSIS
-        ((1199.999999999993,), (1158.3148318698472, 1243.1853243866492), ... 38364.96926881886, 41175.99589789209))
+        Example #4 (verifiable from Hull ch.30, problem.30.9.b (p.704)): Calculate the price of a Quanto option.
+        Uncomment to run (number of paths required is too high for doctests)
 
-        >>> o.calc_px(method='LT', nsteps=100, keep_hist=False) # doctest: +ELLIPSIS,+NORMALIZE_WHITESPACE
-        Quanto...px: 172.205...
-        <BLANKLINE>
+        # >>> s = Stock(S0=400, vol=.2, q=0.03)
+        # >>> o = Quanto(ref=s, right='call', K=400, T=2, rf_r=.06, frf_r=0.04)
+        # >>> o.pxLT(nsteps=100, vol_ex=0.06, correlation=0.4)
+        57.50700503047851
 
-        Calculate the price of a Quanto option. This example comes from Hull ch.30, problem.30.9.b (p.704)
+        Example #5 (plot): Convergence
 
         >>> s = Stock(S0=400, vol=.2, q=0.03)
         >>> o = Quanto(ref=s, right='call', K=400, T=2, rf_r=.06, frf_r=0.04)
-        >>> o.calc_px(method='LT', nsteps=100, vol_ex=0.06, correlation=0.4).px_spec.px
-        57.50700503047851
+        >>> o.plot_px_convergence()
 
-        Example of option price development (LT method) with increasing maturities
-
-        >>> from pandas import Series
-        >>> expiries = range(1,11)
-        >>> O = Series([o.update(T=t).calc_px(method='LT', nsteps=100, vol_ex=0.12, correlation=0.2).px_spec.px \
-        for t in expiries], expiries)
-        >>> O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
-        <matplotlib.axes._subplots.AxesSubplot object at ...>
-        >>> import matplotlib.pyplot as plt
-        >>> plt.show()
 
         MC Examples
         -----------
@@ -105,9 +111,14 @@ class Quanto(OptionValuation):
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
+
+        :Authors:
+            Patrick Granahan,
+            Runmin Zhang
         """
-        return super().calc_px(method=method, nsteps=nsteps, \
-                               npaths=npaths, keep_hist=keep_hist,vol_ex=vol_ex, correlation=correlation,seed=1,deg=deg)
+        return super().calc_px(method=method, nsteps=nsteps,
+                               npaths=npaths, keep_hist=keep_hist, vol_ex=vol_ex, correlation=correlation, seed=1,
+                               deg=deg)
 
     def _calc_LT(self):
         """ Internal function for option valuation.
@@ -116,15 +127,15 @@ class Quanto(OptionValuation):
         -------
         self: Quanto
 
-        .. sectionauthor:: Patrick Granahan
-
+        :Author:
+            Patrick Granahan
         """
 
         # Get provided parameters
-        vol_ex = getattr(self.px_spec, 'vol_ex')  # Volatility of the exchange rate
-        correlation = getattr(self.px_spec, 'correlation')  # Correlation between asset and exchange rate
-        keep_hist = getattr(self.px_spec, 'keep_hist', False)
-        n = getattr(self.px_spec, 'nsteps', 3)
+        vol_ex = getattr(self.px_spec, 'vol_ex')
+        correlation = getattr(self.px_spec, 'correlation')
+        keep_hist = getattr(self.px_spec, 'keep_hist')
+        n = getattr(self.px_spec, 'nsteps')
 
         # Compute the foreign numeraire dividend yield
         growth_rate_of_underlying = (correlation * self.ref.vol * vol_ex)
@@ -156,10 +167,6 @@ class Quanto(OptionValuation):
 
 
         """
-
-
-
-
 
         return self
 
@@ -231,4 +238,3 @@ class Quanto(OptionValuation):
         """
 
         return self
-
