@@ -38,7 +38,8 @@ class Basket(OptionValuation):
         -------
         self : Basket
 
-        .. sectionauthor:: Hanting Li
+        :Authors:
+          Hanting Li <hl45@rice.edu>
 
         Notes
         -----
@@ -54,31 +55,29 @@ class Basket(OptionValuation):
         >>> s = Stock(S0=(42,55,75), vol=(.20,.30,.50))
         >>> o = Basket(ref=s, right='call', K=40, T=.5, rf_r=.1, desc='Hull p.612')
 
-        >>> o.calc_px(method='MC',mu=(0.05,0.1,0.05),weight=(0.3,0.5,0.2),corr=[[1,0,0],[0,1,0],[0,0,1]],npaths=10,nsteps=100).px_spec   # save interim results to self.px_spec. Equivalent to repr(o)
-        PriceSpec
-        keep_hist: false
-        method: MC
-        npaths: 10
-        nsteps: 100
-        px: 15.317306061
-        sub_method: standard; Hull p.612
-        <BLANKLINE>
+        >>> o.calc_px(method='MC',mu=(0.05,0.1,0.05),weight=(0.3,0.5,0.2),corr=[[1,0,0],[0,1,0],[0,0,1]],\
+        npaths=10,nsteps=100).px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 15.317306061...
 
         >>> s = Stock(S0=(50,85,65,80,75), vol=(.20,.10,.05,.20,.30))
         >>> o = Basket(ref=s, right='put', K=80, T=1, rf_r=.05, desc='Hull p.612')
 
-        >>> o.calc_px(method='MC',mu=(0.05,0,0.1,0,0),weight=(0.2,0.2,0.2,0.2,0.2),corr=[[1,0,0,0.9,0],[0,1,0,0,0],[0,0,1,-0.1,0],[0.9,0,-0.1,1,0],[0,0,0,0,1]],npaths=100,nsteps=100).px_spec.px   # save interim results to self.px_spec. Equivalent to repr(o)
+        >>> o.calc_px(method='MC',mu=(0.05,0,0.1,0,0),weight=(0.2,0.2,0.2,0.2,0.2),corr=[[1,0,0,0.9,0],\
+        [0,1,0,0,0],[0,0,1,-0.1,0],[0.9,0,-0.1,1,0],[0,0,0,0,1]],\
+        npaths=100,nsteps=100).px_spec.px   # save interim results to self.px_spec. Equivalent to repr(o)
         6.120469912146624
 
         >>> s = Stock(S0=(30,50), vol=(.20,.15))
         >>> o = Basket(ref=s, right='put', K=55, T=3, rf_r=.05, desc='Hull p.612')
 
-        >>> o.calc_px(method='MC',mu=(0.06,0.05),weight=(0.4,0.6),corr=[[1,0.7],[0.7,1]],npaths=10,nsteps=1000).px_spec.px
+        >>> o.calc_px(method='MC',mu=(0.06,0.05),weight=(0.4,0.6),corr=[[1,0.7],[0.7,1]],\
+        npaths=10,nsteps=1000).px_spec.px
         7.236146325452368
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
-        >>> O = Series([o.update(T=t).calc_px(method='MC',mu=(0.06,0.05),weight=(0.4,0.6),corr=[[1,0.7],[0.7,1]],npaths=2,nsteps=3).px_spec.px for t in expiries], expiries)
+        >>> O = Series([o.update(T=t).calc_px(method='MC',mu=(0.06,0.05),weight=(0.4,0.6),\
+        corr=[[1,0.7],[0.7,1]],npaths=2,nsteps=3).px_spec.px for t in expiries], expiries)
         >>> O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
@@ -130,7 +129,8 @@ class Basket(OptionValuation):
         -------
         self: European
 
-        .. sectionauthor:: Hanting Li
+        :Authors:
+            Hanting Li <hl45@rice.edu>
 
         Notes
         -----
