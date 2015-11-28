@@ -36,7 +36,9 @@ class Barrier(OptionValuation):
         -------
         self : Barrier
 
-        .. sectionauthor:: Scott Morgan, Hanting Li
+        :Authors:
+            Scott Morgan
+            Hanting Li <hl45@rice.edu>
 
         Notes
         ---------
@@ -55,14 +57,8 @@ class Barrier(OptionValuation):
         >>> o.calc_px(H=35.,knock='down',dir='out',method='BS').px_spec.px
         14.474414799617568
 
-        >>> o.calc_px(H=35.,knock='down',dir='out',method='BS').px_spec
-        PriceSpec
-        keep_hist: false
-        method: BS
-        px: 14.4744148
-        rng_seed: 1
-        sub_method: standard; Hull p.604
-        <BLANKLINE>
+        >>> o.calc_px(H=35.,knock='down',dir='out',method='BS').px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 14.4744148...
 
         >>> s = Stock(S0=35., vol=.1, q=.1)
         >>> o = Barrier(ref=s, right='put', K=45., T=2.5, rf_r=.1, desc='up and out put')
@@ -173,10 +169,10 @@ class Barrier(OptionValuation):
         -------
         self: Barrier
 
-        .. sectionauthor:: Hanting Li
+        :Authors:
+            Hanting Li <hl45@rice.edu>
 
-        .. note::
-        Hull p604
+        See ``calc_px()`` for complete documentation.
 
         """
 
