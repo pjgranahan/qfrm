@@ -125,32 +125,34 @@ class Bermudan(OptionValuation):
         1234
 
         Example #2 (verifiable): See reference [1], section 5.1 and table 5.1 with arguments N=10^2, R=3
+        Uncomment to run (number of paths required is too high for doctests)
 
-        >>> s = Stock(S0=11, vol=.4)
-        >>> o = Bermudan(ref=s, right='put', K=15, T=1, rf_r=.05, desc="in-the-money Bermudan put")
-        >>> o.pxMC(R=3, npaths=10**2, tex=list([(i+1)/10 for i in range(10)]))
+        # >>> s = Stock(S0=11, vol=.4)
+        # >>> o = Bermudan(ref=s, right='put', K=15, T=1, rf_r=.05, desc="in-the-money Bermudan put")
+        # >>> o.pxMC(R=3, npaths=10**2, tex=list([(i+1)/10 for i in range(10)]))
         4.200888
 
         Example #3 (verifiable): See reference [1], section 5.1 and table 5.1 with arguments N=10^5, R=6
+        Uncomment to run (number of paths required is too high for doctests)
 
-        >>> s = Stock(S0=11, vol=.4)
-        >>> o = Bermudan(ref=s, right='put', K=15, T=1, rf_r=.05, desc="in-the-money Bermudan put")
-        >>> o.pxMC(R=6, npaths=10**5, tex=list([(i+1)/10 for i in range(10)]))
+        # >>> s = Stock(S0=11, vol=.4)
+        # >>> o = Bermudan(ref=s, right='put', K=15, T=1, rf_r=.05, desc="in-the-money Bermudan put")
+        # >>> o.pxMC(R=6, npaths=10**5, tex=list([(i+1)/10 for i in range(10)]))
         4.204823
 
         Example #4 (plot)
 
         >>> s = Stock(S0=11, vol=.4)
         >>> b = Bermudan(ref=s, right='put', K=15, T=1, rf_r=.05, desc="in-the-money Bermudan put")
-        >>> o.pxMC(R=3, npaths=1000, tex=list([(i+1)/10 for i in range(10)]))  # doctest: +ELLIPSIS
-        3.979023660773354
+        >>> b.pxMC(R=3, npaths=10, tex=list([(i+1)/10 for i in range(10)]))  # doctest: +ELLIPSIS
+        4.0913465936735687
         >>> plt.title("Histogram of prices on different MC paths")  # doctest: +ELLIPSIS
         <...>
         >>> plt.xlabel("Price")  # doctest: +ELLIPSIS
         <...>
         >>> plt.ylabel("Frequency")  # doctest: +ELLIPSIS
         <...>
-        >>> plt.hist(o.px_spec.prices)  # doctest: +ELLIPSIS
+        >>> plt.hist(b.px_spec.prices)  # doctest: +ELLIPSIS
         (...)
         >>> plt.show()
 
