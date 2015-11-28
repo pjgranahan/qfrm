@@ -45,9 +45,45 @@ class Compound(OptionValuation):
 
         Examples
         -------
+        SEE: http://investexcel.net/compound-options-excel
 
+        ================
+        Finite Diff
+        ================
 
+        Method is approximate and extremely unstable. The answers are thus only an approximate of the BSM Solution
 
+        Put on Put
+        >>> s = Stock(S0=90., vol=.12, q=.04)
+        >>> o = American(ref=s, right='put', K=80., T=12./12., rf_r=.05, \
+        desc='http://investexcel.net/compound-options-excel/: POP')
+        >>> o2 = Compound(right='put',T=6./12., K = 20.)
+        >>> o2.calc_px(method='FD',option=o,npaths=40,nsteps = 10000).px_spec.px
+        19.506198232393796
+
+        Call on Put
+        >>> s = Stock(S0=90., vol=.12, q=.04)
+        >>> o = American(ref=s, right='put', K=80., T=12./12., rf_r=.05, \
+        desc='http://investexcel.net/compound-options-excel/: COP')
+        >>> o2 = Compound(right='call',T=6./12., K = 20.)
+        >>> o2.calc_px(method='FD',option=o,npaths=40,nsteps = 10000).px_spec.px
+        9.1037774290081246e-12
+
+        Put on Call
+        >>> s = Stock(S0=90., vol=.12, q=.04)
+        >>> o = American(ref=s, right='call', K=80., T=12./12., rf_r=.05, \
+        desc='http://investexcel.net/compound-options-excel/: POC')
+        >>> o2 = Compound(right='put',T=6./12., K = 20.)
+        >>> o2.calc_px(method='FD',option=o,npaths=40,nsteps = 10000).px_spec.px
+        10.568210941320897
+
+        Call on Call
+        >>> s = Stock(S0=90., vol=.12, q=.04)
+        >>> o = American(ref=s, right='call', K=80., T=12./12., rf_r=.05, \
+        desc='http://investexcel.net/compound-options-excel/: COC')
+        >>> o2 = Compound(right='call',T=6./12., K = 20.)
+        >>> o2.calc_px(method='FD',option=o,npaths=40,nsteps = 10000).px_spec.px
+        0.13415146197967964
 
        """
 
@@ -122,23 +158,37 @@ class Compound(OptionValuation):
         .. sectionauthor:: Scott Morgan
 
         Note
-        ----
+        ------
+
+        EXTREMELY SENSITIVE TO S0
+
+        Formulae: http://www.wiley.com/legacy/wileychi/pwiqf2/supp/c28.pdf (SEE PROBLEM 4)
+        Also consulted: http://www.math.yorku.ca/~hmzhu/Math-6911/lectures/Lecture5/5_BlkSch_FDM.pdf
+                        http://www.cs.cornell.edu/info/courses/spring-98/cs522/content/lab4.pdf
+
 
         """
 
         _ = self.px_spec
 
+        # GRID SIZE
         M = getattr(_, 'npaths', 3)
         N = getattr(_, 'nsteps', 3)
 
-        signCP = 1 if self.right.lower() == 'call' else -1
+        #GRID
         x = np.matrix(np.zeros(shape=(N+1,M+1)))
 
+        # PARAMETERS
+        signCP = 1 if self.right.lower() == 'call' else -1
         T = self.T
         T_left = self.o.T - self.T
         orig_T = self.o.T
         vol = self.o.ref.vol
-        Smax = 2*self.o.ref.S0
+        Smax = 100
+        if self.o.right == 'call':
+            Smax = 2*self.o.ref.S0
+        else:
+            Smax = 3*self.o.ref.S0
         r = self.o.rf_r
         q = .0
         dt = T/(N+0.0)
@@ -147,54 +197,44 @@ class Compound(OptionValuation):
         M = int(Smax/dS)
         K = self.K
         S0 = self.o.ref.S0
+        df = np.exp(-r*dt)
 
+        # EQUATIONS
         def a(j):
-            return .5*dt*((vol**2)*(j**2)-(r-q)*j)
+            return df*(.5*dt*((vol**2)*(j**2)-(r-q)*j))
         def b(j):
-            return 1 - dt*((vol**2)*(j**2)+r)
+            return df*(1 - dt*((vol**2)*(j**2)))
         def c(j):
-            return .5*dt*((vol**2)*(j**2)+(r-q)*j)
+            return df*(.5*dt*((vol**2)*(j**2)+(r-q)*j))
 
-        #print(self.o)
-        #print(self.o.calc_px(method='LT',nsteps=20).px_spec.px)
 
         self.o.T = T_left
         self.o.ref.S0 = Smax
-        #print(self.o.T)
         Smax_price = self.o.calc_px(method='LT',nsteps = 30).px_spec.px
-        #print(Smax)
-        #print(Smax_price)
         self.o.ref.S0 = 0
         Smin_price = self.o.calc_px(method='LT',nsteps = 30).px_spec.px
 
-        # replace with LT Price for each one
+        # FINAL CONDITIONS
         for i in range(0,M+1):
             self.o.ref.S0 = dS*i
             x[N,i] = np.maximum(signCP*(self.o.calc_px(method='LT',nsteps = 30).px_spec.px-K),0)
-            #print(x[N,i])
 
-        #x[N,:] = np.matrix(np.maximum(signCP*(np.linspace(dS*M,0,num=M+1,endpoint=True) - K),0) ).\
-            #transpose().transpose()
+        # BOUNDARY CONDITIONS
+        x[:,0] = np.matrix(list(map(lambda i: (np.maximum(signCP*(Smax_price - K),0)*np.exp(-r*(N-i)*dt)), \
+                                range(0,N+1)))).transpose()
+        x[:,M] = np.matrix(list(map(lambda i: (np.maximum(signCP*(Smin_price - K),0)*np.exp(-r*(N-i)*dt)), \
+                                range(0,N+1)))).transpose()
 
-        # replace with LT price for each one
-        if signCP == 1:
-            x[:,0] = np.matrix(list(map(lambda i: (np.maximum(signCP*(Smax_price - K),0)*np.exp(-r*(N-i)*dt)), \
-                                        range(0,N+1)))).transpose()
-        else:
-            x[:,M] = np.matrix(list(map(lambda i: (np.maximum(signCP*(Smin_price - K),0)*np.exp(-r*(N-i)*dt)), \
-                                        range(0,N+1)))).transpose()
 
+        # CALCULATE THROUGH GRID
         for i in np.arange(N-1,-1,-1):
             for k in range(1,M):
                 j = M-k
                 x[i,k] = a(j)*x[i+1,k+1] + b(j)*x[i+1,k] + c(j)*x[i+1,k-1]
 
+        # RETURN BACK TO NORMAL
         self.o.ref.S0 = S0
         self.o.T = orig_T
-        print(x[0,M-self.o.ref.S0/dS])
-        return self
+        self.px_spec.add(px=x[0,M-S0/dS], method='FDM', sub_method='Explicit')
 
-s = Stock(S0=55., vol=.40, q=.00)
-o = European(ref=s, right='put', K=50., T=12./12., rf_r=.1, desc='7.42840, Hull p.288')
-o2 = Compound(right='call',T=5./12., K = 5.)
-o2.calc_px(method='FD',option=o,npaths=100,nsteps = 700)
+        return self
