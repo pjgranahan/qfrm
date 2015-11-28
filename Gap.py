@@ -174,18 +174,16 @@ class Gap(OptionValuation):
         :Authors:
             Yen-fei Chen <yensfly@gmail.com>
         """
-        from scipy.stats import norm
-        from math import sqrt, exp, log
 
         _ = self
-        d1 = (log(_.ref.S0 / _.K2) + (_.rf_r - _.ref.q + _.ref.vol ** 2 / 2.) * _.T)/(_.ref.vol * sqrt(_.T))
-        d2 = d1 - _.ref.vol * sqrt(_.T)
+        d1 = (np.log(_.ref.S0 / _.K2) + (_.rf_r - _.ref.q + _.ref.vol ** 2 / 2.) * _.T)/(_.ref.vol * np.sqrt(_.T))
+        d2 = d1 - _.ref.vol * np.sqrt(_.T)
 
         # if calc of both prices is cheap, do both and include them into Price object.
         # Price.px should always point to the price of interest to the user
         # Save values as basic data types (int, floats, str), instead of numpy.array
-        px_call = float(_.ref.S0 * exp(-_.ref.q * _.T) * norm.cdf(d1) - _.K * exp(-_.rf_r * _.T) * norm.cdf(d2))
-        px_put = float(- _.ref.S0 * exp(-_.ref.q * _.T) * norm.cdf(-d1) + _.K * exp(-_.rf_r * _.T) * norm.cdf(-d2))
+        px_call = float(_.ref.S0*np.exp(-_.ref.q* _.T)*stats.norm.cdf(d1)-_.K*np.exp(-_.rf_r*_.T)*stats.norm.cdf(d2))
+        px_put = float(-_.ref.S0*np.exp(-_.ref.q*_.T)*stats.norm.cdf(-d1)+_.K*np.exp(-_.rf_r*_.T)*stats.norm.cdf(-d2))
         px = px_call if _.signCP == 1 else px_put if _.signCP == -1 else None
 
         self.px_spec.add(px=px, sub_method='standard; Hull p.335', px_call=px_call, px_put=px_put, d1=d1, d2=d2)
@@ -213,7 +211,7 @@ class Gap(OptionValuation):
 
 
         """
-
+        from math import sqrt, exp, log
         n = getattr(self.px_spec ,'nsteps', 5)
         assert len(self.on) > n , 'nsteps must be less than the vector on'
         _ = self
@@ -301,3 +299,4 @@ class Gap(OptionValuation):
         """
 
         return self
+
