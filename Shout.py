@@ -201,36 +201,34 @@ class Shout(OptionValuation):
         [2] Hull, J.C., Options, Futures and Other Derivatives, 9ed, 2014. Prentice Hall, p609.
 
         """
-        from numpy import exp, random, zeros, sqrt, maximum, polyfit, polyval, array, where, mean, repeat
-        from scipy.stats import norm
 
         n_steps = getattr(self.px_spec, 'nsteps', 3)
         n_paths = getattr(self.px_spec, 'npaths', 3)
         _ = self
 
         dt = _.T / n_steps
-        df = exp(-_.rf_r * dt)
-        random.seed(_.seed)
+        df = np.exp(-_.rf_r * dt)
+        np.random.seed(_.seed)
 
-        h = zeros((n_steps+1, n_paths) ,'d') # option value matrix
-        S = zeros((n_steps+1, n_paths) ,'d') # stock price matrix
+        h = np.zeros((n_steps+1, n_paths) ,'d') # option value matrix
+        S = np.zeros((n_steps+1, n_paths) ,'d') # stock price matrix
         S[0,:] = _.ref.S0 # initial value
 
         # stock price paths
         for t in range(1,n_steps+1):
-            ran = norm.rvs(loc=0, scale=1, size=n_paths) # pseudo - random numbers
-            S[t,:] = S[t-1,:] * exp((_.rf_r-_.ref.vol**2/2)*dt + _.ref.vol*ran*sqrt(dt))
+            ran = scipy.stats.norm.rvs(loc=0, scale=1, size=n_paths) # pseudo - random numbers
+            S[t,:] = S[t-1,:] * np.exp((_.rf_r-_.ref.vol**2/2)*dt + _.ref.vol*ran*np.sqrt(dt))
 
-        h = maximum(_.signCP*(S-_.K), 0) # payoff when not shout
-        final_payoff = repeat(S[-1,:], n_steps+1, axis=0).reshape(n_paths,n_steps+1)
-        V = maximum(_.signCP*(final_payoff.transpose()-_.K), _.signCP*(S-_.K))# payoff when shout
+        h = np.maximum(_.signCP*(S-_.K), 0) # payoff when not shout
+        final_payoff = np.repeat(S[-1,:], n_steps+1, axis=0).reshape(n_paths,n_steps+1)
+        V = np.maximum(_.signCP*(final_payoff.transpose()-_.K), _.signCP*(S-_.K))# payoff when shout
 
         for t in range (n_steps-1,-1,-1): # valuation process ia similar to American option
-            rg = polyfit(S[t,:], df*array(h[t+1,:]), 3) # regression at time t
-            C= polyval(rg, S[t,:]) # continuation values
-            h[t,:]= where(V[t,:]>C, V[t,:], h[t+1,:]*df) # exercise decision: shout or not shout
+            rg = np.polyfit(S[t,:], df*np.array(h[t+1,:]), 3) # regression at time t
+            C= np.polyval(rg, S[t,:]) # continuation values
+            h[t,:]= np.where(V[t,:]>C, V[t,:], h[t+1,:]*df) # exercise decision: shout or not shout
 
-        self.px_spec.add(px=float(mean(h[0,:])), sub_method='Hull p.609')
+        self.px_spec.add(px=float(np.mean(h[0,:])), sub_method='Hull p.609')
         return self
 
     def _calc_FD(self):
