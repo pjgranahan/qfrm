@@ -242,8 +242,8 @@ class Binary(OptionValuation):
         ----------
         self: Binary
 
-        .. sectionauthor:: Patrick Granahan
-
+        :Authors:
+            Patrick Granahan
         """
 
         # Get additional pricing parameters that were provided
@@ -278,7 +278,7 @@ class Binary(OptionValuation):
 
         # The underlying is unknown
         else:
-            raise "Unknown payout_type for binary option."
+            raise Exception("Unknown payout_type for binary option.")
 
         # Store the correct price for the given right
         px = px_call if self.signCP == 1 else px_put if self.signCP == -1 else None
