@@ -1,6 +1,6 @@
 import math
 import numpy as np
-from scipy import stats
+import scipy.stats
 from OptionValuation import *
 import matplotlib.pyplot as plt
 
@@ -19,7 +19,7 @@ class Shout(OptionValuation):
         but a wrapper function calc_px().
 
         Parameters
-        --------
+        ----------
         method : str
                 Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
         nsteps : int
@@ -32,13 +32,16 @@ class Shout(OptionValuation):
                 Seed number for Monte Carlo simulation
 
         Returns
-        --------
+        -------
         self : Shout
 
-        .. sectionauthor:: Mengyan Xie
+        :Authors:
+            Mengyan Xie <xiemengy@gmail.com>
+            Hanting Li
+            Yen-fei Chen
 
         Notes
-        --------
+        -----
         Verification of Shout option: http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L4shout.pdf
         Hull Ch26.12 P609
 
@@ -53,7 +56,7 @@ class Shout(OptionValuation):
         BxsiqdaXlqTBTw&bvm=bv.108194040,d.eWE
 
         LT Examples
-        --------
+        -----------
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Shout(ref=s, right='call', K=52, T=2, rf_r=.05, desc='Example from internet excel spread sheet')
         >>> o.pxLT(nsteps=2, keep_hist=False)
@@ -74,7 +77,7 @@ class Shout(OptionValuation):
         >>> plt.show()
 
         MC Examples
-        --------
+        -----------
         See example on p.26, p.28 in http://core.ac.uk/download/pdf/1568393.pdf
         >>> s = Stock(S0=36, vol=.2)
         >>> o = Shout(ref=s, right='put', K=40, T=1, rf_r=.2, desc='http://core.ac.uk/download/pdf/1568393.pdf')
@@ -104,7 +107,8 @@ class Shout(OptionValuation):
         -------
         self: Shout
 
-        .. sectionauthor:: Mengyan Xie
+        :Authors:
+            Mengyan Xie <xiemengy@gmail.com>
 
         Notes
         -----
@@ -146,8 +150,8 @@ class Shout(OptionValuation):
             S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
 
             # payoff of shout
-            Shout = self.signCP * S / np.exp(self.ref.q * tleft) * stats.norm.cdf(self.signCP * d1) - \
-                    self.signCP * S / np.exp(self.rf_r * tleft) * stats.norm.cdf(self.signCP * d2) + \
+            Shout = self.signCP * S / np.exp(self.ref.q * tleft) * scipy.stats.norm.cdf(self.signCP * d1) - \
+                    self.signCP * S / np.exp(self.rf_r * tleft) * scipy.stats.norm.cdf(self.signCP * d2) + \
                     self.signCP * (S - self.K) / np.exp(self.rf_r * tleft)
 
             # final payoff is the maximum of shout or not shout
@@ -188,7 +192,8 @@ class Shout(OptionValuation):
         -------
         self: Shout
 
-        .. sectionauthor:: Yen-fei Chen
+        :Authors:
+            Yen-fei Chen
 
         Note
         ----
