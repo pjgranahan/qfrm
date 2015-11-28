@@ -228,9 +228,9 @@ class Spread(OptionValuation):
 
         Returns
         -------
-        self: American
+        self: Spread
 
-        .. sectionauthor:: Oleg Melnikov
+        .. sectionauthor::
 
         Note
         ----
