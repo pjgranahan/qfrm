@@ -157,7 +157,7 @@ class Gap(OptionValuation):
         [2] https://www.ma.utexas.edu/users/mcudina/Lecture14_3_4_5.pdf
 
         :Authors:
-            Yen-fei Chen
+            Yen-fei Chen, Thawda Aung, Mengyan Xie
 
         """
         self.K2 = float(K2)
