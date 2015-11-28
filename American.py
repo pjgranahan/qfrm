@@ -32,42 +32,47 @@ class American(OptionValuation):
         Returns
         -------
         self : American
-
-        .. sectionauthor:: Oleg Melnikov and Andrew Weatherly
-
-        Notes
-        -----
+            Returned object contains specifications and calculated price in embedded PriceSpec object.
 
         Examples
         --------
-
         >>> s = Stock(S0=50, vol=.3)
         >>> o = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc='7.42840, Hull p.288')
         >>> o.calc_px(method='LT', nsteps=2, keep_hist=True).px_spec.px
         7.42840190270483
+
         >>> o.px_spec.ref_tree  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         ((50.000...,), (37.0409110340859, 67.49294037880017), (27.440581804701324, 50.000..., 91.10594001952546))
+
         >>> o.calc_px(method='LT', nsteps=2, keep_hist=False)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         American...px: 7.428401903...
+
         >>> s = Stock(S0=30, vol=.3)
         >>> o = American(ref=s, right='call', K=30, T=1., rf_r=.08)
         >>> o.calc_px(method='BS')  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         American...px: 4.713393764...
+
         >>> print(o.px_spec)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         PriceSpec...px: 4.713393764...
+
         >>> t = Stock(S0=40, vol=.2)
         >>> z = American(ref=t, right='put', K=35, T=.5833, rf_r=.0488, desc='Example From Hull and White 2001')
         >>> z.calc_px(method='BS')   # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         American...px: 0.432627059...
+
         >>> print(z.px_spec)   # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         PriceSpec...px: 0.432627059...
+
         >>> p = Stock(S0=50, vol=.25, q=.02)
         >>> v = American(ref=p, right='call', K=40, T=2, rf_r=.05)
         >>> print(v.calc_px(method='BS'))  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         American...px: 11.337850838...
+
         >>> print(v.px_spec)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         PriceSpec...px: 11.337850838...
 
+        :Authors:
+            Oleg Melnikov <xisreal@gmail.com>, Andrew Weatherly
         """
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
         return getattr(self, '_calc_' + method.upper())()
@@ -79,8 +84,13 @@ class American(OptionValuation):
         -------
         self: American
 
-        .. sectionauthor:: Oleg Melnikov
 
+        Examples
+        --------
+        See ``calc_px()`` for complete documentation.
+
+        :Authors:
+            Oleg Melnikov <xisreal@gmail.com>
         """
         # from numpy import arange, maximum, log, exp, sqrt
 
@@ -113,33 +123,34 @@ class American(OptionValuation):
     def _calc_BS(self):
         """ Internal function for option valuation.
 
-        The _calc_BS() function is called through calc_PX() and uses the Black Scholes Merton differential equation to price
-        the American option. Due to the optimal stopping problem, this is technically impossible, so the methods below are
+        See ``calc_px()`` for complete documentation.
+
+        The _calc_BS() function is called through calc_PX() and uses the Black Scholes Merton
+        differential equation to price the American option. Due to the optimal stopping problem,
+        this is technically impossible, so the methods below are
         approximations that have been developed by financial computation scientists.
 
 
-        Returns
-        -------
-        self: American
+        Notes
+        -----
+        Important that if you plan on giving a dividend paying stock that it is semi-annual percentage dividends.
+        This is currently the only type of dividends that the BSM can accept.
 
-        .. sectionauthor:: Andrew Weatherly
+        :Formulae:
+        - `The Closed-form Solution for Pricing American Options <http://aeconf.com/articles/may2007/aef080111.pdf>`_
+        - `Black's approximation <https://en.wikipedia.org/wiki/Black%27s_approximation>`_ (dividend call)
+        -
+            `Closed-Form American Call Option Pricing by Roll-Geske-Whaley, 2008
+            <http://www.bus.lsu.edu/academics/finance/faculty/dchance/Instructional/TN98-01.pdf>`_
 
-        Note
-        ----
+        *Verifiable Example:*
+        See `The Use of Control Variate Technique in Option-Pricing by Hull & White 2001
+        <https://www.researchgate.net/publication/46543317_The_Use_of_Control_Variate_Technique_in_Option-Pricing>`_.
+        2nd example in list, on p.246; the very bottom right number b/c we use control variate for n = 100
 
-        Important that if you plan on giving a dividend paying stock that it is semi-annual percentage dividends. This is
-        currently the only type of dividends that the BSM can accept.
-
-        Formulae:
-        http://aeconf.com/articles/may2007/aef080111.pdf (put)
-        https://en.wikipedia.org/wiki/Black%27s_approximation (dividend call)
-        http://www.bus.lsu.edu/academics/finance/faculty/dchance/Instructional/TN98-01.pdf (non-dividend call)
-
-        Verifiable Example from Hull & White 2001 (SECOND in the example list)
-        http://efinance.org.cn/cn/FEshuo/230301%20%20%20%20%20The%20Use%20of%20the%20Control%20Variate%20Technique%20in%20Option%20Pricing,%20pp.%20237-251.pdf
-        Scroll to page 246 in the pdf and and look at the very bottom right number b/c we use control variate for n = 100
+        :Authors:
+            Andrew Weatherly
         """
-
         #Verify Input
         assert self.right in ['call', 'put'], 'right must be "call" or "put" '
         assert self.ref.vol > 0, 'vol must be >=0'
@@ -163,10 +174,12 @@ class American(OptionValuation):
             else:
                 dividend_val1 = 0
                 dividend_val2 = 0
-            first_val = European(ref=Stock(S0=self.ref.S0 - dividend_val1, vol=self.ref.vol, q=self.ref.q), right=self.right,
-                                 K=self.K, rf_r=self.rf_r, T=self.T).calc_px(method='BS').px_spec.px
-            second_val = European(ref=Stock(S0=self.ref.S0 - dividend_val2, vol=self.ref.vol, q=self.ref.q),
-                                  right=self.right, K=self.K, rf_r=self.rf_r, T=self.T - .5).calc_px(method='BS').px_spec.px
+            first_val = European(
+                    ref=Stock(S0=self.ref.S0 - dividend_val1, vol=self.ref.vol, q=self.ref.q), right=self.right,
+                    K=self.K, rf_r=self.rf_r, T=self.T).calc_px(method='BS').px_spec.px
+            second_val = European(
+                    ref=Stock(S0=self.ref.S0 - dividend_val2, vol=self.ref.vol, q=self.ref.q),
+                    right=self.right, K=self.K, rf_r=self.rf_r, T=self.T - .5).calc_px(method='BS').px_spec.px
             self.px_spec.add(px=float(max([first_val, second_val])), method='BSM', sub_method='Black\'s Approximation')
         elif self.right == 'call':
             #American call is worth the same as European call if there are no dividends. This is by definition.
@@ -177,7 +190,8 @@ class American(OptionValuation):
                              method='European BSM')
         elif self.ref.q != 0:
             # I wasn't able to find a good approximation for American Put BSM w/ dividends so I'm using 200 and 201
-            # time step LT and taking the average. This is effectively the Antithetic Variable technique found on pg. 476 due
+            # time step LT and taking the average. This is effectively
+            # the Antithetic Variable technique found on pg. 476 due
             # to the oscillating nature of binomial tree
             f_a = (American(ref=Stock(S0=self.ref.S0, vol=self.ref.vol, q=self.ref.q), right=self.right,
                             K=self.K, rf_r=self.rf_r, T=self.T).calc_px(method='LT', nsteps=200).px_spec.px
@@ -198,30 +212,20 @@ class American(OptionValuation):
     def _calc_MC(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: American
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor:: Oleg Melnikov
-
-        Note
-        ----
-
+        :Authors:
+            Oleg Melnikov <xisreal@gmail.com>
         """
         return self
 
     def _calc_FD(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: American
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor:: Oleg Melnikov
-
-        Note
-        ----
-
+        :Authors:
+            Oleg Melnikov <xisreal@gmail.com>
         """
 
         return self
