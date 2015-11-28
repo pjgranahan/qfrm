@@ -41,7 +41,7 @@ class ForwardStart(OptionValuation):
         [3] http://www.globalriskguard.com/resources/deriv/fwd_4.pdf -- \
         How to pricing forward start opions, resource for Example 2
 
-        .. sectionauthor:: Runmin Zhang
+        .. sectionauthor:: Runmin Zhang, Tianyi Yao
 
 
         Examples
@@ -70,7 +70,7 @@ class ForwardStart(OptionValuation):
         rf_r=.08).update(T=t).calc_px(method='BS',T_s=0.25).px_spec.px for t in expiries], expiries)
         >>> O.plot(grid=1, title='ForwardStart option Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
-
+        >>> plt.show()
 
 
 
@@ -93,7 +93,7 @@ class ForwardStart(OptionValuation):
         which can be verified by page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
         However, for the purpose if fast runtime, I use nstep = 10 and npaths = 10 in all following examples, \
         whose result does not match verification.
-        If you want to verify my code, please use nsteps = 365 and npaths = 10000
+        If you want to verify my code, please use nsteps = 365 and npaths = 10000 in the following example.
 
         >>> s = Stock(S0=50, vol=.15,q=0.05)
         >>> o=ForwardStart(ref=s, K=100, right='call', T=0.5, rf_r=.1, \
