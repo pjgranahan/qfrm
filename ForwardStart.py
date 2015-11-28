@@ -13,9 +13,9 @@ class ForwardStart(OptionValuation):
         """ Wrapper function that calls appropriate valuation method.
 
         User passes parameters to calc_px, which saves them to local PriceSpec object
-        and calls specific pricing function (_calc_BS,...).
+        and calls specific pricing function (``_calc_BS``,...).
         This makes significantly less docstrings to write, since user is not interfacing pricing functions,
-        but a wrapper function calc_px().
+        but a wrapper function ``calc_px()``.
 
         Parameters
         ----------
@@ -27,11 +27,12 @@ class ForwardStart(OptionValuation):
                 MC, FD methods require number of simulation paths
         keep_hist : bool
                 If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
-        T1 : float
-             Required. Indicates the time that the option starts.
+        T_s : float
+                Required. Indicates the time that the option starts.
         Returns
         -------
-        self : ForwardStart
+        ForwardStart
+            Returned object contains specifications and calculated price in embedded PriceSpec object.
 
         Notes
         -----
@@ -41,7 +42,7 @@ class ForwardStart(OptionValuation):
         [3] http://www.globalriskguard.com/resources/deriv/fwd_4.pdf -- \
         How to pricing forward start opions, resource for Example 2
 
-        .. sectionauthor:: Runmin Zhang, Tianyi Yao
+
 
 
         Examples
@@ -52,17 +53,17 @@ class ForwardStart(OptionValuation):
         >>> s = Stock(S0=50, vol=.15,q=0.05)
         >>> o=ForwardStart(ref=s, K=50,right='call', T=0.5, \
         rf_r=.1).calc_px(method='BS',T_s=0.5)
-        >>> print(o.px_spec.px) #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.px_spec.px #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         2.62877...
-        <BLANKLINE>
+
 
 
         >>> s = Stock(S0=60, vol=.30,q=0.04)
         >>> o=ForwardStart(ref=s, K=66,right='call', T=0.75, \
         rf_r=.08).calc_px(method='BS',T_s=0.25)
-        >>> print(o.px_spec) #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.px_spec #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         PriceSpec...px: 6.760...
-        <BLANKLINE>
+
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
@@ -99,15 +100,14 @@ class ForwardStart(OptionValuation):
         >>> o=ForwardStart(ref=s, K=100, right='call', T=0.5, rf_r=.1, \
                desc='example from page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf'\
                ).calc_px(method='MC',nsteps=10,npaths=10,T_s=0.5) #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        >>> print(o.px_spec.px)#doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.px_spec.px#doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         3.434189...
 
         The following example uses the same parameter as the example above, but uses pxMC()
         >>> s = Stock(S0=50, vol=.15,q=0.05)
         >>> o=ForwardStart(ref=s, K=100, right='call', T=0.5, rf_r=.1, \
-               desc='example from page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf'\
-               ).pxMC(nsteps=10,npaths=10,T_s=0.5)#doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        >>> print(o)#doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+               desc='example from page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf')
+        >>> o.pxMC(nsteps=10,npaths=10,T_s=0.5)#doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         3.434189...
 
 
@@ -121,14 +121,13 @@ class ForwardStart(OptionValuation):
         >>> o=ForwardStart(ref=s, K=100, right='call', T=0.5, rf_r=.1, \
                desc='example from http://investexcel.net/forward-start-options/'\
                ).calc_px(method='MC',nsteps=10,npaths=10,T_s=0.5)
-        >>> print(o.update(right='put').calc_px(method='MC',\
-        nsteps=10,npaths=10,T_s=0.5).px_spec.px) #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.update(right='put').calc_px(method='MC',\
+        nsteps=10,npaths=10,T_s=0.5).px_spec.px #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         1.27965...
 
-        >>> print(o.update(right='put').calc_px(method='MC',\
-        nsteps=10,npaths=10,T_s=0.5).px_spec) #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.update(right='put').calc_px(method='MC',\
+        nsteps=10,npaths=10,T_s=0.5).px_spec #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         PriceSpec...px: 1.27965...
-        <BLANKLINE>
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
@@ -138,10 +137,9 @@ class ForwardStart(OptionValuation):
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> plt.show()
 
-
-
-
-
+        :Authors:
+            Runmin Zhang <Runmin.Zhang@rice.edu>
+            Tianyi Yao   <ty13@rice.edu>
 
 
         """
@@ -154,12 +152,10 @@ class ForwardStart(OptionValuation):
     def _calc_BS(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: ForwardStart
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor:: Runmin Zhang
-
+        :Authors:
+            Runmin Zhang <Runmin.Zhang@rice.edu>
         """
 
         _ = self
@@ -226,11 +222,9 @@ class ForwardStart(OptionValuation):
     def _calc_LT(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: PerpetualAmerican
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor::
+        :Authors:
 
         """
 
@@ -239,16 +233,14 @@ class ForwardStart(OptionValuation):
     def _calc_MC(self):
         """ Internal function for option valuation.
 
-        Returns
-        ---------
-        self: ForwardStart
-
-        .. sectionauthor:: Tianyi Yao
+        See ``calc_px()`` for complete documentation.
 
         Note
         ----
         [1] http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
 
+        :Authors:
+            Tianyi Yao <ty13@rice.edu>
         """
 
         #extract MC parameters
@@ -292,14 +284,9 @@ class ForwardStart(OptionValuation):
     def _calc_FD(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: PerpetualAmerican
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor::
-
-        Note
-        ----
+        :Authors:
 
         """
 
