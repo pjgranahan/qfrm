@@ -3,8 +3,7 @@ import numpy as np
 from scipy import stats
 from OptionValuation import *
 import matplotlib.pyplot as plt
-from scipy.stats import norm
-from math import sqrt, exp, log
+
 
 class Gap(OptionValuation):
     """ Gap option class.
@@ -63,22 +62,21 @@ class Gap(OptionValuation):
 
         Returns
         -----------------------------------------------------
-        self : Gap
-
-        .. sectionauthor:: Yen-fei Chen
+        Gap
+            Returned object contains specifications and calculated price in embedded PriceSpec object.
 
         Notes
-        --------
+        -----------------------------------------------------
         A gap option has a strike price, K1 , and a trigger price, K2 . The trigger price
         determines whether or not the gap option will have a nonzero payoff. The strike price
         determines the amount of the nonzero payoff. The strike price may be greater than or
         less than the trigger price.
 
         Examples
-        --------
+        --------------------------------------------------------
 
         BS Examples
-        --------
+        --------------------------------------------------------
         >>> s = Stock(S0=500000, vol=.2)
         >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='Hull p.601 Example 26.1')
         >>> o.pxBS(K2=350000)
@@ -101,7 +99,7 @@ class Gap(OptionValuation):
         >>> plt.show()
 
         LT Examples
-        --------
+        ----------------------------------------------------------
         >>> s = Stock(S0=500000, vol=.2,  q = 0)
         >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, on = (90000,)*23, desc = 'HULL p. 601 Exp 26.1')
         >>> o.calc_px(K2=350000, nsteps = 22, method='LT').px_spec.px
@@ -124,7 +122,7 @@ class Gap(OptionValuation):
 
 
         MC Examples
-        --------
+        -----------------------------------------------------------
         Because different number of seed, npaths and nsteps will influence the option price. The result of MC method
         may not as accurate as BSM and LT method.
 
@@ -158,6 +156,9 @@ class Gap(OptionValuation):
         [1] http://www.actuarialbookstore.com/samples/3MFE-BRE-12FSM%20Sample%20_4-12-12.pdf
         [2] https://www.ma.utexas.edu/users/mcudina/Lecture14_3_4_5.pdf
 
+        :Authors:
+            Yen-fei Chen
+
         """
         self.K2 = float(K2)
         self.seed0 = seed
@@ -166,17 +167,13 @@ class Gap(OptionValuation):
     def _calc_BS(self):
         """ Internal function for option valuation.
 
-        Returns
-        --------------------------------------------------
-        self: Gap
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor:: Yen-fei Chen
-
-        Note
-        ------------------------------------------------------
-
+        :Authors:
+            Yen-fei Chen
         """
-
+        from scipy.stats import norm
+        from math import sqrt, exp, log
 
         _ = self
         d1 = (log(_.ref.S0 / _.K2) + (_.rf_r - _.ref.q + _.ref.vol ** 2 / 2.) * _.T)/(_.ref.vol * sqrt(_.T))
@@ -255,17 +252,13 @@ class Gap(OptionValuation):
         return self
 
     def _calc_MC(self):
+
         """ Internal function for option valuation.
 
-        Returns
-        ----------------------------------------------
-        self: Gap
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor:: Mengyan Xie
-
-        Note
-        ----------------------------------------------
-
+        :Authors:
+            Mengyan Xie
         """
         # Get parameters of steps and paths
         n_steps = getattr(self.px_spec, 'nsteps', 3)
@@ -299,16 +292,10 @@ class Gap(OptionValuation):
     def _calc_FD(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: Gap
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor:: Oleg Melnikov
-
-        Note
-        ----
-
+        :Authors:
+            Oleg Melnikov <xisreal@gmail.com>
         """
 
         return self
-
