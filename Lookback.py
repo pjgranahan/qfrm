@@ -1,8 +1,7 @@
-from scipy import stats
+import scipy.stats
 import warnings
 import numpy as np
 import math
-from numpy import array, maximum, arange
 
 from OptionValuation import *
 
@@ -57,12 +56,12 @@ class Lookback(OptionValuation):
         The LT method might not generate the same result with BS
         To improve the accuracy, the number of steps can be added
 
-        -------
+        ---------
         Examples
         --------
 
         BS Examples
-        --------
+        -----------
         >>> s = Stock(S0=50, vol=.4, q=.0)
         >>> o = Lookback(ref=s, right='call', K=50, T=0.25, rf_r=.1, desc='Example from Hull Ch.26 Example 26.2 (p608)')
         >>> o.pxBS(Sfl = 50.0)
@@ -88,7 +87,7 @@ class Lookback(OptionValuation):
 
 
         LT Examples
-        --------
+        -----------
         >>> s = Stock(S0=35., vol=.05, q=.00)
         >>> o = Lookback(ref=s, right='call', K=30, T=0.25, rf_r=.1, desc='Hull p607')
         >>> o.pxLT(nsteps=100,keep_hist=False, Sfl = 50.0)
@@ -117,7 +116,7 @@ class Lookback(OptionValuation):
         >>> plt.show()
 
         :Authors:
-            Mengyan Xie
+            Mengyan Xie <xiemengy@gmail.com>
             Hanting Li <hl45@rice.edu>
        """
 
@@ -138,7 +137,7 @@ class Lookback(OptionValuation):
         Hull Book p.607
 
         Examples
-        -------
+        --------
 
 
         """
@@ -157,20 +156,20 @@ class Lookback(OptionValuation):
         # Compute the Strike Tree
         for i in range(0, n, 1):
             if (self.signCP == -1):
-                K = tuple(_['u'] * array(S)) + (S[len(S)-1],)
+                K = tuple(_['u'] * np.array(S)) + (S[len(S)-1],)
             else:
-                K = (S[0],) + tuple(_['d'] * array(S))
-            S = tuple(_['u'] * array(S)) + (_['d']*S[len(S)-1],)
+                K = (S[0],) + tuple(_['d'] * np.array(S))
+            S = tuple(_['u'] * np.array(S)) + (_['d']*S[len(S)-1],)
             # The Spot Tree
             S_tree = (tuple([float(s) for s in S]),) + S_tree
             # The Strike Tree
             K_tree = (tuple([float(k) for k in K]),) + K_tree
 
         # The terminal stock price
-        ST = self.ref.S0 * _['d'] ** arange(n, -1, -1) * _['u'] ** arange(0, n + 1)
+        ST = self.ref.S0 * _['d'] ** np.arange(n, -1, -1) * _['u'] ** np.arange(0, n + 1)
         K = K_tree[0]
         # The payoff tree
-        O = maximum(self.signCP * (ST - K), 0)
+        O = np.maximum(self.signCP * (ST - K), 0)
         O_tree = (tuple([float(o) for o in O]),)
 
         # Generate the Payoff tree
@@ -190,7 +189,8 @@ class Lookback(OptionValuation):
         -------
         self: Look back
 
-        .. sectionauthor:: Mengyan Xie
+        :Authors:
+            Mengyan Xie <xiemengy@gmail.com>
 
         Note
         ----
@@ -221,18 +221,18 @@ class Lookback(OptionValuation):
         Y1 = _.signCP * (-2 * (_.rf_r - _.ref.q - _.ref.vol ** 2 / 2) * math.log(S_new)) / (_.ref.vol ** 2)
 
         # compute call option price
-        c1 = _.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(a1)
-        c2 = _.ref.S0 * math.exp(-_.ref.q * _.T) * (_.ref.vol ** 2) * stats.norm.cdf(-a1) / (2 * (_.rf_r - _.ref.q))
-        c3 = - _.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (stats.norm.cdf(a2) - _.ref.vol ** 2 * math.exp(Y1) * \
-                                                          stats.norm.cdf(-a3) / (2 * (_.rf_r - _.ref.q)))
+        c1 = _.ref.S0 * math.exp(-_.ref.q * _.T) * scipy.stats.norm.cdf(a1)
+        c2 = _.ref.S0 * math.exp(-_.ref.q * _.T) * (_.ref.vol ** 2) * scipy.stats.norm.cdf(-a1)/(2 * (_.rf_r - _.ref.q))
+        c3 = - _.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (scipy.stats.norm.cdf(a2) - _.ref.vol ** 2 * math.exp(Y1) * \
+                                                          scipy.stats.norm.cdf(-a3) / (2 * (_.rf_r - _.ref.q)))
 
         c = c1 - c2 + c3
 
         # compute put option price
-        p1 = self.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (stats.norm.cdf(a1) - _.ref.vol ** 2 * math.exp(Y1) * \
-                                                           stats.norm.cdf(-a3) / (2 * (_.rf_r - _.ref.q)))
-        p2 = _.ref.S0 * math.exp(-_.ref.q * _.T) * (_.ref.vol ** 2) * stats.norm.cdf(-a2) / (2 * (_.rf_r - _.ref.q))
-        p3 = _.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(a2)
+        p1 = self.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (scipy.stats.norm.cdf(a1) - _.ref.vol ** 2 * math.exp(Y1) * \
+                                                           scipy.stats.norm.cdf(-a3) / (2 * (_.rf_r - _.ref.q)))
+        p2 = _.ref.S0 * math.exp(-_.ref.q * _.T) * (_.ref.vol ** 2) * scipy.stats.norm.cdf(-a2)/(2 * (_.rf_r - _.ref.q))
+        p3 = _.ref.S0 * math.exp(-_.ref.q * _.T) * scipy.stats.norm.cdf(a2)
         p = p1 + p2 - p3
 
 
