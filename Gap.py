@@ -319,7 +319,6 @@ class Gap(OptionValuation):
         _ = self
         vol = _.ref.vol
         ttm = _.T
-        on = self.on
         r = _.rf_r
         q = _.ref.q
         S0 = _.ref.S0
@@ -327,16 +326,42 @@ class Gap(OptionValuation):
         K2 = _.K2
         K = _.K
 
+##########################################
+        vol=.0
+        ttm=0.1
+        r=0.1
+        q=0
+        K=57
+        K2=50
+        S0=50
+        time_steps=5
+        px_paths=5
+
         # Set boundary conditions.
-        S_max = 10*S0
+        S_max = 5*S0
         S_min = 0
 
-        stock_px = np.zeros(time_steps,px_paths)
-        d_px = S_max/px_paths
-        d_t = ttm/time_steps
-
-        stock_px 
 
 
+        f_px = np.zeros((time_steps,px_paths))      #Initialize the option px matrix. Hull's P482
+        d_px = S_max/(px_paths-1)
+        d_t = ttm/(time_steps-1)
+
+
+        f_px[:,-1] = S_max
+        for j_px in np.arange(0,time_steps):
+            f_px[-1,j_px] = j_px*d_px
+
+        for i_time in np.arange(time_steps-2,-1,-1):    # Time=(0,d_t,2*d_t,...,T-d_t)
+            for j_px in np.arange(1,px_paths-1):   # price=(0,d_px,....,S_max-d_px)
+                a=( -0.5*(r-q)*j_px*d_t + 0.5*vol**2*j_px*d_t)/(1+r*d_t)
+                b=( 1-vol**2*j_px**2*d_t )/( 1+r*d_t )
+                c=(0.5*(r-q)*j_px*d_t+0.5*vol**2*j_px**2*d_t)/(1+r*d_t)
+                f_px[i_time,j_px]=a*f_px[i_time+1,j_px-1] + b*f_px[i_time+1,j_px] + c*f_px[i_time+1,j_px+1]
+               # f_px[i_time,j_px] = np.maximum()
+        f_px
         return self
 
+s = Stock(S0=50, vol=.2)
+o = Gap(ref=s, right='put', K=57, T=1, rf_r=.09)
+o.calc_px(K2=50, method='FD',seed=2, npaths=250, nsteps=100).px_spec
