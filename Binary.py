@@ -38,8 +38,6 @@ class Binary(OptionValuation):
         ------------
         self : Binary
 
-        .. sectionauthor:: Patrick Granahan, Tianyi Yao
-
         Notes
         ----------
         In finance, a binary option is a type of option in which the payoff can take only two possible outcomes,
@@ -58,52 +56,39 @@ class Binary(OptionValuation):
         Examples
         ------------
 
-        Use the Black-Scholes model to price an asset-or-nothing binary option. Verifiable using DerivaGem.
+        BS Examples
+        ------------
+
+        Example #1 (verifiable using DerivaGem): Use the Black-Scholes model to price an asset-or-nothing binary option.
 
         >>> s = Stock(S0=42, vol=.20)
         >>> o = Binary(ref=s, right='put', K=40, T=.5, rf_r=.1)
-        >>> o.calc_px(method='BS', payout_type="asset-or-nothing").px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PriceSpec...px: 9.27648...
-        <BLANKLINE>
+        >>> o.pxBS(payout_type="asset-or-nothing")  # doctest: +ELLIPSIS
+        9.276485780407903
 
-        Access the attributes in other ways
+        Example #2 (verifiable using DerivaGem): Change the option to be a call
 
-        >>> o.px_spec.px, o.px_spec.d1, o.px_spec.d2, o.px_spec.method, o.px_spec.sub_method #doctest: +ELLIPSIS
-        (9.276485..., 0.76926262..., 0.62784127..., 'BS', 'asset-or-nothing')
+        >>> o.update(right='call').pxBS(payout_type="asset-or-nothing")  # doctest: +ELLIPSIS
+        32.7235142195921
 
-        Change the option to be a call
-
-        >>> o.update(right='call').calc_px().px_spec.px #doctest: +ELLIPSIS
-        32.723514...
-
-        Use the Black-Scholes model to price a cash-or-nothing binary option. Verifiable using DerivaGem.
+        Example #3 (verifiable using DerivaGem): Use the Black-Scholes model to price a cash-or-nothing binary option.
 
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05)
-        >>> o.calc_px(method='BS', \
-        payout_type="cash-or-nothing", Q=1000).px_spec# doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PriceSpec...px: 641.2377...
-        <BLANKLINE>
+        >>> o.pxBS(payout_type="cash-or-nothing", Q=1000)  # doctest: +ELLIPSIS
+        641.2377052315655
 
-        Access the attributes in other ways
+        Example #4 (verifiable using DerivaGem): Change the option to be a put
 
-        >>> o.px_spec.px, o.px_spec.d1, o.px_spec.d2, o.px_spec.method, o.px_spec.sub_method #doctest: +ELLIPSIS
-        (641.23770..., 0.9737886..., 0.549524..., 'BS', 'cash-or-nothing')
+        >>> o.update(right='put').pxBS(payout_type="cash-or-nothing", Q=1000)  #doctest: +ELLIPSIS
+        263.59971280439396
 
-        Change the option to be a put
-
-        >>> o.update(right='put').calc_px().px_spec.px #doctest: +ELLIPSIS
-        8.25403...
-
-        Example of option price development (BS method) with increasing maturities
+        Example #5 (plot): Example of option price development (BS method) with increasing maturities
 
         >>> from pandas import Series
-        >>> expiries = range(1,11)
-        >>> O = Series([o.update(T=t).calc_px(method='BS', \
-        payout_type="cash-or-nothing", Q=1000).px_spec.px for t in expiries], expiries)
-        >>> O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
-        <matplotlib.axes._subplots.AxesSubplot object at ...>
-        >>> import matplotlib.pyplot as plt
+        >>> O = Series([o.update(T=t).pxBS(payout_type="asset-or-nothing") for t in range(1,11)], range(1,11))
+        >>> O.plot(grid=1, title='Price vs expiry (in years)')  # doctest: +ELLIPSIS
+        <...>
         >>> plt.show()
 
 
@@ -241,6 +226,11 @@ class Binary(OptionValuation):
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
+
+
+        :Authors:
+            Patrick Granahan,
+            Tianyi Yao
         """
 
         return super().calc_px(method=method, sub_method=payout_type, nsteps=nsteps, \
