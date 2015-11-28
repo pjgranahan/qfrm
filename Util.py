@@ -3,16 +3,18 @@ import numbers
 import numpy as np
 
 class Util():
-    """ A collection of utility functions, most of which are static methods, i.e. can be called as Util.is_iterable().
+    """ A collection of utility functions, most of which are static methods,
+    i.e. can be called as ``Util.is_iterable()``.
 
-    FYI: Decorator @staticmethod allows use of functions without initializing an object
-    Ex. we can use Util.demote(x) instead of Util().demote(x). It's faster.
+    FYI: Decorator ``@staticmethod`` allows use of functions without initializing an object
+    Ex. we can use ``Util.demote(x)`` instead of ``Util().demote(x)``. It's faster.
 
-    .. sectionauthor:: Oleg Melnikov
+    :Authors:
+        Oleg Melnikov <xisreal@gmail.com>
     """
     @staticmethod
     def is_iterable(x):
-        """ Checks if x is iterable.
+        """ Checks if ``x`` is iterable.
 
         Parameters
         ----------
@@ -22,7 +24,7 @@ class Util():
         Returns
         -------
         bool
-            True if x is iterable, False otherwise
+            ``True`` if ``x`` is iterable, ``False`` otherwise
 
         Exmaples
         --------
@@ -44,7 +46,7 @@ class Util():
 
     @staticmethod
     def is_number(x):
-        """ Checks if x is numeric (float, int, complex, ...)
+        """ Checks if ``x`` is numeric (``float``, ``int``, ``complex``, ...)
 
         Parameters
         ----------
@@ -54,7 +56,7 @@ class Util():
         Returns
         -------
         bool
-            True, if x is numeric; False otherwise.
+            ``True``, if ``x`` is numeric; ``False`` otherwise.
 
         """
         return isinstance(x, numbers.Number)
@@ -65,8 +67,8 @@ class Util():
 
         Parameters
         ----------
-        x : object
-            any object (value, iterable,...) that need to be verified as being numberic or not
+        x : array_like
+            any object (value, iterable,...) that need to be verified as being numeric or not
 
         Returns
         -------
@@ -142,7 +144,7 @@ class Util():
 
     @staticmethod
     def demote(x):
-        """ Attempts to simplify x to a tuple (if x is a more complex data type) or just singleton.
+        """ Attempts to simplify ``x`` to a ``tuple`` (if x is a more complex data type) or just singleton.
         Basically, demotes to a simpler object, if possible.
 
         Parameters
@@ -185,7 +187,7 @@ class Util():
 
     @staticmethod
     def round(x, prec=5, to_tuple=False):
-        """ Recirsively rounds an iterable to the desired precision.
+        """ Recursively rounds an iterable to the desired precision.
 
         Parameters
         ----------
@@ -219,7 +221,7 @@ class Util():
 
     @staticmethod
     def to_tuple(a, leaf_as_float=False):
-        """ Recursively converts a iterable (and arrays) to tuple.
+        """ Recursively converts a iterable (and arrays) to ``tuple``.
 
         Parameters
         ----------
@@ -232,10 +234,10 @@ class Util():
 
         Examples
         --------
-
         >>> import numpy as np; x = (1, 1/3, 1/7,[1/11, 1/13, {1/19, 1/29}]); a = np.array(x)
         >>> Util.to_tuple(x)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         (1, 0.333..., 0.142857142..., (0.0909...,  0.076923076...,  (0.034482758..., 0.052631578...)))
+
         >>> Util.to_tuple(a)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         (1, 0.333..., 0.142857142..., (0.0909...,  0.076923076...,  (0.034482758..., 0.052631578...)))
 
@@ -301,6 +303,4 @@ class SpecPrinter:
 
     def __str__(self):
         return self.full_spec(new_line=True)
-
-
 
