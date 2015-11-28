@@ -91,7 +91,8 @@ class Basket(OptionValuation):
         self.corr = corr
         self.npaths = npaths
         self.nsteps = nsteps
-        return getattr(self, '_calc_' + method.upper())()
+        return super().calc_px(method=method, mu = mu, weight = weight,
+                corr = corr, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
 
     def _calc_BS(self):
         """ Internal function for option valuation.
