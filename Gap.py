@@ -327,41 +327,82 @@ class Gap(OptionValuation):
         K = _.K
 
 ##########################################
-        vol=.0
-        ttm=0.1
-        r=0.1
-        q=0
-        K=57
-        K2=50
-        S0=50
-        time_steps=5
-        px_paths=5
+        # >>> s = Stock(S0=500000, vol=.2)
+        # >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='Hull p.601 Example 26.1')
+        # >>> o.pxBS(K2=350000)
+        # 1895.6889443965902
+        # vol=.15
+        # ttm=1
+        # r=0.06
+        # q=0.09
+        # K=1.62
+        # K2=1.62
+        # S0=1.2
+        # sign=1
+        # style='a'
+
+        # >>> s = Stock(S0=500000, vol=.2)
+        # >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='Hull p.601 Example 26.1')
+        # >>> o.pxBS(K2=350000)
+        # 1895.6889443965902
+        vol=.2
+        ttm=1
+        r=0.05
+        q=0.0
+        K=400
+        K2=350
+        S0=500
+        sign=-1
+        style='e'
+
+        time_steps=50
+        px_paths=50
 
         # Set boundary conditions.
-        S_max = 5*S0
-        S_min = 0
-
+        # S_max = 2.4
+        # S_min = 0.8
+        S_max=S0*2
+        S_min=0
 
 
         f_px = np.zeros((time_steps,px_paths))      #Initialize the option px matrix. Hull's P482
         d_px = S_max/(px_paths-1)
         d_t = ttm/(time_steps-1)
 
+        j_min = int(round(S_min/d_px,0))
 
-        f_px[:,-1] = S_max
-        for j_px in np.arange(0,time_steps):
-            f_px[-1,j_px] = j_px*d_px
+
+        for j_px in np.arange(j_min,px_paths):
+            S_t = j_px*d_px
+            f_px[-1,j_px] = (sign==1)*(S_t>=K)*np.maximum((S_t-K2),0)\
+                            +(sign==-1)*(S_t<=K)*np.maximum(K2-S_t,0)
+
+
+        f_px[:,-1] = (sign==1)*(S_max>=K)*np.maximum((S_max-K2),0)\
+                            +(sign==-1)*(S_max<=K)*np.maximum(K2-S_max,0)
+        f_px[:,j_min] = (sign==1)*(S_min>=K)*np.maximum((S_min-K2),0)\
+                            +(sign==-1)*(S_min<=K)*np.maximum(K2-S_min,0)
 
         for i_time in np.arange(time_steps-2,-1,-1):    # Time=(0,d_t,2*d_t,...,T-d_t)
-            for j_px in np.arange(1,px_paths-1):   # price=(0,d_px,....,S_max-d_px)
-                a=( -0.5*(r-q)*j_px*d_t + 0.5*vol**2*j_px*d_t)/(1+r*d_t)
+            for j_px in np.arange(j_min+1,px_paths-1):   # price=(0,d_px,....,S_max-d_px)
+                a=( -0.5*(r-q)*j_px*d_t + 0.5*vol**2*j_px**2*d_t)/(1+r*d_t)
                 b=( 1-vol**2*j_px**2*d_t )/( 1+r*d_t )
                 c=(0.5*(r-q)*j_px*d_t+0.5*vol**2*j_px**2*d_t)/(1+r*d_t)
-                f_px[i_time,j_px]=a*f_px[i_time+1,j_px-1] + b*f_px[i_time+1,j_px] + c*f_px[i_time+1,j_px+1]
-               # f_px[i_time,j_px] = np.maximum()
-        f_px
-        return self
+                f_px[i_time,j_px]=(a*f_px[i_time+1,j_px-1] + b*f_px[i_time+1,j_px] + c*f_px[i_time+1,j_px+1])
 
+                #if style=='a':
+                #    f_px[i_time,j_px]=(sign==1)*np.maximum(f_px[i_time,j_px],np.maximum(j_px*d_px-K2,0))\
+                #                      +(sign==-1)*np.maximum(f_px[i_time,j_px],np.maximum(-j_px*d_px+K2,0))
+               # f_px[i_time,j_px] = np.maximum()
+
+        f_px.round(3)
+
+        px=f_px[0,int(round(S0/d_px,0))]
+        self.px_spec.add(px=float(px))
+        return self
+#
+# s = Stock(S0=500000, vol=.2)
+# o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05)
 s = Stock(S0=50, vol=.2)
-o = Gap(ref=s, right='put', K=57, T=1, rf_r=.09)
-o.calc_px(K2=50, method='FD',seed=2, npaths=250, nsteps=100).px_spec
+o = Gap(ref=s, right='call', K=57, T=1, rf_r=.09)
+o.calc_px(K2=50, method='FD', npaths=50, nsteps=10).px_spec
