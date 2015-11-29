@@ -243,10 +243,10 @@ class Asian(OptionValuation):
         ----
 
         :Formulae:
-        - `Arithmetic Average Options and Asian Opitons <goo.gl/Kw4zQ2>`_
+        - `Arithmetic Average Options and Asian Options <goo.gl/Kw4zQ2>`_
         - `An efficient convergent lattice algorithm for European Asian options, Tian-Shyr Dai, et al., 2004
           <http://www.csie.ntu.edu.tw/~lyuu/works/asian.pdf>`_
-        - `Simple, fast and flexible pricng of Asian options, Timothy R. Klassen,
+        - `Simple, fast and flexible pricing of Asian options, Timothy R. Klassen,
           <http://phys.columbia.edu/~klassen/asian.pdf>`_
 
         :Authors:
@@ -401,7 +401,7 @@ class Asian(OptionValuation):
         See ``calc_px()`` for complete documentation.
 
         :Formulae:
-        - `Arithmetic Average Options and Asian Opitons <goo.gl/Kw4zQ2>`_
+        - `Arithmetic Average Options and Asian Options <goo.gl/Kw4zQ2>`_
 
         :Authors:
             Scott Morgan

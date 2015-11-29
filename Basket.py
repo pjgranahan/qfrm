@@ -38,9 +38,6 @@ class Basket(OptionValuation):
         -------
         self : Basket
 
-        :Authors:
-          Hanting Li <hl45@rice.edu>
-
         Notes
         -----
         The examples can be verified at:
@@ -83,6 +80,8 @@ class Basket(OptionValuation):
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
+        :Authors:
+          Hanting Li <hl45@rice.edu>
 
         """
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
@@ -97,27 +96,12 @@ class Basket(OptionValuation):
     def _calc_BS(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: European
-
-        .. sectionauthor:: Oleg Melnikov
-
         """
 
         return self
 
     def _calc_LT(self):
         """ Internal function for option valuation.
-
-        Returns
-        -------
-        self: European
-
-        .. sectionauthor:: Oleg Melnikov
-
-        .. note::
-        Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
 
         """
 
@@ -126,17 +110,8 @@ class Basket(OptionValuation):
     def _calc_MC(self, keep_hist=False):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: European
-
         :Authors:
-            Hanting Li <hl45@rice.edu>
-
-        Notes
-        -----
-        Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
-
+          Hanting Li <hl45@rice.edu>
         """
 
 

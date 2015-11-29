@@ -80,13 +80,6 @@ class American(OptionValuation):
     def _calc_LT(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: American
-
-
-        Examples
-        --------
         See ``calc_px()`` for complete documentation.
 
         :Authors:

@@ -15,9 +15,9 @@ class Barrier(OptionValuation):
         """ Wrapper function that calls appropriate valuation method.
 
         User passes parameters to calc_px, which saves them to local PriceSpec object
-        and calls specific pricing function (_calc_BS,...).
+        and calls specific pricing function (``_calc_BS``,...).
         This makes significantly less docstrings to write, since user is not interfacing pricing functions,
-        but a wrapper function calc_px().
+        but a wrapper function ``calc_px()``.
 
         Parameters
         ----------
@@ -28,7 +28,7 @@ class Barrier(OptionValuation):
         npaths : int
                 MC, FD methods require number of simulation paths
         keep_hist : bool
-                If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
+                If ``True``, historical information (trees, simulations, grid) are saved in ``self.px_spec`` object.
         H: float
                 Barrier price
 
@@ -36,22 +36,20 @@ class Barrier(OptionValuation):
         -------
         self : Barrier
 
-        :Authors:
-            Scott Morgan
-            Hanting Li <hl45@rice.edu>
-
         Notes
         ---------
-
         Examples can be verified at:
-            http://www.fintools.com/resources/online-calculators/exotics-calculators/exoticscalc-barrier/
-            DerivaGem, Barrier Option
-            QFRM R Pakcage, Barrier Option, BS method
+
+        - `Barrier Option Calculator <http://www.fintools.com/resources/online-calculators/exotics-calculators/exoticscalc-barrier/>`_
+        -  DerivaGem software (accompanies J.C.Hull's OFOD textbook)
 
         Examples
         ---------
 
-        # BS Examples, see notes for verification
+        BS Examples
+        -----------
+        See notes for verification
+
         >>> s = Stock(S0=50., vol=.25, q=.00)
         >>> o = Barrier(ref=s,right='call', K=45., T=2., rf_r=.1, desc='down and out call')
         >>> o.calc_px(H=35.,knock='down',dir='out',method='BS').px_spec.px
@@ -78,11 +76,13 @@ class Barrier(OptionValuation):
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
-        >>> # SEE NOTES for verification
+        SEE NOTES for verification of examples
+
         >>> s = Stock(S0=95., vol=.25, q=.00)
         >>> o = Barrier(ref=s, right='put', K=100., T=1., rf_r=.1, desc='down and in put')
         >>> o.calc_px(method='LT',H=90.,knock='down',dir='in',nsteps=1050, keep_hist=False).px_spec.px
-        7.104101924957116
+        ... # doctest: +ELLIPSIS
+        7.104101924...
         >>> o.px_spec
         PriceSpec
         LT_specs:
@@ -105,22 +105,26 @@ class Barrier(OptionValuation):
         >>> s = Stock(S0=95., vol=.25, q=.00)
         >>> o = Barrier(ref=s, right='call', K=100., T=2., rf_r=.1, desc='down and out call')
         >>> print(o.calc_px(method='LT', H=87.,knock='down',dir='out',nsteps=1050, keep_hist=False).px_spec.px)
-        11.549805549495334
+        ... # doctest: +ELLIPSIS
+        11.549805549...
 
         >>> s = Stock(S0=95., vol=.25, q=.00)
         >>> o = Barrier(ref=s, right='put', K=100., T=2., rf_r=.1, desc='up and out put')
         >>> print(o.calc_px(method='LT', nsteps=1050, H=105.,knock='up',dir='out', keep_hist=False).px_spec.px)
-        3.2607593764427434
+        ... # doctest: +ELLIPSIS
+        3.260759376...
 
         >>> s = Stock(S0=95., vol=.25, q=.00)
         >>> o = Barrier(ref=s, right='call', K=100., T=2., rf_r=.1, desc='up and in call')
         >>> print(o.calc_px(method='LT',H=105.,knock='up',dir='in', nsteps=1050, keep_hist=False).px_spec.px)
-        20.037733657756565
+        ... # doctest: +ELLIPSIS
+        20.037733657...
 
         >>> s = Stock(S0=95., vol=.25, q=.00)
         >>> o = Barrier(ref=s, right='call', K=100., T=2., rf_r=.1, desc='up and in call')
         >>> print(o.calc_px(method='LT',H=105.,knock='up',dir='in', nsteps=10, keep_hist=False).px_spec.px)
-        20.040606033552542
+        ... # doctest: +ELLIPSIS
+        20.040606033...
 
 
         >>> # Example of option price convergence (LT method)
@@ -133,15 +137,16 @@ class Barrier(OptionValuation):
         >>> # import matplotlib.pyplot as plt
         >>> # plt.show() # uncomment these two rows to actually show plots
 
-        ==========
-        MC Example
-        ==========
+        MC Examples
+        -----------
 
-        All examples below can be verfied in DerivaGem
+        All examples below can be verified with DerivaGem software
+
         >>> s = Stock(S0=50., vol=.3, q=.00)
         >>> o = Barrier(ref=s,right='put', K=50., T=1., rf_r=.1, desc='DerviaGem Up and Out Barrier')
         >>> print(o.calc_px(H=60.,knock='up',dir='out',method='MC', nsteps=500 ,rng_seed=0, npaths = 10000).px_spec.px)
-        3.076977350845583
+        ... # doctest: +ELLIPSIS
+        3.076977350...
 
         >>> s = Stock(S0=50., vol=.3, q=.00)
         >>> o = Barrier(ref=s,right='call', K=50., T=1., rf_r=.1, desc='Up and in call')
@@ -153,6 +158,9 @@ class Barrier(OptionValuation):
         >>> o.calc_px(H=35.,knock='down',dir='in',method='MC', rng_seed = 4, nsteps=500 , npaths = 10000).px_spec.px
         0.14743918425170133
 
+        :Authors:
+            Scott Morgan,
+            Hanting Li <hl45@rice.edu>
        """
 
 
@@ -165,15 +173,10 @@ class Barrier(OptionValuation):
     def _calc_BS(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: Barrier
+        See ``calc_px()`` for complete documentation.
 
         :Authors:
             Hanting Li <hl45@rice.edu>
-
-        See ``calc_px()`` for complete documentation.
-
         """
 
         _ = self
@@ -264,19 +267,17 @@ class Barrier(OptionValuation):
     def _calc_LT(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: Barrier
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor:: Scott Morgan
+        Notes
+        -----
+        - `Binomial Trees for Barrier Options:   <http://goo.gl/zcPhJe>`_
+        - `In-Out Parity <http://www.iam.uni-bonn.de/people/ankirchner/lectures/OP_WS1314/OP_chap_nine.pdf>`_
+        - `Verify Examples
+          <http://www.fintools.com/resources/online-calculators/exotics-calculators/exoticscalc-barrier>`_
 
-        .. note::
-        Binomial Trees for Barrier Options:   http://homepage.ntu.edu.tw/~jryanwang/course/Financial \
-        %20Computation%20or%20Financial%20Engineering%20(graduate%20level)/FE_Ch08%20Barrier%20Option.pdf
-        In-Out Parity: http://www.iam.uni-bonn.de/people/ankirchner/lectures/OP_WS1314/OP_chap_nine.pdf
-        Verify Examples: http://www.fintools.com/resources/online-calculators/exotics-calculators/exoticscalc-barrier/
-
-
+        :Authors:
+            Scott Morgan
         """
 
         if self.knock == 'down':
@@ -367,15 +368,7 @@ class Barrier(OptionValuation):
     def _calc_MC(self, nsteps=3, npaths=4, keep_hist=False):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: Barrier
-
-        .. sectionauthor::
-
-        Notes
-        -----
-
+        See ``calc_px()`` for complete documentation.
 
         """
         _ = self
@@ -549,11 +542,6 @@ class Barrier(OptionValuation):
     def _calc_FD(self, nsteps=3, npaths=4, keep_hist=False):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: Barrier
-
-        .. sectionauthor::
-
+        See ``calc_px()`` for complete documentation.
         """
         return self
