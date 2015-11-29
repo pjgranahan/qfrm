@@ -15,9 +15,9 @@ class Lookback(OptionValuation):
         """ Wrapper function that calls appropriate valuation method.
 
         User passes parameters to calc_px, which saves them to local PriceSpec object
-        and calls specific pricing function (_calc_BS,...).
+        and calls specific pricing function (``_calc_BS``,...).
         This makes significantly less docstrings to write, since user is not interfacing pricing functions,
-        but a wrapper function calc_px().
+        but a wrapper function ``calc_px()``.
 
         Parameters
         ----------
@@ -28,13 +28,13 @@ class Lookback(OptionValuation):
         npaths : int
                 MC, FD methods require number of simulation paths
         keep_hist : bool
-                If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
+                If ``True``, historical information (trees, simulations, grid) are saved in ``self.px_spec`` object.
         Sfl : float
                 Asset floating price.
-                If call option, Sfl is minimum asset price achieved to date.(If the look back has
-                just been originated, Smin = S0.)
+                If call option, ``Sfl`` is minimum asset price achieved to date.(If the look back has
+                just been originated, ``Smin = S0``.)
                 If put option, Sfl is maximum asset price achieved to date. (If the look back has just been originated,
-                Smax = S0.)
+                ``Smax = S0``.)
         q : float
                 Dividend
 
@@ -42,21 +42,19 @@ class Lookback(OptionValuation):
         Returns
         -------
         self : Lookback
-
+            Returns Lookback object
 
         Notes
         -----
 
         Verification of Example:
-           http://investexcel.net/asian-options-excel/
-           DerivaGem, Lookback Option
-           QFRM R Package, Lookback Option
-           Hull P608 Example
+        - `Asian options tutorial and Excel spreadsheet <http://investexcel.net/asian-options-excel>`_
+        - John C. Hull, 9ed, 2015, `ISBN 0133456315 <http://amzn.com/0133456315>`_  p.608
+          - DerivaGem software that accompanies the textbook
 
         The LT method might not generate the same result with BS
         To improve the accuracy, the number of steps can be added
 
-        ---------
         Examples
         --------
 
@@ -116,7 +114,7 @@ class Lookback(OptionValuation):
         >>> plt.show()
 
         :Authors:
-            Mengyan Xie <xiemengy@gmail.com>
+            Mengyan Xie <xiemengy@gmail.com>,
             Hanting Li <hl45@rice.edu>
        """
 
@@ -125,20 +123,16 @@ class Lookback(OptionValuation):
     def _calc_LT(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: Look back
+        See ``calc_px()`` for complete documentation.
+
+
+        Notes
+        -----
+        - `Implementing Binomial Trees   <http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181>`_
+        - John C. Hull, 9ed, 2014, `ISBN 0133456315 <http://amzn.com/0133456315>`_  p.607
 
         :Authors:
             Hanting Li <hl45@rice.edu>
-
-        .. note::
-        Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
-        Hull Book p.607
-
-        Examples
-        --------
-
 
         """
 
@@ -185,19 +179,15 @@ class Lookback(OptionValuation):
     def _calc_BS(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: Look back
+        See ``calc_px()`` for complete documentation.
+
+        Notes
+        -----
+        - John C. Hull, 9ed, 2014, `ISBN 0133456315 <http://amzn.com/0133456315>`_  p.607
+        - `Lookback option on Wikipedia <https://en.wikipedia.org/wiki/Lookback_option>`_
 
         :Authors:
             Mengyan Xie <xiemengy@gmail.com>
-
-        Note
-        ----
-        Hull Book p.607
-        Formular: https://en.wikipedia.org/wiki/Lookback_option
-
-
         """
 
         _ = self
@@ -247,30 +237,14 @@ class Lookback(OptionValuation):
     def _calc_MC(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: Look back
-
-        .. sectionauthor::
-
-        Note
-        ----
-
+        See ``calc_px()`` for complete documentation.
         """
         return self
 
     def _calc_FD(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: Look back
-
-        .. sectionauthor::
-
-        Note
-        ----
-
+        See ``calc_px()`` for complete documentation.
         """
 
         return self
