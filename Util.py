@@ -4,6 +4,7 @@ import numpy as np
 import re
 import functools
 
+
 class Util():
     """ A collection of utility functions, most of which are static methods,
     i.e. can be called as ``Util.is_iterable()``.
@@ -128,8 +129,8 @@ class Util():
         --------
 
         >>> # convert $6 semiannula (SA) coupon bond payments to indexed cash flows
-        >>> Util.cpn2cf(6,2,2.1)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        {'cf': (3.0, 3.0, 3.0, 3.0, 103.0), 'ttcf': (0.1..., 0.6..., 1.1, 1.6, 2.1)}
+        >>> print(Util.cpn2cf(6,2,2.1))  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        {...}
 
         """
 
@@ -259,9 +260,9 @@ class SpecPrinter:
     Examples
     --------
     >>> class A(SpecPrinter):
-    ...     def __init__(self):
+    ...     def __init__(self, **kwargs):
     ...        self.a=[1/17, 1/19, 1/23]; self.b=None; self.c = {'a':1/7,'b':1/13,'c':'bla'}
-    ...        super().__init__() #(print_precision=print_precision)
+    ...        super().__init__(**kwargs) #(print_precision=print_precision)
     >>> A()  # print structure of A(); same as print(str(A())), print(A()), print(repr(A()))
     A
     a:
@@ -273,7 +274,7 @@ class SpecPrinter:
       b: 0.076923077
       c: bla
 
-    >>> A().full_spec(print_as_line=True, print_precision=2)
+    >>> A(print_precision=3).full_spec(print_as_line=True)
     'A{a:[0.06, 0.05, 0.04], c:{a:0.14, b:0.08, c:bla}}'
 
     >>> str(A())  # doctest: +ELLIPSIS
@@ -283,17 +284,41 @@ class SpecPrinter:
     :Authors:
         Oleg Melnikov <xisreal@gmail.com>
     """
+    print_precision = 9
 
-    def __init__(self): # , print_precision=None
+    def __init__(self, print_precision=9):
         """ Constructor
 
-        Sets rounding precision for floating numbers
+        Sets rounding precision for display of floating numbers
 
+        Parameters
+        ----------
+        print_precision : int, optional
+            Sets number of decimal digits to which printed output is rounded;
+            used with whole object print out and with print out of some calculated values (``px``, ...)
+            Default 9 digits. If set to ``None``, machine precision is used.
         """
-        # if print_precision is not None:
-        #     self.print_precision = print_precision
+        # if 'print_precision' in kwargs:
+        #     if kwargs['print_precision'] != 9:
+        #         self._print_precision = kwargs['print_precision']
+        #     else:
+        #         try: del self.print_precision  # do not store default value
+        #         except: pass
+        SpecPrinter.print_precision = print_precision
 
-    def full_spec(self, print_as_line=True, print_precision=9):
+    # @property
+    # def print_precision(self):
+    #     """ Returns user-saved printing precision or default (9 digits)
+    #
+    #     Returns
+    #     -------
+    #     int :
+    #         printing precision
+    #     """
+    #     try: return self._print_precision
+    #     except: return 9
+
+    def full_spec(self, print_as_line=True):
         r""" Returns a formatted string containing all variables of this class (recursively)
 
         Parameters
@@ -321,10 +346,8 @@ class SpecPrinter:
 
         """
 
-        # prec = print_precision
-
         def float_representer(dumper, value):
-            text = str(value if print_precision is None else round(value, print_precision))
+            text = str(value if SpecPrinter.print_precision is None else round(value, SpecPrinter.print_precision))
             return dumper.represent_scalar(u'tag:yaml.org,2002:float', text)
         yaml.add_representer(float, float_representer)
 
@@ -369,7 +392,23 @@ class SpecPrinter:
     def __str__(self):
         return self.full_spec(print_as_line=False)
 
+    def print_value(self, v):
+        if Util.is_number(v):
+            return v if SpecPrinter.print_precision is None else round(v, SpecPrinter.print_precision)
 
 # from qfrm import *
-# print(OptionSeries(ref=Stock(S0=50, vol=0.3), K=51, right='call').full_spec(print_as_line=False))
-# print(OptionSeries(ref=Stock(S0=50, vol=0.3), K=51, right='call').full_spec(print_as_line=False))
+# print(OptionSeries(ref=Stock(S0=50, vol=1/3), K=51, right='call').full_spec(print_as_line=False))
+# OptionValuation(ref=Stock(S0=50, vol=1/7), K=51, right='call',print_precision=4).full_spec(print_as_line=True)
+
+
+# import yaml
+# class A:
+#     def __init__(self):
+#         self.abc = 1
+#         self.hidden = 100
+#         self.xyz = [1,2,3]
+#
+#     def __repr__(self):
+#         return yaml.dump( vars(self).copy().pop('hidden'))
+#
+# A()
