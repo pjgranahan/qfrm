@@ -259,47 +259,41 @@ class SpecPrinter:
     Examples
     --------
     >>> class A(SpecPrinter):
-    ...     def __init__(self, print_precision=4):
+    ...     def __init__(self):
     ...        self.a=[1/17, 1/19, 1/23]; self.b=None; self.c = {'a':1/7,'b':1/13,'c':'bla'}
-    ...        super().__init__(print_precision=print_precision)
-    >>> A(print_precision=None)  # print structure of A(); same as print(str(A())), print(A()), print(repr(A()))
+    ...        super().__init__() #(print_precision=print_precision)
+    >>> A()  # print structure of A(); same as print(str(A())), print(A()), print(repr(A()))
     A
     a:
-    - 0.058823529411764705
-    - 0.05263157894736842
-    - 0.043478260869565216
+    - 0.058823529
+    - 0.052631579
+    - 0.043478261
     c:
-      a: 0.14285714285714285
-      b: 0.07692307692307693
+      a: 0.142857143
+      b: 0.076923077
       c: bla
 
-    >>> A(print_precision=2).full_spec(print_as_line=True)
-    'A{a:[0.06, 0.05, 0.04], c:{a:0.14, b:0.08, c:bla}, print_precision:2}'
+    >>> A().full_spec(print_as_line=True, print_precision=2)
+    'A{a:[0.06, 0.05, 0.04], c:{a:0.14, b:0.08, c:bla}}'
 
     >>> str(A())  # doctest: +ELLIPSIS
-    'A\na:\n- 0.0588\n- 0.0526\n- 0.0435\nc:\n  a: 0.1429\n  b: 0.0769\n  c: bla\nprint_precision: 4'
+    'A\na:\n- 0.058823529\n- 0.052631579\n- 0.043478261\nc:\n  a: 0.142857143\n  b: 0.076923077\n  c: bla'
 
 
     :Authors:
         Oleg Melnikov <xisreal@gmail.com>
     """
 
-    def __init__(self, print_precision=9):
+    def __init__(self): # , print_precision=None
         """ Constructor
 
         Sets rounding precision for floating numbers
 
-        Parameters
-        ----------
-        print_precision : {None, int}, optional
-            Specifies desired floating number precision for screen-printed values (prices, etc).
-            Assists with doctesting due to rounding errors near digits in 10^-12 placements
-            If value is None, then precision is ignored and default machine precision is used.
-            See `round() <https://docs.python.org/3.5/library/functions.html#round>`_
         """
-        self.print_precision = print_precision
+        # if print_precision is not None:
+        #     self.print_precision = print_precision
 
-    def full_spec(self, print_as_line=True):
+    def full_spec(self, print_as_line=True, print_precision=9):
         r""" Returns a formatted string containing all variables of this class (recursively)
 
         Parameters
@@ -307,7 +301,11 @@ class SpecPrinter:
         print_as_line : bool
             If ``True``, print key:value pairs are separated by ``,``
             If ``False``, --- by ``\n``
-
+        print_precision : {None, int}, optional
+            Specifies desired floating number precision for screen-printed values (prices, etc).
+            Assists with doctesting due to rounding errors near digits in 10^-12 placements
+            If value is None, then precision is ignored and default machine precision is used.
+            See `round() <https://docs.python.org/3.5/library/functions.html#round>`_
         Returns
         -------
         str
@@ -323,8 +321,10 @@ class SpecPrinter:
 
         """
 
+        # prec = print_precision
+
         def float_representer(dumper, value):
-            text = str(value if self.print_precision is None else round(value, self.print_precision))
+            text = str(value if print_precision is None else round(value, print_precision))
             return dumper.represent_scalar(u'tag:yaml.org,2002:float', text)
         yaml.add_representer(float, float_representer)
 
