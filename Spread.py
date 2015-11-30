@@ -1,8 +1,7 @@
-from math import log, sqrt, exp
-from scipy.stats import norm
-from numpy.random import normal
-from numpy import maximum, mean
-from numpy.random import seed
+import math
+from scipy import stats
+import numpy.random
+import numpy as np
 from OptionValuation import *
 
 class Spread(OptionValuation):
@@ -89,7 +88,7 @@ class Spread(OptionValuation):
         npaths: 1000
         nsteps: 1000
         px: 0.904837418
-        <BLANKLINE>
+
 
 
         >>> s1 = Stock(S0=30.,q=0.,vol=.2)
@@ -153,12 +152,12 @@ class Spread(OptionValuation):
         """
 
 
-        vol = sqrt(self.ref.vol**2 - 2*self.rho*self.ref.vol*self.S2.vol + self.S2.vol**2)
-        d1 = (1./(vol*sqrt(self.T)))*log((self.S2.S0*exp(-self.S2.q*self.T))/(self.ref.S0*exp(-self.ref.q*self.T)))
-        d2 = d1 - (vol*sqrt(self.T)/2.)
-        d1 = d1 + (vol*sqrt(self.T)/2.)
-        p = self.S2.S0*exp(-self.S2.q*self.T)*norm.cdf(d1)
-        p = p - self.ref.S0*exp(-self.ref.q*self.T)*norm.cdf(d2)
+        vol = math.sqrt(self.ref.vol**2 - 2*self.rho*self.ref.vol*self.S2.vol + self.S2.vol**2)
+        d1 = (1./(vol*math.sqrt(self.T)))*math.log((self.S2.S0*math.exp(-self.S2.q*self.T))/(self.ref.S0*math.exp(-self.ref.q*self.T)))
+        d2 = d1 - (vol*math.sqrt(self.T)/2.)
+        d1 = d1 + (vol*math.sqrt(self.T)/2.)
+        p = self.S2.S0*math.exp(-self.S2.q*self.T)*stats.norm.cdf(d1)
+        p = p - self.ref.S0*math.exp(-self.ref.q*self.T)*stats.norm.cdf(d2)
 
         self.px_spec.add(px=float(p), method='BS')
 
@@ -193,17 +192,17 @@ class Spread(OptionValuation):
         opt_vals = list()
 
         if self.seed0 is not None:
-            seed(self.seed0)
+            numpy.random.seed(self.seed0)
 
 
         for path in range(0,npaths):
 
             ## Generate correlated Wiener Processes
-            u = normal(size=nsteps)
-            v = normal(size=nsteps)
-            v = self.rho*u + sqrt(1-self.rho**2)*v
-            u = u*sqrt(__['dt'])
-            v = v*sqrt(__['dt'])
+            u = numpy.random.normal(size=nsteps)
+            v = numpy.random.normal(size=nsteps)
+            v = self.rho*u + math.sqrt(1-self.rho**2)*v
+            u = u*math.sqrt(__['dt'])
+            v = v*math.sqrt(__['dt'])
 
             ## Simulate the paths
             S1 = [self.ref.S0]
@@ -216,10 +215,10 @@ class Spread(OptionValuation):
                 S2.append(S2[-1]*(mu_2 + self.S2.vol*v[t]) + S2[-1])
 
             ## Calculate the Payoff
-            val = maximum(self.signCP*(S2[-1] - S1[-1] - self.K),0.0)*exp(-self.rf_r*self.T)
+            val = np.maximum(self.signCP*(S2[-1] - S1[-1] - self.K),0.0)*math.exp(-self.rf_r*self.T)
             opt_vals.append((val))
 
-        self.px_spec.add(px=float(mean(opt_vals)), method='MC')
+        self.px_spec.add(px=float(np.mean(opt_vals)), method='MC')
 
         return self
 
