@@ -3,6 +3,7 @@ import math
 import numpy as np
 from OptionValuation import *
 
+
 class ForwardStart(OptionValuation):
     """ ForwardStart option class
 

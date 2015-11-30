@@ -4,6 +4,7 @@ import scipy.stats
 import matplotlib.pyplot as plt
 from OptionValuation import *
 
+
 class Shout(OptionValuation):
     """ Shout option class.
 

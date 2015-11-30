@@ -3,6 +3,7 @@ import numpy as np
 import math
 from OptionValuation import *
 
+
 class Exchange(OptionValuation):
     """ Exchange option class.
 

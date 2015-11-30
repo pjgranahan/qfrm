@@ -8,13 +8,13 @@ from OptionValuation import *
 class European(OptionValuation):
     """ European option class.
 
-    Inherits all methods and properties of OptionValuation class.
+    Inherits all methods and properties of ``OptionValuation`` class.
     """
 
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
 
-        User passes parameters to calc_px, which saves them to local ``PriceSpec`` object
+        User passes parameters to ``calc_px``, which saves them to local ``PriceSpec`` object
         and calls specific pricing function (``_calc_BS``,...).
         This makes significantly less docstrings to write, since user is not interfacing pricing functions,
         but a wrapper function ``calc_px()``.
@@ -22,7 +22,11 @@ class European(OptionValuation):
         Parameters
         ----------
         method : str
-                Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
+                Required. Indicates a valuation method to be used:
+                ``BS``: Black-Scholes Merton calculation
+                ``LT``: Lattice tree (such as binary tree)
+                ``MC``: Monte Carlo simulation methods
+                ``FD``: finite differencing methods
         nsteps : int
                 LT, MC, FD methods require number of times steps
         npaths : int
@@ -35,8 +39,11 @@ class European(OptionValuation):
         European
             Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
 
+
         Examples
         --------
+
+        See .. _my-label:
 
         >>> s = Stock(S0=42, vol=.20)
         >>> o = European(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @0.81, put @4.76, Hull p.339')
