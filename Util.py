@@ -275,7 +275,7 @@ class SpecPrinter:
       c: bla
 
     >>> A(print_precision=3).full_spec(print_as_line=True)
-    'A{a:[0.06, 0.05, 0.04], c:{a:0.14, b:0.08, c:bla}}'
+    'A{a:[0.059, 0.053, 0.043], c:{a:0.143, b:0.077, c:bla}}'
 
     >>> str(A())  # doctest: +ELLIPSIS
     'A\na:\n- 0.058823529\n- 0.052631579\n- 0.043478261\nc:\n  a: 0.142857143\n  b: 0.076923077\n  c: bla'

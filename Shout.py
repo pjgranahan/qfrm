@@ -4,6 +4,7 @@ import scipy.stats
 import matplotlib.pyplot as plt
 from OptionValuation import *
 
+
 class Shout(OptionValuation):
     """ Shout option class.
 
@@ -37,23 +38,20 @@ class Shout(OptionValuation):
 
         :Authors:
             Mengyan Xie <xiemengy@gmail.com>
-            Hanting Li
+            Hanting Li <hl45@rice.edu>
             Yen-fei Chen <yensfly@gmail.com>
 
         Notes
         -----
-        Verification of Shout option: http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L4shout.pdf
+        Verification of Shout option: http://goo.gl/02jISW
         Hull Ch26.12 P609
 
 
         Examples
         --------
         This two excel spreadsheet price shout option.
-        http://investexcel.net/shout-options-excel/
-        https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=9&cad=rja&uact=8&
-        ved=0ahUKEwjMsfu4n6TJAhVJz2MKHQA_B-MQFghSMAg&url=http%3A%2F%2Fwww.actuarialworkshop.com
-        %2FBinomial%2520Tree.xls&usg=AFQjCNEic5d4DfV5BTKbzkPW2LhzBU0Fdw&sig2=lB14d9wQ
-        BxsiqdaXlqTBTw&bvm=bv.108194040,d.eWE
+        http://goo.gl/1rrTCG
+        http://goo.gl/AdgcqY
 
         LT Examples
         -----------

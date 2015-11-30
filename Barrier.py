@@ -1,9 +1,11 @@
-from OptionValuation import *
 import scipy.stats
 import numpy
 import scipy.special
 import math
 import European
+from OptionValuation import *
+
+
 class Barrier(OptionValuation):
     """ European option class.
 

@@ -2,6 +2,7 @@ import numpy as np
 import math
 from OptionValuation import *
 
+
 class Boston(OptionValuation):
     """ Boston Option Valuation Class
 

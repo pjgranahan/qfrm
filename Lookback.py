@@ -5,6 +5,7 @@ import math
 
 from OptionValuation import *
 
+
 class Lookback(OptionValuation):
     """ Lookback option class.
 
@@ -44,11 +45,10 @@ class Lookback(OptionValuation):
 
         Notes
         -----
-
         Verification of Example:
-        - `Asian options tutorial and Excel spreadsheet <http://investexcel.net/asian-options-excel>`_
-        - John C. Hull, 9ed, 2015, `ISBN 0133456315 <http://amzn.com/0133456315>`_  p.608
-          - DerivaGem software that accompanies the textbook
+        Asian options tutorial and Excel spreadsheet <http://investexcel.net/asian-options-excel>
+        John C. Hull, 9ed, 2015, ISBN 0133456315 <http://amzn.com/0133456315>  p.608
+        DerivaGem software that accompanies the textbook
 
         The LT method might not generate the same result with BS
         To improve the accuracy, the number of steps can be added
@@ -126,8 +126,8 @@ class Lookback(OptionValuation):
 
         Notes
         -----
-        - `Implementing Binomial Trees   <http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181>`_
-        - John C. Hull, 9ed, 2014, `ISBN 0133456315 <http://amzn.com/0133456315>`_  p.607
+        Implementing Binomial Trees   <http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181>
+        John C. Hull, 9ed, 2014, ISBN 0133456315 <http://amzn.com/0133456315>  p.607
 
         :Authors:
             Hanting Li <hl45@rice.edu>
@@ -181,8 +181,8 @@ class Lookback(OptionValuation):
 
         Notes
         -----
-        - John C. Hull, 9ed, 2014, `ISBN 0133456315 <http://amzn.com/0133456315>`_  p.607
-        - `Lookback option on Wikipedia <https://en.wikipedia.org/wiki/Lookback_option>`_
+        John C. Hull, 9ed, 2014, ISBN 0133456315 http://amzn.com/0133456315  p.607
+        Lookback option on Wikipedia https://goo.gl/euwJeE
 
         :Authors:
             Mengyan Xie <xiemengy@gmail.com>

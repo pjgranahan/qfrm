@@ -1,6 +1,7 @@
 import numpy as np
 from OptionValuation import *
 
+
 class PerpetualAmerican(OptionValuation):
     """ perpetual American option class.
 
@@ -47,53 +48,53 @@ class PerpetualAmerican(OptionValuation):
         Use the Black-Scholes model to price a perpetual American option
 
         Verification of examples:
-        All the examples below can be verified by this online tools: http://www.coggit.com/freetools
-        R package: PerpetualBS.R
+        `All the examples below can be verified by this online tools: <http://www.coggit.com/freetools>`
 
 
 
-        This examples below can be verified by this online tools: http://www.coggit.com/freetools
+
+        `This examples below can be verified by this online tools: <http://www.coggit.com/freetools>`
         >>> s = Stock(S0=50, vol=.3, q=0.01)
         >>> o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.08, \
         desc='call @37.19 put @8.68 example from Internet')
 
         >>> o.calc_px(method='BS').px_spec.px # doctest: +ELLIPSIS
-        37.19067...
+        37.190676833...
 
         >>> o.calc_px(method="BS").px_spec  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PriceSpec...px: 37.1906...
+        PriceSpec...px: 37.190676834...
 
 
         >>> o.calc_px(method='BS')  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PerpetualAmerican...px: 37.1906...
+        PerpetualAmerican...px: 37.190676834...
 
 
 
 
-        Change the option to a put, can verified by this online tools: http://www.coggit.com/freetools
+        `Change the option to a put, can verified by this online tools: <http://www.coggit.com/freetools>`
         >>> o.update(right='put').calc_px().px_spec.px # doctest: +ELLIPSIS
-        8.67627...
+        8.676279289...
 
         >>> o.update(right='put').calc_px() # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PerpetualAmerican...px: 8.67627...
+        PerpetualAmerican...px: 8.67627929...
 
 
 
 
         Another example with different dividend and risk free interest rate
-        This examples below can be verified by this online tools: http://www.coggit.com/freetools
+        `This examples below can be verified by this online tools: <http://www.coggit.com/freetools>`
         >>> s = Stock(S0=50, vol=.3, q=0.02)
         >>> o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.05, \
         desc='call @27.47 put @13.43 example from Internet')
         >>> o.calc_px(method='BS').px_spec.px # doctest: +ELLIPSIS
-        27.46559...
+        27.465595636...
 
-        Change the option to a put, can be verified by this online tools: http://www.coggit.com/freetools
+        `Change the option to a put, can be verified by this online tools: <http://www.coggit.com/freetools>`
         >>> o.update(right='put').calc_px().px_spec.px# doctest: +ELLIPSIS
-        13.42726...
+        13.427262534...
 
         >>> o.update(right='put').calc_px()# doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PerpetualAmerican...px: 13.42726...
+        PerpetualAmerican...px: 13.427262535...
 
 
 

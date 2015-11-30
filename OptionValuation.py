@@ -55,7 +55,23 @@ class PriceSpec(SpecPrinter):
         SpecPrinter.print_precision = print_precision
         self.add(**kwargs)
 
-
+    # @property
+    # def px(self):
+    #     """Getter method for price variable.
+    #
+    #     Getter and setter allow access to price and use of user-defined rounding of price value.
+    #
+    #     Returns
+    #     -------
+    #     None or float
+    #         Properly rounded price value (if exists)
+    #
+    #     """
+    #     try: return self.print_value(self._px)
+    #     except: return None
+    #
+    # @px.setter
+    # def px(self, px): self._px = px
 
     def add(self, **kwargs):
         """ Adds all key/value input arguments as class variables
