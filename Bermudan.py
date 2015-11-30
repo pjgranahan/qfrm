@@ -151,6 +151,7 @@ class Bermudan(OptionValuation):
         >>> o.pxMC(R=3, npaths=npaths, tex=tex)  # doctest: +ELLIPSIS
         4.091346594
         >>> o.plot_MC()
+        something
 
 
         """
@@ -375,10 +376,16 @@ class Bermudan(OptionValuation):
         payouts = self.px_spec.payouts
         stock_price_paths = self.px_spec.stock_price_paths
 
-        plt.plot(stock_price_paths.T, alpha=0.6, color='0.6')
-        plt.plot(np.mean(stock_price_paths), alpha=1)
+        plt.plot(stock_price_paths.T, alpha=0.5, color='0.5')
+        mean = np.mean(stock_price_paths, axis=0)
+        plt.plot(mean.T, alpha=1)
         plt.title("Payout Paths from Monte Carlo Simulation")
-        plt.xlabel("Exercise dates (index)")
+        plt.xlabel("Exercise dates")
+        # plt.xticks(self.tex)
+        # a=axes.get_xticks().tolist()
+        # a[1]='change'
+        # plt.set_xticklabels(a)
         plt.ylabel("Payout")
         # plt.hist(o.px_spec.payouts, bins=npaths * len(tex), histtype='stepfilled')
         plt.show()
+        print('test')
