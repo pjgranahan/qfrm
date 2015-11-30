@@ -1,4 +1,4 @@
-from qfrm import *
+from OptionValuation import *
 
 
 class Bermudan(OptionValuation):
