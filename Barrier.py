@@ -1,18 +1,9 @@
 from OptionValuation import *
-import scipy.stats.norm
-import numpy.arange
-import numpy.maximum
-import numpy.log
-import numpy.exp
-import numpy.sqrt
-import numpy.minimum
-import numpy.random
-import numpy.zeros
-import scipy.special.binom
-import math.ceil
-import math.floor
-import math.factorial
-import European.European
+import scipy.stats
+import numpy
+import scipy.special
+import math
+import European
 class Barrier(OptionValuation):
     """ European option class.
 
