@@ -143,16 +143,16 @@ class Bermudan(OptionValuation):
         Example #4 (plot)
 
         >>> s = Stock(S0=11, vol=.4)
-        >>> b = Bermudan(ref=s, right='put', K=15, T=1, rf_r=.05, desc="in-the-money Bermudan put")
-        >>> b.pxMC(R=3, npaths=10, tex=list([(i+1)/10 for i in range(10)]))  # doctest: +ELLIPSIS
-        4.0913465936735687
+        >>> o = Bermudan(ref=s, right='put', K=15, T=1, rf_r=.05, desc="in-the-money Bermudan put")
+        >>> o.pxMC(R=3, npaths=10, tex=list([(i+1)/10 for i in range(10)]))  # doctest: +ELLIPSIS
+        4.091346594
         >>> plt.title("Histogram of prices on different MC paths")  # doctest: +ELLIPSIS
         <...>
         >>> plt.xlabel("Price")  # doctest: +ELLIPSIS
         <...>
         >>> plt.ylabel("Frequency")  # doctest: +ELLIPSIS
         <...>
-        >>> plt.hist(b.px_spec.prices)  # doctest: +ELLIPSIS
+        >>> plt.hist(o.px_spec.prices)  # doctest: +ELLIPSIS
         (...)
         >>> plt.show()
 
