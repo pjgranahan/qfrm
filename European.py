@@ -2,8 +2,8 @@ from scipy import stats
 import warnings
 import numpy as np
 import math
-
 from OptionValuation import *
+
 
 class European(OptionValuation):
     """ European option class.
@@ -14,7 +14,7 @@ class European(OptionValuation):
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
 
-        User passes parameters to calc_px, which saves them to local PriceSpec object
+        User passes parameters to calc_px, which saves them to local ``PriceSpec`` object
         and calls specific pricing function (``_calc_BS``,...).
         This makes significantly less docstrings to write, since user is not interfacing pricing functions,
         but a wrapper function ``calc_px()``.
@@ -28,12 +28,12 @@ class European(OptionValuation):
         npaths : int
                 MC, FD methods require number of simulation paths
         keep_hist : bool
-                If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
+                If ``True``, historical information (trees, simulations, grid) are saved in ``self.px_spec`` object.
 
         Returns
         -------
         European
-            Returned object contains specifications and calculated price in embedded PriceSpec object.
+            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
 
         Examples
         --------
@@ -48,19 +48,18 @@ class European(OptionValuation):
         (0.8085993729000922, 0.7692626281060315, 0.627841271868722, 'BS')
 
         >>> o.update(right='call').pxBS()  # change option object to a put
-        4.759422392871532
+        4.759422393
 
         >>> European(clone=o, K=41, desc='Ex. copy params; new strike.').pxLT()
-        4.2270039114413125
+        4.227003911
 
         >>> s = Stock(S0=810, vol=.2, q=.02)
         >>> o = European(ref=s, right='call', K=800, T=.5, rf_r=.05, desc='53.39, Hull p.291')
         >>> o.pxLT(nsteps=3)  # option price from a 3-step tree (that's 2 time intervals)
-        59.867529937506426
+        59.867529938
 
         >>> o.pxLT(nsteps=3, keep_hist=True)  # option price from a 3-step tree (that's 2 time intervals)
-        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        59.867529937...
+        59.867529938
 
         >>> o.px_spec.ref_tree  # prints reference tree  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         ((810.0,), (746.491768087...878.911232579...), (687.962913360...810.0, 953.685129326...),

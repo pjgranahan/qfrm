@@ -6,6 +6,7 @@ from math import log as mlog
 from scipy.stats import norm
 from OptionValuation import *
 
+
 class Asian(OptionValuation):
     """ Asian option class.
 

@@ -13,10 +13,10 @@ class American(OptionValuation):
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
 
-        User passes parameters to calc_px, which saves them to local PriceSpec object
-        and calls specific pricing function (_calc_BS,...).
+        User passes parameters to calc_px, which saves them to local ``PriceSpec`` object
+        and calls specific pricing function (``_calc_BS``,...).
         This makes significantly less docstrings to write, since user is not interfacing pricing functions,
-        but a wrapper function calc_px().
+        but a wrapper function ``calc_px()``.
 
         Parameters
         ----------
@@ -27,12 +27,12 @@ class American(OptionValuation):
         npaths : int
                 MC, FD methods require number of simulation paths
         keep_hist : bool
-                If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
+                If ``True``, historical information (trees, simulations, grid) are saved in ``self.px_spec`` object.
 
         Returns
         -------
         self : American
-            Returned object contains specifications and calculated price in embedded PriceSpec object.
+            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
 
         Examples
         --------
@@ -42,7 +42,7 @@ class American(OptionValuation):
         7.42840190270483
 
         >>> o.px_spec.ref_tree  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        ((50.000...,), (37.0409110340859, 67.49294037880017), (27.440581804701324, 50.000..., 91.10594001952546))
+        ((50.000...), (37.040911034...67.49294037880017), (27.440581804...50.000...91.10594001952546))
 
         >>> o.calc_px(method='LT', nsteps=2, keep_hist=False)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         American...px: 7.428401903...
