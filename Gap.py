@@ -1,8 +1,8 @@
 import math
 import numpy as np
 from scipy import stats
-from OptionValuation import *
 import matplotlib.pyplot as plt
+from OptionValuation import *
 
 
 class Gap(OptionValuation):

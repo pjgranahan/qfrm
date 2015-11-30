@@ -1,7 +1,7 @@
-from OptionValuation import *
 from European import European
 from American import American
 import numpy as np
+from OptionValuation import *
 
 class Compound(OptionValuation):
     """ Asian option class.

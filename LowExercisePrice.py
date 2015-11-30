@@ -1,5 +1,5 @@
-from OptionValuation import *
 import numpy as np
+from OptionValuation import *
 
 class LowExercisePrice(OptionValuation):
     """ LowExercisePrice option class.

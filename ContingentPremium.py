@@ -1,10 +1,10 @@
 import numpy as np
 import math
-from OptionValuation import *
-from European import *
 import scipy.optimize
 import scipy.stats
 import matplotlib.pyplot as plt
+from OptionValuation import *
+from European import *
 
 
 class ContingentPremium(OptionValuation):

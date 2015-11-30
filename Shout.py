@@ -1,8 +1,8 @@
 import math
 import numpy as np
 import scipy.stats
-from OptionValuation import *
 import matplotlib.pyplot as plt
+from OptionValuation import *
 
 class Shout(OptionValuation):
     """ Shout option class.
