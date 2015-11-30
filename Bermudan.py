@@ -347,8 +347,11 @@ class Bermudan(OptionValuation):
 
         # Find the average price across all the stock_price_paths, then record it
         price = np.mean(terminal_payouts[:, 0])
-        self.px_spec.add(px=price, terminal_payouts=terminal_payouts, payouts=payouts,
-                         stock_price_paths=stock_price_paths)
+        self.px_spec.add(px=price)
+
+        # Record history if requested
+        if getattr(self.px_spec, 'keep_hist'):
+            self.px_spec.add(terminal_payouts=terminal_payouts, payouts=payouts, stock_price_paths=stock_price_paths)
 
         return self
 
