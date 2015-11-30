@@ -376,16 +376,40 @@ class Bermudan(OptionValuation):
         payouts = self.px_spec.payouts
         stock_price_paths = self.px_spec.stock_price_paths
 
-        plt.plot(stock_price_paths.T, alpha=0.5, color='0.5')
-        mean = np.mean(stock_price_paths, axis=0)
-        plt.plot(mean.T, alpha=1)
-        plt.title("Payout Paths from Monte Carlo Simulation")
-        plt.xlabel("Exercise dates")
-        # plt.xticks(self.tex)
-        # a=axes.get_xticks().tolist()
-        # a[1]='change'
-        # plt.set_xticklabels(a)
-        plt.ylabel("Payout")
-        # plt.hist(o.px_spec.payouts, bins=npaths * len(tex), histtype='stepfilled')
-        plt.show()
+        # Three subplots sharing both x/y axes
+        f, (ax1, ax2, ax3) = plt.subplots(3, sharex=True, sharey=True)
+
+        # Plot the price paths graph
+        ax1.plot(stock_price_paths.T, alpha=0.5, color='0.5')
+        mean_price_path, = ax1.plot(np.mean(stock_price_paths, axis=0).T, alpha=0.8, label="Mean of price paths")
+        ax1.set_title("Price Paths")
+        ax1.legend(handles=[mean_price_path], loc=0)  # Position the legend in the "best" place
+
+        # Plot the payout paths graph
+        ax2.plot(payouts.T, alpha=0.5, color='0.5')
+        mean_payout_path, = ax2.plot(np.mean(payouts, axis=0).T, alpha=0.8, label="Mean of payout paths")
+        ax2.set_title("Payout Paths")
+        ax2.legend(handles=[mean_payout_path], loc=0)  # Position the legend in the "best" place
+
+        # Plot the terminal payout paths graph
+        ax3.plot(terminal_payouts.T, alpha=0.5, color='0.5')
+        mean_terminal_payout_path, = ax3.plot(np.mean(terminal_payouts, axis=0).T, alpha=0.8, label="Mean of terminal payout paths")
+        ax3.set_title("Terminal Payout Paths")
+        ax3.legend(handles=[mean_terminal_payout_path], loc=0)  # Position the legend in the "best" place
+
+        # Set common labels
+        f.text(0.5, 0.04, 'Exercise Dates', ha='center', va='center')
+        f.text(0.06, 0.5, 'Price', ha='center', va='center', rotation='vertical')
+
+        #
+        # plt.xticks(np.arange(min(len(self.tex)), max(len(self.tex))+1))
+        ax3.set_xticks(np.arange(min(len(self.tex)), max(len(self.tex))+1, 1.0))
+        plt.tick_params(axis='x', which='major', labelsize=10)
+        ax3.set_xticklabels(self.tex)
+
+        # Set the window title
+        f.canvas.set_window_title('Monte Carlo Simulation')
+
+
+        plt.show(block=True)
         print('test')
