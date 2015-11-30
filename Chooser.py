@@ -1,8 +1,8 @@
 import math
 import numpy as np
 from scipy import stats
-from OptionValuation import *
 import matplotlib.pyplot as plt
+from OptionValuation import *
 
 
 class Chooser(OptionValuation):
@@ -35,8 +35,6 @@ class Chooser(OptionValuation):
         Returns
         -------------------------------------
         self : Chooser
-
-        .. sectionauthor:: Thawda Aung, Yen-fei Chen
 
         Notes
         --------------------------------------
@@ -104,6 +102,10 @@ class Chooser(OptionValuation):
 
         Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
 
+        :Authors:
+            Thawda Aung
+            Yen-fei Chen <yensfly@gmail.com>
+
         """
         self.tau = float(tau)
         return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
@@ -111,12 +113,10 @@ class Chooser(OptionValuation):
     def _calc_BS(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------------------------------------------
-        self: Chooser BS method
+        See ``calc_px()`` for complete documentation.
 
-        .. section author:: Thawda Aung, Yen-fei Chen
-
+        :Authors:
+            Thawda Aung
         """
         from scipy.stats import norm
         from math import sqrt, exp, log
@@ -138,12 +138,10 @@ class Chooser(OptionValuation):
     def _calc_LT(self):
         """ Internal function for option valuation.
 
-        Returns
-        ----------------------------------------
-        self: Chooser
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor:: Yen-fei Chen
-
+        :Authors:
+            Yen-fei Chen <yensfly@gmail.com>
         """
         from numpy import cumsum, log, arange, insert, exp, sum, maximum
 
@@ -179,28 +177,19 @@ class Chooser(OptionValuation):
     def _calc_MC(self, nsteps=3, npaths=4, keep_hist=False):
         """ Internal function for option valuation.
 
-        Returns
-        ------------------------------------------------------
-        self: Chooser
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor::
-
-        Notes
-        -----------------------------------------------------
-
-
+        :Authors:
+            Oleg Melnikov <xisreal@gmail.com>
         """
         return self
 
     def _calc_FD(self, nsteps=3, npaths=4, keep_hist=False):
         """ Internal function for option valuation.
 
-        Returns
-        ---------------------------------------------------
-        self: Chooser
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor::
-
+        :Authors:
+            Oleg Melnikov <xisreal@gmail.com>
         """
         return self
-

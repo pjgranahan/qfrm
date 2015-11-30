@@ -1,9 +1,9 @@
-from OptionValuation import *
 from math import log, sqrt, exp
 from scipy.stats import norm
 from numpy.random import normal
 from numpy import maximum, mean
 from numpy.random import seed
+from OptionValuation import *
 
 class Spread(OptionValuation):
     """ Spread option class.

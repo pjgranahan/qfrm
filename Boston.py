@@ -211,13 +211,4 @@ class Boston(OptionValuation):
         #                 LT_specs=_, ref_tree = S_tree if save_tree else None, opt_tree = O_tree if save_tree else None)
         return self
 
-"""
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
-"""
-s = Stock(S0=50, vol=.2, q=.032)
-o = Boston(ref=s, right='call', K=50, T=.25, rf_r=.059)
-#print(o.calc_px(method='LT', nsteps=200, keep_hist=True).px_spec.px)
-print(o.calc_px(method='LT', nsteps=2, keep_hist=True))
 

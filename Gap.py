@@ -1,10 +1,9 @@
 import math
 import numpy as np
 from scipy import stats
-from OptionValuation import *
 import matplotlib.pyplot as plt
-from scipy.stats import norm
-from math import sqrt, exp, log
+from OptionValuation import *
+
 
 class Gap(OptionValuation):
     """ Gap option class.
@@ -63,22 +62,21 @@ class Gap(OptionValuation):
 
         Returns
         -----------------------------------------------------
-        self : Gap
-
-        .. sectionauthor:: Yen-fei Chen
+        Gap
+            Returned object contains specifications and calculated price in embedded PriceSpec object.
 
         Notes
-        --------
+        -----------------------------------------------------
         A gap option has a strike price, K1 , and a trigger price, K2 . The trigger price
         determines whether or not the gap option will have a nonzero payoff. The strike price
         determines the amount of the nonzero payoff. The strike price may be greater than or
         less than the trigger price.
 
         Examples
-        --------
+        --------------------------------------------------------
 
         BS Examples
-        --------
+        --------------------------------------------------------
         >>> s = Stock(S0=500000, vol=.2)
         >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='Hull p.601 Example 26.1')
         >>> o.pxBS(K2=350000)
@@ -101,7 +99,7 @@ class Gap(OptionValuation):
         >>> plt.show()
 
         LT Examples
-        --------
+        ----------------------------------------------------------
         >>> s = Stock(S0=500000, vol=.2,  q = 0)
         >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, on = (90000,)*23, desc = 'HULL p. 601 Exp 26.1')
         >>> o.calc_px(K2=350000, nsteps = 22, method='LT').px_spec.px
@@ -124,7 +122,7 @@ class Gap(OptionValuation):
 
 
         MC Examples
-        --------
+        -----------------------------------------------------------
         Because different number of seed, npaths and nsteps will influence the option price. The result of MC method
         may not as accurate as BSM and LT method.
 
@@ -158,6 +156,11 @@ class Gap(OptionValuation):
         [1] http://www.actuarialbookstore.com/samples/3MFE-BRE-12FSM%20Sample%20_4-12-12.pdf
         [2] https://www.ma.utexas.edu/users/mcudina/Lecture14_3_4_5.pdf
 
+        :Authors:
+            Yen-fei Chen <yensfly@gmail.com>
+            Thawda Aung
+            Mengyan Xie <xiemengy@gmail.com>
+
         """
         self.K2 = float(K2)
         self.seed0 = seed
@@ -166,27 +169,21 @@ class Gap(OptionValuation):
     def _calc_BS(self):
         """ Internal function for option valuation.
 
-        Returns
-        --------------------------------------------------
-        self: Gap
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor:: Yen-fei Chen
-
-        Note
-        ------------------------------------------------------
-
+        :Authors:
+            Yen-fei Chen <yensfly@gmail.com>
         """
 
-
         _ = self
-        d1 = (log(_.ref.S0 / _.K2) + (_.rf_r - _.ref.q + _.ref.vol ** 2 / 2.) * _.T)/(_.ref.vol * sqrt(_.T))
-        d2 = d1 - _.ref.vol * sqrt(_.T)
+        d1 = (np.log(_.ref.S0 / _.K2) + (_.rf_r - _.ref.q + _.ref.vol ** 2 / 2.) * _.T)/(_.ref.vol * np.sqrt(_.T))
+        d2 = d1 - _.ref.vol * np.sqrt(_.T)
 
         # if calc of both prices is cheap, do both and include them into Price object.
         # Price.px should always point to the price of interest to the user
         # Save values as basic data types (int, floats, str), instead of numpy.array
-        px_call = float(_.ref.S0 * exp(-_.ref.q * _.T) * norm.cdf(d1) - _.K * exp(-_.rf_r * _.T) * norm.cdf(d2))
-        px_put = float(- _.ref.S0 * exp(-_.ref.q * _.T) * norm.cdf(-d1) + _.K * exp(-_.rf_r * _.T) * norm.cdf(-d2))
+        px_call = float(_.ref.S0*np.exp(-_.ref.q* _.T)*stats.norm.cdf(d1)-_.K*np.exp(-_.rf_r*_.T)*stats.norm.cdf(d2))
+        px_put = float(-_.ref.S0*np.exp(-_.ref.q*_.T)*stats.norm.cdf(-d1)+_.K*np.exp(-_.rf_r*_.T)*stats.norm.cdf(-d2))
         px = px_call if _.signCP == 1 else px_put if _.signCP == -1 else None
 
         self.px_spec.add(px=px, sub_method='standard; Hull p.335', px_call=px_call, px_put=px_put, d1=d1, d2=d2)
@@ -214,7 +211,7 @@ class Gap(OptionValuation):
 
 
         """
-
+        from math import sqrt, exp, log
         n = getattr(self.px_spec ,'nsteps', 5)
         assert len(self.on) > n , 'nsteps must be less than the vector on'
         _ = self
@@ -255,17 +252,13 @@ class Gap(OptionValuation):
         return self
 
     def _calc_MC(self):
+
         """ Internal function for option valuation.
 
-        Returns
-        ----------------------------------------------
-        self: Gap
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor:: Mengyan Xie
-
-        Note
-        ----------------------------------------------
-
+        :Authors:
+            Mengyan Xie <xiemengy@gmail.com>
         """
         # Get parameters of steps and paths
         n_steps = getattr(self.px_spec, 'nsteps', 3)
@@ -299,15 +292,10 @@ class Gap(OptionValuation):
     def _calc_FD(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: Gap
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor:: Oleg Melnikov
-
-        Note
-        ----
-
+        :Authors:
+            Oleg Melnikov <xisreal@gmail.com>
         """
 
         return self

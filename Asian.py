@@ -1,28 +1,26 @@
-from OptionValuation import *
 from math import sqrt
 from numpy import cumsum, maximum, sum,  exp, mean, zeros, log
 from numpy.random import normal, seed
 from math import exp as mexp
 from math import log as mlog
 from scipy.stats import norm
+from OptionValuation import *
 
 class Asian(OptionValuation):
-    """ SHORT DESCRIPTION: Asian option class.
+    """ Asian option class.
 
-    LONG DESCRIPTION:
     Inherits all methods and properties of OptionValuation class.
     Asian options pay by the averaged historical value up to maturity of an underlying as the strike, against the maturity 
     value of the underlying, or they compare the averaged value of the underlying up to maturity against a fixed strike.
     """
 
-
     def calc_px(self, method='MC', nsteps=3, npaths=10000, keep_hist=False, rng_seed=1, sub_method='Arithmetic', strike='K'):
         """ Wrapper function that calls appropriate valuation method.
 
         User passes parameters to calc_px, which saves them to local PriceSpec object
-        and calls specific pricing function (_calc_BS,...).
+        and calls specific pricing function (``_calc_BS``,...).
         This makes significantly less docstrings to write, since user is not interfacing pricing functions,
-        but a wrapper function calc_px().
+        but a wrapper function ``calc_px()``.
 
         Parameters
         ----------
@@ -49,16 +47,13 @@ class Asian(OptionValuation):
         -------
         self : Asian
 
-        .. sectionauthor:: Scott Morgan & Andrew Weatherly & Andy Liao
-
         Notes
         -----
         BS; LT Methods,
-        Verification of First and Second Examples: http://investexcel.net/asian-options-excel/
+        `Verification of First and Second Examples <http://investexcel.net/asian-options-excel>`_
 
-        ================================
-        README ABOUT MONTE CARLO METHODS
-        ================================
+        MONTE CARLO METHODS
+        ===================
         When you use the Monte Carlo method to price the Asian option, you will find that the result is an
         approximation of the BS result described in the Hull 9e textbook. By going through the examples 
         below, you will also see the dependency of the goodness of the MC method, as approximation, 
@@ -77,10 +72,9 @@ class Asian(OptionValuation):
         Finally the referenced examples are only for the Geometric, Fixed-Strike variant of the Asian option.
         To obtain pricing for other variants of Asian options, I suggest that you pick up a copy of
         DerivaGem software.
-        ================================       
 
         Examples
-        -------
+        --------
 
         >>> # SEE NOTES to verify first two examples
         >>> s = Stock(S0=30, vol=.3, q = .02)
@@ -231,7 +225,10 @@ class Asian(OptionValuation):
         <...>
         >>> plt.show()                
 
-       """
+
+        :Authors:
+            Scott Morgan, Andrew Weatherly, Andy Liao
+        """
 
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, \
             rng_seed=rng_seed, sub_method=sub_method, strike=strike)        
@@ -240,22 +237,20 @@ class Asian(OptionValuation):
     def _calc_LT(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: Asian
-
-        .. sectionauthor:: Andrew Weatherly
+        See ``calc_px()`` for complete documentation.
 
         Note
         ----
 
-        Formulae:
+        :Formulae:
+        - `Arithmetic Average Options and Asian Options <goo.gl/Kw4zQ2>`_
+        - `An efficient convergent lattice algorithm for European Asian options, Tian-Shyr Dai, et al., 2004
+          <http://www.csie.ntu.edu.tw/~lyuu/works/asian.pdf>`_
+        - `Simple, fast and flexible pricing of Asian options, Timothy R. Klassen,
+          <http://phys.columbia.edu/~klassen/asian.pdf>`_
 
-        http://homepage.ntu.edu.tw/~jryanwang/course/Financial%20Computation%20or%20Financial%20Engineering%20(graduate
-            %20level)/FE_Ch10%20Asian%20Options.pdf
-        http://www.csie.ntu.edu.tw/~lyuu/works/asian.pdf
-        http://phys.columbia.edu/~klassen/asian.pdf
-
+        :Authors:
+            Andrew Weatherly
         """
         #Imports
         import numpy as np
@@ -403,18 +398,13 @@ class Asian(OptionValuation):
     def _calc_BS(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: Asian
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor:: Scott Morgan
+        :Formulae:
+        - `Arithmetic Average Options and Asian Options <goo.gl/Kw4zQ2>`_
 
-        Note
-        ----
-
-        Formulae: http://homepage.ntu.edu.tw/~jryanwang/course/Financial%20Computation%20or%20Financial% \
-        20Engineering%20(graduate%20level)/FE_Ch10%20Asian%20Options.pdf
-
+        :Authors:
+            Scott Morgan
         """
 
         # Verify input
@@ -462,15 +452,10 @@ class Asian(OptionValuation):
     def _calc_MC(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: Asian
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor:: Andy Liao
-
-        Note
-        ----
-
+        :Authors:
+            Andy Liao
         """
         
         #Throw exception if inputs are not the right type.
@@ -538,14 +523,7 @@ class Asian(OptionValuation):
     def _calc_FD(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: American
-
-        .. sectionauthor:: Oleg Melnikov
-
-        Note
-        ----
+        See ``calc_px()`` for complete documentation.
 
         """
 

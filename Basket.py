@@ -38,8 +38,6 @@ class Basket(OptionValuation):
         -------
         self : Basket
 
-        .. sectionauthor:: Hanting Li
-
         Notes
         -----
         The examples can be verified at:
@@ -54,36 +52,36 @@ class Basket(OptionValuation):
         >>> s = Stock(S0=(42,55,75), vol=(.20,.30,.50))
         >>> o = Basket(ref=s, right='call', K=40, T=.5, rf_r=.1, desc='Hull p.612')
 
-        >>> o.calc_px(method='MC',mu=(0.05,0.1,0.05),weight=(0.3,0.5,0.2),corr=[[1,0,0],[0,1,0],[0,0,1]],npaths=10,nsteps=100).px_spec   # save interim results to self.px_spec. Equivalent to repr(o)
-        PriceSpec
-        keep_hist: false
-        method: MC
-        npaths: 10
-        nsteps: 100
-        px: 15.317306061
-        sub_method: standard; Hull p.612
-        <BLANKLINE>
+        >>> o.calc_px(method='MC',mu=(0.05,0.1,0.05),weight=(0.3,0.5,0.2),corr=[[1,0,0],[0,1,0],[0,0,1]],\
+        npaths=10,nsteps=100).px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 15.317306061...
 
         >>> s = Stock(S0=(50,85,65,80,75), vol=(.20,.10,.05,.20,.30))
         >>> o = Basket(ref=s, right='put', K=80, T=1, rf_r=.05, desc='Hull p.612')
 
-        >>> o.calc_px(method='MC',mu=(0.05,0,0.1,0,0),weight=(0.2,0.2,0.2,0.2,0.2),corr=[[1,0,0,0.9,0],[0,1,0,0,0],[0,0,1,-0.1,0],[0.9,0,-0.1,1,0],[0,0,0,0,1]],npaths=100,nsteps=100).px_spec.px   # save interim results to self.px_spec. Equivalent to repr(o)
+        >>> o.calc_px(method='MC',mu=(0.05,0,0.1,0,0),weight=(0.2,0.2,0.2,0.2,0.2),corr=[[1,0,0,0.9,0],\
+        [0,1,0,0,0],[0,0,1,-0.1,0],[0.9,0,-0.1,1,0],[0,0,0,0,1]],\
+        npaths=100,nsteps=100).px_spec.px   # save interim results to self.px_spec. Equivalent to repr(o)
         6.120469912146624
 
         >>> s = Stock(S0=(30,50), vol=(.20,.15))
         >>> o = Basket(ref=s, right='put', K=55, T=3, rf_r=.05, desc='Hull p.612')
 
-        >>> o.calc_px(method='MC',mu=(0.06,0.05),weight=(0.4,0.6),corr=[[1,0.7],[0.7,1]],npaths=10,nsteps=1000).px_spec.px
+        >>> o.calc_px(method='MC',mu=(0.06,0.05),weight=(0.4,0.6),corr=[[1,0.7],[0.7,1]],\
+        npaths=10,nsteps=1000).px_spec.px
         7.236146325452368
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
-        >>> O = Series([o.update(T=t).calc_px(method='MC',mu=(0.06,0.05),weight=(0.4,0.6),corr=[[1,0.7],[0.7,1]],npaths=2,nsteps=3).px_spec.px for t in expiries], expiries)
+        >>> O = Series([o.update(T=t).calc_px(method='MC',mu=(0.06,0.05),weight=(0.4,0.6),\
+        corr=[[1,0.7],[0.7,1]],npaths=2,nsteps=3).px_spec.px for t in expiries], expiries)
         >>> O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
+        :Authors:
+          Hanting Li <hl45@rice.edu>
 
         """
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
@@ -92,16 +90,11 @@ class Basket(OptionValuation):
         self.corr = corr
         self.npaths = npaths
         self.nsteps = nsteps
-        return getattr(self, '_calc_' + method.upper())()
+        return super().calc_px(method=method, mu = mu, weight = weight,
+                corr = corr, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
 
     def _calc_BS(self):
         """ Internal function for option valuation.
-
-        Returns
-        -------
-        self: European
-
-        .. sectionauthor:: Oleg Melnikov
 
         """
 
@@ -110,15 +103,6 @@ class Basket(OptionValuation):
     def _calc_LT(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: European
-
-        .. sectionauthor:: Oleg Melnikov
-
-        .. note::
-        Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
-
         """
 
         return self
@@ -126,16 +110,8 @@ class Basket(OptionValuation):
     def _calc_MC(self, keep_hist=False):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: European
-
-        .. sectionauthor:: Hanting Li
-
-        Notes
-        -----
-        Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
-
+        :Authors:
+          Hanting Li <hl45@rice.edu>
         """
 
 

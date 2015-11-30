@@ -1,8 +1,7 @@
-from scipy import stats
+import scipy.stats
 import warnings
 import numpy as np
 import math
-from numpy import array, maximum, arange
 
 from OptionValuation import *
 
@@ -16,9 +15,9 @@ class Lookback(OptionValuation):
         """ Wrapper function that calls appropriate valuation method.
 
         User passes parameters to calc_px, which saves them to local PriceSpec object
-        and calls specific pricing function (_calc_BS,...).
+        and calls specific pricing function (``_calc_BS``,...).
         This makes significantly less docstrings to write, since user is not interfacing pricing functions,
-        but a wrapper function calc_px().
+        but a wrapper function ``calc_px()``.
 
         Parameters
         ----------
@@ -29,13 +28,13 @@ class Lookback(OptionValuation):
         npaths : int
                 MC, FD methods require number of simulation paths
         keep_hist : bool
-                If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
+                If ``True``, historical information (trees, simulations, grid) are saved in ``self.px_spec`` object.
         Sfl : float
                 Asset floating price.
-                If call option, Sfl is minimum asset price achieved to date.(If the look back has
-                just been originated, Smin = S0.)
+                If call option, ``Sfl`` is minimum asset price achieved to date.(If the look back has
+                just been originated, ``Smin = S0``.)
                 If put option, Sfl is maximum asset price achieved to date. (If the look back has just been originated,
-                Smax = S0.)
+                ``Smax = S0``.)
         q : float
                 Dividend
 
@@ -43,27 +42,24 @@ class Lookback(OptionValuation):
         Returns
         -------
         self : Lookback
-
-        .. sectionauthor:: Mengyan Xie, Hanting Li
+            Returns Lookback object
 
         Notes
         -----
 
         Verification of Example:
-           http://investexcel.net/asian-options-excel/
-           DerivaGem, Lookback Option
-           QFRM R Package, Lookback Option
-           Hull P608 Example
+        - `Asian options tutorial and Excel spreadsheet <http://investexcel.net/asian-options-excel>`_
+        - John C. Hull, 9ed, 2015, `ISBN 0133456315 <http://amzn.com/0133456315>`_  p.608
+          - DerivaGem software that accompanies the textbook
 
         The LT method might not generate the same result with BS
         To improve the accuracy, the number of steps can be added
 
-        -------
         Examples
         --------
 
         BS Examples
-        --------
+        -----------
         >>> s = Stock(S0=50, vol=.4, q=.0)
         >>> o = Lookback(ref=s, right='call', K=50, T=0.25, rf_r=.1, desc='Example from Hull Ch.26 Example 26.2 (p608)')
         >>> o.pxBS(Sfl = 50.0)
@@ -89,7 +85,7 @@ class Lookback(OptionValuation):
 
 
         LT Examples
-        --------
+        -----------
         >>> s = Stock(S0=35., vol=.05, q=.00)
         >>> o = Lookback(ref=s, right='call', K=30, T=0.25, rf_r=.1, desc='Hull p607')
         >>> o.pxLT(nsteps=100,keep_hist=False, Sfl = 50.0)
@@ -116,6 +112,10 @@ class Lookback(OptionValuation):
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
+
+        :Authors:
+            Mengyan Xie <xiemengy@gmail.com>,
+            Hanting Li <hl45@rice.edu>
        """
 
         return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, Sfl = Sfl)
@@ -123,19 +123,16 @@ class Lookback(OptionValuation):
     def _calc_LT(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: Look back
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor:: Hanting Li
 
-        .. note::
-        Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
-        Hull Book p.607
+        Notes
+        -----
+        - `Implementing Binomial Trees   <http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181>`_
+        - John C. Hull, 9ed, 2014, `ISBN 0133456315 <http://amzn.com/0133456315>`_  p.607
 
-        Examples
-        -------
-
+        :Authors:
+            Hanting Li <hl45@rice.edu>
 
         """
 
@@ -153,20 +150,20 @@ class Lookback(OptionValuation):
         # Compute the Strike Tree
         for i in range(0, n, 1):
             if (self.signCP == -1):
-                K = tuple(_['u'] * array(S)) + (S[len(S)-1],)
+                K = tuple(_['u'] * np.array(S)) + (S[len(S)-1],)
             else:
-                K = (S[0],) + tuple(_['d'] * array(S))
-            S = tuple(_['u'] * array(S)) + (_['d']*S[len(S)-1],)
+                K = (S[0],) + tuple(_['d'] * np.array(S))
+            S = tuple(_['u'] * np.array(S)) + (_['d']*S[len(S)-1],)
             # The Spot Tree
             S_tree = (tuple([float(s) for s in S]),) + S_tree
             # The Strike Tree
             K_tree = (tuple([float(k) for k in K]),) + K_tree
 
         # The terminal stock price
-        ST = self.ref.S0 * _['d'] ** arange(n, -1, -1) * _['u'] ** arange(0, n + 1)
+        ST = self.ref.S0 * _['d'] ** np.arange(n, -1, -1) * _['u'] ** np.arange(0, n + 1)
         K = K_tree[0]
         # The payoff tree
-        O = maximum(self.signCP * (ST - K), 0)
+        O = np.maximum(self.signCP * (ST - K), 0)
         O_tree = (tuple([float(o) for o in O]),)
 
         # Generate the Payoff tree
@@ -182,18 +179,15 @@ class Lookback(OptionValuation):
     def _calc_BS(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: Look back
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor:: Mengyan Xie
+        Notes
+        -----
+        - John C. Hull, 9ed, 2014, `ISBN 0133456315 <http://amzn.com/0133456315>`_  p.607
+        - `Lookback option on Wikipedia <https://en.wikipedia.org/wiki/Lookback_option>`_
 
-        Note
-        ----
-        Hull Book p.607
-        Formular: https://en.wikipedia.org/wiki/Lookback_option
-
-
+        :Authors:
+            Mengyan Xie <xiemengy@gmail.com>
         """
 
         _ = self
@@ -217,18 +211,18 @@ class Lookback(OptionValuation):
         Y1 = _.signCP * (-2 * (_.rf_r - _.ref.q - _.ref.vol ** 2 / 2) * math.log(S_new)) / (_.ref.vol ** 2)
 
         # compute call option price
-        c1 = _.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(a1)
-        c2 = _.ref.S0 * math.exp(-_.ref.q * _.T) * (_.ref.vol ** 2) * stats.norm.cdf(-a1) / (2 * (_.rf_r - _.ref.q))
-        c3 = - _.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (stats.norm.cdf(a2) - _.ref.vol ** 2 * math.exp(Y1) * \
-                                                          stats.norm.cdf(-a3) / (2 * (_.rf_r - _.ref.q)))
+        c1 = _.ref.S0 * math.exp(-_.ref.q * _.T) * scipy.stats.norm.cdf(a1)
+        c2 = _.ref.S0 * math.exp(-_.ref.q * _.T) * (_.ref.vol ** 2) * scipy.stats.norm.cdf(-a1)/(2 * (_.rf_r - _.ref.q))
+        c3 = - _.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (scipy.stats.norm.cdf(a2) - _.ref.vol ** 2 * math.exp(Y1) * \
+                                                          scipy.stats.norm.cdf(-a3) / (2 * (_.rf_r - _.ref.q)))
 
         c = c1 - c2 + c3
 
         # compute put option price
-        p1 = self.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (stats.norm.cdf(a1) - _.ref.vol ** 2 * math.exp(Y1) * \
-                                                           stats.norm.cdf(-a3) / (2 * (_.rf_r - _.ref.q)))
-        p2 = _.ref.S0 * math.exp(-_.ref.q * _.T) * (_.ref.vol ** 2) * stats.norm.cdf(-a2) / (2 * (_.rf_r - _.ref.q))
-        p3 = _.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(a2)
+        p1 = self.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (scipy.stats.norm.cdf(a1) - _.ref.vol ** 2 * math.exp(Y1) * \
+                                                           scipy.stats.norm.cdf(-a3) / (2 * (_.rf_r - _.ref.q)))
+        p2 = _.ref.S0 * math.exp(-_.ref.q * _.T) * (_.ref.vol ** 2) * scipy.stats.norm.cdf(-a2)/(2 * (_.rf_r - _.ref.q))
+        p3 = _.ref.S0 * math.exp(-_.ref.q * _.T) * scipy.stats.norm.cdf(a2)
         p = p1 + p2 - p3
 
 
@@ -243,30 +237,14 @@ class Lookback(OptionValuation):
     def _calc_MC(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: Look back
-
-        .. sectionauthor::
-
-        Note
-        ----
-
+        See ``calc_px()`` for complete documentation.
         """
         return self
 
     def _calc_FD(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: Look back
-
-        .. sectionauthor::
-
-        Note
-        ----
-
+        See ``calc_px()`` for complete documentation.
         """
 
         return self

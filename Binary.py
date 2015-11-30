@@ -1,7 +1,7 @@
-from OptionValuation import *
 import numpy as np
 import math
 import scipy.stats
+from OptionValuation import *
 
 
 class Binary(OptionValuation):

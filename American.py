@@ -1,7 +1,7 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from OptionValuation import *
 from European import *
-import matplotlib.pyplot as plt
 
 
 class American(OptionValuation):
@@ -80,13 +80,6 @@ class American(OptionValuation):
     def _calc_LT(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: American
-
-
-        Examples
-        --------
         See ``calc_px()`` for complete documentation.
 
         :Authors:
