@@ -54,7 +54,7 @@ class ForwardStart(OptionValuation):
         >>> o=ForwardStart(ref=s, K=50,right='call', T=0.5, \
         rf_r=.1).calc_px(method='BS',T_s=0.5)
         >>> o.px_spec.px #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        2.62877...
+        2.628777266...
 
 
 
@@ -62,7 +62,7 @@ class ForwardStart(OptionValuation):
         >>> o=ForwardStart(ref=s, K=66,right='call', T=0.75, \
         rf_r=.08).calc_px(method='BS',T_s=0.25)
         >>> o.px_spec #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PriceSpec...px: 6.760...
+        PriceSpec...px: 6.760976029...
 
 
         >>> from pandas import Series
@@ -90,7 +90,7 @@ class ForwardStart(OptionValuation):
 
         Use a Monte Carlo simulation to price a forwardstart option
 
-        The following example will generate px = 2.62029... with nsteps = 365 and npaths = 10000, \
+        The following example will generate px = 2.620293977...with nsteps = 365 and npaths = 10000, \
         which can be verified by page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
         However, for the purpose if fast runtime, I use nstep = 10 and npaths = 10 in all following examples, \
         whose result does not match verification.
@@ -101,17 +101,17 @@ class ForwardStart(OptionValuation):
                desc='example from page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf'\
                ).calc_px(method='MC',nsteps=10,npaths=10,T_s=0.5) #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         >>> o.px_spec.px#doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        3.434189...
+        3.434189097...
 
         The following example uses the same parameter as the example above, but uses pxMC()
         >>> s = Stock(S0=50, vol=.15,q=0.05)
         >>> o=ForwardStart(ref=s, K=100, right='call', T=0.5, rf_r=.1, \
                desc='example from page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf')
-        >>> o.pxMC(nsteps=10,npaths=10,T_s=0.5)#doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        3.434189...
+        >>> o.pxMC(nsteps=10,npaths=10,T_s=0.5)
+        3.434189097
 
 
-        The following example will generate px = 1.43860... with nsteps = 365 and npaths = 10000, \
+        The following example will generate px = 1.438603501...with nsteps = 365 and npaths = 10000, \
         which can be verified by the xls file in http://investexcel.net/forward-start-options/
         However, for the purpose if fast runtime, I use nstep = 10 and npaths = 10 in all following examples, \
         whose result does not match verification.
@@ -123,11 +123,11 @@ class ForwardStart(OptionValuation):
                ).calc_px(method='MC',nsteps=10,npaths=10,T_s=0.5)
         >>> o.update(right='put').calc_px(method='MC',\
         nsteps=10,npaths=10,T_s=0.5).px_spec.px #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        1.27965...
+        1.279658389...
 
         >>> o.update(right='put').calc_px(method='MC',\
         nsteps=10,npaths=10,T_s=0.5).px_spec #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PriceSpec...px: 1.27965...
+        PriceSpec...px: 1.279658389...
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
@@ -237,7 +237,7 @@ class ForwardStart(OptionValuation):
 
         Note
         ----
-        [1] http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
+        [1] `<http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf>`
 
         :Authors:
             Tianyi Yao <ty13@rice.edu>
