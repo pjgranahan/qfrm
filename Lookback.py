@@ -35,8 +35,6 @@ class Lookback(OptionValuation):
                 just been originated, ``Smin = S0``.)
                 If put option, Sfl is maximum asset price achieved to date. (If the look back has just been originated,
                 ``Smax = S0``.)
-        q : float
-                Dividend
 
 
         Returns
