@@ -1,10 +1,10 @@
-from OptionValuation import *
 from math import sqrt
 from numpy import cumsum, maximum, sum,  exp, mean, zeros, log
 from numpy.random import normal, seed
 from math import exp as mexp
 from math import log as mlog
 from scipy.stats import norm
+from OptionValuation import *
 
 class Asian(OptionValuation):
     """ Asian option class.

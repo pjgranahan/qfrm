@@ -1,7 +1,7 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from OptionValuation import *
 from European import *
-import matplotlib.pyplot as plt
 
 
 class American(OptionValuation):
