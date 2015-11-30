@@ -64,50 +64,50 @@ class Bermudan(OptionValuation):
         Examples
         --------
 
-        # >>> #LT pricing of Bermudan options
-        # >>> s = Stock(S0=50, vol=.3)
-        # >>> o = Bermudan(ref=s, right='put', K=52, T=2, rf_r=.05)
-        # >>> o.calc_px(method='LT', keep_hist=True).px_spec.px
-        # 7.251410363950508
-        # >>> ##Changing the maturity
-        # >>> o = Bermudan(ref=s, right='put', K=52, T=1, rf_r=.05)
-        # >>> o.calc_px(method='LT', keep_hist=True).px_spec.px
-        # 5.9168269657242
-        # >>> o = Bermudan(ref=s, right='put', K=52, T=.5, rf_r=.05)
-        # >>> o.calc_px(method='LT', keep_hist=True).px_spec.px
-        # 4.705110748543638
-        # >>> ##Explicit input of exercise schedule
-        # >>> ##Explicit input of exercise schedule
-        # >>> from numpy.random import normal, seed
-        # >>> seed(12345678)
-        # >>> rlist = normal(1,1,20)
-        # >>> times = tuple(map(lambda i: float(str(round(abs(rlist[i]),2))), range(20)))
-        # >>> o = Bermudan(ref=s, right='put', K=52, T=1., rf_r=.05)
-        # >>> o.calc_px(method='LT', tex=times, keep_hist=True).px_spec.px
-        # 5.8246496768398055
-        # >>> ##Example from p. 9 of http://janroman.dhis.org/stud/I2012/Bermuda/reportFinal.pdf
-        # >>> times = (3/12,6/12,9/12,12/12,15/12,18/12,21/12,24/12)
-        # >>> o = Bermudan(ref=Stock(50, vol=.6), right='put', K=52, T=2, rf_r=0.1)
-        # >>> o.calc_px(method='LT', tex=times, nsteps=40, keep_hist=False).px_spec.px
-        # 13.206509995991107
-        # >>> ##Price vs. strike curve - example of vectorization of price calculation
-        # >>> import matplotlib.pyplot as plt
-        # >>> from numpy import linspace
-        # >>> Karr = linspace(30,70,101)
-        # >>> px = tuple(map(lambda i:  Bermudan(ref=Stock(50, vol=.6), right='put', K=Karr[i], T=2, rf_r=0.1).
-        # ... calc_px(tex=times, nsteps=20).px_spec.px, range(Karr.shape[0])))
-        # >>> fig = plt.figure()
-        # >>> ax = fig.add_subplot(111)
-        # >>> ax.plot(Karr,px,label='Bermudan put')
-        # [<...>]
-        # >>> ax.set_title('Price of Bermudan put vs K')
-        # <...>
-        # >>> ax.set_ylabel('Px')
-        # <...>
-        # >>> ax.set_xlabel('K')
-        # <...>
-        # >>> ax.grid()
-        # >>> ax.legend()
+        >>> #LT pricing of Bermudan options
+        >>> s = Stock(S0=50, vol=.3)
+        >>> o = Bermudan(ref=s, right='put', K=52, T=2, rf_r=.05)
+        >>> o.calc_px(method='LT', keep_hist=True).px_spec.px
+        7.251410363950508
+        >>> ##Changing the maturity
+        >>> o = Bermudan(ref=s, right='put', K=52, T=1, rf_r=.05)
+        >>> o.calc_px(method='LT', keep_hist=True).px_spec.px
+        5.9168269657242
+        >>> o = Bermudan(ref=s, right='put', K=52, T=.5, rf_r=.05)
+        >>> o.calc_px(method='LT', keep_hist=True).px_spec.px
+        4.705110748543638
+        >>> ##Explicit input of exercise schedule
+        >>> ##Explicit input of exercise schedule
+        >>> from numpy.random import normal, seed
+        >>> seed(12345678)
+        >>> rlist = normal(1,1,20)
+        >>> times = tuple(map(lambda i: float(str(round(abs(rlist[i]),2))), range(20)))
+        >>> o = Bermudan(ref=s, right='put', K=52, T=1., rf_r=.05)
+        >>> o.calc_px(method='LT', tex=times, keep_hist=True).px_spec.px
+        5.8246496768398055
+        >>> ##Example from p. 9 of http://janroman.dhis.org/stud/I2012/Bermuda/reportFinal.pdf
+        >>> times = (3/12,6/12,9/12,12/12,15/12,18/12,21/12,24/12)
+        >>> o = Bermudan(ref=Stock(50, vol=.6), right='put', K=52, T=2, rf_r=0.1)
+        >>> o.calc_px(method='LT', tex=times, nsteps=40, keep_hist=False).px_spec.px
+        13.206509995991107
+        >>> ##Price vs. strike curve - example of vectorization of price calculation
+        >>> import matplotlib.pyplot as plt
+        >>> from numpy import linspace
+        >>> Karr = linspace(30,70,101)
+        >>> px = tuple(map(lambda i:  Bermudan(ref=Stock(50, vol=.6), right='put', K=Karr[i], T=2, rf_r=0.1).
+        ... calc_px(tex=times, nsteps=20).px_spec.px, range(Karr.shape[0])))
+        >>> fig = plt.figure()
+        >>> ax = fig.add_subplot(111)
+        >>> ax.plot(Karr,px,label='Bermudan put')
+        [<...>]
+        >>> ax.set_title('Price of Bermudan put vs K')
+        <...>
+        >>> ax.set_ylabel('Px')
+        <...>
+        >>> ax.set_xlabel('K')
+        <...>
+        >>> ax.grid()
+        >>> ax.legend()
         <...>
         # >>> plt.show()
 
@@ -197,21 +197,21 @@ class Bermudan(OptionValuation):
         n = getattr(self.px_spec, 'nsteps', 3)
         _ = self.LT_specs(n)
 
-        # Redo tree steps
+        #Redo tree steps
 
         S = self.ref.S0 * _['d'] ** arange(n, -1, -1) * _['u'] ** arange(0, n + 1)  # terminal stock prices
-        O = maximum(self.signCP * (S - self.K), 0)  # terminal option payouts
+        O = maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
         # tree = ((S, O),)
         S_tree = (tuple([float(s) for s in S]),)  # use tuples of floats (instead of numpy.float)
         O_tree = (tuple([float(o) for o in O]),)
         # tree = ([float(s) for s in S], [float(o) for o in O],)
 
         for i in range(n, 0, -1):
-            O = _['df_dt'] * ((1 - _['p']) * O[:i] + (_['p']) * O[1:])  # prior option prices
-            # (@time step=i-1)
-            S = _['d'] * S[1:i + 1]  # prior stock prices (@time step=i-1)
-            Payout = maximum(self.signCP * (S - self.K), 0)  # payout at time step i-1 (moving backward in time)
-            if i * _['dt'] in self.tex:  # The Bermudan condition: exercise only at scheduled times
+            O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices
+            #(@time step=i-1)
+            S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
+            Payout = maximum(self.signCP * (S - self.K), 0)   # payout at time step i-1 (moving backward in time)
+            if i*_['dt'] in self.tex:   #The Bermudan condition: exercise only at scheduled times
                 O = maximum(O, Payout)
             # tree = tree + ((S, O),)
             S_tree = (tuple([float(s) for s in S]),) + S_tree
@@ -219,11 +219,11 @@ class Bermudan(OptionValuation):
             # tree = tree + ([float(s) for s in S], [float(o) for o in O],)
 
         self.px_spec.add(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
-                         LT_specs=_, ref_tree=S_tree if keep_hist else None, opt_tree=O_tree if keep_hist else None)
+                        LT_specs=_, ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
 
         # self.px_spec = PriceSpec(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
         #                 LT_specs=_, ref_tree = S_tree if save_tree else None, opt_tree = O_tree if save_tree 
-        # else None)
+        #else None)
         return self
 
     def _calc_BS(self):
