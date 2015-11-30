@@ -8,7 +8,7 @@ class Bermudan(OptionValuation):
     """
 
     def calc_px(self, method='LT', tex=(.12, .24, .46, .9, .91, .92, .93, .94, .95, .96, .97, .98, .99, 1.),
-                nsteps=None, npaths=None, keep_hist=False, R=3):
+                nsteps=None, npaths=None, keep_hist=False, R=3, seed=4294967295):
         """ Wrapper function that calls appropriate valuation method.
 
         User passes parameters to calc_px, which saves them to local PriceSpec object
@@ -24,7 +24,7 @@ class Bermudan(OptionValuation):
                 Required. Must be a vector (tuple; list; array, ...) of times to exercisability. 
                 For Bermudan, assume that exercisability is for discrete tex times only.
                 This also needs to be sorted ascending and the final value is the corresponding vanilla maturity.
-                If T is not equal the the final value of T, then
+                If T is not equal the the final value of tex, then
                     the T will take precedence: if T < max(tex) then tex will be truncated to tex[tex < T] and will be 
                     appended to tex.
                     If T > max(tex) then the largest value of tex will be replaced with T.
@@ -41,12 +41,12 @@ class Bermudan(OptionValuation):
         R : int
                 Number of basis functions. Used to generate weighted Laguerre polynomial values.
                 Used in MC method. Must be between 0 and 6.
+        seed : int
+                The seed for the RNG.
 
         Returns
         -------
         self : Bermudan
-
-        .. sectionauthor:: Oleg Melkinov; Andy Liao, Patrick Granahan
 
 
         Notes
@@ -54,9 +54,6 @@ class Bermudan(OptionValuation):
         The Bermudan option is a modified American with restricted early-exercise dates. Due to this restriction, 
         Bermudans are named as such as they are "between" American and European options in exercisability, and as 
         this module demonstrates, in price.
-
-        For our Monte Carlo pricing, we use the Longstaff-Schwartz algorithm. Our implementation is drawn heavily from
-        this paper [1], while our method for generating the betas is drawn heavily from this paper [2].
 
 
         References
@@ -118,56 +115,71 @@ class Bermudan(OptionValuation):
         MC Examples
         -----------
 
-        Example #1 (pricing isn't working correctly, so the expected output is gibberish for now)
+        Example #1
 
-        # >>> s = Stock(S0=1200, vol=.25, q=0.015)
-        # >>> o = Bermudan(ref=s, right='call', K=1200, T=1, rf_r=.03, frf_r=0.05)
-        # >>> o.pxMC(R=2, npaths=5, tex=[(i+1)/10 for i in range(10)])
-        1234
+        >>> s = Stock(S0=1200, vol=.25, q=0.015)
+        >>> T = 1; tex = np.arange(0.1, T + 0.1, 0.1)
+        >>> o = Bermudan(ref=s, right='call', K=1200, T=T, rf_r=.03, frf_r=0.05)
+        >>> o.pxMC(R=2, npaths=5, tex=tex)
+        31.682017621
 
         Example #2 (verifiable): See reference [1], section 5.1 and table 5.1 with arguments N=10^2, R=3
         Uncomment to run (number of paths required is too high for doctests)
 
         # >>> s = Stock(S0=11, vol=.4)
-        # >>> o = Bermudan(ref=s, right='put', K=15, T=1, rf_r=.05, desc="in-the-money Bermudan put")
-        # >>> o.pxMC(R=3, npaths=10**2, tex=list([(i+1)/10 for i in range(10)]))
-        4.200888
+        # >>> T = 1; tex = np.arange(0.1, T + 0.1, 0.1)
+        # >>> o = Bermudan(ref=s, right='put', K=15, T=T, rf_r=.05, desc="in-the-money Bermudan put")
+        # >>> actual = o.pxMC(R=3, npaths=10**2, tex=tex); expected = 4.200888
+        # >>> actual
+        # 4.0403015590000004
+        # >>> (abs(actual - expected) / expected) < 0.10  # Verify within 10% of expected
+        # True
 
         Example #3 (verifiable): See reference [1], section 5.1 and table 5.1 with arguments N=10^5, R=6
         Uncomment to run (number of paths required is too high for doctests)
 
         # >>> s = Stock(S0=11, vol=.4)
-        # >>> o = Bermudan(ref=s, right='put', K=15, T=1, rf_r=.05, desc="in-the-money Bermudan put")
-        # >>> o.pxMC(R=6, npaths=10**5, tex=[(i+1)/10 for i in range(10)])
-        4.204823
+        # >>> T = 1; tex = np.arange(0.1, T + 0.1, 0.1)
+        # >>> o = Bermudan(ref=s, right='put', K=15, T=T, rf_r=.05, desc="in-the-money Bermudan put")
+        # >>> actual = o.pxMC(R=6, npaths=10**5, tex=tex); expected = 4.204823
+        # >>> actual
+        # 3.9492928389999999
+        # >>> (abs(actual - expected) / expected) < 0.10  # Verify within 10% of expected
+        # True
 
         Example #4 (plot)
 
-        >>> s = Stock(S0=100, vol=.4)
-        >>> T = 1
-        >>> npaths = 10
-        >>> tex = tuple(np.arange(0, 1, 0.01))
-        >>> o = Bermudan(ref=s, right='call', K=100, T=T, rf_r=.00, desc="in-the-money Bermudan put")
-        >>> o.pxMC(R=3, npaths=npaths, tex=tex)  # doctest: +ELLIPSIS
-        4.091346594
+        >>> s = Stock(S0=11, vol=.4)
+        >>> T = 1; tex = np.arange(0.1, T + 0.1, 0.1)
+        >>> o = Bermudan(ref=s, right='put', K=15, T=T, rf_r=.01)
+        >>> o.pxMC(R=3, npaths=10, tex=tex)  # doctest: +ELLIPSIS
+        4.016206951
         >>> o.plot_MC()
-        something
 
-
+        :Authors:
+            Oleg Melkinov,
+            Andy Liao,
+            Patrick Granahan
         """
 
-        from numpy import asarray
+        # Seed the RNG
+        np.random.seed(seed)
+
         T = max(tex)
-        if self.T < T:
-            tex = tuple(asarray(tex)[asarray(tex) < self.T]) + (self.T,)
-        if self.T > T:
+        deltaT = self.T - T
+        epsilon = 10 ** (-11)
+
+        if deltaT < epsilon:
+            tex = tuple(np.asarray(tex)[np.asarray(tex) < self.T]) + (self.T,)
+        elif deltaT > epsilon:
             tex = tex[:-1] + (self.T,)
+
         self.tex = tex
         knsteps = max(tuple(map(lambda i: int(T / (tex[i + 1] - tex[i])), range(len(tex) - 1))))
         if nsteps != None:
             knsteps = knsteps * nsteps
         nsteps = knsteps
-        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, R=R)
+        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, R=R, seed=seed)
         return getattr(self, '_calc_' + method.upper())()
 
     def _calc_LT(self):
@@ -232,19 +244,14 @@ class Bermudan(OptionValuation):
     def _calc_MC(self):
         """ Internal function for option valuation.
 
-        NOTE: Currently only semi-functional. There's a bug where the prices returned from different stock_price_paths are largely
-        the same price (as seen in the price histogram in MC example #4). So while the answer isn't completely wrong,
-        it's definitely not right.
+        See calc_px() for full documentation.
 
         Returns
         -------
         self: Bermudan
 
-        .. sectionauthor:: Patrick Granahan
-
-        Note
-        ----
-        Uses the Longstaff-Schwartz algorithm.
+        :Authors:
+            Patrick Granahan
         """
 
         # Get arguments from calc_px
@@ -320,36 +327,28 @@ class Bermudan(OptionValuation):
 
         # Step backwards through the exercise dates, halting before we get to the current date
         for tex_index in range(len(self.tex) - 1, 1, -1):
-            # Calculate the time difference between the next exercise date and the current exercise date
-            previous_tex = 0 if tex_index == 0 else self.tex[tex_index - 1]
-            delta_T = self.tex[tex_index] - previous_tex
-
-            # Calculate the drift difference between the next exercise date and the current exercise date
-            drift = self.rf_r - self.ref.q
-            delta_drift = np.exp(drift * delta_T)
-
             # Fit a polynomial of degree R to the stock prices at the tex against the terminal payouts at the tex + 1.
             # Used to generate a vector of coefficients that minimises the squared error.
             MSE_coefficients = np.polyfit(stock_price_paths[:, tex_index].A1,  # A1 reshapes (npaths, 1) to (npaths,)
-                                          terminal_payouts[:, tex_index + 1],# * delta_drift,
-                                          R)  # TODO: check if removing df from here was a bad idea
+                                          terminal_payouts[:, tex_index + 1],
+                                          R)
 
-            # Calculate the continuation price TODO TODO TODO TODO by evaluate a polynomial at specific values.
+            # Calculate the continuation price by evaluating the stock prices at tex_index using the MSE_coefficients
             continuation_price = np.polyval(MSE_coefficients, stock_price_paths[:, tex_index])
 
             # Calculate the terminal payouts on each path by looking at whether the option is exercised
             condition = payouts[:, tex_index] > continuation_price
             x = payouts[:, tex_index]
-            y = terminal_payouts[:, tex_index + 1] #* delta_drift
+            y = terminal_payouts[:, tex_index + 1]
             terminal_payouts[:, tex_index] = np.where(condition.A1, x.A1, y)
 
         # Calculate the payoffs on each path for the current date
-        delta_drift = self.tex[0]
-        terminal_payouts[:, 0] = terminal_payouts[:, 1] #* delta_drift
+        terminal_payouts[:, 0] = terminal_payouts[:, 1]
 
         # Find the average price across all the stock_price_paths, then record it
         price = np.mean(terminal_payouts[:, 0])
-        self.px_spec.add(px=price, sub_method='Longstaff-Schwartz', terminal_payouts=terminal_payouts, payouts=payouts, stock_price_paths=stock_price_paths)
+        self.px_spec.add(px=price, terminal_payouts=terminal_payouts, payouts=payouts,
+                         stock_price_paths=stock_price_paths)
 
         return self
 
@@ -369,31 +368,42 @@ class Bermudan(OptionValuation):
 
         return self
 
-
     def plot_MC(self):
+        """
+        Plots the price paths, payout paths, and terminal payout paths of a given Monte Carlo simulation.
+
+        Returns
+        -------
+        None
+            Only shows the plot.
+        """
         # Fetch history from px_spec
         terminal_payouts = self.px_spec.terminal_payouts
         payouts = self.px_spec.payouts
         stock_price_paths = self.px_spec.stock_price_paths
 
         # Three subplots sharing both x/y axes
-        f, (ax1, ax2, ax3) = plt.subplots(3, sharex=True, sharey=True)
+        f, (ax1, ax2, ax3) = plt.subplots(3, sharex=True, sharey=False)
+
+        # The x axis will always be self.tex, with the current date prepended
+        x = (0,) + self.tex
 
         # Plot the price paths graph
-        ax1.plot(stock_price_paths.T, alpha=0.5, color='0.5')
-        mean_price_path, = ax1.plot(np.mean(stock_price_paths, axis=0).T, alpha=0.8, label="Mean of price paths")
+        ax1.plot(x, stock_price_paths.T, alpha=0.5, color='0.5')
+        mean_price_path, = ax1.plot(x, np.mean(stock_price_paths, axis=0).T, alpha=0.8, label="Mean of price paths")
         ax1.set_title("Price Paths")
         ax1.legend(handles=[mean_price_path], loc=0)  # Position the legend in the "best" place
 
         # Plot the payout paths graph
-        ax2.plot(payouts.T, alpha=0.5, color='0.5')
-        mean_payout_path, = ax2.plot(np.mean(payouts, axis=0).T, alpha=0.8, label="Mean of payout paths")
+        ax2.plot(x, payouts.T, alpha=0.5, color='0.5')
+        mean_payout_path, = ax2.plot(x, np.mean(payouts, axis=0).T, alpha=0.8, label="Mean of payout paths")
         ax2.set_title("Payout Paths")
         ax2.legend(handles=[mean_payout_path], loc=0)  # Position the legend in the "best" place
 
         # Plot the terminal payout paths graph
-        ax3.plot(terminal_payouts.T, alpha=0.5, color='0.5')
-        mean_terminal_payout_path, = ax3.plot(np.mean(terminal_payouts, axis=0).T, alpha=0.8, label="Mean of terminal payout paths")
+        ax3.plot(x, terminal_payouts.T, alpha=0.5, color='0.5')
+        mean_terminal_payout_path, = ax3.plot(x, np.mean(terminal_payouts, axis=0).T, alpha=0.8,
+                                              label="Mean of terminal payout paths")
         ax3.set_title("Terminal Payout Paths")
         ax3.legend(handles=[mean_terminal_payout_path], loc=0)  # Position the legend in the "best" place
 
@@ -401,15 +411,10 @@ class Bermudan(OptionValuation):
         f.text(0.5, 0.04, 'Exercise Dates', ha='center', va='center')
         f.text(0.06, 0.5, 'Price', ha='center', va='center', rotation='vertical')
 
-        #
-        # plt.xticks(np.arange(min(len(self.tex)), max(len(self.tex))+1))
-        ax3.set_xticks(np.arange(min(len(self.tex)), max(len(self.tex))+1, 1.0))
-        plt.tick_params(axis='x', which='major', labelsize=10)
-        ax3.set_xticklabels(self.tex)
-
         # Set the window title
         f.canvas.set_window_title('Monte Carlo Simulation')
 
-
+        # Show the plot
         plt.show(block=True)
-        print('test')
+
+        return None
