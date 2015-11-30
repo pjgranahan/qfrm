@@ -1,6 +1,6 @@
 from OptionValuation import *
-from numpy.random import multivariate_normal, seed
-from numpy import sqrt, mean, matrix, transpose, diag, dot, repeat, exp
+import numpy.random
+import numpy as np
 
 class Basket(OptionValuation):
     """ European option class.
@@ -131,7 +131,7 @@ class Basket(OptionValuation):
 
         # Compute the stock price at t
         def calS(St,mu,sigma,param):
-            deltaS = mu*St*deltat + sigma*St*param*sqrt(deltat)
+            deltaS = mu*St*deltat + sigma*St*param*np.sqrt(deltat)
             S_update = St+deltaS
             return(S_update.item())
 
@@ -147,25 +147,25 @@ class Basket(OptionValuation):
         priceNpath = ()
 
         # Compute covariance matrix from correlation matrix
-        covM = dot(dot(diag(vol),(corrM)),diag(vol))
+        covM = np.dot(np.dot(np.diag(vol),(corrM)),np.diag(vol))
 
         # Set seed
-        seed(10987)
+        numpy.random.seed(10987)
         # Generate random numbers
-        param = multivariate_normal(repeat(0,Nasset),covM,nsteps)
+        param = numpy.random.multivariate_normal(np.repeat(0,Nasset),covM,nsteps)
         param = tuple(zip(*param))
 
         # Generate N paths
         for i in range(npaths):
             price = list(map(one_path,S0,mu,vol,param))
-            wprice = transpose(matrix(price))*transpose(matrix(_.weight))
+            wprice = np.transpose(np.matrix(price))*np.transpose(np.matrix(_.weight))
             wprice = tuple(wprice.ravel().tolist()[0])
             priceNpath = priceNpath + (wprice,)
 
         # Terminal Payoff
-        payoff = max(0,_.signCP*(mean(tuple(zip(*priceNpath))[nsteps])-_.K))
+        payoff = max(0,_.signCP*(np.mean(tuple(zip(*priceNpath))[nsteps])-_.K))
 
-        self.px_spec.add(px=float(payoff*exp(-_.rf_r*_.T)), sub_method='standard; Hull p.612')
+        self.px_spec.add(px=float(payoff*np.exp(-_.rf_r*_.T)), sub_method='standard; Hull p.612')
 
         return self
 

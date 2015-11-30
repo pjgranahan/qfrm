@@ -1,10 +1,9 @@
-from scipy.stats import norm
-from numpy import arange, maximum, log, exp, sqrt, minimum , random, zeros
-from scipy.special import binom
-from math import ceil, floor, factorial
-from European import European
 from OptionValuation import *
-
+import scipy.stats
+import numpy
+import scipy.special
+import math
+import European
 class Barrier(OptionValuation):
     """ European option class.
 
@@ -141,6 +140,8 @@ class Barrier(OptionValuation):
         -----------
 
         All examples below can be verified with DerivaGem software
+        # Note : you would like to get the close results you would have to use
+        # nsteps = 500 , npaths = 10000
 
         >>> s = Stock(S0=50., vol=.3, q=.00)
         >>> o = Barrier(ref=s,right='put', K=50., T=1., rf_r=.1, desc='DerviaGem Up and Out Barrier')
@@ -150,17 +151,20 @@ class Barrier(OptionValuation):
 
         >>> s = Stock(S0=50., vol=.3, q=.00)
         >>> o = Barrier(ref=s,right='call', K=50., T=1., rf_r=.1, desc='Up and in call')
-        >>> print(o.calc_px(H=60.,knock='up',dir='in',method='MC',rng_seed = 0, nsteps=500 , npaths = 10000).px_spec.px)
-        8.122764096728886
+        >>> print(o.calc_px(H=60.,knock='up',dir='in',method='MC',rng_seed = 0, nsteps=500 , npaths = 100).px_spec.px)
+        ... # doctest: +ELLIPSIS
+        7.173989150...
 
         >>> s = Stock(S0=50., vol=.25, q=.00)
         >>> o = Barrier(ref=s,right='call', K=45., T=2., rf_r=.3, desc='down and in call')
-        >>> o.calc_px(H=35.,knock='down',dir='in',method='MC', rng_seed = 4, nsteps=500 , npaths = 10000).px_spec.px
-        0.14743918425170133
+        >>> o.calc_px(H=35.,knock='down',dir='in',method='MC', rng_seed = 4, nsteps=500 , npaths = 300).px_spec.px
+        ... # doctest: +ELLIPSIS
+        0.041420563...
 
         :Authors:
             Scott Morgan,
             Hanting Li <hl45@rice.edu>
+            Thawda Aung <thawda.aung1@gmail.com>
        """
 
 
@@ -181,60 +185,60 @@ class Barrier(OptionValuation):
 
         _ = self
         # Compute Parameters
-        d1 = (log(_.ref.S0/_.K) + (_.rf_r-_.ref.q+(_.ref.vol**2)/2)*_.T)/(_.ref.vol*sqrt(_.T))
-        d2 = d1 - _.ref.vol*sqrt(_.T)
+        d1 = (numpy.log(_.ref.S0/_.K) + (_.rf_r-_.ref.q+(_.ref.vol**2)/2)*_.T)/(_.ref.vol*numpy.sqrt(_.T))
+        d2 = d1 - _.ref.vol*numpy.sqrt(_.T)
 
-        c = _.ref.S0*exp(-_.ref.q*_.T)*norm.cdf(d1) - _.K*exp(-_.rf_r*_.T)*norm.cdf(d2)
-        p = _.K*exp(-_.rf_r*_.T)*norm.cdf(-d2) - _.ref.S0*exp(-_.ref.q*_.T)*norm.cdf(-d1)
+        c = _.ref.S0*numpy.exp(-_.ref.q*_.T)*scipy.stats.norm.cdf(d1) - _.K*numpy.exp(-_.rf_r*_.T)*scipy.stats.norm.cdf(d2)
+        p = _.K*numpy.exp(-_.rf_r*_.T)*scipy.stats.norm.cdf(-d2) - _.ref.S0*numpy.exp(-_.ref.q*_.T)*scipy.stats.norm.cdf(-d1)
 
         l = (_.rf_r-_.ref.q+(_.ref.vol**2)/2)/(_.ref.vol**2)
-        y = log((_.H**2)/(_.ref.S0*_.K))/(_.ref.vol*sqrt(_.T)) + l*_.ref.vol*sqrt(_.T)
-        x1 = log(_.ref.S0/_.H)/(_.ref.vol*sqrt(_.T)) + l*_.ref.vol*sqrt(_.T)
-        y1 = log(_.H/_.ref.S0)/(_.ref.vol*sqrt(_.T)) + l*_.ref.vol*sqrt(_.T)
+        y = numpy.log((_.H**2)/(_.ref.S0*_.K))/(_.ref.vol*numpy.sqrt(_.T)) + l*_.ref.vol*numpy.sqrt(_.T)
+        x1 = numpy.log(_.ref.S0/_.H)/(_.ref.vol*numpy.sqrt(_.T)) + l*_.ref.vol*numpy.sqrt(_.T)
+        y1 = numpy.log(_.H/_.ref.S0)/(_.ref.vol*numpy.sqrt(_.T)) + l*_.ref.vol*numpy.sqrt(_.T)
 
         # Consider Call Option
         # Two Situations: H<=K vs H>K
         if (_.right == 'call'):
             if (_.H<=_.K):
-                cdi = _.ref.S0*exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*norm.cdf(y) - \
-                      _.K*exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*norm.cdf(y-_.ref.vol*sqrt(_.T))
-                cdo = _.ref.S0*norm.cdf(x1)*exp(-_.ref.q*_.T) - _.K*exp(-_.rf_r*_.T)*norm.cdf(x1-_.ref.vol*sqrt(_.T)) \
-                      - _.ref.S0*exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*norm.cdf(y1) + \
-                      _.K*exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*norm.cdf(y1-_.ref.vol*sqrt(_.T))
+                cdi = _.ref.S0*numpy.exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*scipy.stats.norm.cdf(y) - \
+                      _.K*numpy.exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*scipy.stats.norm.cdf(y-_.ref.vol*numpy.sqrt(_.T))
+                cdo = _.ref.S0*scipy.stats.norm.cdf(x1)*numpy.exp(-_.ref.q*_.T) - _.K*numpy.exp(-_.rf_r*_.T)*scipy.stats.norm.cdf(x1-_.ref.vol*numpy.sqrt(_.T)) \
+                      - _.ref.S0*numpy.exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*scipy.stats.norm.cdf(y1) + \
+                      _.K*numpy.exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*scipy.stats.norm.cdf(y1-_.ref.vol*numpy.sqrt(_.T))
                 cdo = c - cdi
                 cuo = 0
                 cui = c
             else:
-                cdo = _.ref.S0*norm.cdf(x1)*exp(-_.ref.q*_.T) - _.K*exp(-_.rf_r*_.T)*norm.cdf(x1-_.ref.vol*sqrt(_.T)) \
-                      - _.ref.S0*exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*norm.cdf(y1) + \
-                      _.K*exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*norm.cdf(y1-_.ref.vol*sqrt(_.T))
+                cdo = _.ref.S0*scipy.stats.norm.cdf(x1)*numpy.exp(-_.ref.q*_.T) - _.K*numpy.exp(-_.rf_r*_.T)*scipy.stats.norm.cdf(x1-_.ref.vol*numpy.sqrt(_.T)) \
+                      - _.ref.S0*numpy.exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*scipy.stats.norm.cdf(y1) + \
+                      _.K*numpy.exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*scipy.stats.norm.cdf(y1-_.ref.vol*numpy.sqrt(_.T))
                 cdi = c - cdo
-                cui = _.ref.S0*norm.cdf(x1)*exp(-_.ref.q*_.T) -\
-                      _.K*exp(-_.rf_r*_.T)*norm.cdf(x1-_.ref.vol*sqrt(_.T)) - \
-                      _.ref.S0*exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*(norm.cdf(-y)-norm.cdf(-y1)) + \
-                      _.K*exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*(norm.cdf(-y+_.ref.vol*sqrt(_.T))-\
-                                                                      norm.cdf(-y1+_.ref.vol*sqrt(_.T)))
+                cui = _.ref.S0*scipy.stats.norm.cdf(x1)*numpy.exp(-_.ref.q*_.T) -\
+                      _.K*numpy.exp(-_.rf_r*_.T)*scipy.stats.norm.cdf(x1-_.ref.vol*numpy.sqrt(_.T)) - \
+                      _.ref.S0*numpy.exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*(scipy.stats.norm.cdf(-y)-scipy.stats.norm.cdf(-y1)) + \
+                      _.K*numpy.exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*(scipy.stats.norm.cdf(-y+_.ref.vol*numpy.sqrt(_.T))-\
+                                                                      scipy.stats.norm.cdf(-y1+_.ref.vol*numpy.sqrt(_.T)))
                 cuo = c - cui
         # Consider Put Option
         # Two Situations: H<=K vs H>K
         else:
             if (_.H>_.K):
-                pui = -_.ref.S0*exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*norm.cdf(-y) + \
-                      _.K*exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*norm.cdf(-y+_.ref.vol*sqrt(_.T))
+                pui = -_.ref.S0*numpy.exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*scipy.stats.norm.cdf(-y) + \
+                      _.K*numpy.exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*scipy.stats.norm.cdf(-y+_.ref.vol*numpy.sqrt(_.T))
                 puo = p - pui
                 pdo = 0
                 pdi = p
             else:
-                puo = -_.ref.S0*norm.cdf(-x1)*exp(-_.ref.q*_.T) + \
-                      _.K*exp(-_.rf_r*_.T)*norm.cdf(-x1+_.ref.vol*sqrt(_.T)) + \
-                      _.ref.S0*exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*norm.cdf(-y1) - \
-                      _.K*exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*norm.cdf(-y1+_.ref.vol*sqrt(_.T))
+                puo = -_.ref.S0*scipy.stats.norm.cdf(-x1)*numpy.exp(-_.ref.q*_.T) + \
+                      _.K*numpy.exp(-_.rf_r*_.T)*scipy.stats.norm.cdf(-x1+_.ref.vol*numpy.sqrt(_.T)) + \
+                      _.ref.S0*numpy.exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*scipy.stats.norm.cdf(-y1) - \
+                      _.K*numpy.exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*scipy.stats.norm.cdf(-y1+_.ref.vol*numpy.sqrt(_.T))
                 pui = p - puo
-                pdi = -_.ref.S0*norm.cdf(-x1)*exp(-_.ref.q*_.T) +\
-                      _.K*exp(-_.rf_r*_.T)*norm.cdf(-x1+_.ref.vol*sqrt(_.T)) + \
-                      _.ref.S0*exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*(norm.cdf(y)-norm.cdf(y1)) - \
-                      _.K*exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*(norm.cdf(y-_.ref.vol*sqrt(_.T)) -\
-                                                                      norm.cdf(y1-_.ref.vol*sqrt(_.T)))
+                pdi = -_.ref.S0*scipy.stats.norm.cdf(-x1)*numpy.exp(-_.ref.q*_.T) +\
+                      _.K*numpy.exp(-_.rf_r*_.T)*scipy.stats.norm.cdf(-x1+_.ref.vol*numpy.sqrt(_.T)) + \
+                      _.ref.S0*numpy.exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*(scipy.stats.norm.cdf(y)-scipy.stats.norm.cdf(y1)) - \
+                      _.K*numpy.exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*(scipy.stats.norm.cdf(y-_.ref.vol*numpy.sqrt(_.T)) -\
+                                                                      scipy.stats.norm.cdf(y1-_.ref.vol*numpy.sqrt(_.T)))
                 pdo = p - pdi
 
         if (_.right == 'call'):
@@ -291,10 +295,10 @@ class Barrier(OptionValuation):
         n = getattr(self.px_spec, 'nsteps', 3)
         _ = self.LT_specs(n)
 
-        S = self.ref.S0 * _['d'] ** arange(n, -1, -1) * _['u'] ** arange(0, n + 1)  # terminal stock prices
-        S2 = maximum(s*(S - self.H),0) # Find where crossed the barrier
-        S2 = minimum(S2,1)  # 0 when across the barrier, 1 otherwise
-        O = maximum(self.signCP * (S - self.K), 0)
+        S = self.ref.S0 * _['d'] ** numpy.arange(n, -1, -1) * _['u'] ** numpy.arange(0, n + 1)  # terminal stock prices
+        S2 = numpy.maximum(s*(S - self.H),0) # Find where crossed the barrier
+        S2 = numpy.numpy.minimum(S2,1)  # 0 when across the barrier, 1 otherwise
+        O = numpy.maximum(self.signCP * (S - self.K), 0)
         O = O * S2        # terminal option payouts
         # tree = ((S, O),)
         S_tree = (tuple([float(s) for s in S]),)  # use tuples of floats (instead of numpy.float)
@@ -304,8 +308,8 @@ class Barrier(OptionValuation):
         for i in range(n, 0, -1):
             O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
             S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
-            S2 = maximum(s*(S - self.H),0)
-            S2 = minimum(S2,1)
+            S2 = numpy.maximum(s*(S - self.H),0)
+            S2 = numpy.minimum(S2,1)
             O = O * S2
             S_tree = (tuple([float(s) for s in S]),) + S_tree
             O_tree = (tuple([float(o) for o in O]),) + O_tree
@@ -325,11 +329,11 @@ class Barrier(OptionValuation):
 
 
 
-        k = int(ceil(log(self.K/(self.ref.S0*_['d']**n))/log(_['u']/_['d'])))
-        h = int(floor(log(self.H/(self.ref.S0*_['d']**n))/log(_['u']/_['d'])))
-        l = list(map(lambda j: binom(n,n-2*h+j)*(_['p']**j)*((1-_['p'])**(n-j))* \
+        k = int(math.ceil(numpy.log(self.K/(self.ref.S0*_['d']**n))/numpy.log(_['u']/_['d'])))
+        h = int(math.floor(numpy.log(self.H/(self.ref.S0*_['d']**n))/numpy.log(_['u']/_['d'])))
+        l = list(map(lambda j: scipy.special.scipy.special.binom(n,n-2*h+j)*(_['p']**j)*((1-_['p'])**(n-j))* \
                                (self.ref.S0*(_['u']**j)*(_['d']**(n-j))-self.K),range(k,n+1)))
-        down_in_call = exp(-self.rf_r*self.T)*sum(l)
+        down_in_call = numpy.exp(-self.rf_r*self.T)*sum(l)
 
 
 
@@ -339,7 +343,7 @@ class Barrier(OptionValuation):
 
         elif self.dir == 'in' and self.right == 'call' and self.knock == 'up':
 
-            o = European(ref=self.ref, right='call', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
+            o = European.European(ref=self.ref, right='call', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
             call_px = o.calc_px(method='BS').px_spec.px   # save interim results to self.px_spec. Equivalent to repr(o)
             in_px = call_px - out_px
             self.px_spec.add(px=in_px, method='LT', sub_method='in out parity',
@@ -348,7 +352,7 @@ class Barrier(OptionValuation):
 
         elif self.dir == 'in' and self.right == 'put' and self.knock == 'up':
 
-            o = European(ref=self.ref, right='put', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
+            o = European.European(ref=self.ref, right='put', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
             put_px = o.calc_px(method='BS').px_spec.px   # save interim results to self.px_spec. Equivalent to repr(o)
             in_px = put_px - out_px
             self.px_spec.add(px=in_px, method='LT', sub_method='in out parity',
@@ -356,7 +360,7 @@ class Barrier(OptionValuation):
 
         elif self.dir == 'in' and self.right == 'put' and self.knock == 'down':
 
-            o = European(ref=self.ref, right='put', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
+            o = European.European(ref=self.ref, right='put', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
             put_px = o.calc_px(method='BS').px_spec.px   # save interim results to self.px_spec. Equivalent to repr(o)
             in_px = put_px - out_px
             self.px_spec.add(px=in_px, method='LT', sub_method='in out parity',
@@ -387,19 +391,19 @@ class Barrier(OptionValuation):
         K = _.K
         T = _.T
         rng_seed =  int(self.px_spec.rng_seed)
-        random.seed(rng_seed)
+        numpy.random.seed(rng_seed)
 
 
         def AssetPaths(spot, r , sigma , T , num_steps , num_sims):
-        #np.random.seed(seed)
+        #np.numpy.random.seed(seed)
 
-            sim_paths = zeros((num_sims , num_steps + 1))
+            sim_paths = numpy.zeros((num_sims , num_steps + 1))
             sim_paths[:,0] = spot
             dt = T / num_steps
             for i in range(int(num_sims)):
                 for j in range(1,int(num_steps +1) ):
-                    wt = random.randn()
-                    sim_paths[i,j] = sim_paths[i , j -1] * exp((r - 0.5 * sigma **2)  * dt + sigma * sqrt(dt) * wt)
+                    wt = numpy.random.randn()
+                    sim_paths[i,j] = sim_paths[i , j -1] * numpy.exp((r - 0.5 * sigma **2)  * dt + sigma * numpy.sqrt(dt) * wt)
 
             return(sim_paths)
 
@@ -419,22 +423,22 @@ class Barrier(OptionValuation):
             return(knocked)
 
         def knockedout_put(spot , Sb , K , r , T , sigma , NSteps, NRepl):
-            payoff = zeros((NRepl , 1))
+            payoff = numpy.zeros((NRepl , 1))
             for i in range(NRepl):
                 path = AssetPaths( spot , r , sigma , T , NSteps , 1)
                 knocked = barrierCrossing(spot , Sb , path)
                 if knocked == 0:
                     payoff[i] = max(0 , K - path[0,NSteps ])
-            return(norm.fit(exp(-r*T) * payoff)[0])
+            return(scipy.stats.norm.fit(numpy.exp(-r*T) * payoff)[0])
 
         def knockedin_put(spot , Sb , K , r , T , sigma , NSteps, NRepl):
-            payoff = zeros((NRepl , 1))
+            payoff = numpy.zeros((NRepl , 1))
             for i in range(NRepl):
                 path = AssetPaths( spot , r , sigma , T , NSteps , 1)
                 knocked = barrierCrossing(spot , Sb , path)
                 if knocked == 1:
                     payoff[i] = max(0 , K - path[0,NSteps])
-            return(norm.fit(exp(-r*T) * payoff)[0])
+            return(scipy.stats.norm.fit(numpy.exp(-r*T) * payoff)[0])
 
         def barrierCrossing(spot , sb , path):
             if sb < spot:
@@ -453,39 +457,39 @@ class Barrier(OptionValuation):
 
 
         def knockout_call(spot , Sb , K , r , T , sigma , NSteps , NRepl):
-            payoff = zeros((NRepl , 1))
+            payoff = numpy.zeros((NRepl , 1))
 
             for i in range(NRepl):
                 path = AssetPaths(spot , r , sigma , T , NSteps , 1 )
                 knocked = barrierCrossing(spot , Sb , path)
                 if knocked == 0:
                     payoff[i] = max(0 , path[0 , NSteps] - K)
-            return(norm.fit(exp(-r*T) * payoff)[0])
+            return(scipy.stats.norm.fit(numpy.exp(-r*T) * payoff)[0])
 
 
         def knockin_call(spot , Sb , K , r , T , sigma , NSteps , NRepl):
-            payoff = zeros((NRepl , 1))
+            payoff = numpy.zeros((NRepl , 1))
 
             for i in range(NRepl):
                 path = AssetPaths(spot , r , sigma , T , NSteps , 1 )
                 knocked = barrierCrossing(spot , Sb , path)
                 if knocked == 1:
                     payoff[i] = max(0 , path[0 , NSteps] - K)
-            return(norm.fit(exp(-r*T) * payoff)[0])
+            return(scipy.stats.norm.fit(numpy.exp(-r*T) * payoff)[0])
 
         px = 0
         if self.dir == 'out' and self.right == 'call' and self.knock == 'down':
             if spot > Sb:
                 px = knockout_call(spot , Sb , K , r , T , sigma , NSteps , NRepl)
             else:
-                o = European(ref=self.ref, right='call', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
+                o = European.European(ref=self.ref, right='call', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
                 px = o.calc_px(method='BS').px_spec.px
 
         elif self.dir == 'in' and self.right == 'call' and self.knock == 'down':
             if spot > Sb:
                 px = knockin_call(spot , Sb , K , r , T , sigma , NSteps , NRepl)
             else:
-                o = European(ref=self.ref, right='call', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
+                o = European.European(ref=self.ref, right='call', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
                 px = o.calc_px(method='BS').px_spec.px
                 # px = o.European(ref=s,right='call', K=K, T=T, rf_r=r)
 
@@ -493,42 +497,42 @@ class Barrier(OptionValuation):
             if spot > Sb:
                 px = knockedin_put(spot , Sb , K , r , T , sigma , NSteps , NRepl)
             else:
-                o = European(ref=self.ref, right='put', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
+                o = European.European(ref=self.ref, right='put', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
                 px = o.calc_px(method='BS').px_spec.px
 
         elif self.dir == 'out' and self.right == 'put' and self.knock == 'down':
             if spot > Sb:
                 px = knockedout_put(spot , Sb , K , r, T , sigma , NSteps , NRepl)
             else:
-                o = European(ref=self.ref, right='put', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
+                o = European.European(ref=self.ref, right='put', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
                 px = o.calc_px(method='BS').px_spec.px
 
         elif self.dir == 'out' and self.right == 'call' and self.knock == 'up':
             if spot < Sb:
                 px = knockout_call(spot , Sb , K , r , T , sigma , NSteps , NRepl)
             else:
-                o = European(ref=self.ref, right='call', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
+                o = European.European(ref=self.ref, right='call', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
                 px = o.calc_px(method='BS').px_spec.px
 
         elif self.dir == 'in' and self.right == 'call' and self.knock == 'up':
             if spot < Sb:
                 px = knockin_call(spot , Sb , K , r , T , sigma , NSteps , NRepl)
             else:
-                o = European(ref=self.ref, right='call', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
+                o = European.European(ref=self.ref, right='call', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
                 px = o.calc_px(method='BS').px_spec.px
 
         elif self.dir == 'in' and self.right == 'put' and self.knock == 'up':
             if spot < Sb:
                 px = knockedin_put(spot , Sb , K , r , T , sigma , NSteps , NRepl)
             else:
-                o = European(ref=self.ref, right='put', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
+                o = European.European(ref=self.ref, right='put', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
                 px = o.calc_px(method='BS').px_spec.px
 
         elif self.dir == 'out' and self.right == 'put' and self.knock == 'up':
             if spot < Sb:
                 px = knockedout_put(spot , Sb , K , r, T , sigma , NSteps , NRepl)
             else:
-                o = European(ref=self.ref, right='put', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
+                o = European.European(ref=self.ref, right='put', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
                 px = o.calc_px(method='BS').px_spec.px
 
         self.px_spec.add(px=float(px), sub_method='Monte Carlo Simulation')
