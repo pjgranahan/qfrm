@@ -152,7 +152,7 @@ class Bermudan(OptionValuation):
         >>> s = Stock(S0=11, vol=.4)
         >>> T = 1; tex = np.arange(0.1, T + 0.1, 0.1)
         >>> o = Bermudan(ref=s, right='put', K=15, T=T, rf_r=.01)
-        >>> o.pxMC(R=3, npaths=10, tex=tex)  # doctest: +ELLIPSIS
+        >>> o.pxMC(R=3, npaths=10, tex=tex, keep_hist=True)
         4.016206951
         >>> o.plot_MC()
 
@@ -275,7 +275,26 @@ class Bermudan(OptionValuation):
             payout = np.maximum(self.signCP * (stock_price - self.K), 0)
             return payout
 
-        def generate_stock_price_paths():
+        def delta_T_array():
+            """
+            Creates an array of time differences.
+
+            Returns
+            -------
+            delta_Ts : numpy.array
+                The array of time differences.
+            """
+            # Create an array of time differences
+            delta_Ts = np.zeros((len(self.tex)))
+
+            # Calculate the time difference between the next exercise date and the current exercise date
+            for tex_index in range(len(self.tex)):
+                previous_tex = 0 if tex_index == 0 else self.tex[tex_index - 1]
+                delta_Ts[tex_index] = self.tex[tex_index] - previous_tex
+
+            return delta_Ts
+
+        def generate_stock_price_paths(delta_Ts):
             """
             Generates a matrix (dimensions npaths * (tex + 1)) of stock price stock_price_paths.
             Each row represents a path, with each column representing a snapshot of each path at a given tex.
@@ -287,6 +306,11 @@ class Bermudan(OptionValuation):
             -----
             See http://nakamuraseminars.org/nsblog/2014/06/21/monte-carlo-in-python-an-example/ for more discussion
             on how this method can be further optimized.
+
+            Parameters
+            ----------
+            delta_Ts : numpy.array
+                    An array of time differences.
 
             Returns
             -------
@@ -304,20 +328,16 @@ class Bermudan(OptionValuation):
                 # Generate an array of uniform random samples, npaths in length
                 random_samples = np.random.normal(loc=0.0, scale=1.0, size=npaths)
 
-                # Calculate the time difference between the next exercise date and the current exercise date
-                previous_tex = 0 if tex_index == 0 else self.tex[tex_index - 1]
-                delta_T = self.tex[tex_index] - previous_tex
-
                 # Calculate the stock prices, using the standard propagation equation
                 drift = self.rf_r - self.ref.q
-                discount = np.exp(((drift - 0.5 * (self.ref.vol ** 2)) * delta_T) + (
-                    self.ref.vol * random_samples * np.sqrt(delta_T)))
+                discount = np.exp(((drift - 0.5 * (self.ref.vol ** 2)) * delta_Ts[tex_index]) + (
+                    self.ref.vol * random_samples * np.sqrt(delta_Ts[tex_index])))
                 paths[:, tex_index + 1] = paths[:, tex_index] * discount
 
             return np.matrix(paths)
 
         # Generate stock_price_paths
-        stock_price_paths = generate_stock_price_paths()
+        stock_price_paths = generate_stock_price_paths(delta_T_array())
 
         # Generate the matrix of payouts using the matrix of stock prices
         payouts = payout(stock_price_paths)
