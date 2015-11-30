@@ -1,6 +1,7 @@
-from OptionValuation import *
 from numpy.random import multivariate_normal, seed
 from numpy import sqrt, mean, matrix, transpose, diag, dot, repeat, exp
+from OptionValuation import *
+
 
 class Basket(OptionValuation):
     """ European option class.
