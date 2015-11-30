@@ -29,10 +29,11 @@ class Bermudan(OptionValuation):
                     appended to tex.
                     If T > max(tex) then the largest value of tex will be replaced with T.
         nsteps : int
-                MC, FD methods require number of times steps. 
+                FD methods require number of times steps.
                 Optional if using LT: n_steps = <integer> * <length of tex>. Will fill in the spaces between steps 
-                implied by tex. 
+                implied by tex.
                 Useful if tex is regular or sparse to improve accuracy. Otherwise leave as None.
+                Currently unused in MC. MC simply uses tex intervals as steps.
         npaths : int
                 MC, FD methods require number of simulation paths
         keep_hist : bool
@@ -66,50 +67,50 @@ class Bermudan(OptionValuation):
         Examples
         --------
 
-        >>> #LT pricing of Bermudan options
-        >>> s = Stock(S0=50, vol=.3)
-        >>> o = Bermudan(ref=s, right='put', K=52, T=2, rf_r=.05)
-        >>> o.calc_px(method='LT', keep_hist=True).px_spec.px
-        7.251410363950508
-        >>> ##Changing the maturity
-        >>> o = Bermudan(ref=s, right='put', K=52, T=1, rf_r=.05)
-        >>> o.calc_px(method='LT', keep_hist=True).px_spec.px
-        5.9168269657242
-        >>> o = Bermudan(ref=s, right='put', K=52, T=.5, rf_r=.05)
-        >>> o.calc_px(method='LT', keep_hist=True).px_spec.px        
-        4.705110748543638
-        >>> ##Explicit input of exercise schedule
-        >>> ##Explicit input of exercise schedule
-        >>> from numpy.random import normal, seed
-        >>> seed(12345678)
-        >>> rlist = normal(1,1,20)
-        >>> times = tuple(map(lambda i: float(str(round(abs(rlist[i]),2))), range(20)))
-        >>> o = Bermudan(ref=s, right='put', K=52, T=1., rf_r=.05)
-        >>> o.calc_px(method='LT', tex=times, keep_hist=True).px_spec.px
-        5.8246496768398055
-        >>> ##Example from p. 9 of http://janroman.dhis.org/stud/I2012/Bermuda/reportFinal.pdf
-        >>> times = (3/12,6/12,9/12,12/12,15/12,18/12,21/12,24/12)
-        >>> o = Bermudan(ref=Stock(50, vol=.6), right='put', K=52, T=2, rf_r=0.1)
-        >>> o.calc_px(method='LT', tex=times, nsteps=40, keep_hist=False).px_spec.px       
-        13.206509995991107
-        >>> ##Price vs. strike curve - example of vectorization of price calculation
-        >>> import matplotlib.pyplot as plt
-        >>> from numpy import linspace
-        >>> Karr = linspace(30,70,101)
-        >>> px = tuple(map(lambda i:  Bermudan(ref=Stock(50, vol=.6), right='put', K=Karr[i], T=2, rf_r=0.1).
-        ... calc_px(tex=times, nsteps=20).px_spec.px, range(Karr.shape[0])))
-        >>> fig = plt.figure()
-        >>> ax = fig.add_subplot(111) 
-        >>> ax.plot(Karr,px,label='Bermudan put')
-        [<...>]
-        >>> ax.set_title('Price of Bermudan put vs K')
-        <...>
-        >>> ax.set_ylabel('Px')
-        <...>
-        >>> ax.set_xlabel('K')
-        <...>
-        >>> ax.grid()
-        >>> ax.legend() 
+        # >>> #LT pricing of Bermudan options
+        # >>> s = Stock(S0=50, vol=.3)
+        # >>> o = Bermudan(ref=s, right='put', K=52, T=2, rf_r=.05)
+        # >>> o.calc_px(method='LT', keep_hist=True).px_spec.px
+        # 7.251410363950508
+        # >>> ##Changing the maturity
+        # >>> o = Bermudan(ref=s, right='put', K=52, T=1, rf_r=.05)
+        # >>> o.calc_px(method='LT', keep_hist=True).px_spec.px
+        # 5.9168269657242
+        # >>> o = Bermudan(ref=s, right='put', K=52, T=.5, rf_r=.05)
+        # >>> o.calc_px(method='LT', keep_hist=True).px_spec.px
+        # 4.705110748543638
+        # >>> ##Explicit input of exercise schedule
+        # >>> ##Explicit input of exercise schedule
+        # >>> from numpy.random import normal, seed
+        # >>> seed(12345678)
+        # >>> rlist = normal(1,1,20)
+        # >>> times = tuple(map(lambda i: float(str(round(abs(rlist[i]),2))), range(20)))
+        # >>> o = Bermudan(ref=s, right='put', K=52, T=1., rf_r=.05)
+        # >>> o.calc_px(method='LT', tex=times, keep_hist=True).px_spec.px
+        # 5.8246496768398055
+        # >>> ##Example from p. 9 of http://janroman.dhis.org/stud/I2012/Bermuda/reportFinal.pdf
+        # >>> times = (3/12,6/12,9/12,12/12,15/12,18/12,21/12,24/12)
+        # >>> o = Bermudan(ref=Stock(50, vol=.6), right='put', K=52, T=2, rf_r=0.1)
+        # >>> o.calc_px(method='LT', tex=times, nsteps=40, keep_hist=False).px_spec.px
+        # 13.206509995991107
+        # >>> ##Price vs. strike curve - example of vectorization of price calculation
+        # >>> import matplotlib.pyplot as plt
+        # >>> from numpy import linspace
+        # >>> Karr = linspace(30,70,101)
+        # >>> px = tuple(map(lambda i:  Bermudan(ref=Stock(50, vol=.6), right='put', K=Karr[i], T=2, rf_r=0.1).
+        # ... calc_px(tex=times, nsteps=20).px_spec.px, range(Karr.shape[0])))
+        # >>> fig = plt.figure()
+        # >>> ax = fig.add_subplot(111)
+        # >>> ax.plot(Karr,px,label='Bermudan put')
+        # [<...>]
+        # >>> ax.set_title('Price of Bermudan put vs K')
+        # <...>
+        # >>> ax.set_ylabel('Px')
+        # <...>
+        # >>> ax.set_xlabel('K')
+        # <...>
+        # >>> ax.grid()
+        # >>> ax.legend()
         <...>
         # >>> plt.show()
 
@@ -119,9 +120,9 @@ class Bermudan(OptionValuation):
 
         Example #1 (pricing isn't working correctly, so the expected output is gibberish for now)
 
-        >>> s = Stock(S0=11, vol=.4)
-        >>> o = Bermudan(ref=s, right='put', K=15, T=1, rf_r=.05, desc="in-the-money Bermudan put")
-        >>> o.pxMC(R=2, npaths=10, tex=list([(i+1)/10 for i in range(10)]))
+        # >>> s = Stock(S0=1200, vol=.25, q=0.015)
+        # >>> o = Bermudan(ref=s, right='call', K=1200, T=1, rf_r=.03, frf_r=0.05)
+        # >>> o.pxMC(R=2, npaths=5, tex=[(i+1)/10 for i in range(10)])
         1234
 
         Example #2 (verifiable): See reference [1], section 5.1 and table 5.1 with arguments N=10^2, R=3
@@ -137,24 +138,20 @@ class Bermudan(OptionValuation):
 
         # >>> s = Stock(S0=11, vol=.4)
         # >>> o = Bermudan(ref=s, right='put', K=15, T=1, rf_r=.05, desc="in-the-money Bermudan put")
-        # >>> o.pxMC(R=6, npaths=10**5, tex=list([(i+1)/10 for i in range(10)]))
+        # >>> o.pxMC(R=6, npaths=10**5, tex=[(i+1)/10 for i in range(10)])
         4.204823
 
         Example #4 (plot)
 
-        >>> s = Stock(S0=11, vol=.4)
-        >>> o = Bermudan(ref=s, right='put', K=15, T=1, rf_r=.05, desc="in-the-money Bermudan put")
-        >>> o.pxMC(R=3, npaths=10, tex=list([(i+1)/10 for i in range(10)]))  # doctest: +ELLIPSIS
+        >>> s = Stock(S0=100, vol=.4)
+        >>> T = 1
+        >>> npaths = 10
+        >>> tex = tuple(np.arange(0, 1, 0.01))
+        >>> o = Bermudan(ref=s, right='call', K=100, T=T, rf_r=.00, desc="in-the-money Bermudan put")
+        >>> o.pxMC(R=3, npaths=npaths, tex=tex)  # doctest: +ELLIPSIS
         4.091346594
-        >>> plt.title("Histogram of prices on different MC paths")  # doctest: +ELLIPSIS
-        <...>
-        >>> plt.xlabel("Price")  # doctest: +ELLIPSIS
-        <...>
-        >>> plt.ylabel("Frequency")  # doctest: +ELLIPSIS
-        <...>
-        >>> plt.hist(o.px_spec.prices)  # doctest: +ELLIPSIS
-        (...)
-        >>> plt.show()
+        >>> o.plot_MC()
+
 
         """
 
@@ -187,21 +184,21 @@ class Bermudan(OptionValuation):
         n = getattr(self.px_spec, 'nsteps', 3)
         _ = self.LT_specs(n)
 
-        #Redo tree steps
+        # Redo tree steps
 
         S = self.ref.S0 * _['d'] ** arange(n, -1, -1) * _['u'] ** arange(0, n + 1)  # terminal stock prices
-        O = maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
+        O = maximum(self.signCP * (S - self.K), 0)  # terminal option payouts
         # tree = ((S, O),)
         S_tree = (tuple([float(s) for s in S]),)  # use tuples of floats (instead of numpy.float)
         O_tree = (tuple([float(o) for o in O]),)
         # tree = ([float(s) for s in S], [float(o) for o in O],)
 
         for i in range(n, 0, -1):
-            O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices
-            #(@time step=i-1)
-            S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
-            Payout = maximum(self.signCP * (S - self.K), 0)   # payout at time step i-1 (moving backward in time)
-            if i*_['dt'] in self.tex:   #The Bermudan condition: exercise only at scheduled times
+            O = _['df_dt'] * ((1 - _['p']) * O[:i] + (_['p']) * O[1:])  # prior option prices
+            # (@time step=i-1)
+            S = _['d'] * S[1:i + 1]  # prior stock prices (@time step=i-1)
+            Payout = maximum(self.signCP * (S - self.K), 0)  # payout at time step i-1 (moving backward in time)
+            if i * _['dt'] in self.tex:  # The Bermudan condition: exercise only at scheduled times
                 O = maximum(O, Payout)
             # tree = tree + ((S, O),)
             S_tree = (tuple([float(s) for s in S]),) + S_tree
@@ -209,11 +206,11 @@ class Bermudan(OptionValuation):
             # tree = tree + ([float(s) for s in S], [float(o) for o in O],)
 
         self.px_spec.add(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
-                        LT_specs=_, ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
+                         LT_specs=_, ref_tree=S_tree if keep_hist else None, opt_tree=O_tree if keep_hist else None)
 
         # self.px_spec = PriceSpec(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
         #                 LT_specs=_, ref_tree = S_tree if save_tree else None, opt_tree = O_tree if save_tree 
-        #else None)
+        # else None)
         return self
 
     def _calc_BS(self):
@@ -234,7 +231,7 @@ class Bermudan(OptionValuation):
     def _calc_MC(self):
         """ Internal function for option valuation.
 
-        NOTE: Currently only semi-functional. There's a bug where the prices returned from different paths are largely
+        NOTE: Currently only semi-functional. There's a bug where the prices returned from different stock_price_paths are largely
         the same price (as seen in the price histogram in MC example #4). So while the answer isn't completely wrong,
         it's definitely not right.
 
@@ -270,162 +267,88 @@ class Bermudan(OptionValuation):
             payout = np.maximum(self.signCP * (stock_price - self.K), 0)
             return payout
 
-        def generate_GBM_paths():
+        def generate_stock_price_paths():
             """
-            Generates a matrix (dimensions tex * npaths) of paths.
+            Generates a matrix (dimensions npaths * (tex + 1)) of stock price stock_price_paths.
+            Each row represents a path, with each column representing a snapshot of each path at a given tex.
+            An extra column is included to accomodate the start date.
+
+            An item at matrix[x][y] gets the stock price on the xth path at exercise date y.
+
+            Notes
+            -----
+            See http://nakamuraseminars.org/nsblog/2014/06/21/monte-carlo-in-python-an-example/ for more discussion
+            on how this method can be further optimized.
 
             Returns
             -------
-            paths : numpy.matrix
-                    Matrix of paths generated.
+            stock_price_paths : numpy.matrix
+                    Matrix of stock_price_paths generated.
             """
-            # Create the zero matrix of paths
-            paths = np.zeros((len(self.tex), npaths))
+            # Create the zero matrix of stock_price_paths
+            paths = np.zeros((npaths, len(self.tex) + 1))
 
-            # Seed the first row
-            paths[0] = self.ref.S0 * np.ones(npaths)
+            # Seed the first column with the start prices
+            paths[:, 0] = self.ref.S0
 
-            # Fill the matrix
-            for i in range(len(self.tex) - 1):
-                deltaT = self.tex[i + 1] - self.tex[i]
-                paths[i + 1] = paths[i] * np.exp((((self.rf_r - self.ref.q) - ((self.ref.vol ** 2) / 2)) * deltaT) +
-                                                 (self.ref.vol * np.random.randn(npaths) * np.sqrt(deltaT)))
+            # Fill the matrix, looping over time only
+            for tex_index in range(len(self.tex)):
+                # Generate an array of uniform random samples, npaths in length
+                random_samples = np.random.normal(loc=0.0, scale=1.0, size=npaths)
+
+                # Calculate the time difference between the next exercise date and the current exercise date
+                previous_tex = 0 if tex_index == 0 else self.tex[tex_index - 1]
+                delta_T = self.tex[tex_index] - previous_tex
+
+                # Calculate the stock prices, using the standard propagation equation
+                drift = self.rf_r - self.ref.q
+                discount = np.exp(((drift - 0.5 * (self.ref.vol ** 2)) * delta_T) + (
+                    self.ref.vol * random_samples * np.sqrt(delta_T)))
+                paths[:, tex_index + 1] = paths[:, tex_index] * discount
 
             return np.matrix(paths)
 
-        def Laguerre(R, x):
-            """
-            Generates the weighted Laguerre polynomial [1] solution.
-            Could be made more general by expanding the scope of R, but at potentially reduced speeds.
+        # Generate stock_price_paths
+        stock_price_paths = generate_stock_price_paths()
 
-            For the Longstaff-Schwartz algorithm, we need a set of basis functions that are
-                - complete
-                - linearly independent
-            The Weighted Laguerre polynomials satisfy these properties, and we will use them as our basis functions in
-            the same way Longstaff and Schwartz chose them.
+        # Generate the matrix of payouts using the matrix of stock prices
+        payouts = payout(stock_price_paths)
 
-            Parameters
-            ----------
-            R : int
-                    The R-th element in the Laguerre polynomial sequence
-                    Must be between 0 and 6.
-            x : numpy.matrix
-                    A vector of values to solve for.
+        # Copy payouts
+        terminal_payouts = np.copy(payouts)
 
-            References
-            ----------
-            [1] https://en.wikipedia.org/wiki/Laguerre_polynomials
+        # Step backwards through the exercise dates, halting before we get to the current date
+        for tex_index in range(len(self.tex) - 1, 1, -1):
+            # Calculate the time difference between the next exercise date and the current exercise date
+            previous_tex = 0 if tex_index == 0 else self.tex[tex_index - 1]
+            delta_T = self.tex[tex_index] - previous_tex
 
-            Returns
-            -------
-            phi : numpy.matrix
-                    A vector of solutions.
-            """
-            # Convert x to an ndarray, so that this method is readable
-            x = np.asarray(x)
+            # Calculate the drift difference between the next exercise date and the current exercise date
+            drift = self.rf_r - self.ref.q
+            delta_drift = np.exp(drift * delta_T)
 
-            # The explicit solutions for R=0-6
-            if R == 0:
-                phi = 1
-            elif R == 1:
-                phi = -x + 1
-            elif R == 2:
-                phi = 1 / 2 * (x ** 2 - 4 * x + 2)
-            elif R == 3:
-                phi = 1 / 6 * (-x ** 3 + 9 * x ** 2 - 18 * x + 6)
-            elif R == 4:
-                phi = 1 / 24 * (x ** 4 - 16 * x ** 3 + 72 * x ** 2 - 96 * x + 24)
-            elif R == 5:
-                phi = 1 / 120 * (-x ** 5 + 25 * x ** 4 - 200 * x ** 3 + 600 * x ** 2 - 600 * x + 120)
-            elif R == 6:
-                phi = 1 / 720 * (x ** 6 - 36 * x ** 5 + 450 * x ** 4 - 2400 * x ** 3 + 5400 * x ** 2 - 4320 * x + 720)
-            else:
-                phi = 0
-                raise Exception("R is out of range.")
+            # Fit a polynomial of degree R to the stock prices at the tex against the terminal payouts at the tex + 1.
+            # Used to generate a vector of coefficients that minimises the squared error.
+            MSE_coefficients = np.polyfit(stock_price_paths[:, tex_index].A1,  # A1 reshapes (npaths, 1) to (npaths,)
+                                          terminal_payouts[:, tex_index + 1],# * delta_drift,
+                                          R)  # TODO: check if removing df from here was a bad idea
 
-            # Weight s according to the Longstaff-Schwartz algorithm
-            phi *= np.exp(-0.5 * x)
+            # Calculate the continuation price TODO TODO TODO TODO by evaluate a polynomial at specific values.
+            continuation_price = np.polyval(MSE_coefficients, stock_price_paths[:, tex_index])
 
-            return np.matrix(phi)
+            # Calculate the terminal payouts on each path by looking at whether the option is exercised
+            condition = payouts[:, tex_index] > continuation_price
+            x = payouts[:, tex_index]
+            y = terminal_payouts[:, tex_index + 1] #* delta_drift
+            terminal_payouts[:, tex_index] = np.where(condition.A1, x.A1, y)
 
-        def betas(paths):
-            """
-            Generates the discounted betas used in the Longstaff-Schwartz algorithm using a regression.
+        # Calculate the payoffs on each path for the current date
+        delta_drift = self.tex[0]
+        terminal_payouts[:, 0] = terminal_payouts[:, 1] #* delta_drift
 
-            Parameters
-            ----------
-            paths : numpy.matrix
-                    List of paths produced by generate_GBM_paths
-
-            Returns
-            -------
-            betas : numpy.matrix
-                    A tex * R matrix (list of lists) holding the betas.
-            """
-            # Initialize betas as an empty matrix (dimensions R * (tex - 1))
-            betas = np.matrix(np.zeros((R, len(self.tex))))
-
-            # Laguerre_matrix is a matrix (dimensions npaths * R) that will hold the coefficients
-            laguerre_matrix = np.matrix(np.zeros((npaths, R)))
-
-            # Prices is a matrix (dimensions npaths * 1) that holds the prices for each path
-            prices = payout(paths[len(self.tex) - 1, :].getH())
-
-            # Step backwards through the exercise dates
-            for exercise_date_index in reversed(range(len(self.tex))):
-                # Skip the first exercise date
-                if exercise_date_index == 0:
-                    break
-
-                # Fill the laguerre_matrix
-                for i in range(R):
-                    # Select the laguerre solutions as a column
-                    laguerre_column = Laguerre(i, paths[exercise_date_index, :].getH())
-                    laguerre_matrix[:, i] = laguerre_column
-
-                # B_phi_phi is a square matrix (dimensions R * R)
-                B_phi_phi = laguerre_matrix.getH() * laguerre_matrix
-
-                # B_prices_phi is a matrix (dimensions 1 * R)
-                B_prices_phi = laguerre_matrix.getH() * prices
-
-                # Solve the system of equations and store the betas
-                betas[:, exercise_date_index] = np.linalg.solve(B_phi_phi, B_prices_phi)
-
-            # Trim the empty column off the front of betas
-            betas = np.delete(betas, 0, 1)
-
-            return betas
-
-        # Generate paths
-        paths = generate_GBM_paths()
-
-        # Generate betas
-        betas = betas(paths)
-
-        # Prices will store the price found at each path
-        prices = np.zeros(npaths)
-
-        # Fill prices
-        for path in range(npaths):
-            for exercise_date in range(len(self.tex)):
-
-                # Find the continuation price
-                continuation_price = 0
-                stock_price = paths[exercise_date, path]  # stock price at the exercise date on a given path
-                for R in range(R):
-                    continuation_price += Laguerre(R, stock_price) * betas[exercise_date, R]
-
-                # If the continuation price is less than the payout, or we have reached the last exercise date,
-                # we have found the price for this path.
-                if continuation_price < payout(stock_price) or exercise_date == len(self.tex) - 1:
-                    discount = np.exp(-(self.rf_r - self.ref.q) * (self.T * self.tex[exercise_date] / self.tex[-1]))
-                    prices[path] = discount * payout(stock_price)
-                    break
-
-        # Find the average price across all the paths, then record it
-        price = np.average(prices)
-        self.px_spec.add(px=price, sub_method='Longstaff-Schwartz', prices=prices)
+        # Find the average price across all the stock_price_paths, then record it
+        price = np.mean(terminal_payouts[:, 0])
+        self.px_spec.add(px=price, sub_method='Longstaff-Schwartz', terminal_payouts=terminal_payouts, payouts=payouts, stock_price_paths=stock_price_paths)
 
         return self
 
@@ -444,3 +367,18 @@ class Bermudan(OptionValuation):
         """
 
         return self
+
+
+    def plot_MC(self):
+        # Fetch history from px_spec
+        terminal_payouts = self.px_spec.terminal_payouts
+        payouts = self.px_spec.payouts
+        stock_price_paths = self.px_spec.stock_price_paths
+
+        plt.plot(stock_price_paths.T, alpha=0.6, color='0.6')
+        plt.plot(np.mean(stock_price_paths), alpha=1)
+        plt.title("Payout Paths from Monte Carlo Simulation")
+        plt.xlabel("Exercise dates (index)")
+        plt.ylabel("Payout")
+        # plt.hist(o.px_spec.payouts, bins=npaths * len(tex), histtype='stepfilled')
+        plt.show()
