@@ -4,6 +4,7 @@ import numpy.random
 import numpy as np
 from OptionValuation import *
 
+
 class Spread(OptionValuation):
     """ Spread option class.
 

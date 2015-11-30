@@ -1,6 +1,7 @@
-from OptionValuation import *
 import numpy.random
 import numpy as np
+from OptionValuation import *
+
 
 class Basket(OptionValuation):
     """ European option class.

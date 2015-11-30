@@ -5,6 +5,7 @@ import math
 
 from OptionValuation import *
 
+
 class Lookback(OptionValuation):
     """ Lookback option class.
 

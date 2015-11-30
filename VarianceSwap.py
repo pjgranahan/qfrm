@@ -1,6 +1,7 @@
 from scipy.stats import norm
 from numpy import sqrt, exp, log, asarray, zeros
-from qfrm import *
+from OptionValuation import *
+
 
 class VarianceSwap(OptionValuation):
     """ VarianceSwap option class.

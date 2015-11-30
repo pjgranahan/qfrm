@@ -1,6 +1,7 @@
 import numpy as np
 from OptionValuation import *
 
+
 class PerpetualAmerican(OptionValuation):
     """ perpetual American option class.
 
