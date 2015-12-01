@@ -78,15 +78,15 @@ class VarianceSwap(OptionValuation):
         Pricing by BSM
         >>> s = Stock(355)
         >>> o = VarianceSwap(ref=s, rf_r=0.03, T=1.)
-        >>> o.pxBS() # doctest: +ELLIPSIS
-        -489162.761...
+        >>> o.pxBS()
+        -489162.76141834602
         
         >>> ##Changing the stock price
-        >>> VarianceSwap(ref=Stock(310), rf_r=0.03, T=1.).pxBS() # doctest: +ELLIPSIS
-        -504216.712...
+        >>> VarianceSwap(ref=Stock(310), rf_r=0.03, T=1.).pxBS()
+        -504216.71298424702
         
-        >>> VarianceSwap(ref=Stock(500), rf_r=0.03, T=1.).pxBS() # doctest: +ELLIPSIS
-        -1404368.57...
+        >>> VarianceSwap(ref=Stock(500), rf_r=0.03, T=1.).pxBS()
+        -1404368.576835108
         
         Explicit input parameters
         >>> VarianceSwap(ref=Stock(290), rf_r=0.03, T=1.).pxBS(K=(280.,300.,320.,340.,360.,380.,400.),
@@ -107,17 +107,15 @@ class VarianceSwap(OptionValuation):
         >>> fig = plt.figure()
         >>> ax = fig.add_subplot(111)
         >>> ax.plot(s2K,px,label='Variance Swap') # doctest: +ELLIPSIS
-        [<...>]
-        >>> ax.set_title('Price of Variance Swap vs Vol_K for L_Var = '+str(o.L_Var/1000)+'M') # doctest: +ELLIPSIS
-        <...>
-        >>> ax.set_ylabel('Px [x000]') # doctest: +ELLIPSIS
-        <...>
-        >>> ax.set_xlabel('volatility strike') # doctest: +ELLIPSIS
-        <...>
-        >>> ax.grid()
-        >>> ax.legend() # doctest: +ELLIPSIS
-        <...>
-        >>> plt.show()
+        [<matplotlib.lines.Line2D object at 0x...>]
+        >>> ax.set_title('Price of Variance Swap vs Vol_K for L_Var = '+str(o.L_Var/1000)+'M');  # doctest: +ELLIPSIS
+        <matplotlib.text.Text object at 0x0...>
+        >>> ax.set_ylabel('Px [x000]');           # doctest: +ELLIPSIS
+        <matplotlib.text.Text object at 0x0...>
+        >>> ax.set_xlabel('volatility strike');   # doctest: +ELLIPSIS
+        <matplotlib.text.Text object at 0x0...>
+        >>> ax.grid(); ax.legend(); plt.show();   # doctest: +ELLIPSIS
+        <matplotlib.legend.Legend object at 0x...>
 
         :Authors:
             Andy Liao <Andy.Liao@rice.edu>
