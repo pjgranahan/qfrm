@@ -150,7 +150,8 @@ class ForwardStart(OptionValuation):
         >>> s = Stock(S0=50, vol=.15,q=0.05)
         >>> o=ForwardStart(ref=s, K=50, right='call', T=1, rf_r=.01, \
                desc='example from page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf')
-        >>> o.pxFD(nsteps=4,T_s=0.5)
+        >>> o.pxFD(nsteps=4,T_s=0.5) #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        2.335714...
 
         :Authors:
             Runmin Zhang <Runmin.Zhang@rice.edu>
@@ -328,30 +329,46 @@ class ForwardStart(OptionValuation):
         S_tree = (tuple([float(s) for s in S]),)  # use tuples of floats (instead of numpy.float)
         O_tree = (tuple([float(o) for o in O]),)
 
+        # Calculate a, b and c parameters
         a = [1 / (1 + _.rf_r * dt) * (-0.5 * (_.rf_r - _.ref.q) * j * dt + \
                                       0.5 * (_.ref.vol**2) * (j**2) * dt) for j in range(1, len(O)-1)]
         b = [1 / (1 + _.rf_r * dt) * (1 - (_.ref.vol**2) * (j**2) * dt) for j in range(1, len(O)-1)]
         c = [1 / (1 + _.rf_r * dt) * (0.5 * (_.rf_r - _.ref.q) * j * dt + 0.5 * (_.ref.vol**2) * (j**2) * dt)\
              for j in range(1, len(O)-1)]
-        print(S)
 
-        for i in range(1, int(n)+1):
+        # Backward calculate each node of payoff
+        for i in range(n, 0, -1):
             O_a = O[:-2]
             O_b = O[1:-1]
             O_c = O[2:]
 
+            # original payoff
             O = a * O_a + b * O_b + c * O_c
             O_new = np.insert(O, min_O, max_O)
             O_new = np.append(O_new, 0)
             O = np.maximum(O_new, Payout)
 
+            # Left number until duration
+            left = n - i + 1
+            # Left time until duration
+            tleft = left * _.T / n
+
+            # d1 and d2 from BS model
+            d1 = (0 + (self.rf_r + self.ref.vol ** 2 / 2) * tleft) / (self.ref.vol * np.sqrt(tleft))
+            d2 = d1 - self.ref.vol * np.sqrt(tleft)
+            # payoff of forward start
+            F_S = _.signCP * S / np.exp(_.ref.q * tleft) * scipy.stats.norm.cdf(self.signCP * d1) - \
+                    _.signCP * S / np.exp(_.rf_r * tleft) * scipy.stats.norm.cdf(self.signCP * d2) + \
+                    _.signCP * (S - _.K) / np.exp(self.rf_r * tleft)
             #S_tree = (tuple([float(s) for s in S]),) + S_tree
-            print(O)
+            # final payoff is the maximum of shout or not shout
+            Payout = np.maximum(F_S, 0)
+            O = np.maximum(O, Payout)
+ #           print(O)
             O_tree = (tuple([float(o) for o in O]),) + O_tree
 
-
-        out = O_tree[0][0]
-        print(out)
+        out = O_tree[0][4]
+#        print(out)
 
         self.px_spec.add(px=float(out), method='FD', sub_method='Finite difference; Hull Ch.13',
                         FD_specs=_, ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
