@@ -1,16 +1,18 @@
 import math
 import numpy as np
-from scipy import stats
+import scipy.linalg as la
+import scipy.stats as st
 import matplotlib.pyplot as plt
-
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+from OptionValuation import *
 
 
 class Chooser(OptionValuation):
     """ Chooser option class.
 
     Inherits all methods and properties of OptionValuation class.
+    An option contract that allows the holder to decide whether it is a call or put prior to
+    the expiration date. Chooser options usually have the same exercise price and expiration
+    date regardless of what decision the holder ultimately makes.
     """
 
     def calc_px(self, tau=None, method='BS', nsteps=None, npaths=None, keep_hist=False):
@@ -40,9 +42,11 @@ class Chooser(OptionValuation):
 
         Notes
         --------------------------------------
-        An option contract that allows the holder to decide whether it is a call or put prior to
-        the expiration date. Chooser options usually have the same exercise price and expiration
-        date regardless of what decision the holder ultimately makes.
+        FD Notes
+        --------------------------------------
+        Mathworks Chooser BSM result gives a price of 8.9308 for the first FD example, below.
+        See: <http://www.mathworks.com/help/fininst/chooserbybls.html>. The difference between the 
+        BSM result and the FD result is a discretization error.
 
         Examples
         --------------------------------------
@@ -87,6 +91,53 @@ class Chooser(OptionValuation):
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
+        
+        FD Examples
+        ---------------------------------------------
+        
+        First example: see referenced result for comparison
+        >>> s = Stock(S0=50, vol=0.2, q=0.05)
+        >>> o = Chooser(ref=s, right='put', K=60, T=6/12, rf_r=.1, desc= 'Mathworks example')
+        >>> o.pxFD(tau=3/12,nsteps=100,npaths=100) # doctest: +ELLIPSIS
+        8.94395152...
+        
+        Second example: coarsen the grid to increase deviation from the BSM price
+        >>> s = Stock(S0=50, vol=0.2, q=0.05)
+        >>> o = Chooser(ref=s, right='put', K=60, T=6/12, rf_r=.1, desc= 'Mathworks example')
+        >>> o.pxFD(tau=3/12,nsteps=10,npaths=10) # doctest: +ELLIPSIS
+        9.49812976...
+        
+        Third example: Change the maturity
+        >>> s = Stock(S0=50, vol=0.2, q=0.05)
+        >>> o = Chooser(ref=s, right='put', K=60, T=12/12, rf_r=.1, desc= 'Mathworks example')
+        >>> o.pxFD(tau=3/12,nsteps=100,npaths=100) # doctest: +ELLIPSIS
+        8.49747834...
+        
+        Fourth example: make choice at t=0: price collapses to a European call.
+        >>> s = Stock(S0=50, vol=0.2, q=0.05)
+        >>> o = Chooser(ref=s, right='put', K=60, T=12/12, rf_r=.1, desc= 'Mathworks example')
+        >>> o.pxFD(tau=0/12,nsteps=100,npaths=100) # doctest: +ELLIPSIS
+        8.27396786...
+        
+        Vectorization example with plot: exploration of tau-space.
+        >>> tarr = np.linspace(0,12/12,11)
+        >>> px = tuple(map(lambda i: Chooser(ref=s, right='put', K=60, T=12/12, rf_r=.1).pxFD(tau=tarr[i],nsteps=100,
+        ... npaths=100), range(tarr.shape[0])))
+        >>> fig = plt.figure()
+        >>> ax = fig.add_subplot(111) 
+        >>> ax.plot(tarr,px,label='Chooser') # doctest: +ELLIPSIS
+        [<...>]
+        >>> ax.set_title('Price of Chooser vs tau') # doctest: +ELLIPSIS
+        <...>
+        >>> ax.set_ylabel('Px') # doctest: +ELLIPSIS
+        <...>
+        >>> ax.set_xlabel('tau') # doctest: +ELLIPSIS 
+        <...>
+        >>> ax.grid()
+        >>> ax.legend() # doctest: +ELLIPSIS
+        <...>
+        >>> plt.show()
+        
 
         See Also
         -----------------------------------------------
@@ -107,6 +158,7 @@ class Chooser(OptionValuation):
         :Authors:
             Thawda Aung
             Yen-fei Chen <yensfly@gmail.com>
+            Andy Liao <Andy.Liao@rice.edu>
 
         """
         self.tau = float(tau)
@@ -192,6 +244,79 @@ class Chooser(OptionValuation):
         See ``calc_px()`` for complete documentation.
 
         :Authors:
-            Oleg Melnikov <xisreal@gmail.com>
+            Andy Liao <Andy.Liao@rice.edu>
         """
+
+        #List all the parameters used in calculation
+        _ = self
+        
+        S0 = _.ref.S0
+        vol = _.ref.vol
+        q = _.ref.q
+        r = _.rf_r
+        K = _.K
+        tau = _.tau
+        T = _.T
+        N = _.px_spec.nsteps
+        M = _.px_spec.npaths
+        
+        #Grid parameters
+        Smax = 2*K
+        dt = T/float(N)
+        dS = Smax/float(M)
+        ival = np.arange(M)
+        jval = np.arange(N)
+        
+        #Set up grid
+        grid = np.zeros(shape=(M+1,N+1))
+        bcs = np.linspace(0,Smax,M+1)
+        
+        #Calculation as given in Hull 9e. section 26.8, page 604.
+        #We use the Crank-Nicholson method to:        
+        #Compute the price of a European call with maturity T and strike K
+        #Set up BC's
+        grid[:,-1] = np.maximum(bcs-K,0)
+        grid[-1,:-1] = (Smax-K)*np.exp(-r*dt*(N-jval))
+        #Set up coefficients
+        alpha = .25*dt*(vol**2*ival**2-(r-q)*ival)
+        beta = -dt*.5*(vol**2*ival**2+r)
+        gamma = .25*dt*(vol**2*ival**2+(r-q)*ival)
+        M1 = -np.diag(alpha[2:M],-1)+np.diag(1-beta[1:M])-np.diag(gamma[1:M-1],1)
+        M2 = np.diag(alpha[2:M],-1)+np.diag(1+beta[1:M])+np.diag(gamma[1:M-1],1)
+        #Populate grid
+        P, L, U = la.lu(M1)
+        for j in reversed(range(N)):
+            x1 = la.solve(L, np.dot(M2,grid[1:M,j+1]))
+            x2 = la.solve(U, x1)
+            grid[1:M,j] = x2
+        cpx = np.interp(S0,bcs,grid[:,0])
+        
+        #Compute the price of a European put with maturity tau and strike K*exp(-(r-q)*(T-tau))
+        grid = np.zeros(shape=(M+1,N+1))
+        Kau = K*np.exp(-r*(T-tau))
+        S1 = S0*np.exp(-q*(T-tau))
+        Smau = 2*Kau
+        dt = tau/float(N)
+        dS = Smau/float(M)
+        bcs = np.linspace(0,Smau,M+1)
+        grid[:,-1] = np.maximum(Kau-bcs,0)
+        grid[-1,:-1] = (Kau-Smau)*np.exp(-r*dt*(N-jval))
+        #Set up coefficients
+        alpha = .25*dt*(vol**2*ival**2-(r-q)*ival)
+        beta = -dt*.5*(vol**2*ival**2+r)
+        gamma = .25*dt*(vol**2*ival**2+(r-q)*ival)
+        M1 = -np.diag(alpha[2:M],-1)+np.diag(1-beta[1:M])-np.diag(gamma[1:M-1],1)
+        M2 = np.diag(alpha[2:M],-1)+np.diag(1+beta[1:M])+np.diag(gamma[1:M-1],1)
+        #Populate grid
+        P, L, U = la.lu(M1)
+        for j in reversed(range(N)):
+            x1 = la.solve(L, np.dot(M2,grid[1:M,j+1]))
+            x2 = la.solve(U, x1)
+            grid[1:M,j] = x2
+        ppx = np.interp(S1,bcs,grid[:,0])        
+
+        #Sum of above call and put prices is the Chooser price.        
+        _.px_spec.add(px=cpx+ppx)
+
         return self
+
