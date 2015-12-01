@@ -15,44 +15,53 @@ class Chooser(OptionValuation):
     date regardless of what decision the holder ultimately makes.
     """
 
-    def calc_px(self, tau=None, method='BS', nsteps=None, npaths=None, keep_hist=False):
+    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, tau=None):
         """ Wrapper function that calls appropriate valuation method.
 
-        User passes parameters to calc_px, which saves them to local PriceSpec object
-        and calls specific pricing function (_calc_BS,...).
-        This makes significantly less docstrings to write, since user is not interfacing pricing functions,
-        but a wrapper function calc_px().
+        All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
+        specific pricing method (``_calc_BS()``,...) is called.
+        An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
+        is calculating price via a shorter method wrapper ``.pxBS(...)``.
+        The same works for all methods (BS, LT, MC, FD).
 
         Parameters
-        ------------------------------------------------
-        tau : float
-                Time to choose whether this option is a call or put.
+        ----------
         method : str
-                Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
+                Required. Indicates a valuation method to be used:
+                ``BS``: Black-Scholes Merton calculation
+                ``LT``: Lattice tree (such as binary tree)
+                ``MC``: Monte Carlo simulation methods
+                ``FD``: finite differencing methods
         nsteps : int
                 LT, MC, FD methods require number of times steps
         npaths : int
                 MC, FD methods require number of simulation paths
         keep_hist : bool
                 If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
+        tau : float
+                Time to choose whether this option is a call or put.
 
         Returns
-        -------------------------------------
+        -------
         self : Chooser
+            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
+
 
         Notes
-        --------------------------------------
-        FD Notes
-        --------------------------------------
+        ------
+
+
+        **FD Notes**
+
         Mathworks Chooser BSM result gives a price of 8.9308 for the first FD example, below.
         See: <http://www.mathworks.com/help/fininst/chooserbybls.html>. The difference between the 
         BSM result and the FD result is a discretization error.
 
         Examples
-        --------------------------------------
+        --------
 
-        BS Examples
-        --------------------------------------
+        **BS Examples**
+
         EXOTIC OPTIONS: A CHOOSER OPTION AND ITS PRICING by Raimonda Martinkkute-Kauliene (Dec 2012)
         https://www.dropbox.com/s/r9lvi0uzdehwlm4/101-330-1-PB%20%284%29.pdf?dl=0
         >>> s = Stock(S0=50, vol=0.2, q=0.05)
@@ -70,8 +79,8 @@ class Chooser(OptionValuation):
         >>> o.pxBS(tau=3/12)
         5.7775783438734258
 
-        LT Examples
-        ---------------------------------------------
+        **LT Examples**
+
         >>> s = Stock(S0=50, vol=0.2, q=0.05)
         >>> o = Chooser(ref=s, right='put', K=50, T=1, rf_r=.1, desc= 'Exotic options paper page 297 Table 2 time 0.5')
         >>> o.pxLT(tau=3/12, nsteps=2)
@@ -92,9 +101,8 @@ class Chooser(OptionValuation):
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
         
-        FD Examples
-        ---------------------------------------------
-        
+        **FD Examples**
+
         First example: see referenced result for comparison
         >>> s = Stock(S0=50, vol=0.2, q=0.05)
         >>> o = Chooser(ref=s, right='put', K=60, T=6/12, rf_r=.1, desc= 'Mathworks example')
@@ -140,7 +148,8 @@ class Chooser(OptionValuation):
         
 
         See Also
-        -----------------------------------------------
+        ---------
+
         Hull, John C.,Options, Futures and Other Derivatives, 9ed, 2014. Prentice Hall. ISBN 978-0-13-345631-8.
         http://www-2.rotman.utoronto.ca/~hull/ofod/index.html
 
@@ -156,8 +165,8 @@ class Chooser(OptionValuation):
         Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
 
         :Authors:
-            Thawda Aung
-            Yen-fei Chen <yensfly@gmail.com>
+            Thawda Aung,
+            Yen-fei Chen <yensfly@gmail.com>,
             Andy Liao <Andy.Liao@rice.edu>
 
         """

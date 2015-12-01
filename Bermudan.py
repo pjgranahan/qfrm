@@ -16,15 +16,20 @@ class Bermudan(OptionValuation):
                 nsteps=None, npaths=None, keep_hist=False, R=3):
         """ Wrapper function that calls appropriate valuation method.
 
-        User passes parameters to calc_px, which saves them to local PriceSpec object
-        and calls specific pricing function (_calc_BS,...).
-        This makes significantly less docstrings to write, since user is not interfacing pricing functions,
-        but a wrapper function calc_px().
+        All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
+        specific pricing method (``_calc_BS()``,...) is called.
+        An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
+        is calculating price via a shorter method wrapper ``.pxBS(...)``.
+        The same works for all methods (BS, LT, MC, FD).
 
         Parameters
         ----------
         method : str
-                Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
+                Required. Indicates a valuation method to be used:
+                ``BS``: Black-Scholes Merton calculation
+                ``LT``: Lattice tree (such as binary tree)
+                ``MC``: Monte Carlo simulation methods
+                ``FD``: finite differencing methods
         tex : list
                 Required. Must be a vector (tuple; list; array, ...) of times to exercisability. 
                 For Bermudan, assume that exercisability is for discrete tex times only.
@@ -49,37 +54,46 @@ class Bermudan(OptionValuation):
         Returns
         -------
         self : Bermudan
+            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
+
 
         Notes
         -----
+
+
         LT Notes
-        --------
-        Referenced example is from p. 9 of http://janroman.dhis.org/stud/I2012/Bermuda/reportFinal.pdf
-        
+
+        Referenced example is from p.9 of
+        `Bermudan Option Pricing using Binomial Models Seminar in Analytical Finance I
+        <http://janroman.dhis.org/stud/I2012/Bermuda/reportFinal.pdf>`_
+
+
         MC Notes
-        --------        
-        For our Monte Carlo pricing, we use the Longstaff-Schwartz algorithm. Our implementation is drawn heavily from
-        this paper [1], while our method for generating the betas is drawn heavily from this paper [2].
 
+        For our Monte Carlo pricing, we use the Longstaff-Schwartz algorithm.
+        Our implementation is drawn heavily from
+        `Longstaff Schwartz Pricing of Bermudan Options and Their Greeks, Howard Thom, 2009
+        <http://eprints.maths.ox.ac.uk/789/1/Thom.pdf>`_,
+        while our method for generating the betas is drawn heavily from
+        `Multilevel Monte Carlo Adapted to Bermudan Options Using Randomized Stopping Rules
+        <http://eprints.maths.ox.ac.uk/934/1/longyun_chen.pdf>`_.
 
-        References
-        ----------
-        [1] http://eprints.maths.ox.ac.uk/789/1/Thom.pdf
-        [2] http://eprints.maths.ox.ac.uk/934/1/longyun_chen.pdf
 
         Examples
         --------
+
         
-        LT Examples
-        -----------
+       **LT Examples**
 
         LT pricing of Bermudan options
+
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Bermudan(ref=s, right='put', K=52, T=2, rf_r=.05)
         >>> o.pxLT(keep_hist=True) # doctest: +ELLIPSIS
         7.25141036...
         
         Changing the maturity
+
         >>> o = Bermudan(ref=s, right='put', K=52, T=1, rf_r=.05)
         >>> o.pxLT(keep_hist=True) # doctest: +ELLIPSIS
         5.91682696...
@@ -89,6 +103,7 @@ class Bermudan(OptionValuation):
         4.70511074...
 
         Explicit input of exercise schedule
+
         >>> np.random.seed(12345678)
         >>> rlist = np.random.normal(1,1,20)
         >>> times = tuple(map(lambda i: float(str(round(abs(rlist[i]),2))), range(20)))
@@ -97,12 +112,14 @@ class Bermudan(OptionValuation):
         5.82464967...
 
         Example from outside reference
+
         >>> times = (3/12,6/12,9/12,12/12,15/12,18/12,21/12,24/12)
         >>> o = Bermudan(ref=Stock(50, vol=.6), right='put', K=52, T=2, rf_r=0.1)
         >>> o.pxLT(tex=times, nsteps=40, keep_hist=False) # doctest: +ELLIPSIS       
         13.2065099...
 
         Price vs. strike curve - example of vectorization of price calculation
+
         >>> Karr = np.linspace(30,70,101)
         >>> px = tuple(map(lambda i:  Bermudan(ref=Stock(50, vol=.6), right='put', K=Karr[i], T=2, rf_r=0.1).
         ... pxLT(tex=times, nsteps=20), range(Karr.shape[0])))
@@ -125,14 +142,14 @@ class Bermudan(OptionValuation):
         MC Examples
         -----------
 
-        Example #1 (pricing isn't working correctly, so the expected output is gibberish for now)
+        **Example #1** (pricing isn't working correctly, so the expected output is gibberish for now)
 
         >>> s = Stock(S0=11, vol=.4)
         >>> o = Bermudan(ref=s, right='put', K=15, T=1, rf_r=.05, desc="in-the-money Bermudan put")
         >>> o.pxMC(R=2, npaths=10, tex=list([(i+1)/10 for i in range(10)]))
         1234
 
-        Example #2 (verifiable): See reference [1], section 5.1 and table 5.1 with arguments N=10^2, R=3
+        **Example #2** (verifiable): See reference [1], section 5.1 and table 5.1 with arguments N=10^2, R=3
         Uncomment to run (number of paths required is too high for doctests)
 
         # >>> s = Stock(S0=11, vol=.4)

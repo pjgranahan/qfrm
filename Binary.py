@@ -16,15 +16,20 @@ class Binary(OptionValuation):
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, payout_type="asset-or-nothing", Q=0.0):
         """ Wrapper function that calls appropriate valuation method.
 
-        User passes parameters to calc_px, which saves them to local PriceSpec object
-        and calls specific pricing function (_calc_BS,...).
-        This makes significantly less docstrings to write, since user is not interfacing pricing functions,
-        but a wrapper function calc_px().
+        All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
+        specific pricing method (``_calc_BS()``,...) is called.
+        An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
+        is calculating price via a shorter method wrapper ``.pxBS(...)``.
+        The same works for all methods (BS, LT, MC, FD).
 
         Parameters
-        ---------------
+        ----------
         method : str
-                Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
+                Required. Indicates a valuation method to be used:
+                ``BS``: Black-Scholes Merton calculation
+                ``LT``: Lattice tree (such as binary tree)
+                ``MC``: Monte Carlo simulation methods
+                ``FD``: finite differencing methods
         nsteps : int
                 LT, MC, FD methods require number of times steps
         npaths : int
@@ -39,6 +44,8 @@ class Binary(OptionValuation):
         Returns
         ------------
         self : Binary
+            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
+
 
         Notes
         ----------

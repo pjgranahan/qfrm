@@ -13,15 +13,20 @@ class LowExercisePrice(OptionValuation):
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
 
-        User passes parameters to calc_px, which saves them to local PriceSpec object
-        and calls specific pricing function (_calc_BS,...).
-        This makes significantly less docstrings to write, since user is not interfacing pricing functions,
-        but a wrapper function calc_px().
+        All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
+        specific pricing method (``_calc_BS()``,...) is called.
+        An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
+        is calculating price via a shorter method wrapper ``.pxBS(...)``.
+        The same works for all methods (BS, LT, MC, FD).
 
         Parameters
         ----------
         method : str
-                Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
+                Required. Indicates a valuation method to be used:
+                ``BS``: Black-Scholes Merton calculation
+                ``LT``: Lattice tree (such as binary tree)
+                ``MC``: Monte Carlo simulation methods
+                ``FD``: finite differencing methods
         nsteps : int
                 LT, MC, FD methods require number of times steps
         npaths : int
@@ -32,18 +37,14 @@ class LowExercisePrice(OptionValuation):
         Returns
         -------
         self : LowExercisePrice
-
-
-        Authors
-        -------
-        Runmin Zhang
+            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
 
 
         Examples
         --------
 
-        LT Examples
-        -----------
+        **LT Examples**
+
         #From DeriGem. S0=5, K=0.01, vol=0.30, T=4, rf_r=0.1, Steps=4, BSM European Call
         >>> s = Stock(S0=5, vol=.30)
         >>> o = LowExercisePrice(ref=s,T=4,rf_r=.10)
@@ -81,6 +82,9 @@ class LowExercisePrice(OptionValuation):
         -----
         [1] Wikipedia: Low Exercise Price Option - https://en.wikipedia.org/wiki/Low_Exercise_Price_Option
         [2] LEPOs Explanatory Booklet http://www.asx.com.au/documents/resources/UnderstandingLEPOs.pdf
+
+        :Authors:
+            Runmin Zheng
        """
 
         # LowExercisePrice is an European call option with a fixed strike price $0.01

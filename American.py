@@ -17,10 +17,12 @@ class American(OptionValuation):
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
 
-        User passes parameters to ``calc_px``, which saves them to local ``PriceSpec`` object
-        and calls specific pricing function (``_calc_BS``,...).
-        This makes significantly less docstrings to write, since user is not interfacing pricing functions,
-        but a wrapper function ``calc_px()``.
+        All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
+        specific pricing method (``_calc_BS()``,...) is called.
+        An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
+        is calculating price via a shorter method wrapper ``.pxBS(...)``.
+        The same works for all methods (BS, LT, MC, FD).
+
 
         Parameters
         ----------
