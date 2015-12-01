@@ -1,8 +1,8 @@
 import math
-import pandas as pd
-import matplotlib.pyplot as plt
 import warnings
 import itertools
+import pandas as pd
+import matplotlib.pyplot as plt
 
 try: from qfrm.Util import *  # production:  if qfrm package is installed
 except:   from Util import *  # development: if not installed and running from source

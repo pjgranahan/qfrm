@@ -11,21 +11,27 @@ except:   from European import *  # development: if not installed and running fr
 class American(OptionValuation):
     """ American option class.
 
-    Inherits all methods and properties of OptionValuation class.
+    Inherits all methods and properties of ``OptionValuation`` class.
     """
 
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
 
-        User passes parameters to calc_px, which saves them to local ``PriceSpec`` object
-        and calls specific pricing function (``_calc_BS``,...).
-        This makes significantly less docstrings to write, since user is not interfacing pricing functions,
-        but a wrapper function ``calc_px()``.
+        All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
+        specific pricing method (``_calc_BS()``,...) is called.
+        An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
+        is calculating price via a shorter method wrapper ``.pxBS(...)``.
+        The same works for all methods (BS, LT, MC, FD).
+
 
         Parameters
         ----------
         method : str
-                Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
+                Required. Indicates a valuation method to be used:
+                ``BS``: Black-Scholes Merton calculation
+                ``LT``: Lattice tree (such as binary tree)
+                ``MC``: Monte Carlo simulation methods
+                ``FD``: finite differencing methods
         nsteps : int
                 LT, MC, FD methods require number of times steps
         npaths : int
@@ -125,7 +131,7 @@ class American(OptionValuation):
 
         See ``calc_px()`` for complete documentation.
 
-        The _calc_BS() function is called through calc_PX() and uses the Black Scholes Merton
+        The ``_calc_BS()`` function is called through ``calc_PX()`` and uses the Black Scholes Merton
         differential equation to price the American option. Due to the optimal stopping problem,
         this is technically impossible, so the methods below are
         approximations that have been developed by financial computation scientists.
@@ -164,8 +170,8 @@ class American(OptionValuation):
         from numpy import linspace
 
         if self.right == 'call' and self.ref.q != 0:
-            #Black's approximations outlined on pg. 346
-            #Dividend paying stocks assume semi-annual payments
+            # Black's approximations outlined on pg. 346
+            # Dividend paying stocks assume semi-annual payments
             if self.T > .5:
                 dividend_val1 = sum([self.ref.q * self.ref.S0 * exp(-self.rf_r * i) for i in linspace(.5, self.T - .5,
                                     self.T * 2 - .5)])
@@ -182,9 +188,9 @@ class American(OptionValuation):
                     right=self.right, K=self.K, rf_r=self.rf_r, T=self.T - .5).calc_px(method='BS').px_spec.px
             self.px_spec.add(px=float(max([first_val, second_val])), method='BSM', sub_method='Black\'s Approximation')
         elif self.right == 'call':
-            #American call is worth the same as European call if there are no dividends. This is by definition.
-            #Check first line of the http://www.bus.lsu.edu/academics/finance/faculty/dchance/Instructional/TN98-01.pdf
-            #paper as evidence
+            # American call is worth the same as European call if there are no dividends. This is by definition.
+            # Check first line of http://www.bus.lsu.edu/academics/finance/faculty/dchance/Instructional/TN98-01.pdf
+            # paper as evidence
             self.px_spec.add(px=float(European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right, K=self.K,
                                                rf_r=self.rf_r, T=self.T).calc_px(method='BS').px_spec.px),
                              method='European BSM')
@@ -199,7 +205,7 @@ class American(OptionValuation):
                               rf_r=self.rf_r, T=self.T).calc_px(method='LT', nsteps=201).px_spec.px) / 2
             self.px_spec.add(px=float(f_a), method='BSM', sub_method='Antithetic Variable')
         else:
-            #Control Variate technique outlined on pg.463
+            # Control Variate technique outlined on pg.463
             f_a = American(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right,
                            K=self.K, rf_r=self.rf_r, T=self.T).calc_px(method='LT', nsteps=100).px_spec.px
             f_bsm = European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right,
@@ -229,3 +235,4 @@ class American(OptionValuation):
         """
 
         return self
+

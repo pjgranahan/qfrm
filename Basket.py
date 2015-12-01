@@ -15,15 +15,20 @@ class Basket(OptionValuation):
                 corr = [[1,0,0],[0,1,0],[0,0,1]], nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
 
-        User passes parameters to calc_px, which saves them to local PriceSpec object
-        and calls specific pricing function (_calc_BS,...).
-        This makes significantly less docstrings to write, since user is not interfacing pricing functions,
-        but a wrapper function calc_px().
+        All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
+        specific pricing method (``_calc_BS()``,...) is called.
+        An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
+        is calculating price via a shorter method wrapper ``.pxBS(...)``.
+        The same works for all methods (BS, LT, MC, FD).
 
         Parameters
         ----------
         method : str
-                Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
+                Required. Indicates a valuation method to be used:
+                ``BS``: Black-Scholes Merton calculation
+                ``LT``: Lattice tree (such as binary tree)
+                ``MC``: Monte Carlo simulation methods
+                ``FD``: finite differencing methods
         nsteps : int
                 LT, MC, FD methods require number of times steps
         npaths : int
@@ -40,6 +45,7 @@ class Basket(OptionValuation):
         Returns
         -------
         self : Basket
+            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
 
         Notes
         -----
@@ -47,7 +53,7 @@ class Basket(OptionValuation):
           http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=panier.html
         The results might differ a little due to the simulations.
         Since it takes time to run more paths and steps, the number of simulations is not very large in examples.
-        To improve accuracy, please improve the npaths and nsteps.
+        To improve accuracy, please improve the ``npaths`` and ``nsteps``.
 
         Examples
         -------
@@ -56,23 +62,23 @@ class Basket(OptionValuation):
         >>> o = Basket(ref=s, right='call', K=40, T=.5, rf_r=.1, desc='Hull p.612')
 
         >>> o.calc_px(method='MC',mu=(0.05,0.1,0.05),weight=(0.3,0.5,0.2),corr=[[1,0,0],[0,1,0],[0,0,1]],\
-        npaths=10,nsteps=100).px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PriceSpec...px: 15.317306061...
+        npaths=10,nsteps=10).px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 14.394869309...
 
         >>> s = Stock(S0=(50,85,65,80,75), vol=(.20,.10,.05,.20,.30))
         >>> o = Basket(ref=s, right='put', K=80, T=1, rf_r=.05, desc='Hull p.612')
 
         >>> o.calc_px(method='MC',mu=(0.05,0,0.1,0,0),weight=(0.2,0.2,0.2,0.2,0.2),corr=[[1,0,0,0.9,0],\
         [0,1,0,0,0],[0,0,1,-0.1,0],[0.9,0,-0.1,1,0],[0,0,0,0,1]],\
-        npaths=100,nsteps=100).px_spec.px   # save interim results to self.px_spec. Equivalent to repr(o)
-        6.120469912146624
+        npaths=10,nsteps=10).px_spec.px   # save interim results to self.px_spec. Equivalent to repr(o)
+        5.865304292765618
 
         >>> s = Stock(S0=(30,50), vol=(.20,.15))
         >>> o = Basket(ref=s, right='put', K=55, T=3, rf_r=.05, desc='Hull p.612')
 
         >>> o.calc_px(method='MC',mu=(0.06,0.05),weight=(0.4,0.6),corr=[[1,0.7],[0.7,1]],\
-        npaths=10,nsteps=1000).px_spec.px
-        7.236146325452368
+        npaths=10,nsteps=10).px_spec.px
+        6.1471894937486695
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
