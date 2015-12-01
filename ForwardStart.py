@@ -153,7 +153,7 @@ class ForwardStart(OptionValuation):
         >>> o=ForwardStart(ref=s, K=50, right='call', T=1, rf_r=.01, \
                desc='example from page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf')
         >>> o.pxFD(nsteps=4,T_s=0.5) #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        2.335714...
+        2.363964889
 
         :Authors:
             Runmin Zhang <Runmin.Zhang@rice.edu>
@@ -355,18 +355,22 @@ class ForwardStart(OptionValuation):
             # Left time until duration
             tleft = left * _.T / n
 
+            #~~~~~ need to add ts
+
             # d1 and d2 from BS model
-            d1 = (0 + (self.rf_r + self.ref.vol ** 2 / 2) * tleft) / (self.ref.vol * np.sqrt(tleft))
-            d2 = d1 - self.ref.vol * np.sqrt(tleft)
+            d1 = (_.rf_r - _.ref.q + _.ref.vol ** 2 / 2) * tleft / (_.ref.vol * np.sqrt(tleft))
+            d2 = d1 - _.ref.vol * np.sqrt(tleft)
+            S = S * np.exp(-_.ref.q * ())
             # payoff of forward start
             F_S = _.signCP * S / np.exp(_.ref.q * tleft) * scipy.stats.norm.cdf(self.signCP * d1) - \
                     _.signCP * S / np.exp(_.rf_r * tleft) * scipy.stats.norm.cdf(self.signCP * d2) + \
                     _.signCP * (S - _.K) / np.exp(self.rf_r * tleft)
-            #S_tree = (tuple([float(s) for s in S]),) + S_tree
+
             # final payoff is the maximum of shout or not shout
             Payout = np.maximum(F_S, 0)
             O = np.maximum(O, Payout)
  #           print(O)
+            S_tree = (tuple([float(s) for s in S]),) + S_tree
             O_tree = (tuple([float(o) for o in O]),) + O_tree
 
         out = O_tree[0][4]
