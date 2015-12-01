@@ -1,4 +1,5 @@
-from qfrm import *
+try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:   from OptionValuation import *  # development: if not installed and running from source
 
 
 class Bermudan(OptionValuation):
@@ -44,8 +45,6 @@ class Bermudan(OptionValuation):
         Returns
         -------
         self : Bermudan
-
-        .. sectionauthor:: Oleg Melkinov; Andy Liao, Patrick Granahan
 
 
         Notes
@@ -156,6 +155,9 @@ class Bermudan(OptionValuation):
         (...)
         >>> plt.show()
 
+        :Authors:
+            Andy Liao, Patrick Granahan
+
         """
 
         from numpy import asarray
@@ -174,12 +176,6 @@ class Bermudan(OptionValuation):
 
     def _calc_LT(self):
         """ Internal function for option valuation.
-
-        Returns
-        -------
-        self: Bermudan
-
-        .. sectionauthor:: Oleg Melnikov; Andy Liao
 
         """
 
@@ -219,15 +215,6 @@ class Bermudan(OptionValuation):
     def _calc_BS(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: Bermudan
-
-        .. sectionauthor:: 
-
-        Note
-        ----
-
         """
         return self
 
@@ -237,12 +224,6 @@ class Bermudan(OptionValuation):
         NOTE: Currently only semi-functional. There's a bug where the prices returned from different paths are largely
         the same price (as seen in the price histogram in MC example #4). So while the answer isn't completely wrong,
         it's definitely not right.
-
-        Returns
-        -------
-        self: Bermudan
-
-        .. sectionauthor:: Patrick Granahan
 
         Note
         ----

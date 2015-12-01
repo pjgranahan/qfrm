@@ -1,7 +1,9 @@
 import numpy as np
 import math
 import scipy.stats
-from OptionValuation import *
+
+try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:   from OptionValuation import *  # development: if not installed and running from source
 
 
 class Binary(OptionValuation):

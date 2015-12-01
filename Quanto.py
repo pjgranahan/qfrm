@@ -1,6 +1,10 @@
 import numpy.random as rnd
-from OptionValuation import *
-from American import *
+
+try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:   from OptionValuation import *  # development: if not installed and running from source
+
+try: from qfrm.American import *  # production:  if qfrm package is installed
+except:   from American import *  # development: if not installed and running from source
 
 
 class Quanto(OptionValuation):

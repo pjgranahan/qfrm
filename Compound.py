@@ -1,6 +1,11 @@
 import numpy as np
-from OptionValuation import *
-from American import American
+
+try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:   from OptionValuation import *  # development: if not installed and running from source
+
+try: from qfrm.American import *  # production:  if qfrm package is installed
+except:   from American import *  # development: if not installed and running from source
+
 
 
 class Compound(OptionValuation):
@@ -54,7 +59,7 @@ class Compound(OptionValuation):
         >>> o = American(ref=s, right='put', K=80., T=12./12., rf_r=.05, \
         desc='http://investexcel.net/compound-options-excel/: POP')
         >>> o2 = Compound(right='put',T=6./12., K = 20.)
-        >>> o2.calc_px(method='FD',option=o,npaths=40,nsteps = 10000).px_spec.px
+        >>> o2.calc_px(method='FD',option=o,npaths=10, nsteps = 10).px_spec.px
         19.506198232393796
 
         **Call on Put**
@@ -63,7 +68,7 @@ class Compound(OptionValuation):
         >>> o = American(ref=s, right='put', K=80., T=12./12., rf_r=.05, \
         desc='http://investexcel.net/compound-options-excel/: COP')
         >>> o2 = Compound(right='call',T=6./12., K = 20.)
-        >>> o2.calc_px(method='FD',option=o,npaths=40,nsteps = 10000).px_spec.px
+        >>> o2.calc_px(method='FD',option=o,npaths=10, nsteps = 10).px_spec.px
         9.1037774290081246e-12
 
         **Put on Call**
@@ -72,7 +77,7 @@ class Compound(OptionValuation):
         >>> o = American(ref=s, right='call', K=80., T=12./12., rf_r=.05, \
         desc='http://investexcel.net/compound-options-excel/: POC')
         >>> o2 = Compound(right='put',T=6./12., K = 20.)
-        >>> o2.calc_px(method='FD',option=o,npaths=40,nsteps = 10000).px_spec.px
+        >>> o2.calc_px(method='FD',option=o, npaths=10,nsteps = 10).px_spec.px
         10.568210941320897
 
         **Call on Call**
@@ -81,7 +86,7 @@ class Compound(OptionValuation):
         >>> o = American(ref=s, right='call', K=80., T=12./12., rf_r=.05, \
         desc='http://investexcel.net/compound-options-excel/: COC')
         >>> o2 = Compound(right='call',T=6./12., K = 20.)
-        >>> o2.calc_px(method='FD',option=o,npaths=40,nsteps = 10000).px_spec.px
+        >>> o2.calc_px(method='FD',option=o, npaths=10, nsteps = 10).px_spec.px
         0.13415146197967964
 
         :Authors:

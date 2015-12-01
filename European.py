@@ -2,7 +2,9 @@ from scipy import stats
 import warnings
 import numpy as np
 import math
-from OptionValuation import *
+
+try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:   from OptionValuation import *  # development: if not installed and running from source
 
 
 class European(OptionValuation):
@@ -42,8 +44,6 @@ class European(OptionValuation):
 
         Examples
         --------
-
-        See .. _my-label:
 
         >>> s = Stock(S0=42, vol=.20)
         >>> o = European(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @0.81, put @4.76, Hull p.339')

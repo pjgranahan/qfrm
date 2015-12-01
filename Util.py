@@ -1,8 +1,8 @@
+import re
 import yaml
 import numbers
-import numpy as np
-import re
 import functools
+import numpy as np
 
 
 class Util():
@@ -359,9 +359,10 @@ class SpecPrinter:
         # s = s.replace('\n...\n','')   # trim trailing new line (explicit end)
         s = re.sub(u'(?imu)^\s*\n', u'', s)  # removes lines of spaces
 
-        s = s.replace('!!python/object:','').replace('!!python/tuple','')
-        s = s.replace('__main__.','').replace(type(self).__name__ + '.','').replace('SpecPrinter.', '')
-        s = s.replace('OptionValuation.','').replace('OptionSeries.','').replace('Util.', '')
+        s = s.replace('!!python/object:', '').replace('!!python/tuple', '')
+        s = s.replace('__main__.', '').replace(type(self).__name__ + '.', '').replace('SpecPrinter.', '')
+        s = s.replace('OptionValuation.', '').replace('OptionSeries.', '')
+        s = s.replace('qfrm.', '').replace('Util.', '')
 
         s = s.replace(' {', '{')
         s = re.sub(re.compile(r'(,\s){2,}'), ', ', s)  # ", , , , , ... "   |->  ", "

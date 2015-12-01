@@ -1,6 +1,8 @@
 from scipy.stats import norm
 from numpy import sqrt, exp, log, asarray, zeros
-from OptionValuation import *
+
+try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:   from OptionValuation import *  # development: if not installed and running from source
 
 
 class VarianceSwap(OptionValuation):

@@ -1,7 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from OptionValuation import *
-from European import *
+
+try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:   from OptionValuation import *  # development: if not installed and running from source
+
+try: from qfrm.European import *  # production:  if qfrm package is installed
+except:   from European import *  # development: if not installed and running from source
 
 
 class American(OptionValuation):
@@ -37,7 +41,10 @@ class American(OptionValuation):
         Examples
         --------
         >>> s = Stock(S0=50, vol=.3)
-        >>> o = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc='7.42840, Hull p.288')
+        >>> American(ref=s, right='put', K=52, T=2, rf_r=.05, desc='7.42840, See J.C.Hull p.288').pxLT(nsteps=2)
+        7.428401903
+
+        >>> o = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc='7.42840, See J.C.Hull p.288')
         >>> o.calc_px(method='LT', nsteps=2, keep_hist=True).px_spec.px
         7.42840190270483
 
