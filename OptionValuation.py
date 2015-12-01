@@ -3,7 +3,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import warnings
 import itertools
-from Util import *
+
+try: from qfrm.Util import *  # production:  if qfrm package is installed
+except:   from Util import *  # development: if not installed and running from source
 
 
 class PriceSpec(SpecPrinter):
@@ -55,7 +57,23 @@ class PriceSpec(SpecPrinter):
         SpecPrinter.print_precision = print_precision
         self.add(**kwargs)
 
-
+    # @property
+    # def px(self):
+    #     """Getter method for price variable.
+    #
+    #     Getter and setter allow access to price and use of user-defined rounding of price value.
+    #
+    #     Returns
+    #     -------
+    #     None or float
+    #         Properly rounded price value (if exists)
+    #
+    #     """
+    #     try: return self.print_value(self._px)
+    #     except: return None
+    #
+    # @px.setter
+    # def px(self, px): self._px = px
 
     def add(self, **kwargs):
         """ Adds all key/value input arguments as class variables

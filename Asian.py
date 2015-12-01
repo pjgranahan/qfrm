@@ -4,7 +4,10 @@ from numpy.random import normal, seed
 from math import exp as mexp
 from math import log as mlog
 from scipy.stats import norm
-from OptionValuation import *
+
+try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:   from OptionValuation import *  # development: if not installed and running from source
+
 
 class Asian(OptionValuation):
     """ Asian option class.

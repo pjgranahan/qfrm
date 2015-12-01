@@ -1,7 +1,10 @@
 import scipy.stats
 import math
 import numpy as np
-from OptionValuation import *
+
+try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:   from OptionValuation import *  # development: if not installed and running from source
+
 
 class ForwardStart(OptionValuation):
     """ ForwardStart option class
@@ -137,9 +140,25 @@ class ForwardStart(OptionValuation):
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> plt.show()
 
+
+
+        Examples using _calc_FD()
+        -------------------------------------
+
+        Notes
+        -----
+        Verification of examples: page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
+
+        >>> s = Stock(S0=50, vol=.15,q=0.05)
+        >>> o=ForwardStart(ref=s, K=50, right='call', T=1, rf_r=.01, \
+               desc='example from page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf')
+        >>> o.pxFD(nsteps=4,T_s=0.5) #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        2.363964889
+
         :Authors:
             Runmin Zhang <Runmin.Zhang@rice.edu>
             Tianyi Yao   <ty13@rice.edu>
+            Mengyan Xie  <xiemengy@gmail.com>
 
 
         """
@@ -286,11 +305,78 @@ class ForwardStart(OptionValuation):
 
         See ``calc_px()`` for complete documentation.
 
+        Note
+        ----
+        [1] `<http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf>`
+
         :Authors:
+            Mengyan Xie <xiemengy@gmail.com>
 
         """
 
+        keep_hist = getattr(self.px_spec, 'keep_hist', False)
+        n = getattr(self.px_spec, 'nsteps', 3)
+        _ = self
+        dt = _.T / n
+
+        # Get the Price based on Binomial Tree
+        S = np.linspace(0.5*_.ref.S0, 1.5*_.ref.S0, 9)[::-1]
+        O = np.maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
+        max_O = max(O)
+        min_O = min(O)
+
+        Payout = np.maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
+
+        # The end node of tree
+        S_tree = (tuple([float(s) for s in S]),)  # use tuples of floats (instead of numpy.float)
+        O_tree = (tuple([float(o) for o in O]),)
+
+        # Calculate a, b and c parameters
+        a = [1 / (1 + _.rf_r * dt) * (-0.5 * (_.rf_r - _.ref.q) * j * dt + \
+                                      0.5 * (_.ref.vol**2) * (j**2) * dt) for j in range(1, len(O)-1)]
+        b = [1 / (1 + _.rf_r * dt) * (1 - (_.ref.vol**2) * (j**2) * dt) for j in range(1, len(O)-1)]
+        c = [1 / (1 + _.rf_r * dt) * (0.5 * (_.rf_r - _.ref.q) * j * dt + 0.5 * (_.ref.vol**2) * (j**2) * dt)\
+             for j in range(1, len(O)-1)]
+
+        # Backward calculate each node of payoff
+        for i in range(n, 0, -1):
+            O_a = O[:-2]
+            O_b = O[1:-1]
+            O_c = O[2:]
+
+            # original payoff
+            O = a * O_a + b * O_b + c * O_c
+            O_new = np.insert(O, min_O, max_O)
+            O_new = np.append(O_new, 0)
+            O = np.maximum(O_new, Payout)
+
+            # Left number until duration
+            left = n - i + 1
+            # Left time until duration
+            tleft = left * _.T / n
+
+            #~~~~~ need to add ts
+
+            # d1 and d2 from BS model
+            d1 = (_.rf_r - _.ref.q + _.ref.vol ** 2 / 2) * tleft / (_.ref.vol * np.sqrt(tleft))
+            d2 = d1 - _.ref.vol * np.sqrt(tleft)
+            S = S * np.exp(-_.ref.q * ())
+            # payoff of forward start
+            F_S = _.signCP * S / np.exp(_.ref.q * tleft) * scipy.stats.norm.cdf(self.signCP * d1) - \
+                    _.signCP * S / np.exp(_.rf_r * tleft) * scipy.stats.norm.cdf(self.signCP * d2) + \
+                    _.signCP * (S - _.K) / np.exp(self.rf_r * tleft)
+
+            # final payoff is the maximum of shout or not shout
+            Payout = np.maximum(F_S, 0)
+            O = np.maximum(O, Payout)
+ #           print(O)
+            S_tree = (tuple([float(s) for s in S]),) + S_tree
+            O_tree = (tuple([float(o) for o in O]),) + O_tree
+
+        out = O_tree[0][4]
+#        print(out)
+
+        self.px_spec.add(px=float(out), method='FD', sub_method='Finite difference; Hull Ch.13',
+                        FD_specs=_, ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
+
         return self
-
-
-

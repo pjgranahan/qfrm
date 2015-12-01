@@ -3,8 +3,9 @@ import math
 import scipy.optimize
 import scipy.stats
 import matplotlib.pyplot as plt
-from OptionValuation import *
-from European import *
+
+try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:   from OptionValuation import *  # development: if not installed and running from source
 
 
 class ContingentPremium(OptionValuation):

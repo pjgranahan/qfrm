@@ -1,9 +1,13 @@
-from OptionValuation import *
 import scipy.stats
 import numpy
 import scipy.special
 import math
 import European
+
+try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:   from OptionValuation import *  # development: if not installed and running from source
+
+
 class Barrier(OptionValuation):
     """ European option class.
 
