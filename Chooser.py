@@ -3,7 +3,9 @@ import numpy as np
 import scipy.linalg as la
 import scipy.stats as st
 import matplotlib.pyplot as plt
-from OptionValuation import *
+
+try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:   from OptionValuation import *  # development: if not installed and running from source
 
 
 class Chooser(OptionValuation):

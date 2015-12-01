@@ -1,7 +1,10 @@
-from OptionValuation import *
 import matplotlib.pyplot as plt
 import scipy.stats as st
 import numpy as np
+
+try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:   from OptionValuation import *  # development: if not installed and running from source
+
 
 class Asian(OptionValuation):
     """ Asian option class.
