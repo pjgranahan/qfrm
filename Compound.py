@@ -60,7 +60,7 @@ class Compound(OptionValuation):
         desc='http://investexcel.net/compound-options-excel/: POP')
         >>> o2 = Compound(right='put',T=6./12., K = 20.)
         >>> o2.calc_px(method='FD',option=o,npaths=10, nsteps = 10).px_spec.px
-        19.506198232393796
+        19.505177573647167
 
         **Call on Put**
 
@@ -69,7 +69,7 @@ class Compound(OptionValuation):
         desc='http://investexcel.net/compound-options-excel/: COP')
         >>> o2 = Compound(right='call',T=6./12., K = 20.)
         >>> o2.calc_px(method='FD',option=o,npaths=10, nsteps = 10).px_spec.px
-        9.1037774290081246e-12
+        0.00011247953032440167
 
         **Put on Call**
 
@@ -78,7 +78,7 @@ class Compound(OptionValuation):
         desc='http://investexcel.net/compound-options-excel/: POC')
         >>> o2 = Compound(right='put',T=6./12., K = 20.)
         >>> o2.calc_px(method='FD',option=o, npaths=10,nsteps = 10).px_spec.px
-        10.568210941320897
+        10.46547097001881
 
         **Call on Call**
 
@@ -87,7 +87,7 @@ class Compound(OptionValuation):
         desc='http://investexcel.net/compound-options-excel/: COC')
         >>> o2 = Compound(right='call',T=6./12., K = 20.)
         >>> o2.calc_px(method='FD',option=o, npaths=10, nsteps = 10).px_spec.px
-        0.13415146197967964
+        0.19033219221798756
 
         :Authors:
             Scott Morgan

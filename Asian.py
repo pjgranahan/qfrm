@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import scipy.stats as st
 import numpy as np
 
+
 class Asian(OptionValuation):
     """ Asian option class.
 
@@ -76,7 +77,6 @@ class Asian(OptionValuation):
         rng_seed: 1
         strike: K
         sub_method: Geometric
-        <BLANKLINE>
 
         >>> s = Stock(S0=30, vol=.3, q = .02)
         >>> o = Asian(ref=s, right='put', K=29, T=1., rf_r=.08, \
@@ -91,7 +91,6 @@ class Asian(OptionValuation):
         rng_seed: 1
         strike: K
         sub_method: Geometric
-        <BLANKLINE>
 
         >>> s = Stock(S0=30, vol=.3, q = .02)
         >>> o = Asian(ref=s, right='put', K=30., T=1., rf_r=.08)
@@ -105,7 +104,6 @@ class Asian(OptionValuation):
         rng_seed: 1
         strike: K
         sub_method: Geometric
-        <BLANKLINE>
 
         >>> s = Stock(S0=20, vol=.3, q = .00)
         >>> o = Asian(ref=s, right='put', K=21., T=1., rf_r=.08)
@@ -119,7 +117,6 @@ class Asian(OptionValuation):
         rng_seed: 1
         strike: K
         sub_method: Geometric
-        <BLANKLINE>
 
         >>> s = Stock(S0=20, vol=.3, q = .00)
         >>> o = Asian(ref=s, right='put', K=21., T=2., rf_r=.08)
@@ -133,7 +130,6 @@ class Asian(OptionValuation):
         rng_seed: 1
         strike: K
         sub_method: Geometric
-        <BLANKLINE>
 
         >>> s = Stock(S0=20, vol=.3, q = .00)
         >>> o = Asian(ref=s, right='put', K=21., T=2., rf_r=.08)
@@ -418,17 +414,17 @@ class Asian(OptionValuation):
 
         # Parameters for Value Calculation (see link in docstring)
         a = .5 * (r - q - (vol ** 2) / 6.)
-        vola = vol / sqrt(3.)
-        d1 = (mlog(S * mexp(a * T) / K) + (vola ** 2) * .5 * T) / (vola * sqrt(T))
-        d2 = d1 - vola * sqrt(T)
+        vola = vol / np.sqrt(3.)
+        d1 = (np.log(S * np.exp(a * T) / K) + (vola ** 2) * .5 * T) / (vola * np.sqrt(T))
+        d2 = d1 - vola * np.sqrt(T)
 
         # Calculate the value of the option using the BS Equation
         if right == 'call':
-            px = S * mexp((a - r) * T) * norm.cdf(d1) - K * mexp(-r * T) * norm.cdf(d2)
+            px = S * np.exp((a - r) * T) * st.norm.cdf(d1) - K * np.exp(-r * T) * st.norm.cdf(d2)
             self.px_spec.add(px=float(px), method='BSM', sub_method='Geometric')
 
         else:
-            px = K * mexp(-r * T) * norm.cdf(-d2) - S * mexp((a - r) * T) * norm.cdf(-d1)
+            px = K * np.exp(-r * T) * st.norm.cdf(-d2) - S * np.exp((a - r) * T) * st.norm.cdf(-d1)
             self.px_spec.add(px=float(px), method='BSM', sub_method='Geometric')
         return self
 

@@ -102,7 +102,6 @@ class Barrier(OptionValuation):
         px: 7.104101925
         rng_seed: 1
         sub_method: in out parity
-        <BLANKLINE>
 
 
         >>> s = Stock(S0=95., vol=.25, q=.00)
@@ -301,7 +300,7 @@ class Barrier(OptionValuation):
 
         S = self.ref.S0 * _['d'] ** numpy.arange(n, -1, -1) * _['u'] ** numpy.arange(0, n + 1)  # terminal stock prices
         S2 = numpy.maximum(s*(S - self.H),0) # Find where crossed the barrier
-        S2 = numpy.numpy.minimum(S2,1)  # 0 when across the barrier, 1 otherwise
+        S2 = numpy.minimum(S2,1)  # 0 when across the barrier, 1 otherwise
         O = numpy.maximum(self.signCP * (S - self.K), 0)
         O = O * S2        # terminal option payouts
         # tree = ((S, O),)
@@ -335,7 +334,7 @@ class Barrier(OptionValuation):
 
         k = int(math.ceil(numpy.log(self.K/(self.ref.S0*_['d']**n))/numpy.log(_['u']/_['d'])))
         h = int(math.floor(numpy.log(self.H/(self.ref.S0*_['d']**n))/numpy.log(_['u']/_['d'])))
-        l = list(map(lambda j: scipy.special.scipy.special.binom(n,n-2*h+j)*(_['p']**j)*((1-_['p'])**(n-j))* \
+        l = list(map(lambda j: scipy.special.binom(n,n-2*h+j)*(_['p']**j)*((1-_['p'])**(n-j))* \
                                (self.ref.S0*(_['u']**j)*(_['d']**(n-j))-self.K),range(k,n+1)))
         down_in_call = numpy.exp(-self.rf_r*self.T)*sum(l)
 
