@@ -62,23 +62,23 @@ class Basket(OptionValuation):
         >>> o = Basket(ref=s, right='call', K=40, T=.5, rf_r=.1, desc='Hull p.612')
 
         >>> o.calc_px(method='MC',mu=(0.05,0.1,0.05),weight=(0.3,0.5,0.2),corr=[[1,0,0],[0,1,0],[0,0,1]],\
-        npaths=10,nsteps=100).px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PriceSpec...px: 15.317306061...
+        npaths=10,nsteps=10).px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 14.394869309...
 
         >>> s = Stock(S0=(50,85,65,80,75), vol=(.20,.10,.05,.20,.30))
         >>> o = Basket(ref=s, right='put', K=80, T=1, rf_r=.05, desc='Hull p.612')
 
         >>> o.calc_px(method='MC',mu=(0.05,0,0.1,0,0),weight=(0.2,0.2,0.2,0.2,0.2),corr=[[1,0,0,0.9,0],\
         [0,1,0,0,0],[0,0,1,-0.1,0],[0.9,0,-0.1,1,0],[0,0,0,0,1]],\
-        npaths=100,nsteps=100).px_spec.px   # save interim results to self.px_spec. Equivalent to repr(o)
-        6.120469912146624
+        npaths=10,nsteps=10).px_spec.px   # save interim results to self.px_spec. Equivalent to repr(o)
+        5.865304292765618
 
         >>> s = Stock(S0=(30,50), vol=(.20,.15))
         >>> o = Basket(ref=s, right='put', K=55, T=3, rf_r=.05, desc='Hull p.612')
 
         >>> o.calc_px(method='MC',mu=(0.06,0.05),weight=(0.4,0.6),corr=[[1,0.7],[0.7,1]],\
-        npaths=10,nsteps=1000).px_spec.px
-        7.236146325452368
+        npaths=10,nsteps=10).px_spec.px
+        6.1471894937486695
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
