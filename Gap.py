@@ -131,10 +131,14 @@ class Gap(OptionValuation):
         Because different number of seed, npaths and nsteps will influence the option price. The result of MC method
         may not as accurate as BSM and LT method.
 
+        The following example will generate px = 1895.64429636 with nsteps = 998 and npaths = 1000, \
+        which can be verified by Hull p.601 Example 26.1
+        However, for the purpose if fast runtime, I use nstep = 10 and npaths = 10 in all following examples, \
+        whose result does not match verification.
         >>> s = Stock(S0=500000, vol=.2)
         >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='Hull p.601 Example 26.1')
-        >>> o.pxMC(K2=350000,seed=1, npaths=1000, nsteps=998)
-        1895.64429636
+        >>> o.pxMC(K2=350000,seed=10, npaths=50, nsteps=10)
+        2283.059032245
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
@@ -145,16 +149,20 @@ class Gap(OptionValuation):
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
+        The following example will generate px = 2.258897568 with nsteps = 90 and npaths = 101, \
+        which is similar to BS example.
         >>> s = Stock(S0=50, vol=.2)
         >>> o = Gap(ref=s, right='call', K=57, T=1, rf_r=.09)
-        >>> o.calc_px(K2=50, method='MC',seed=2, npaths=101, nsteps=90).px_spec.px
-        2.258897568193636
+        >>> o.calc_px(K2=50, method='MC',seed=2, npaths=10, nsteps=50).px_spec.px
+        1.342195428464781
 
+        The following example will generate px = 4.35362028... with nsteps = 100 and npaths = 250, \
+        which is similar to BS example.
         >>> s = Stock(S0=50, vol=.2)
         >>> o = Gap(ref=s, right='put', K=57, T=1, rf_r=.09)
-        >>> o.calc_px(K2=50, method='MC',seed=2, npaths=250, nsteps=100).px_spec
+        >>> o.calc_px(K2=50, method='MC',seed=2, npaths=10, nsteps=50).px_spec
         ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PriceSpec...px: 4.35362028...
+        PriceSpec...px: 3.672556646...
 
 
         **FD Examples**
