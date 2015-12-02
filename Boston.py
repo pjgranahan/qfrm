@@ -1,6 +1,9 @@
 import numpy as np
 import math
-from OptionValuation import *
+
+try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:   from OptionValuation import *  # development: if not installed and running from source
+
 
 class Boston(OptionValuation):
     """ Boston Option Valuation Class
@@ -11,15 +14,20 @@ class Boston(OptionValuation):
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
 
-        User passes parameters to calc_px, which saves them to local PriceSpec object
-        and calls specific pricing function (_calc_BS,...).
-        This makes significantly less docstrings to write, since user is not interfacing pricing functions,
-        but a wrapper function calc_px().
+        All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
+        specific pricing method (``_calc_BS()``,...) is called.
+        An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
+        is calculating price via a shorter method wrapper ``.pxBS(...)``.
+        The same works for all methods (BS, LT, MC, FD).
 
         Parameters
         ----------
         method : str
-                Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
+                Required. Indicates a valuation method to be used:
+                ``BS``: Black-Scholes Merton calculation
+                ``LT``: Lattice tree (such as binary tree)
+                ``MC``: Monte Carlo simulation methods
+                ``FD``: finite differencing methods
         nsteps : int
                 LT, MC, FD methods require number of times steps
         npaths : int
@@ -30,8 +38,8 @@ class Boston(OptionValuation):
         Returns
         -------
         self : Boston
+            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
 
-        .. sectionauthor:: Andrew Weatherly
 
         Notes
         -----
@@ -155,6 +163,9 @@ class Boston(OptionValuation):
         seed0: -
         <BLANKLINE>
 
+        :Authors:
+            Andrew Weatherly
+
         """
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
         return getattr(self, '_calc_' + method.upper())()
@@ -211,13 +222,4 @@ class Boston(OptionValuation):
         #                 LT_specs=_, ref_tree = S_tree if save_tree else None, opt_tree = O_tree if save_tree else None)
         return self
 
-"""
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
-"""
-s = Stock(S0=50, vol=.2, q=.032)
-o = Boston(ref=s, right='call', K=50, T=.25, rf_r=.059)
-#print(o.calc_px(method='LT', nsteps=200, keep_hist=True).px_spec.px)
-print(o.calc_px(method='LT', nsteps=2, keep_hist=True))
 

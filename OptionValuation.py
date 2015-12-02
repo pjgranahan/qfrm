@@ -1,9 +1,11 @@
 import math
-import pandas as pd
-import matplotlib.pyplot as plt
 import warnings
 import itertools
-from Util import *
+import pandas as pd
+import matplotlib.pyplot as plt
+
+try: from qfrm.Util import *  # production:  if qfrm package is installed
+except:   from Util import *  # development: if not installed and running from source
 
 
 class PriceSpec(SpecPrinter):
@@ -11,30 +13,74 @@ class PriceSpec(SpecPrinter):
 
     Use this object to store the price, sub/method and any intermediate results in your option object.
 
+    :Authors:
+        Oleg Melnikov <xisreal@gmail.com>
     """
     px = None  # use float data type
     method = None  # 'BS', 'LT', 'MC', 'FD'
     sub_method = None   # indicate specifics about pricing method. ex: 'lsm' or 'naive' for mc pricing of American
 
-    def __init__(self, **kwargs):
+    def __init__(self, print_precision=9, **kwargs):
         """ Constructor.
 
-        Calls add() method to save named input variables.
+        Calls ``add()`` method to save named input variables.
+        See ``add()`` method for further details.
 
         Parameters
         ----------
+        print_precision : int, optional
+            Sets number of decimal digits to which printed output is rounded;
+            used with whole object print out and with print out of some calculated values (``px``, ...)
+            Default 9 digits. If set to ``None``, machine precision is used.
         kwargs : object, optional
-            any named input (key=value, key=value,...) that needs to be stored at PriceSpec
+            any named input (key=value, key=value,...) that needs to be stored at ``PriceSpec``
 
+        Examples
+        --------
+
+        Default ``print_precision = 9`` is used
+
+        >>> PriceSpec(price=1/7)
+        PriceSpec
+        price: 0.142857143
+
+        >>> PriceSpec(price=1/7, print_precision=4)
+        PriceSpec
+        price: 0.1429
         """
+
+        # super().__init__(kwargs)
+        # if 'print_precision' in kwargs:
+        #     super().__init__(print_precision=kwargs['print_precision'])
+        #     del kwargs['print_precision']
+        # super().__init__(print_precision=print_precision)
+        SpecPrinter.print_precision = print_precision
         self.add(**kwargs)
+
+    # @property
+    # def px(self):
+    #     """Getter method for price variable.
+    #
+    #     Getter and setter allow access to price and use of user-defined rounding of price value.
+    #
+    #     Returns
+    #     -------
+    #     None or float
+    #         Properly rounded price value (if exists)
+    #
+    #     """
+    #     try: return self.print_value(self._px)
+    #     except: return None
+    #
+    # @px.setter
+    # def px(self, px): self._px = px
 
     def add(self, **kwargs):
         """ Adds all key/value input arguments as class variables
 
         Parameters
         ----------
-        kwargs : object, optional
+        kwargs : optional
             any named input (key=value, key=value,...) that needs to be stored at PriceSpec
 
         Returns
@@ -46,38 +92,16 @@ class PriceSpec(SpecPrinter):
             if v is not None:  setattr(self, K, v)
         return self
 
-    # def __repr__(self):
-    #     """ Compiles a printable representation of the object
-    #
-    #     Returns
-    #     -------
-    #     str
-    #         Return a string containing a printable representation of an object.
-    #
-    #     Examples
-    #     --------
-    #     >>> PriceSpec(a=1, b='2', c=2.0)  # instantiates an object, saves its input, prints out structure
-    #     OptionValuation.PriceSpec
-    #     a: 1
-    #     b: '2'
-    #     c: 2.0
-    #     <BLANKLINE>
-    #
-    #     """
-    #     s = yaml.dump(self, default_flow_style=0).replace('!!python/object:','').replace('!!python/tuple','')
-    #     s = s.replace('__main__.','')
-    #     return s
-
 
 class Stock(SpecPrinter):
     """ Object for storing parameters of an underlying (referenced) asset.
 
-    .. sectionauthor:: Oleg Melnikov
-
     Sets parameters of an equity stock share: S0, vol, ticker, dividend yield, curr, tkr ...
 
+    :Authors:
+        Oleg Melnikov <xisreal@gmail.com>
     """
-    def __init__(self, S0=None, vol=None, q=0, curr=None, tkr=None, desc=None):
+    def __init__(self, S0=None, vol=None, q=0, curr=None, tkr=None, desc=None, print_precision=9):
         """ Constructor.
 
         Parameters
@@ -95,20 +119,29 @@ class Stock(SpecPrinter):
             stock ticker. optional.
         desc : dict
             any additional information related to the stock.
+        print_precision : int, optional
+            Sets number of decimal digits to which printed output is rounded;
+            used with whole object print out and with print out of some calculated values (``px``, ...)
+            Default 9 digits. If set to ``None``, machine precision is used.
+
 
         Examples
         --------
-        >>> Stock(S0=50, vol=0.2, tkr='MSFT')   # doctest: +NORMALIZE_WHITESPACE
+        >>> Stock(S0=50, vol=1/7, tkr='MSFT')  # uses default print_precision of 9 digits
         Stock
         S0: 50
-        curr: -
-        desc: -
         q: 0
         tkr: MSFT
-        vol: 0.2
+        vol: 0.142857143
+
+        >>> Stock(S0=50, vol=1/7, tkr='MSFT', print_precision=4) # doctest: +ELLIPSIS
+        Stock...vol: 0.1429
 
         """
         self.S0, self.vol, self.q, self.curr, self.tkr, self.desc = S0, vol, q, curr, tkr, desc
+        # if 'print_precision' in kwargs: super().__init__(print_precision=kwargs['print_precision'])
+        # super().__init__(print_precision=print_precision)
+        SpecPrinter.print_precision = print_precision
 
 
 class OptionSeries(SpecPrinter):
@@ -119,12 +152,12 @@ class OptionSeries(SpecPrinter):
     This class can be used for plotting and evaluating option packages (strategies like bull spread, straddle, ...).
     It can also be inherited by classes that require an important extension - option valuation.
 
-    Sets option series specifications: ref, K, T, .... this is a ligth object with only a few methods.
+    Sets option series specifications: ``ref``, ``K``, ``T``, .... this is a ligth object with only a few methods.
 
-    .. sectionauthor:: Oleg Melnikov
-
+    :Authors:
+        Oleg Melnikov <xisreal@gmail.com>
     """
-    def __init__(self, ref=None, right=None, K=None, T=None, clone=None, desc=None):
+    def __init__(self, ref=None, right=None, K=None, T=None, clone=None, desc=None, print_precision=9):
         r""" Constructor.
 
         If clone object is supplied, its specs are used.
@@ -132,78 +165,76 @@ class OptionSeries(SpecPrinter):
         Parameters
         ----------
         ref : object
-            any suitable object of an underlying instrument (must have S0 & vol variables).
-                required, if clone = None.
+            any suitable object of an underlying instrument (must have ``S0`` & ``vol`` variables).
+                required, if ``clone = None``.
         right : {'call', 'put', 'other'}
-            'call', 'put', and 'other' (for some exotic instruments). required, if clone = None.
+            'call', 'put', and 'other' (for some exotic instruments). required, if ``clone = None``.
         K : float
-            strike price, positive number. required, if clone = None.
+            strike price, positive number. required, if ``clone = None``.
         T : float
-            time to maturity, in years, positive number. required, if clone = None.
+            time to maturity, in years, positive number. required, if ``clone = None``.
         clone : OptionValuation, European, American, any child of OptionValuation, optional
-            another option object from which this object will inherit specifications. optional.
+            another option object from which this object will inherit specifications.
             this is useful if you want to price European option as (for example) American.
             then European option's specs will be used to create a new American option. just makes things simple.
-        desc : dict
-            any number of describing variables. optional.
+        desc : dict, optional
+            any number of describing variables.
+        print_precision : int, optional
+            Sets number of decimal digits to which printed output is rounded;
+            used with whole object print out and with print out of some calculated values (``px``, ...)
+            Default 9 digits. If set to ``None``, machine precision is used.
+
 
         Examples
         --------
-        Examples show different ways of printing specs (parameters) of the objects
+        Various ways of printing specifications (parameters) of the objects (which inherit ``SpecPrinter``).
 
-        >>> OptionSeries(ref=Stock(S0=50, vol=0.3), K=51, right='call').full_spec(new_line=False)
-        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        'OptionSeries {K:51, _right:call, _signCP:1,...ref:Stock {S0:50, curr:-, desc:-, q:0, ,  tkr:-, vol:0.3}},'
+        The default (floating point number) precision of printed values (9 decimals) is used.
+        Note precision of ``vol`` variable:
 
-        >>> print(OptionSeries(ref=Stock(S0=50, vol=0.3, tkr='ibm', curr='usd'), K=51, right='call').full_spec(True))
-        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> OptionSeries(ref=Stock(S0=50, vol=1/7, tkr='IBM', curr='USD'), K=51, right='call')
         OptionSeries
         K: 51
         _right: call
         _signCP: 1
-        px_spec: PriceSpec {}
+        px_spec: PriceSpec{}
         ref: Stock
           S0: 50
-          curr: usd
-          desc: -
+          curr: USD
           q: 0
-          tkr: ibm
-          vol: 0.3
+          tkr: IBM
+          vol: 0.142857143
 
-        >>> o = OptionSeries(ref=Stock(S0=50,vol=.03)); repr(o)
-        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        'OptionSeries\npx_spec: PriceSpec {}\nref: Stock\n  S0: 50\n
-        curr: -\n  desc: -\n  q: 0\n  tkr: -\n  vol: 0.03\n'
-        >>> o  # equivalent to print(repr(o))
-        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        The following uses built-in ``repr()`` function,
+        which calls object's ``__repr__()`` method.
+
+        >>> repr(OptionSeries(ref=Stock(S0=50,vol=1/7)))
+        'OptionSeries\npx_spec: PriceSpec{}\nref: Stock\n  S0: 50\n  q: 0\n  vol: 0.142857143'
+
+        The following shows how to control precision temporarily.
+        If needed, default precision can be changed in ``SpecPrinter.full_spec()`` definition.
+
+        >>> OptionSeries(ref=Stock(S0=50, vol=1/7), K=51, print_precision=2).full_spec(print_as_line=True)
+        'OptionSeries{K:51, px_spec:PriceSpec{}, ref:Stock{S0:50, q:0, vol:0.14}}'
+
+        The following is a bit more cumbersome way to print object's structure
+        with a custom precision.
+
+        >>> print(OptionSeries(ref=Stock(S0=50, vol=1/7), K=51).full_spec(print_as_line=0))
         OptionSeries
-        px_spec: PriceSpec {}
+        K: 51
+        px_spec: PriceSpec{}
         ref: Stock
           S0: 50
-          curr: -
-          desc: -
           q: 0
-          tkr: -
-          vol: 0.03
+          vol: 0.142857143
 
-        >>> o = OptionSeries(ref=Stock(S0=50,vol=.03));  str(o)
-        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        'OptionSeries\npx_spec: PriceSpec {}\nref: Stock\n  S0: 50\n
-        curr: -\n  desc: -\n  q: 0\n  tkr: -\n  vol: 0.03\n'
-        >>> print(str(o))
-        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        OptionSeries
-        px_spec: PriceSpec {}
-        ref: Stock
-          S0: 50
-          curr: -
-          desc: -
-          q: 0
-          tkr: -
-          vol: 0.03
 
+        :Authors:
+            Oleg Melnikov <xisreal@gmail.com>
         """
         self.update(ref=ref, right=right, K=K, T=T, clone=clone, desc=desc)
+        SpecPrinter.print_precision = print_precision
 
     def update(self, **kwargs):
         """ Updates current objects' parameters
@@ -212,45 +243,40 @@ class OptionSeries(SpecPrinter):
 
         Parameters
         ----------
-        **kwargs :
+        kwargs :
             parameters (key=value,  key=value, ...) that needs to be updated
+
 
         Examples
         --------
-
         >>> o = OptionSeries(ref=Stock(S0=50, vol=.3), right='put', K=52, T=2).update(K=53) # sets new strike
-        >>> o   # prints structure of the object to screen
+        >>> o      # print out object's variables.
         OptionSeries
         K: 53
         T: 2
         _right: put
         _signCP: -1
-        px_spec: PriceSpec {}
+        px_spec: PriceSpec{}
         ref: Stock
           S0: 50
-          curr: -
-          desc: -
           q: 0
-          tkr: -
           vol: 0.3
-        <BLANKLINE>
 
-        >>> OptionSeries(clone=o, K=54).update(right='call')  # copy parameters from o; changes strike & right
+        >>> OptionSeries(clone=o, K=54).update(right='call')  # copy parameters from o
         OptionSeries
         K: 54
         T: 2
         _right: call
         _signCP: 1
-        px_spec: PriceSpec {}
+        px_spec: PriceSpec{}
         ref: Stock
           S0: 50
-          curr: -
-          desc: -
           q: 0
-          tkr: -
           vol: 0.3
-        <BLANKLINE>
 
+
+        :Authors:
+            Oleg Melnikov <xisreal@gmail.com>
         """
         self.reset()   # delete old calculations, before updating parameters
 
@@ -272,7 +298,7 @@ class OptionSeries(SpecPrinter):
         Returns
         -------
         str
-            'call', 'put', or 'other'
+            'call', 'put', or 'other' indicating the right of this option object
 
         """
         if getattr(self, '_right') is None:
@@ -280,11 +306,6 @@ class OptionSeries(SpecPrinter):
             self._right = 'call'
 
         return self._right
-        # try:
-        #     return self._right
-        # except:
-        #     warnings.warn('Cannot access self._right in OptionValuation.get_right() method', UserWarning)
-        #     return ''
 
     def set_right(self, right='call'):
         """ Sets option's right to a new string.
@@ -294,11 +315,12 @@ class OptionSeries(SpecPrinter):
         Parameters
         ----------
         right : str
-            Right of the option: 'cal', 'put', or other valid options.
+            Right of the option: 'call', 'put', or other valid options.
 
         Returns
         -------
-        self : OptionSeries
+        self : object
+            Returns this object handle
 
         """
         if right is not None:
@@ -313,7 +335,7 @@ class OptionSeries(SpecPrinter):
         """ Identifies a sign (+/-) indicating the right of the option.
 
         This property is convenient in calculations, which have parts with sign depending on the option's right.
-        There is no setter property for `signCP`, instead it must be set via `right` property.
+        There is no setter property for ``signCP``, instead it must be set via ``right`` property.
 
         Returns
         -------
@@ -343,8 +365,10 @@ class OptionSeries(SpecPrinter):
 
         >>> from qfrm import *; American().style
         'American'
+
         >>> from qfrm import *; European().style
         'European'
+
         >>> OptionSeries().style  # returns None
         """
         if any('OptionValuation' == i.__name__ for i in self.__class__.__bases__):
@@ -368,10 +392,13 @@ class OptionSeries(SpecPrinter):
         >>> from qfrm import *
         >>> OptionSeries(ref=Stock(S0=50, vol=0.3), K=51, right='call').series
         '51 call'
+
         >>> OptionSeries(ref=Stock(S0=50, vol=0.3, tkr='IBM'), K=51, right='call').series
         'IBM 51 call'
+
         >>> OptionSeries(ref=Stock(S0=50, vol=0.3, tkr='IBM'), K=51, T=2, right='call').series
         'IBM 51 2yr call'
+
         >>> American(ref=Stock(S0=50, vol=0.3), K=51, right='call').series
         '51 American call'
 
@@ -397,15 +424,16 @@ class OptionSeries(SpecPrinter):
 
         Examples
         --------
-
-        >>> from qfrm import *; s = Stock(S0=50, vol=0.3, tkr='IBM')
+        >>> from qfrm import *
+        >>> s = Stock(S0=50, vol=0.3, tkr='IBM')
         >>> OptionSeries(ref=s, K=51, right='call').specs
-        'IBM 51 call, Stock {S0:50, curr:-, desc:-, q:0, tkr:IBM, , vol:0.3},'
+        'IBM 51 call, Stock{S0:50, q:0, tkr:IBM, vol:0.3}'
+
         >>> American(ref=Stock(S0=50, vol=0.3), K=51, right='call').specs
-        '51 American call, Stock {S0:50, curr:-, desc:-, q:0, tkr:-, , vol:0.3}, rf_r=None frf_r=0'
+        '51 American call, Stock{S0:50, q:0, vol:0.3} rf_r=None frf_r=0'
 
         """
-        try: ref = self.ref.full_spec(new_line=False)
+        try: ref = self.ref.full_spec(print_as_line=True)
         except: ref = ''
 
         frf_r = (' frf_r=' + str(self.frf_r)) if hasattr(self, 'frf_r') else ''
@@ -427,20 +455,19 @@ class OptionSeries(SpecPrinter):
         clone : OptionSeries, OptionValuation, European, American, ...
             Target option object that needs to be duplicated.
 
+
         Examples
         --------
 
-        >>> o = OptionSeries(right='call');
+        >>> o = OptionSeries(right='call')
         >>> OptionSeries(clone=o).right  # create new option similar to o
         'call'
 
-        >>> from qfrm import *; American(clone=European(frf_r=.05))  # create American similar to European
-        ... # doctest: +ELLIPSES, +NORMALIZE_WHITESPACE
+        >>> from qfrm import *
+        >>> American(clone=European(frf_r=.05))  # create American similar to European
         American
         frf_r: 0.05
-        px_spec: OptionValuation.PriceSpec {}
-        rf_r: -
-        seed0: -
+        px_spec: PriceSpec{}
 
         """
         # copy specs from supplied object
@@ -478,6 +505,10 @@ class OptionValuation(OptionSeries):
             foreign risk free rate.
         seed0 : int, None, optional
             None or positive integer to seed random number generator (rng).
+        precision : {None, int}, optional
+            indicates desired floating number precision of calculated prices.
+            Assists with doctesting due to rounding errors near digits in 10^-12 placements
+            If value is None, then precision is ignored and default machine precision is used
         args : object, optional
             arguments to be passed to base class constructor. see base class for types of its arguments
         kwargs : object, optional
@@ -494,18 +525,15 @@ class OptionValuation(OptionSeries):
         >>> OptionValuation(ref=Stock(S0=50), rf_r=.05, frf_r=.01)
         OptionValuation
         frf_r: 0.01
-        px_spec: PriceSpec {}
+        px_spec: PriceSpec{}
         ref: Stock
           S0: 50
-          curr: -
-          desc: -
           q: 0
-          tkr: -
-          vol: -
         rf_r: 0.05
-        seed0: -
-        <BLANKLINE>
+
+
         """
+        # Todo: OptionValuation.__init__(print_precision=4) doesn't work.
         self.rf_r, self.frf_r, self.seed0 = rf_r, frf_r, seed0
         super().__init__(*args, **kwargs)  # pass remaining arguments to base (parent) class
         self.reset()
@@ -570,20 +598,22 @@ class OptionValuation(OptionSeries):
             Plot object on which to plot the data.
         vs : object, optional
             another option object (i.e. subclass of OptionValuation such as European, American,...)
-        :return : None
-            Plot the price convergence.
 
         Examples
         --------
-
         See J.C.Hull, OFOD, 9ed, p.289, Fig 13.10, 2-step Binomial tree for American put option.
         The following produces two trees: stock price progressions and option proce backward induction.
-        >>> from qfrm import *;  s = Stock(S0=50, vol=.3)
+
+        >>> from qfrm import *;
+        >>> s = Stock(S0=50, vol=.3)
         >>> a = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc={'px=$7.42840, See Hull p.289'})
         >>> ref_tree = a.calc_px(method='LT', nsteps=10, keep_hist=True).px_spec.ref_tree
+
         >>> a.plot_bt(bt=ref_tree, title='Binary tree of stock prices; ' + a.specs)
         >>> a.plot_bt(bt=a.px_spec.opt_tree, title='Binary tree of option prices; ' + a.specs)
 
+        :Authors:
+            Oleg Melnikov <xisreal@gmail.com>
         """
         if ax is None: fig, ax = plt.subplots()
         if 'fig' in locals():  # assures tight layout even when plot is manually resized
@@ -645,18 +675,17 @@ class OptionValuation(OptionSeries):
             Plot object on which to plot the data.
         vs : object, optional
             another option object (i.e. subclass of OptionValuation such as European, American,...)
-        :return : None
-            Plot the price convergence.
 
         Examples
         --------
-
         >>> from qfrm import *;  s = Stock(S0=50, vol=.3);
         >>> a = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc={'$7.42840, See Hull p.288'})
         >>> e = European(clone=a)
         >>> e.plot_px_convergence(nsteps_max=10)
         >>> a.plot_px_convergence(nsteps_max=10, vs=e)
 
+        :Authors:
+            Oleg Melnikov <xisreal@gmail.com>
         """
         if ax is None: fig, ax = plt.subplots()
         if 'fig' in locals():  # assures tight layout even when plot is manually resized
@@ -686,12 +715,14 @@ class OptionValuation(OptionSeries):
 
         Examples
         --------
-        See J.C.Hull, OFOD, 9ed, p.288-289.
-        This example demonstrates change in (convergence of) price with increasing number of steps of binary tree.
         >>> from qfrm import *; s = Stock(S0=50, vol=.3)
         >>> a = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc={'$7.42840, See Hull p.288'})
         >>> a.plot(nsteps_max=5)
+        ... # See J.C.Hull, OFOD, 9ed, p.288-289.
+        ... # This example demonstrates change in (convergence of) price with increasing number of steps of binary tree.
 
+        :Authors:
+            Oleg Melnikov <xisreal@gmail.com>
         """
         fig = plt.figure()
         ax1 = plt.subplot(221)
@@ -721,7 +752,7 @@ class OptionValuation(OptionSeries):
 
     @property
     def net_r(self):
-        """
+        """ Computes net risk free rate.
 
         Returns
         -------
@@ -731,12 +762,15 @@ class OptionValuation(OptionSeries):
         Examples
         --------
         >>> from pprint import pprint; from qfrm import *
-        >>> o = OptionValuation(rf_r=0.05); pprint(vars(o))  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        {'frf_r': 0,...'rf_r': 0.05,...}
+        >>> o = OptionValuation(rf_r=0.05); pprint(vars(o))
+        {'frf_r': 0, 'px_spec': PriceSpec{}, 'rf_r': 0.05, 'seed0': None}
+
         >>> o.update(rf_r=0.04)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         OptionValuation...frf_r: 0...rf_r: 0.04...
+
         >>> o.update(ref=Stock(q=0.01))  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         OptionValuation...frf_r: 0...q: 0.01...rf_r: 0.04...
+
         >>> o.net_r   # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         0.03
 
@@ -814,12 +848,12 @@ class OptionValuation(OptionSeries):
 
         Examples
         --------
-
-        >>> from qfrm import *; European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').pxBS()
-        3.444364288840312
+        >>> from qfrm import *
+        >>> European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').pxBS()
+        3.444364289
 
         """
-        return self.calc_px(method='BS', **kwargs).px_spec.px
+        return self.print_value(self.calc_px(method='BS', **kwargs).px_spec.px)
 
     def pxLT(self, **kwargs):
         """ Calls exotic pricing method `calc_px()`
@@ -839,12 +873,12 @@ class OptionValuation(OptionSeries):
 
         Examples
         --------
-
-        >>> from qfrm import *; European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').pxLT()
-        3.6693707022743633
+        >>> from qfrm import *
+        >>> European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').pxLT()
+        3.669370702
 
         """
-        return self.calc_px(method='LT', **kwargs).px_spec.px
+        return self.print_value(self.calc_px(method='LT', **kwargs).px_spec.px)
 
     def pxMC(self, **kwargs):
         """ Calls exotic pricing method `calc_px()`
@@ -864,11 +898,11 @@ class OptionValuation(OptionSeries):
 
         Examples
         --------
-
-        >>> from qfrm import *; European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').pxMC()
+        >>> from qfrm import *
+        >>> European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').pxMC()
 
         """
-        return self.calc_px(method='MC', **kwargs).px_spec.px
+        return self.print_value(self.calc_px(method='MC', **kwargs).px_spec.px)
 
     def pxFD(self, **kwargs):
         """ Calls exotic pricing method `calc_px()`
@@ -889,10 +923,10 @@ class OptionValuation(OptionSeries):
 
         Examples
         --------
-
-        >>> from qfrm import *; European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').pxFD()
+        >>> from qfrm import *
+        >>> European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').pxFD()
 
         """
-        return self.calc_px(method='FD', **kwargs).px_spec.px
+        return self.print_value(self.calc_px(method='FD', **kwargs).px_spec.px)
 
 

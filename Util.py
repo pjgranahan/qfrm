@@ -1,18 +1,23 @@
+import re
 import yaml
 import numbers
+import functools
 import numpy as np
 
+
 class Util():
-    """ A collection of utility functions, most of which are static methods, i.e. can be called as Util.is_iterable().
+    """ A collection of utility functions, most of which are static methods,
+    i.e. can be called as ``Util.is_iterable()``.
 
-    FYI: Decorator @staticmethod allows use of functions without initializing an object
-    Ex. we can use Util.demote(x) instead of Util().demote(x). It's faster.
+    FYI: Decorator ``@staticmethod`` allows use of functions without initializing an object
+    Ex. we can use ``Util.demote(x)`` instead of ``Util().demote(x)``. It's faster.
 
-    .. sectionauthor:: Oleg Melnikov
+    :Authors:
+        Oleg Melnikov <xisreal@gmail.com>
     """
     @staticmethod
     def is_iterable(x):
-        """ Checks if x is iterable.
+        """ Checks if ``x`` is iterable.
 
         Parameters
         ----------
@@ -22,7 +27,7 @@ class Util():
         Returns
         -------
         bool
-            True if x is iterable, False otherwise
+            ``True`` if ``x`` is iterable, ``False`` otherwise
 
         Exmaples
         --------
@@ -44,7 +49,7 @@ class Util():
 
     @staticmethod
     def is_number(x):
-        """ Checks if x is numeric (float, int, complex, ...)
+        """ Checks if ``x`` is numeric (``float``, ``int``, ``complex``, ...)
 
         Parameters
         ----------
@@ -54,7 +59,7 @@ class Util():
         Returns
         -------
         bool
-            True, if x is numeric; False otherwise.
+            ``True``, if ``x`` is numeric; ``False`` otherwise.
 
         """
         return isinstance(x, numbers.Number)
@@ -65,8 +70,8 @@ class Util():
 
         Parameters
         ----------
-        x : object
-            any object (value, iterable,...) that need to be verified as being numberic or not
+        x : array_like
+            any object (value, iterable,...) that need to be verified as being numeric or not
 
         Returns
         -------
@@ -124,8 +129,8 @@ class Util():
         --------
 
         >>> # convert $6 semiannula (SA) coupon bond payments to indexed cash flows
-        >>> Util.cpn2cf(6,2,2.1)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        {'cf': (3.0, 3.0, 3.0, 3.0, 103.0), 'ttcf': (0.1..., 0.6..., 1.1, 1.6, 2.1)}
+        >>> print(Util.cpn2cf(6,2,2.1))  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        {...}
 
         """
 
@@ -142,7 +147,7 @@ class Util():
 
     @staticmethod
     def demote(x):
-        """ Attempts to simplify x to a tuple (if x is a more complex data type) or just singleton.
+        """ Attempts to simplify ``x`` to a ``tuple`` (if x is a more complex data type) or just singleton.
         Basically, demotes to a simpler object, if possible.
 
         Parameters
@@ -185,7 +190,7 @@ class Util():
 
     @staticmethod
     def round(x, prec=5, to_tuple=False):
-        """ Recirsively rounds an iterable to the desired precision.
+        """ Recursively rounds an iterable to the desired precision.
 
         Parameters
         ----------
@@ -219,7 +224,7 @@ class Util():
 
     @staticmethod
     def to_tuple(a, leaf_as_float=False):
-        """ Recursively converts a iterable (and arrays) to tuple.
+        """ Recursively converts a iterable (and arrays) to ``tuple``.
 
         Parameters
         ----------
@@ -232,10 +237,10 @@ class Util():
 
         Examples
         --------
-
         >>> import numpy as np; x = (1, 1/3, 1/7,[1/11, 1/13, {1/19, 1/29}]); a = np.array(x)
         >>> Util.to_tuple(x)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         (1, 0.333..., 0.142857142..., (0.0909...,  0.076923076...,  (0.034482758..., 0.052631578...)))
+
         >>> Util.to_tuple(a)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         (1, 0.333..., 0.142857142..., (0.0909...,  0.076923076...,  (0.034482758..., 0.052631578...)))
 
@@ -248,59 +253,163 @@ class Util():
 
 
 class SpecPrinter:
-    """ Helper class for printing class's internal variables.
+    r""" Helper class for printing class's internal variables.
 
     This is a base class that is inherited by any child class needs to display its specifications (class variables).
 
     Examples
     --------
     >>> class A(SpecPrinter):
-    ...     def __init__(self):  self.a=[1,2,3]; self.b = {'a':1,'b':2.,'c':'3'}
-    >>> A()   # prints out structure of the object
-    Util.A
+    ...     def __init__(self, **kwargs):
+    ...        self.a=[1/17, 1/19, 1/23]; self.b=None; self.c = {'a':1/7,'b':1/13,'c':'bla'}
+    ...        super().__init__(**kwargs) #(print_precision=print_precision)
+    >>> A()  # print structure of A(); same as print(str(A())), print(A()), print(repr(A()))
+    A
     a:
-    - 1
-    - 2
-    - 3
-    b:
-      a: 1
-      b: 2.0
-      c: '3'
-    <BLANKLINE>
+    - 0.058823529
+    - 0.052631579
+    - 0.043478261
+    c:
+      a: 0.142857143
+      b: 0.076923077
+      c: bla
+
+    >>> A(print_precision=3).full_spec(print_as_line=True)
+    'A{a:[0.059, 0.053, 0.043], c:{a:0.143, b:0.077, c:bla}}'
+
+    >>> str(A())  # doctest: +ELLIPSIS
+    'A\na:\n- 0.058823529\n- 0.052631579\n- 0.043478261\nc:\n  a: 0.142857143\n  b: 0.076923077\n  c: bla'
+
+
+    :Authors:
+        Oleg Melnikov <xisreal@gmail.com>
     """
+    print_precision = 9
 
-    def full_spec(self, new_line=False, float_precision=9):
-        """ Returns a formatted string containing all variables of this class (recursively)
+    def __init__(self, print_precision=9):
+        """ Constructor
 
-        new_line : bool
-            Whether include new line symbol '\n' or not
+        Sets rounding precision for display of floating numbers
 
+        Parameters
+        ----------
+        print_precision : int, optional
+            Sets number of decimal digits to which printed output is rounded;
+            used with whole object print out and with print out of some calculated values (``px``, ...)
+            Default 9 digits. If set to ``None``, machine precision is used.
+        """
+        # if 'print_precision' in kwargs:
+        #     if kwargs['print_precision'] != 9:
+        #         self._print_precision = kwargs['print_precision']
+        #     else:
+        #         try: del self.print_precision  # do not store default value
+        #         except: pass
+        SpecPrinter.print_precision = print_precision
+
+    # @property
+    # def print_precision(self):
+    #     """ Returns user-saved printing precision or default (9 digits)
+    #
+    #     Returns
+    #     -------
+    #     int :
+    #         printing precision
+    #     """
+    #     try: return self._print_precision
+    #     except: return 9
+
+    def full_spec(self, print_as_line=True):
+        r""" Returns a formatted string containing all variables of this class (recursively)
+
+        Parameters
+        ----------
+        print_as_line : bool
+            If ``True``, print key:value pairs are separated by ``,``
+            If ``False``, --- by ``\n``
+        print_precision : {None, int}, optional
+            Specifies desired floating number precision for screen-printed values (prices, etc).
+            Assists with doctesting due to rounding errors near digits in 10^-12 placements
+            If value is None, then precision is ignored and default machine precision is used.
+            See `round() <https://docs.python.org/3.5/library/functions.html#round>`_
         Returns
         -------
         str
             Formatted string with option specifications
 
+
+        Notes
+        -----
+        - `PyYAML documenation <http://pyyaml.org/wiki/PyYAMLDocumentation>`_
+        - `YAML dump options <https://dpinte.wordpress.com/2008/10/31/pyaml-dump-option/>`_
+        - `Overloading examples <http://pyyaml.org/browser/pyyaml/trunk/lib/yaml/representer.py#L187>`_
+        - `RegEx demo <https://regex101.com/r/dZ9iI8/1>`_
+
         """
 
         def float_representer(dumper, value):
-            # Source:  http://pyyaml.org/browser/pyyaml/trunk/lib/yaml/representer.py#L187
-            text = str(round(value, float_precision))
+            text = str(value if SpecPrinter.print_precision is None else round(value, SpecPrinter.print_precision))
             return dumper.represent_scalar(u'tag:yaml.org,2002:float', text)
         yaml.add_representer(float, float_representer)
 
-        s = yaml.dump(self, default_flow_style=not new_line).replace('!!python/object:','').replace('!!python/tuple','')
-        s = s.replace('__main__.','').replace(type(self).__name__ + '.','').replace('null','-')
-        s = s.replace('__main__.','').replace('OptionValuation.','').replace('OptionSeries.','').replace('null','-')
-        if not new_line:
-            s = s.replace(',', ', ').replace('\n', ',').replace(': ', ':').replace('  ', ' ')
+        # each yaml dump has trailing '\n', which we identify and remove
+        s = yaml.dump(self, default_flow_style=print_as_line, width=1000)  # , explicit_end=True
 
-        return s
+        s = re.sub(r'\w+: null', '', s)  # RegEx removes null keys. Demo: https://regex101.com/r/dZ9iI8/1
+        # s = re.sub(r'\b\w+:\s+null(|$)', '', s).strip() # RegEx removes null keys.
+        # s = s.replace('\n...\n','')   # trim trailing new line (explicit end)
+        s = re.sub(u'(?imu)^\s*\n', u'', s)  # removes lines of spaces
+
+        s = s.replace('!!python/object:', '').replace('!!python/tuple', '')
+        s = s.replace('__main__.', '').replace(type(self).__name__ + '.', '').replace('SpecPrinter.', '')
+        s = s.replace('OptionValuation.', '').replace('OptionSeries.', '')
+        s = s.replace('qfrm.', '').replace('Util.', '')
+
+        s = s.replace(' {', '{')
+        s = re.sub(re.compile(r'(,\s){2,}'), ', ', s)  # ", , , , , ... "   |->  ", "
+        # s = s.replace('{,  ','{').replace('{, ','{')
+
+        if print_as_line:
+            s = s.replace(',', ', ').replace(': ', ':')  #.replace('  ', ' ')
+            s = re.sub(r'(\s){2,}', ' ', s)    # replace successive spaces with one instance
+
+        # s = re.sub(r'(,\s){2,}', ', ', s)  # replace successive instances of ', ' with one instance
+        # s = re.sub(r'(\n\s){2,}', '\n ', s)    # replace successive spaces with one instance
+        # s = re.sub(r'(\n\s\s){2,}', '\n\s\s', s)    # replace successive spaces with one instance
+        # s = functools.reduce( (lambda x, y: x + '\n ' + y if y else x), s.split('\n '))
+        # s = functools.reduce( (lambda x, y: x + '\n  ' + y if y else x), s.split('\n  '))
+
+        # s = yaml.dump(self, default_flow_style=not new_line).replace('!!python/object:','').replace('!!python/tuple','')
+        # s = s.replace('__main__.','').replace(type(self).__name__ + '.','').replace('null','-')
+        # s = s.replace('__main__.','').replace('OptionValuation.','').replace('OptionSeries.','').replace('null','-')
+        # s = s.replace('Util.', '').replace(', ,',', ').replace('{,  ','{').replace('{, ','{')
+        # if not new_line:
+            # s = s.replace(',', ', ').replace('\n', ',').replace(': ', ':').replace('  ', ' ')
+
+        return s.strip()
 
     def __repr__(self):
-        return self.full_spec(new_line=True)
+        return self.full_spec(print_as_line=False)
 
     def __str__(self):
-        return self.full_spec(new_line=True)
+        return self.full_spec(print_as_line=False)
+
+    def print_value(self, v):
+        if Util.is_number(v):
+            return v if SpecPrinter.print_precision is None else round(v, SpecPrinter.print_precision)
+
+# from qfrm import *
+# print(OptionSeries(ref=Stock(S0=50, vol=1/3), K=51, right='call').full_spec(print_as_line=False))
+# OptionValuation(ref=Stock(S0=50, vol=1/7), K=51, right='call',print_precision=4).full_spec(print_as_line=True)
 
 
-
+# import yaml
+# class A:
+#     def __init__(self):
+#         self.abc = 1
+#         self.hidden = 100
+#         self.xyz = [1,2,3]
+#
+#     def __repr__(self):
+#         return yaml.dump( vars(self).copy().pop('hidden'))
+#
+# A()

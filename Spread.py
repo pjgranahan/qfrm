@@ -1,9 +1,12 @@
-from OptionValuation import *
-from math import log, sqrt, exp
-from scipy.stats import norm
-from numpy.random import normal
-from numpy import maximum, mean
-from numpy.random import seed
+import math
+from scipy import stats
+import numpy.random
+import numpy as np
+
+try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:   from OptionValuation import *  # development: if not installed and running from source
+
+
 
 class Spread(OptionValuation):
     """ Spread option class.
@@ -15,15 +18,21 @@ class Spread(OptionValuation):
     def calc_px(self, method='BS', S2 = None, rho = .5, nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
 
-        User passes parameters to calc_px, which saves them to local PriceSpec object
-        and calls specific pricing function (_calc_BS,...).
-        This makes significantly less docstrings to write, since user is not interfacing pricing functions,
-        but a wrapper function calc_px().
+        All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
+        specific pricing method (``_calc_BS()``,...) is called.
+        An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
+        is calculating price via a shorter method wrapper ``.pxBS(...)``.
+        The same works for all methods (BS, LT, MC, FD).
 
         Parameters
         ----------
         method : str
-                Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
+                Required. Indicates a valuation method to be used:
+                ``BS``: Black-Scholes Merton calculation
+                ``LT``: Lattice tree (such as binary tree)
+                ``MC``: Monte Carlo simulation methods
+                ``FD``: finite differencing methods
+
         S2 : Stock
                 Required. Indicated the second stock used in the spread option
         rho : float
@@ -38,8 +47,8 @@ class Spread(OptionValuation):
         Returns
         -------
         self : Spread
+            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
 
-        .. sectionauthor:: Scott Morgan
 
         Notes
         ---------
@@ -89,7 +98,7 @@ class Spread(OptionValuation):
         npaths: 1000
         nsteps: 1000
         px: 0.904837418
-        <BLANKLINE>
+
 
 
         >>> s1 = Stock(S0=30.,q=0.,vol=.2)
@@ -101,7 +110,8 @@ class Spread(OptionValuation):
         >>> O.plot(grid=1, title='Price vs Time to Expiry') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
 
-
+        :Authors:
+            Scott Morgan
        """
 
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
@@ -111,18 +121,6 @@ class Spread(OptionValuation):
 
     def _calc_LT(self):
         """ Internal function for option valuation.
-
-
-        Returns
-        -------
-        self: Spread
-
-        .. sectionauthor::
-
-        Note
-        ----
-
-        Formulae:
 
 
         """
@@ -137,28 +135,23 @@ class Spread(OptionValuation):
         valid when K = 0. Thus, it does not even factor in K at all and should only be used to price
         spreads with K = 0.
 
-        Returns
-        -------
-        self: Spread
-
-        .. sectionauthor:: Scott Morgan
-
-        Note
-        ----
+        Notes
+        -----
 
         HUGE NOTE: Black-Scholes Method only works when K = 0
 
-        Formulae:
+        :Authors:
+            Scott Morgan
 
         """
 
 
-        vol = sqrt(self.ref.vol**2 - 2*self.rho*self.ref.vol*self.S2.vol + self.S2.vol**2)
-        d1 = (1./(vol*sqrt(self.T)))*log((self.S2.S0*exp(-self.S2.q*self.T))/(self.ref.S0*exp(-self.ref.q*self.T)))
-        d2 = d1 - (vol*sqrt(self.T)/2.)
-        d1 = d1 + (vol*sqrt(self.T)/2.)
-        p = self.S2.S0*exp(-self.S2.q*self.T)*norm.cdf(d1)
-        p = p - self.ref.S0*exp(-self.ref.q*self.T)*norm.cdf(d2)
+        vol = math.sqrt(self.ref.vol**2 - 2*self.rho*self.ref.vol*self.S2.vol + self.S2.vol**2)
+        d1 = (1./(vol*math.sqrt(self.T)))*math.log((self.S2.S0*math.exp(-self.S2.q*self.T))/(self.ref.S0*math.exp(-self.ref.q*self.T)))
+        d2 = d1 - (vol*math.sqrt(self.T)/2.)
+        d1 = d1 + (vol*math.sqrt(self.T)/2.)
+        p = self.S2.S0*math.exp(-self.S2.q*self.T)*stats.norm.cdf(d1)
+        p = p - self.ref.S0*math.exp(-self.ref.q*self.T)*stats.norm.cdf(d2)
 
         self.px_spec.add(px=float(p), method='BS')
 
@@ -193,17 +186,17 @@ class Spread(OptionValuation):
         opt_vals = list()
 
         if self.seed0 is not None:
-            seed(self.seed0)
+            numpy.random.seed(self.seed0)
 
 
         for path in range(0,npaths):
 
             ## Generate correlated Wiener Processes
-            u = normal(size=nsteps)
-            v = normal(size=nsteps)
-            v = self.rho*u + sqrt(1-self.rho**2)*v
-            u = u*sqrt(__['dt'])
-            v = v*sqrt(__['dt'])
+            u = numpy.random.normal(size=nsteps)
+            v = numpy.random.normal(size=nsteps)
+            v = self.rho*u + math.sqrt(1-self.rho**2)*v
+            u = u*math.sqrt(__['dt'])
+            v = v*math.sqrt(__['dt'])
 
             ## Simulate the paths
             S1 = [self.ref.S0]
@@ -216,10 +209,10 @@ class Spread(OptionValuation):
                 S2.append(S2[-1]*(mu_2 + self.S2.vol*v[t]) + S2[-1])
 
             ## Calculate the Payoff
-            val = maximum(self.signCP*(S2[-1] - S1[-1] - self.K),0.0)*exp(-self.rf_r*self.T)
+            val = np.maximum(self.signCP*(S2[-1] - S1[-1] - self.K),0.0)*math.exp(-self.rf_r*self.T)
             opt_vals.append((val))
 
-        self.px_spec.add(px=float(mean(opt_vals)), method='MC')
+        self.px_spec.add(px=float(np.mean(opt_vals)), method='MC')
 
         return self
 
@@ -228,9 +221,9 @@ class Spread(OptionValuation):
 
         Returns
         -------
-        self: American
+        self: Spread
 
-        .. sectionauthor:: Oleg Melnikov
+        .. sectionauthor::
 
         Note
         ----

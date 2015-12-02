@@ -1,8 +1,11 @@
 import math
 import numpy as np
-from scipy import stats
-from OptionValuation import *
+import scipy.stats
 import matplotlib.pyplot as plt
+
+try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:   from OptionValuation import *  # development: if not installed and running from source
+
 
 class Shout(OptionValuation):
     """ Shout option class.
@@ -13,15 +16,20 @@ class Shout(OptionValuation):
     def calc_px(self, method='LT', nsteps=None, npaths=None, keep_hist=False, seed=None):
         """ Wrapper function that calls appropriate valuation method.
 
-        User passes parameters to calc_px, which saves them to local PriceSpec object
-        and calls specific pricing function (_calc_BS,...).
-        This makes significantly less docstrings to write, since user is not interfacing pricing functions,
-        but a wrapper function calc_px().
+        All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
+        specific pricing method (``_calc_BS()``,...) is called.
+        An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
+        is calculating price via a shorter method wrapper ``.pxBS(...)``.
+        The same works for all methods (BS, LT, MC, FD).
 
         Parameters
-        --------
+        ----------
         method : str
-                Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
+                Required. Indicates a valuation method to be used:
+                ``BS``: Black-Scholes Merton calculation
+                ``LT``: Lattice tree (such as binary tree)
+                ``MC``: Monte Carlo simulation methods
+                ``FD``: finite differencing methods
         nsteps : int
                 LT, MC, FD methods require number of times steps
         npaths : int
@@ -32,28 +40,25 @@ class Shout(OptionValuation):
                 Seed number for Monte Carlo simulation
 
         Returns
-        --------
+        -------
         self : Shout
+            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
 
-        .. sectionauthor:: Mengyan Xie
 
         Notes
-        --------
-        Verification of Shout option: http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L4shout.pdf
+        -----
+        Verification of Shout option: http://goo.gl/02jISW
         Hull Ch26.12 P609
 
 
         Examples
         --------
         This two excel spreadsheet price shout option.
-        http://investexcel.net/shout-options-excel/
-        https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=9&cad=rja&uact=8&
-        ved=0ahUKEwjMsfu4n6TJAhVJz2MKHQA_B-MQFghSMAg&url=http%3A%2F%2Fwww.actuarialworkshop.com
-        %2FBinomial%2520Tree.xls&usg=AFQjCNEic5d4DfV5BTKbzkPW2LhzBU0Fdw&sig2=lB14d9wQ
-        BxsiqdaXlqTBTw&bvm=bv.108194040,d.eWE
+        http://goo.gl/1rrTCG
+        http://goo.gl/AdgcqY
 
         LT Examples
-        --------
+        -----------
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Shout(ref=s, right='call', K=52, T=2, rf_r=.05, desc='Example from internet excel spread sheet')
         >>> o.pxLT(nsteps=2, keep_hist=False)
@@ -74,7 +79,7 @@ class Shout(OptionValuation):
         >>> plt.show()
 
         MC Examples
-        --------
+        -----------
         See example on p.26, p.28 in http://core.ac.uk/download/pdf/1568393.pdf
         >>> s = Stock(S0=36, vol=.2)
         >>> o = Shout(ref=s, right='put', K=40, T=1, rf_r=.2, desc='http://core.ac.uk/download/pdf/1568393.pdf')
@@ -92,6 +97,11 @@ class Shout(OptionValuation):
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
+        :Authors:
+            Mengyan Xie <xiemengy@gmail.com>,
+            Hanting Li <hl45@rice.edu>,
+            Yen-fei Chen <yensfly@gmail.com>
+
        """
         self.seed = seed
         return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
@@ -104,7 +114,8 @@ class Shout(OptionValuation):
         -------
         self: Shout
 
-        .. sectionauthor:: Mengyan Xie
+        :Authors:
+            Mengyan Xie <xiemengy@gmail.com>
 
         Notes
         -----
@@ -146,8 +157,8 @@ class Shout(OptionValuation):
             S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
 
             # payoff of shout
-            Shout = self.signCP * S / np.exp(self.ref.q * tleft) * stats.norm.cdf(self.signCP * d1) - \
-                    self.signCP * S / np.exp(self.rf_r * tleft) * stats.norm.cdf(self.signCP * d2) + \
+            Shout = self.signCP * S / np.exp(self.ref.q * tleft) * scipy.stats.norm.cdf(self.signCP * d1) - \
+                    self.signCP * S / np.exp(self.rf_r * tleft) * scipy.stats.norm.cdf(self.signCP * d2) + \
                     self.signCP * (S - self.K) / np.exp(self.rf_r * tleft)
 
             # final payoff is the maximum of shout or not shout
@@ -188,7 +199,8 @@ class Shout(OptionValuation):
         -------
         self: Shout
 
-        .. sectionauthor:: Yen-fei Chen
+        :Authors:
+            Yen-fei Chen <yensfly@gmail.com>
 
         Note
         ----
@@ -196,36 +208,34 @@ class Shout(OptionValuation):
         [2] Hull, J.C., Options, Futures and Other Derivatives, 9ed, 2014. Prentice Hall, p609.
 
         """
-        from numpy import exp, random, zeros, sqrt, maximum, polyfit, polyval, array, where, mean, repeat
-        from scipy.stats import norm
 
         n_steps = getattr(self.px_spec, 'nsteps', 3)
         n_paths = getattr(self.px_spec, 'npaths', 3)
         _ = self
 
         dt = _.T / n_steps
-        df = exp(-_.rf_r * dt)
-        random.seed(_.seed)
+        df = np.exp(-_.rf_r * dt)
+        np.random.seed(_.seed)
 
-        h = zeros((n_steps+1, n_paths) ,'d') # option value matrix
-        S = zeros((n_steps+1, n_paths) ,'d') # stock price matrix
+        h = np.zeros((n_steps+1, n_paths) ,'d') # option value matrix
+        S = np.zeros((n_steps+1, n_paths) ,'d') # stock price matrix
         S[0,:] = _.ref.S0 # initial value
 
         # stock price paths
         for t in range(1,n_steps+1):
-            ran = norm.rvs(loc=0, scale=1, size=n_paths) # pseudo - random numbers
-            S[t,:] = S[t-1,:] * exp((_.rf_r-_.ref.vol**2/2)*dt + _.ref.vol*ran*sqrt(dt))
+            ran = scipy.stats.norm.rvs(loc=0, scale=1, size=n_paths) # pseudo - random numbers
+            S[t,:] = S[t-1,:] * np.exp((_.rf_r-_.ref.vol**2/2)*dt + _.ref.vol*ran*np.sqrt(dt))
 
-        h = maximum(_.signCP*(S-_.K), 0) # payoff when not shout
-        final_payoff = repeat(S[-1,:], n_steps+1, axis=0).reshape(n_paths,n_steps+1)
-        V = maximum(_.signCP*(final_payoff.transpose()-_.K), _.signCP*(S-_.K))# payoff when shout
+        h = np.maximum(_.signCP*(S-_.K), 0) # payoff when not shout
+        final_payoff = np.repeat(S[-1,:], n_steps+1, axis=0).reshape(n_paths,n_steps+1)
+        V = np.maximum(_.signCP*(final_payoff.transpose()-_.K), _.signCP*(S-_.K))# payoff when shout
 
         for t in range (n_steps-1,-1,-1): # valuation process ia similar to American option
-            rg = polyfit(S[t,:], df*array(h[t+1,:]), 3) # regression at time t
-            C= polyval(rg, S[t,:]) # continuation values
-            h[t,:]= where(V[t,:]>C, V[t,:], h[t+1,:]*df) # exercise decision: shout or not shout
+            rg = np.polyfit(S[t,:], df*np.array(h[t+1,:]), 3) # regression at time t
+            C= np.polyval(rg, S[t,:]) # continuation values
+            h[t,:]= np.where(V[t,:]>C, V[t,:], h[t+1,:]*df) # exercise decision: shout or not shout
 
-        self.px_spec.add(px=float(mean(h[0,:])), sub_method='Hull p.609')
+        self.px_spec.add(px=float(np.mean(h[0,:])), sub_method='Hull p.609')
         return self
 
     def _calc_FD(self):

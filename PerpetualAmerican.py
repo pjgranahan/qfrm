@@ -1,5 +1,8 @@
-from OptionValuation import *
 import numpy as np
+
+try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:   from OptionValuation import *  # development: if not installed and running from source
+
 
 class PerpetualAmerican(OptionValuation):
     """ perpetual American option class.
@@ -10,14 +13,20 @@ class PerpetualAmerican(OptionValuation):
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
 
-        User passes parameters to calc_px, which saves them to local PriceSpec object
-        and calls specific pricing function
-
+        All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
+        specific pricing method (``_calc_BS()``,...) is called.
+        An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
+        is calculating price via a shorter method wrapper ``.pxBS(...)``.
+        The same works for all methods (BS, LT, MC, FD).
 
         Parameters
-        --------------
+        ----------
         method : str
-                Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
+                Required. Indicates a valuation method to be used:
+                ``BS``: Black-Scholes Merton calculation
+                ``LT``: Lattice tree (such as binary tree)
+                ``MC``: Monte Carlo simulation methods
+                ``FD``: finite differencing methods
         nsteps : int
                 LT, MC, FD methods require number of times steps
         npaths : int
@@ -27,16 +36,17 @@ class PerpetualAmerican(OptionValuation):
 
         Returns
         ----------
-        self : PerpetualAmerican
+        PerpetualAmerican
+            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
 
-        .. sectionauthor:: Tianyi Yao
+
 
         Notes
         ---------
-        In finance, a perpetual American option is a special type of American option which deos not have a
+        In finance, a perpetual American option is a special type of American option which does not have a
         maturity date.
 
-        Formula reference: Hull P.599 Perpetual American
+        [1] Formula reference: Hull P.599 Perpetual American
 
         Examples
         ------------
@@ -44,54 +54,54 @@ class PerpetualAmerican(OptionValuation):
         Use the Black-Scholes model to price a perpetual American option
 
         Verification of examples:
-        All the examples below can be verified by this online tools: http://www.coggit.com/freetools
-        R package: PerpetualBS.R
+        `All the examples below can be verified by this online tools: <http://www.coggit.com/freetools>`
 
 
 
-        This examples below can be verified by this online tools: http://www.coggit.com/freetools
+
+        `This examples below can be verified by this online tools: <http://www.coggit.com/freetools>`
         >>> s = Stock(S0=50, vol=.3, q=0.01)
         >>> o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.08, \
         desc='call @37.19 put @8.68 example from Internet')
 
-        >>> print(o.calc_px(method='BS').px_spec.px) # doctest: +ELLIPSIS
-        37.19067...
+        >>> o.calc_px(method='BS').px_spec.px # doctest: +ELLIPSIS
+        37.190676833...
 
-        >>> print(o.calc_px(method="BS").px_spec)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PriceSpec...px: 37.1906...
-        <BLANKLINE>
-
-        >>> print(o.calc_px(method='BS'))  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PerpetualAmerican...px: 37.1906...
-        <BLANKLINE>
+        >>> o.calc_px(method="BS").px_spec  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 37.190676834...
 
 
+        >>> o.calc_px(method='BS')  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PerpetualAmerican...px: 37.190676834...
 
-        Change the option to a put, can verified by this online tools: http://www.coggit.com/freetools
-        >>> print(o.update(right='put').calc_px().px_spec.px) # doctest: +ELLIPSIS
-        8.67627...
 
-        >>> print(o.update(right='put').calc_px()) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PerpetualAmerican...px: 8.67627...
-        <BLANKLINE>
+
+
+        `Change the option to a put, can verified by this online tools: <http://www.coggit.com/freetools>`
+        >>> o.update(right='put').calc_px().px_spec.px # doctest: +ELLIPSIS
+        8.676279289...
+
+        >>> o.update(right='put').calc_px() # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PerpetualAmerican...px: 8.67627929...
+
 
 
 
         Another example with different dividend and risk free interest rate
-        This examples below can be verified by this online tools: http://www.coggit.com/freetools
+        `This examples below can be verified by this online tools: <http://www.coggit.com/freetools>`
         >>> s = Stock(S0=50, vol=.3, q=0.02)
         >>> o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.05, \
         desc='call @27.47 put @13.43 example from Internet')
-        >>> print(o.calc_px(method='BS').px_spec.px) # doctest: +ELLIPSIS
-        27.46559...
+        >>> o.calc_px(method='BS').px_spec.px # doctest: +ELLIPSIS
+        27.465595636...
 
-        Change the option to a put, can be verified by this online tools: http://www.coggit.com/freetools
-        >>> print(o.update(right='put').calc_px().px_spec.px)# doctest: +ELLIPSIS
-        13.42726...
+        `Change the option to a put, can be verified by this online tools: <http://www.coggit.com/freetools>`
+        >>> o.update(right='put').calc_px().px_spec.px# doctest: +ELLIPSIS
+        13.427262534...
 
-        >>> print(o.update(right='put').calc_px())# doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PerpetualAmerican...px: 13.42726...
-        <BLANKLINE>
+        >>> o.update(right='put').calc_px()# doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PerpetualAmerican...px: 13.427262535...
+
 
 
 
@@ -105,6 +115,9 @@ class PerpetualAmerican(OptionValuation):
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
+        :Authors:
+            Tianyi Yao <ty13@rice.edu>
+
         """
 
         return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
@@ -116,15 +129,10 @@ class PerpetualAmerican(OptionValuation):
 
         """ Internal function for option valuation.
 
-        Returns
-        ----------
-        self: PerpetualAmerican
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor:: Tianyi Yao
-
-        Note
-        -------
-
+        :Authors:
+            Tianyi Yao <ty13@rice.edu>
         """
 
         #Get parameters
@@ -175,11 +183,9 @@ class PerpetualAmerican(OptionValuation):
     def _calc_LT(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: PerpetualAmerican
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor::
+        :Authors:
 
         """
 
@@ -188,14 +194,9 @@ class PerpetualAmerican(OptionValuation):
     def _calc_MC(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: PerpetualAmerican
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor::
-
-        Note
-        ----
+        :Authors:
 
         """
         return self
@@ -203,14 +204,9 @@ class PerpetualAmerican(OptionValuation):
     def _calc_FD(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: PerpetualAmerican
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor::
-
-        Note
-        ----
+        :Authors:
 
         """
 

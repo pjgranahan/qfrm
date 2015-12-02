@@ -1,26 +1,37 @@
-from qfrm import *
-from numpy import arange, maximum
+import matplotlib.pyplot as plt
+import numpy as np
+
+try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:   from OptionValuation import *  # development: if not installed and running from source
 
 
 class Bermudan(OptionValuation):
     """ Bermudan option class.
 
     Inherits all methods and properties of OptionValuation class.
+    The Bermudan option is a modified American with restricted early-exercise dates. Due to this restriction, 
+    Bermudans are named as such as they are "between" American and European options in exercisability, and as 
+    this module demonstrates, in price.
     """
 
-    def calc_px(self, method='LT', tex=(.12,.24,.46,.9,.91,.92,.93,.94,.95,.96,.97,.98,.99, 1.), \
-        nsteps=None, npaths=None, keep_hist=False, R=3):
+    def calc_px(self, method='LT', tex=(.12, .24, .46, .9, .91, .92, .93, .94, .95, .96, .97, .98, .99, 1.),
+                nsteps=None, npaths=None, keep_hist=False, R=3):
         """ Wrapper function that calls appropriate valuation method.
 
-        User passes parameters to calc_px, which saves them to local PriceSpec object
-        and calls specific pricing function (_calc_BS,...).
-        This makes significantly less docstrings to write, since user is not interfacing pricing functions,
-        but a wrapper function calc_px().
+        All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
+        specific pricing method (``_calc_BS()``,...) is called.
+        An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
+        is calculating price via a shorter method wrapper ``.pxBS(...)``.
+        The same works for all methods (BS, LT, MC, FD).
 
         Parameters
         ----------
         method : str
-                Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
+                Required. Indicates a valuation method to be used:
+                ``BS``: Black-Scholes Merton calculation
+                ``LT``: Lattice tree (such as binary tree)
+                ``MC``: Monte Carlo simulation methods
+                ``FD``: finite differencing methods
         tex : list
                 Required. Must be a vector (tuple; list; array, ...) of times to exercisability. 
                 For Bermudan, assume that exercisability is for discrete tex times only.
@@ -45,98 +56,149 @@ class Bermudan(OptionValuation):
         Returns
         -------
         self : Bermudan
-
-        .. sectionauthor:: Oleg Melkinov; Andy Liao, Patrick Granahan
+            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
 
 
         Notes
         -----
-        The Bermudan option is a modified American with restricted early-exercise dates. Due to this restriction, 
-        Bermudans are named as such as they are "between" American and European options in exercisability, and as 
-        this module demonstrates, in price.
 
 
-        References
-        ----------
-        [1] http://eprints.maths.ox.ac.uk/789/1/Thom.pdf
-        [2] http://eprints.maths.ox.ac.uk/934/1/longyun_chen.pdf
+        LT Notes
+
+        Referenced example is from p.9 of
+        `Bermudan Option Pricing using Binomial Models Seminar in Analytical Finance I
+        <http://janroman.dhis.org/stud/I2012/Bermuda/reportFinal.pdf>`_
+
+
+        MC Notes
+
+        For our Monte Carlo pricing, we use the Longstaff-Schwartz algorithm.
+        Our implementation is drawn heavily from
+        `Longstaff Schwartz Pricing of Bermudan Options and Their Greeks, Howard Thom, 2009
+        <http://eprints.maths.ox.ac.uk/789/1/Thom.pdf>`_,
+        while our method for generating the betas is drawn heavily from
+        `Multilevel Monte Carlo Adapted to Bermudan Options Using Randomized Stopping Rules
+        <http://eprints.maths.ox.ac.uk/934/1/longyun_chen.pdf>`_.
+
 
         Examples
         --------
 
-        >>> #LT pricing of Bermudan options
+        
+       **LT Examples**
+
+        LT pricing of Bermudan options
+
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Bermudan(ref=s, right='put', K=52, T=2, rf_r=.05)
-        >>> o.calc_px(method='LT', keep_hist=True).px_spec.px
-        7.251410363950508
-        >>> ##Changing the maturity
+        >>> o.pxLT(keep_hist=True) # doctest: +ELLIPSIS
+        7.25141036...
+        
+        Changing the maturity
+
         >>> o = Bermudan(ref=s, right='put', K=52, T=1, rf_r=.05)
-        >>> o.calc_px(method='LT', keep_hist=True).px_spec.px
-        5.9168269657242
+        >>> o.pxLT(keep_hist=True) # doctest: +ELLIPSIS
+        5.91682696...
+
         >>> o = Bermudan(ref=s, right='put', K=52, T=.5, rf_r=.05)
-        >>> o.calc_px(method='LT', keep_hist=True).px_spec.px        
-        4.705110748543638
-        >>> ##Explicit input of exercise schedule
-        >>> ##Explicit input of exercise schedule
-        >>> from numpy.random import normal, seed
-        >>> seed(12345678)
-        >>> rlist = normal(1,1,20)
+        >>> o.pxLT(keep_hist=True) # doctest: +ELLIPSIS     
+        4.70511074...
+
+        Explicit input of exercise schedule
+
+        >>> np.random.seed(12345678)
+        >>> rlist = np.random.normal(1,1,20)
         >>> times = tuple(map(lambda i: float(str(round(abs(rlist[i]),2))), range(20)))
         >>> o = Bermudan(ref=s, right='put', K=52, T=1., rf_r=.05)
-        >>> o.calc_px(method='LT', tex=times, keep_hist=True).px_spec.px
-        5.8246496768398055
-        >>> ##Example from p. 9 of http://janroman.dhis.org/stud/I2012/Bermuda/reportFinal.pdf
+        >>> o.pxLT(tex=times, keep_hist=True) # doctest: +ELLIPSIS
+        5.82464967...
+
+        Example from outside reference
+
         >>> times = (3/12,6/12,9/12,12/12,15/12,18/12,21/12,24/12)
         >>> o = Bermudan(ref=Stock(50, vol=.6), right='put', K=52, T=2, rf_r=0.1)
-        >>> o.calc_px(method='LT', tex=times, nsteps=40, keep_hist=False).px_spec.px       
-        13.206509995991107
-        >>> ##Price vs. strike curve - example of vectorization of price calculation
-        >>> import matplotlib.pyplot as plt
-        >>> from numpy import linspace
-        >>> Karr = linspace(30,70,101)
+        >>> o.pxLT(tex=times, nsteps=40, keep_hist=False) # doctest: +ELLIPSIS       
+        13.2065099...
+
+        Price vs. strike curve - example of vectorization of price calculation
+
+        >>> Karr = np.linspace(30,70,101)
         >>> px = tuple(map(lambda i:  Bermudan(ref=Stock(50, vol=.6), right='put', K=Karr[i], T=2, rf_r=0.1).
-        ... calc_px(tex=times, nsteps=20).px_spec.px, range(Karr.shape[0])))
+        ... pxLT(tex=times, nsteps=20), range(Karr.shape[0])))
         >>> fig = plt.figure()
         >>> ax = fig.add_subplot(111) 
-        >>> ax.plot(Karr,px,label='Bermudan put')
+        >>> ax.plot(Karr,px,label='Bermudan put') # doctest: +ELLIPSIS
         [<...>]
-        >>> ax.set_title('Price of Bermudan put vs K')
+        >>> ax.set_title('Price of Bermudan put vs K') # doctest: +ELLIPSIS
         <...>
-        >>> ax.set_ylabel('Px')
+        >>> ax.set_ylabel('Px') # doctest: +ELLIPSIS
         <...>
-        >>> ax.set_xlabel('K')
+        >>> ax.set_xlabel('K') # doctest: +ELLIPSIS 
         <...>
         >>> ax.grid()
-        >>> ax.legend() 
+        >>> ax.legend() # doctest: +ELLIPSIS
         <...>
-        # >>> plt.show()
+        >>> plt.show()
 
-        MC example #1 - Verifiable example #1: See reference [1], section 5.1 and table 5.1 with arguments N=10^2, R=3
+
+        MC Examples
+        -----------
+
+        **Example #1** (pricing isn't working correctly, so the expected output is gibberish for now)
 
         >>> s = Stock(S0=11, vol=.4)
         >>> o = Bermudan(ref=s, right='put', K=15, T=1, rf_r=.05, desc="in-the-money Bermudan put")
-        >>> o.calc_px(method='MC', R=3, npaths=10**2, tex=list([(i+1)/10 for i in range(10)])).px_spec.px
+        >>> o.pxMC(R=2, npaths=10, tex=list([(i+1)/10 for i in range(10)]))
+        1234
+
+        **Example #2** (verifiable): See reference [1], section 5.1 and table 5.1 with arguments N=10^2, R=3
+        Uncomment to run (number of paths required is too high for doctests)
+
+        # >>> s = Stock(S0=11, vol=.4)
+        # >>> o = Bermudan(ref=s, right='put', K=15, T=1, rf_r=.05, desc="in-the-money Bermudan put")
+        # >>> o.pxMC(R=3, npaths=10**2, tex=list([(i+1)/10 for i in range(10)]))
         4.200888
 
-        MC example #2 - Verifiable example #2: See reference [1], section 5.1 and table 5.1 with arguments N=10^5, R=6
+        Example #3 (verifiable): See reference [1], section 5.1 and table 5.1 with arguments N=10^5, R=6
+        Uncomment to run (number of paths required is too high for doctests)
+
+        # >>> s = Stock(S0=11, vol=.4)
+        # >>> o = Bermudan(ref=s, right='put', K=15, T=1, rf_r=.05, desc="in-the-money Bermudan put")
+        # >>> o.pxMC(R=6, npaths=10**5, tex=list([(i+1)/10 for i in range(10)]))
+        4.204823
+
+        Example #4 (plot)
 
         >>> s = Stock(S0=11, vol=.4)
-        >>> o = Bermudan(ref=s, right='put', K=15, T=1, rf_r=.05, desc="in-the-money Bermudan put")
-        >>> o.calc_px(method='MC', R=6, npaths=10**5, tex=list([(i+1)/10 for i in range(10)])).px_spec.px
-        4.204823
+        >>> b = Bermudan(ref=s, right='put', K=15, T=1, rf_r=.05, desc="in-the-money Bermudan put")
+        >>> b.pxMC(R=3, npaths=10, tex=list([(i+1)/10 for i in range(10)]))  # doctest: +ELLIPSIS
+        4.0913465936735687
+        >>> plt.title("Histogram of prices on different MC paths")  # doctest: +ELLIPSIS
+        <...>
+        >>> plt.xlabel("Price")  # doctest: +ELLIPSIS
+        <...>
+        >>> plt.ylabel("Frequency")  # doctest: +ELLIPSIS
+        <...>
+        >>> plt.hist(b.px_spec.prices)  # doctest: +ELLIPSIS
+        (...)
+        >>> plt.show()
+
+        :Authors: 
+            Oleg Melkinov 
+            Andy Liao <Andy.Liao@rice.edu>
+            Patrick Granahan
 
         """
 
-        from numpy import asarray
         T = max(tex)
         if self.T < T:
-            tex = tuple(asarray(tex)[asarray(tex) < self.T]) + (self.T,)
+            tex = tuple(np.asarray(tex)[np.asarray(tex) < self.T]) + (self.T,)
         if self.T > T:
-            tex = tex[:-1] + (self.T,)            
+            tex = tex[:-1] + (self.T,)
         self.tex = tex
-        knsteps = max(tuple(map(lambda i: int(T/(tex[i+1]-tex[i])), range(len(tex)-1))))
+        knsteps = max(tuple(map(lambda i: int(T / (tex[i + 1] - tex[i])), range(len(tex) - 1))))
         if nsteps != None:
-            knsteps = knsteps * nsteps 
+            knsteps = knsteps * nsteps
         nsteps = knsteps
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, R=R)
         return getattr(self, '_calc_' + method.upper())()
@@ -147,31 +209,33 @@ class Bermudan(OptionValuation):
         Returns
         -------
         self: Bermudan
-
-        .. sectionauthor:: Oleg Melnikov; Andy Liao
+   
+        :Authors: 
+            Oleg Melnikov 
+            Andy Liao <Andy.Liao@rice.edu>
 
         """
 
         keep_hist = getattr(self.px_spec, 'keep_hist', False)
         n = getattr(self.px_spec, 'nsteps', 3)
         _ = self.LT_specs(n)
-        
-        #Redo tree steps 
 
-        S = self.ref.S0 * _['d'] ** arange(n, -1, -1) * _['u'] ** arange(0, n + 1)  # terminal stock prices
-        O = maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
+        #Redo tree steps
+
+        S = self.ref.S0 * _['d'] ** np.arange(n, -1, -1) * _['u'] ** np.arange(0, n + 1)  # terminal stock prices
+        O = np.maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
         # tree = ((S, O),)
         S_tree = (tuple([float(s) for s in S]),)  # use tuples of floats (instead of numpy.float)
         O_tree = (tuple([float(o) for o in O]),)
         # tree = ([float(s) for s in S], [float(o) for o in O],)
 
         for i in range(n, 0, -1):
-            O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices 
+            O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices
             #(@time step=i-1)
             S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
-            Payout = maximum(self.signCP * (S - self.K), 0)   # payout at time step i-1 (moving backward in time)
-            if i*_['dt'] in self.tex:   #The Bermudan condition: exercise only at scheduled times         
-                O = maximum(O, Payout)
+            Payout = np.maximum(self.signCP * (S - self.K), 0)   # payout at time step i-1 (moving backward in time)
+            if i*_['dt'] in self.tex:   #The Bermudan condition: exercise only at scheduled times
+                O = np.maximum(O, Payout)
             # tree = tree + ((S, O),)
             S_tree = (tuple([float(s) for s in S]),) + S_tree
             O_tree = (tuple([float(o) for o in O]),) + O_tree
@@ -203,6 +267,10 @@ class Bermudan(OptionValuation):
     def _calc_MC(self):
         """ Internal function for option valuation.
 
+        NOTE: Currently only semi-functional. There's a bug where the prices returned from different paths are largely
+        the same price (as seen in the price histogram in MC example #4). So while the answer isn't completely wrong,
+        it's definitely not right.
+
         Returns
         -------
         self: Bermudan
@@ -211,7 +279,7 @@ class Bermudan(OptionValuation):
 
         Note
         ----
-
+        Uses the Longstaff-Schwartz algorithm.
         """
 
         # Get arguments from calc_px
@@ -220,10 +288,11 @@ class Bermudan(OptionValuation):
 
         def payout(stock_price):
             """
-            The payout of a Bermudan option given a stock_price.
+            Calculates the payout of a Bermudan option at a given stock_price.
+
             Parameters
             ----------
-            stock_price : list
+            stock_price : numpy.matrix
                 A vector of stock prices
 
             Returns
@@ -236,7 +305,7 @@ class Bermudan(OptionValuation):
 
         def generate_GBM_paths():
             """
-            Generates a list of paths (list of lists) of shape (tex * npaths).
+            Generates a matrix (dimensions tex * npaths) of paths.
 
             Returns
             -------
@@ -251,9 +320,9 @@ class Bermudan(OptionValuation):
 
             # Fill the matrix
             for i in range(len(self.tex) - 1):
-                deltaT = self.tex[i+1] - self.tex[i]
-                paths[i+1] = paths[i] * np.exp((((self.rf_r - self.ref.q) - ((self.ref.vol**2) / 2)) * deltaT) +
-                                               (self.ref.vol * np.random.randn(npaths) * np.sqrt(deltaT)))
+                deltaT = self.tex[i + 1] - self.tex[i]
+                paths[i + 1] = paths[i] * np.exp((((self.rf_r - self.ref.q) - ((self.ref.vol ** 2) / 2)) * deltaT) +
+                                                 (self.ref.vol * np.random.randn(npaths) * np.sqrt(deltaT)))
 
             return np.matrix(paths)
 
@@ -262,13 +331,19 @@ class Bermudan(OptionValuation):
             Generates the weighted Laguerre polynomial [1] solution.
             Could be made more general by expanding the scope of R, but at potentially reduced speeds.
 
+            For the Longstaff-Schwartz algorithm, we need a set of basis functions that are
+                - complete
+                - linearly independent
+            The Weighted Laguerre polynomials satisfy these properties, and we will use them as our basis functions in
+            the same way Longstaff and Schwartz chose them.
+
             Parameters
             ----------
             R : int
                     The R-th element in the Laguerre polynomial sequence
                     Must be between 0 and 6.
-            x : list
-                A vector of values to solve for.
+            x : numpy.matrix
+                    A vector of values to solve for.
 
             References
             ----------
@@ -282,33 +357,34 @@ class Bermudan(OptionValuation):
             # Convert x to an ndarray, so that this method is readable
             x = np.asarray(x)
 
+            # The explicit solutions for R=0-6
             if R == 0:
                 phi = 1
             elif R == 1:
                 phi = -x + 1
             elif R == 2:
-                phi = 1/2 * (x**2 -4*x + 2)
+                phi = 1 / 2 * (x ** 2 - 4 * x + 2)
             elif R == 3:
-                phi = 1/6 * (-x**3 + 9*x**2 - 18*x + 6)
+                phi = 1 / 6 * (-x ** 3 + 9 * x ** 2 - 18 * x + 6)
             elif R == 4:
-                phi = 1/24 * (x**4 - 16*x**3 + 72*x**2 - 96*x + 24)
+                phi = 1 / 24 * (x ** 4 - 16 * x ** 3 + 72 * x ** 2 - 96 * x + 24)
             elif R == 5:
-                phi = 1/120 * (-x**5 + 25*x**4 - 200*x**3 + 600*x**2 - 600*x + 120)
+                phi = 1 / 120 * (-x ** 5 + 25 * x ** 4 - 200 * x ** 3 + 600 * x ** 2 - 600 * x + 120)
             elif R == 6:
-                phi = 1/720 * (x**6 - 36*x**5 + 450*x**4 - 2400*x**3 + 5400*x**2 - 4320*x + 720)
+                phi = 1 / 720 * (x ** 6 - 36 * x ** 5 + 450 * x ** 4 - 2400 * x ** 3 + 5400 * x ** 2 - 4320 * x + 720)
             else:
                 phi = 0
                 raise Exception("R is out of range.")
 
             # Weight s according to the Longstaff-Schwartz algorithm
             phi *= np.exp(-0.5 * x)
-            # phi = np.multiply(phi, np.exp(np.multiply(-0.5, x)))
 
             return np.matrix(phi)
 
         def betas(paths):
             """
             Generates the discounted betas used in the Longstaff-Schwartz algorithm using a regression.
+
             Parameters
             ----------
             paths : numpy.matrix
@@ -316,23 +392,17 @@ class Bermudan(OptionValuation):
 
             Returns
             -------
-            betas : list
+            betas : numpy.matrix
                     A tex * R matrix (list of lists) holding the betas.
             """
-
             # Initialize betas as an empty matrix (dimensions R * (tex - 1))
             betas = np.matrix(np.zeros((R, len(self.tex))))
 
-            # Initialize B_phi_phi as an empty square matrix (dimensions R * R)
-            # B_phi_phi = np.matrix(np.zeros((R, R)))
-
-            # Initialize B_prices_phi as an empty matrix (dimensions 1 * R)
-            # B_prices_phi = np.matrix(np.zeros((1, R)))
-
-            # Initialize laguerre_matrix as an empty matrix (dimensions npaths * R)
+            # Laguerre_matrix is a matrix (dimensions npaths * R) that will hold the coefficients
             laguerre_matrix = np.matrix(np.zeros((npaths, R)))
 
-            prices = payout(paths[len(self.tex)-1, :].getH())
+            # Prices is a matrix (dimensions npaths * 1) that holds the prices for each path
+            prices = payout(paths[len(self.tex) - 1, :].getH())
 
             # Step backwards through the exercise dates
             for exercise_date_index in reversed(range(len(self.tex))):
@@ -352,11 +422,11 @@ class Bermudan(OptionValuation):
                 # B_prices_phi is a matrix (dimensions 1 * R)
                 B_prices_phi = laguerre_matrix.getH() * prices
 
+                # Solve the system of equations and store the betas
                 betas[:, exercise_date_index] = np.linalg.solve(B_phi_phi, B_prices_phi)
 
+            # Trim the empty column off the front of betas
             betas = np.delete(betas, 0, 1)
-
-            # print(betas)
 
             return betas
 
@@ -366,24 +436,29 @@ class Bermudan(OptionValuation):
         # Generate betas
         betas = betas(paths)
 
-        # values will store the list of prices; each price comes from a different path
+        # Prices will store the price found at each path
         prices = np.zeros(npaths)
 
         # Fill prices
         for path in range(npaths):
             for exercise_date in range(len(self.tex)):
+
+                # Find the continuation price
                 continuation_price = 0
-                stock_price = paths[exercise_date, path] # stock price at the exercise date on a given path
+                stock_price = paths[exercise_date, path]  # stock price at the exercise date on a given path
                 for R in range(R):
                     continuation_price += Laguerre(R, stock_price) * betas[exercise_date, R]
-                if continuation_price < payout(stock_price) or exercise_date == len(self.tex)-1:
+
+                # If the continuation price is less than the payout, or we have reached the last exercise date,
+                # we have found the price for this path.
+                if continuation_price < payout(stock_price) or exercise_date == len(self.tex) - 1:
                     discount = np.exp(-(self.rf_r - self.ref.q) * (self.T * self.tex[exercise_date] / self.tex[-1]))
                     prices[path] = discount * payout(stock_price)
                     break
 
-        # Find the price by averaging the prices, then record it
+        # Find the average price across all the paths, then record it
         price = np.average(prices)
-        self.px_spec.add(px=price, sub_method='Longstaff-Schwartz')
+        self.px_spec.add(px=price, sub_method='Longstaff-Schwartz', prices=prices)
 
         return self
 
@@ -402,8 +477,3 @@ class Bermudan(OptionValuation):
         """
 
         return self
-
-
-s = Stock(S0=11, vol=.4)
-o = Bermudan(ref=s, right='put', K=15, T=1, rf_r=.05, desc="in-the-money Bermudan put")
-print(o.calc_px(method='MC', R=3, npaths=5**1, tex=list([(i+1)/10 for i in range(10)])).px_spec.px)
