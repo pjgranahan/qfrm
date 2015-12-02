@@ -127,7 +127,7 @@ class Exchange(OptionValuation):
         PriceSpec...px: 3.993309432...
 
         >>> (o.px_spec.px, o.px_spec.method)  # alternative attribute access
-        (3.993309432456474, 'FD')
+        (3.993309432456476, 'FD')
 
         >>> Exchange(clone=o).pxFD(cor=0.75, nsteps=10, npaths=9)
         3.993309432
