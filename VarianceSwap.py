@@ -79,15 +79,15 @@ class VarianceSwap(OptionValuation):
         Pricing by BSM
         >>> s = Stock(355)
         >>> o = VarianceSwap(ref=s, rf_r=0.03, T=1.)
-        >>> o.pxBS()
-        -489162.76141834602
+        >>> o.pxBS() # doctest: +ELLIPSIS
+        -489162.761...
         
         >>> ##Changing the stock price
-        >>> VarianceSwap(ref=Stock(310), rf_r=0.03, T=1.).pxBS()
-        -504216.71298424702
+        >>> VarianceSwap(ref=Stock(310), rf_r=0.03, T=1.).pxBS() # doctest: +ELLIPSIS
+        -504216.712...
         
-        >>> VarianceSwap(ref=Stock(500), rf_r=0.03, T=1.).pxBS()
-        -1404368.576835108
+        >>> VarianceSwap(ref=Stock(500), rf_r=0.03, T=1.).pxBS() # doctest: +ELLIPSIS
+        -1404368.57...
         
         Explicit input parameters
         >>> VarianceSwap(ref=Stock(290), rf_r=0.03, T=1.).pxBS(K=(280.,300.,320.,340.,360.,380.,400.),
