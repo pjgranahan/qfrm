@@ -65,14 +65,17 @@ class ForwardStart(OptionValuation):
         >>> o.px_spec.px #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         2.628777266...
 
-
-
         >>> s = Stock(S0=60, vol=.30,q=0.04)
         >>> o=ForwardStart(ref=s, K=66,right='call', T=0.75, \
         rf_r=.08).calc_px(method='BS',T_s=0.25)
         >>> o.px_spec #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         PriceSpec...px: 6.760976029...
 
+        >>> s = Stock(S0=60, vol=.30,q=0.04)
+        >>> o=ForwardStart(ref=s, K=66,right='put', T=0.75, \
+        rf_r=.08).calc_px(method='BS',T_s=0.25)
+        >>> o.px_spec #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 5.057238874
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
