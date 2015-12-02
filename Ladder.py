@@ -65,6 +65,10 @@ class Ladder(OptionValuation):
         FD Examples
         --------------
 
+        >>> s = Stock(S0=50)
+        >>> o = Ladder(rungs=(51, 52, 53, 54, 55), ref=s, right='call', K=51, T=1, rf_r=0.05)
+        >>> o.pxFD(npaths = 10, nsteps=5)
+
 
         :Authors:
             Patrick Granahan
@@ -130,9 +134,8 @@ class Ladder(OptionValuation):
         # Set boundary conditions.
         grid[:, -1] = S_vec
 
-        # Payout at the maturity time. For the initial
-        init_cond = self.payoff(S_vec)
-        init_cond = np.maximum(self.signCP * (S_vec - self.K),S_min)
+        # Payout at the maturity time. Seeded with the prices in S_vec, which have no price history
+        init_cond = [self.payoff((stock_price,)) for stock_price in S_vec]
 
         if self.right == 'call':
             # Boundary condition
@@ -269,8 +272,11 @@ class Ladder(OptionValuation):
         rung_reached = -1
         # Climb the ladder, rung by rung, until the extreme stock price can't reach the next rung
         # (Note that each rung step could represent an increase OR decrease in strike, depending on the option right)
-        while self.signCP * extreme_historical_price >= self.signCP * self.rungs[rung_reached + 1]:
-            rung_reached += 1
+        for i in range(len(self.rungs)):
+            if self.signCP * extreme_historical_price >= self.signCP * self.rungs[rung_reached + 1]:
+                rung_reached += 1
+            else:
+                break
 
         payoff = max(self.signCP * (self.rungs[rung_reached] - self.K), 0)
         return payoff
