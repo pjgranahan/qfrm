@@ -1,6 +1,8 @@
 import math
 import numpy as np
 import scipy.stats
+import scipy.sparse
+
 
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
 except:   from OptionValuation import *  # development: if not installed and running from source
@@ -165,14 +167,14 @@ class ForwardStart(OptionValuation):
         >>> s = Stock(S0=50, vol=.15,q=0.05)
         >>> o=ForwardStart(ref=s, K=50, right='call', T=1, rf_r=.01, \
                desc='example from page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf')
-        >>> o.pxFD(nsteps=4,T_s=0.5) #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.pxFD(nsteps=4, npaths = 9, T_s=0.5) #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         2.38237683
 
         >>> s = Stock(S0=60, vol=.30,q=0.04)
         >>> o=ForwardStart(ref=s, K=66,right='call', T=0.75, \
-        rf_r=.08).calc_px(method='FD',T_s=0.25)
+        rf_r=.08).calc_px(method='FD', nsteps=4, npaths = 9, T_s=0.25)
         >>> o.px_spec #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PriceSpec...px: 6.402007239...
+        PriceSpec...px: 6.4149988...
 
         >>> from pandas import Series
         >>> expiries = range(1,5)
@@ -339,13 +341,13 @@ class ForwardStart(OptionValuation):
 
         """
 
-        keep_hist = getattr(self.px_spec, 'keep_hist', False)
         n = getattr(self.px_spec, 'nsteps', 3)
+        m = getattr(self.px_spec, 'npaths', 3)
         _ = self
         dt = _.T / n
 
         # Get the Price based on FD method
-        S = np.linspace(0.5*_.ref.S0, 1.5*_.ref.S0, 9)[::-1]
+        S = np.linspace(0.5*_.ref.S0, 1.5*_.ref.S0, m)[::-1]
 
         # Find the index of S which nearest to the strike price K
         idx = (np.abs(S - _.K)).argmin()
