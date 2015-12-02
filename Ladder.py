@@ -17,7 +17,7 @@ class Ladder(OptionValuation):
                 Required. The predetermined profit lock-in price levels.
         """
         super().__init__(*args, **kwargs)
-        self.rungs = sorted(rungs)
+        self.rungs = sorted(rungs, reverse=self.signCP == -1)
 
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
@@ -130,9 +130,9 @@ class Ladder(OptionValuation):
         # Set boundary conditions.
         grid[:, -1] = S_vec
 
-        # Payout at the maturity time
-        init_cond = np.maximum(self.signCP * (S_vec - self.K),
-                               S_min)  # TODO need to updated S_vec to include the ladder rungs lol
+        # Payout at the maturity time. For the initial
+        init_cond = self.payoff(S_vec)
+        init_cond = np.maximum(self.signCP * (S_vec - self.K),S_min)
 
         if self.right == 'call':
             # Boundary condition
@@ -236,8 +236,27 @@ class Ladder(OptionValuation):
 
         Examples
         --------
-        >>>
+        >>> s = Stock(S0=50)
+        >>> o = Ladder(rungs=(51, 52, 53, 54, 55), ref=s, right='call', K=51)
+        >>> o.payoff((50, 50.5, 52, 49, 37, 52.5, 0))
+        1
+
+        >>> s = Stock(S0=50)
+        >>> o = Ladder(rungs=(51, 52, 55, 54, 53), ref=s, right='call', K=53)
+        >>> o.payoff((50, 50.5, 52, 49, 37, 52.5, 0))
+        0
+
+        >>> s = Stock(S0=50)
+        >>> o = Ladder(rungs=(50, 48, 47, 42, 40.5), ref=s, right='put', K=45)
+        >>> o.payoff((50, 55, 45, 60))
+        0
+
+        >>> s = Stock(S0=50)
+        >>> o = Ladder(rungs=(50, 48, 47, 42, 40.5), ref=s, right='put', K=45)
+        >>> o.payoff((50, 55, 45, 60, 41.9))
+        3
         """
+
         # Find the extreme price in time for this option. Max for a call, min for a put
         if self.signCP == 1:
             extreme_historical_price = max(price_history)
@@ -250,7 +269,7 @@ class Ladder(OptionValuation):
         rung_reached = -1
         # Climb the ladder, rung by rung, until the extreme stock price can't reach the next rung
         # (Note that each rung step could represent an increase OR decrease in strike, depending on the option right)
-        while extreme_historical_price >= self.rungs[rung_reached + 1]:
+        while self.signCP * extreme_historical_price >= self.signCP * self.rungs[rung_reached + 1]:
             rung_reached += 1
 
         payoff = max(self.signCP * (self.rungs[rung_reached] - self.K), 0)
