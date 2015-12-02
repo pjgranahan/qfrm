@@ -50,6 +50,9 @@ class ForwardStart(OptionValuation):
         [3] Verify example 4 with
         `How to pricing forward start options <http://www.globalriskguard.com/resources/deriv/fwd_4.pdf>`_
 
+        Please note that in this implementation, we assume that at time ``T_s``, the strike is automatically set\
+        to be equal to the underlying price at ``T_s``, meaning we have at-the-money option. \
+        Hence, the user-supplied strike price ``K`` is ignored.
 
         Examples
         --------

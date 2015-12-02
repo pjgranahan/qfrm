@@ -46,6 +46,8 @@ class PerpetualAmerican(OptionValuation):
         In finance, a perpetual American option is a special type of American option which does not have a
         maturity date.
 
+        Please note that this perpetual American option has no expiry data. Hence, the parameter ``T`` is not used.
+
         [1] Formula reference: Hull P.599 Perpetual American
 
         Examples
