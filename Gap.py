@@ -396,7 +396,5 @@ class Gap(OptionValuation):
             f_px[-1,:]=lower_bound
 
         self.px_spec.add(px=float(np.interp(S0,S_vec,f_px[:,0])), sub_method='Implicit Method')
-        if self.keep_hist == True:
-            self.px_spec.add(opt_tree=f_px)
         return self
 
