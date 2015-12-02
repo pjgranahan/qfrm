@@ -317,7 +317,8 @@ class Binary(OptionValuation):
 
         Notes
         ----------------
-        [1] `Implementing Binomial Trees:   <http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181>`_
+        [1] `Implementing Binomial Trees, Manfred Gilli & Enrico Schumann, 2009
+            <http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181>`_
 
         :Authors:
             Tianyi Yao <ty13@rice.edu>

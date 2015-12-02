@@ -105,7 +105,7 @@ class PerpetualAmerican(OptionValuation):
 
         # Example of option price development (BS method) with increasing maturities (This would give a horizontal line\
         because this perpetual American option does not have an expiry)
-        
+
         >>> from pandas import Series
         >>> expiries = range(1,11)
         >>> O = Series([o.update(T=t).calc_px(method='BS').px_spec.px for t in expiries], expiries)
