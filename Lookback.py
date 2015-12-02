@@ -1,7 +1,5 @@
-import warnings
-import numpy as np
 import math
-import scipy.stats
+import numpy as np
 
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
 except:   from OptionValuation import *  # development: if not installed and running from source
@@ -132,7 +130,7 @@ class Lookback(OptionValuation):
 
         :Authors:
             Mengyan Xie <xiemengy@gmail.com>,
-            Hanting Li <hl45@rice.edu>
+            Hanting Li <hl45@rice.edu>,
             Yen-fei Chen <yensfly@gmail.com>
        """
         self.Sfl = Sfl
@@ -219,6 +217,7 @@ class Lookback(OptionValuation):
 
         # compute the new stock price
         S_new = _.ref.S0 / _.px_spec.Sfl if _.signCP == 1 else _.px_spec.Sfl / _.ref.S0
+        N = Util.norm_cdf
 
         # compute each a and c parameters from Hull p607
         a1 = (math.log(S_new) + (_.signCP * (_.rf_r - _.ref.q) + _.ref.vol ** 2 / 2) * _.T) / \
@@ -229,18 +228,18 @@ class Lookback(OptionValuation):
         Y1 = _.signCP * (-2 * (_.rf_r - _.ref.q - _.ref.vol ** 2 / 2) * math.log(S_new)) / (_.ref.vol ** 2)
 
         # compute call option price
-        c1 = _.ref.S0 * math.exp(-_.ref.q * _.T) * scipy.stats.norm.cdf(a1)
-        c2 = _.ref.S0 * math.exp(-_.ref.q * _.T) * (_.ref.vol ** 2) * scipy.stats.norm.cdf(-a1)/(2 * (_.rf_r - _.ref.q))
-        c3 = - _.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (scipy.stats.norm.cdf(a2) - _.ref.vol ** 2 * math.exp(Y1) * \
-                                                          scipy.stats.norm.cdf(-a3) / (2 * (_.rf_r - _.ref.q)))
+        c1 = _.ref.S0 * math.exp(-_.ref.q * _.T) * N(a1)
+        c2 = _.ref.S0 * math.exp(-_.ref.q * _.T) * (_.ref.vol ** 2) * N(-a1)/(2 * (_.rf_r - _.ref.q))
+        c3 = - _.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (N(a2) - _.ref.vol ** 2 * math.exp(Y1) * \
+                                                          N(-a3) / (2 * (_.rf_r - _.ref.q)))
 
         c = c1 - c2 + c3
 
         # compute put option price
-        p1 = self.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (scipy.stats.norm.cdf(a1) - _.ref.vol ** 2 * math.exp(Y1) * \
-                                                           scipy.stats.norm.cdf(-a3) / (2 * (_.rf_r - _.ref.q)))
-        p2 = _.ref.S0 * math.exp(-_.ref.q * _.T) * (_.ref.vol ** 2) * scipy.stats.norm.cdf(-a2)/(2 * (_.rf_r - _.ref.q))
-        p3 = _.ref.S0 * math.exp(-_.ref.q * _.T) * scipy.stats.norm.cdf(a2)
+        p1 = self.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (N(a1) - _.ref.vol ** 2 * math.exp(Y1) * \
+                                                           N(-a3) / (2 * (_.rf_r - _.ref.q)))
+        p2 = _.ref.S0 * math.exp(-_.ref.q * _.T) * (_.ref.vol ** 2) * N(-a2)/(2 * (_.rf_r - _.ref.q))
+        p3 = _.ref.S0 * math.exp(-_.ref.q * _.T) * N(a2)
         p = p1 + p2 - p3
 
 

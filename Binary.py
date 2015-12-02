@@ -1,6 +1,5 @@
-import numpy as np
 import math
-import scipy.stats
+import numpy as np
 
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
 except:   from OptionValuation import *  # development: if not installed and running from source
@@ -60,7 +59,7 @@ class Binary(OptionValuation):
 
         References
         -------------
-        [1] https://en.wikipedia.org/wiki/Binary_option
+        [1] `Binary Option on Wikipedia <https://en.wikipedia.org/wiki/Binary_option>`_
 
         Examples
         ------------
@@ -273,8 +272,8 @@ class Binary(OptionValuation):
             discount = self.ref.S0 * math.exp(-self.ref.q * self.T)
 
             # Compute the put and call price
-            px_call = discount * scipy.stats.norm.cdf(d1)
-            px_put = discount * scipy.stats.norm.cdf(-d1)
+            px_call = discount * Util.norm_cdf(d1)
+            px_put = discount * Util.norm_cdf(-d1)
 
         # Price the cash-or-nothing binary option
         elif payout_type == "cash-or-nothing":
@@ -282,8 +281,8 @@ class Binary(OptionValuation):
             discount = Q * math.exp(-self.rf_r * self.T)
 
             # Compute the put and call price
-            px_call = discount * scipy.stats.norm.cdf(d2)
-            px_put = discount * scipy.stats.norm.cdf(-d2)
+            px_call = discount * Util.norm_cdf(d2)
+            px_put = discount * Util.norm_cdf(-d2)
 
         # The underlying is unknown
         else:

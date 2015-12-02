@@ -64,8 +64,8 @@ class Barrier(OptionValuation):
         >>> from qfrm import *
         >>> s = Stock(S0=50., vol=.25, q=.00)
         >>> o = Barrier(ref=s,right='call', K=45., T=2., rf_r=.1, desc='down and out call')
-        >>> o.calc_px(H=35., knock='down', dir='out', method='BS').px_spec.px
-        14.474414799617568
+        >>> o.pxBS(H=35., knock='down', dir='out')
+        14.4744148
 
         >>> o.calc_px(H=35.,knock='down',dir='out',method='BS').px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         PriceSpec...px: 14.4744148...
@@ -169,11 +169,12 @@ class Barrier(OptionValuation):
 
         _ = self
         # Compute Parameters
+        N = Util.norm_cdf
         d1 = (np.log(_.ref.S0/_.K) + (_.rf_r-_.ref.q+(_.ref.vol**2)/2)*_.T)/(_.ref.vol*np.sqrt(_.T))
         d2 = d1 - _.ref.vol*np.sqrt(_.T)
 
-        c = _.ref.S0*np.exp(-_.ref.q*_.T)*scipy.stats.norm.cdf(d1) - _.K*np.exp(-_.rf_r*_.T)*scipy.stats.norm.cdf(d2)
-        p = _.K*np.exp(-_.rf_r*_.T)*scipy.stats.norm.cdf(-d2) - _.ref.S0*np.exp(-_.ref.q*_.T)*scipy.stats.norm.cdf(-d1)
+        c = _.ref.S0*np.exp(-_.ref.q*_.T)*N(d1) - _.K*np.exp(-_.rf_r*_.T)*N(d2)
+        p = _.K*np.exp(-_.rf_r*_.T)*N(-d2) - _.ref.S0*np.exp(-_.ref.q*_.T)*N(-d1)
 
         l = (_.rf_r-_.ref.q+(_.ref.vol**2)/2)/(_.ref.vol**2)
         y = np.log((_.H**2)/(_.ref.S0*_.K))/(_.ref.vol*np.sqrt(_.T)) + l*_.ref.vol*np.sqrt(_.T)
@@ -184,45 +185,45 @@ class Barrier(OptionValuation):
         # Two Situations: H<=K vs H>K
         if (_.right == 'call'):
             if (_.H<=_.K):
-                cdi = _.ref.S0*np.exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*scipy.stats.norm.cdf(y) - \
-                      _.K*np.exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*scipy.stats.norm.cdf(y-_.ref.vol*np.sqrt(_.T))
-                cdo = _.ref.S0*scipy.stats.norm.cdf(x1)*np.exp(-_.ref.q*_.T) - _.K*np.exp(-_.rf_r*_.T)*scipy.stats.norm.cdf(x1-_.ref.vol*np.sqrt(_.T)) \
-                      - _.ref.S0*np.exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*scipy.stats.norm.cdf(y1) + \
-                      _.K*np.exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*scipy.stats.norm.cdf(y1-_.ref.vol*np.sqrt(_.T))
+                cdi = _.ref.S0*np.exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*N(y) - \
+                      _.K*np.exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*N(y-_.ref.vol*np.sqrt(_.T))
+                cdo = _.ref.S0*N(x1)*np.exp(-_.ref.q*_.T) - _.K*np.exp(-_.rf_r*_.T)*N(x1-_.ref.vol*np.sqrt(_.T)) \
+                      - _.ref.S0*np.exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*N(y1) + \
+                      _.K*np.exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*N(y1-_.ref.vol*np.sqrt(_.T))
                 cdo = c - cdi
                 cuo = 0
                 cui = c
             else:
-                cdo = _.ref.S0*scipy.stats.norm.cdf(x1)*np.exp(-_.ref.q*_.T) - _.K*np.exp(-_.rf_r*_.T)*scipy.stats.norm.cdf(x1-_.ref.vol*np.sqrt(_.T)) \
-                      - _.ref.S0*np.exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*scipy.stats.norm.cdf(y1) + \
-                      _.K*np.exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*scipy.stats.norm.cdf(y1-_.ref.vol*np.sqrt(_.T))
+                cdo = _.ref.S0*N(x1)*np.exp(-_.ref.q*_.T) - _.K*np.exp(-_.rf_r*_.T)*N(x1-_.ref.vol*np.sqrt(_.T)) \
+                      - _.ref.S0*np.exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*N(y1) + \
+                      _.K*np.exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*N(y1-_.ref.vol*np.sqrt(_.T))
                 cdi = c - cdo
-                cui = _.ref.S0*scipy.stats.norm.cdf(x1)*np.exp(-_.ref.q*_.T) -\
-                      _.K*np.exp(-_.rf_r*_.T)*scipy.stats.norm.cdf(x1-_.ref.vol*np.sqrt(_.T)) - \
-                      _.ref.S0*np.exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*(scipy.stats.norm.cdf(-y)-scipy.stats.norm.cdf(-y1)) + \
-                      _.K*np.exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*(scipy.stats.norm.cdf(-y+_.ref.vol*np.sqrt(_.T))-\
-                                                                      scipy.stats.norm.cdf(-y1+_.ref.vol*np.sqrt(_.T)))
+                cui = _.ref.S0*N(x1)*np.exp(-_.ref.q*_.T) -\
+                      _.K*np.exp(-_.rf_r*_.T)*N(x1-_.ref.vol*np.sqrt(_.T)) - \
+                      _.ref.S0*np.exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*(N(-y)-N(-y1)) + \
+                      _.K*np.exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*(N(-y+_.ref.vol*np.sqrt(_.T))-\
+                                                                      N(-y1+_.ref.vol*np.sqrt(_.T)))
                 cuo = c - cui
         # Consider Put Option
         # Two Situations: H<=K vs H>K
         else:
             if (_.H>_.K):
-                pui = -_.ref.S0*np.exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*scipy.stats.norm.cdf(-y) + \
-                      _.K*np.exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*scipy.stats.norm.cdf(-y+_.ref.vol*np.sqrt(_.T))
+                pui = -_.ref.S0*np.exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*N(-y) + \
+                      _.K*np.exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*N(-y+_.ref.vol*np.sqrt(_.T))
                 puo = p - pui
                 pdo = 0
                 pdi = p
             else:
-                puo = -_.ref.S0*scipy.stats.norm.cdf(-x1)*np.exp(-_.ref.q*_.T) + \
-                      _.K*np.exp(-_.rf_r*_.T)*scipy.stats.norm.cdf(-x1+_.ref.vol*np.sqrt(_.T)) + \
-                      _.ref.S0*np.exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*scipy.stats.norm.cdf(-y1) - \
-                      _.K*np.exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*scipy.stats.norm.cdf(-y1+_.ref.vol*np.sqrt(_.T))
+                puo = -_.ref.S0*N(-x1)*np.exp(-_.ref.q*_.T) + \
+                      _.K*np.exp(-_.rf_r*_.T)*N(-x1+_.ref.vol*np.sqrt(_.T)) + \
+                      _.ref.S0*np.exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*N(-y1) - \
+                      _.K*np.exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*N(-y1+_.ref.vol*np.sqrt(_.T))
                 pui = p - puo
-                pdi = -_.ref.S0*scipy.stats.norm.cdf(-x1)*np.exp(-_.ref.q*_.T) +\
-                      _.K*np.exp(-_.rf_r*_.T)*scipy.stats.norm.cdf(-x1+_.ref.vol*np.sqrt(_.T)) + \
-                      _.ref.S0*np.exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*(scipy.stats.norm.cdf(y)-scipy.stats.norm.cdf(y1)) - \
-                      _.K*np.exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*(scipy.stats.norm.cdf(y-_.ref.vol*np.sqrt(_.T)) -\
-                                                                      scipy.stats.norm.cdf(y1-_.ref.vol*np.sqrt(_.T)))
+                pdi = -_.ref.S0*N(-x1)*np.exp(-_.ref.q*_.T) +\
+                      _.K*np.exp(-_.rf_r*_.T)*N(-x1+_.ref.vol*np.sqrt(_.T)) + \
+                      _.ref.S0*np.exp(-_.ref.q*_.T)*((_.H/_.ref.S0)**(2*l))*(N(y)-N(y1)) - \
+                      _.K*np.exp(-_.rf_r*_.T)*((_.H/_.ref.S0)**(2*l-2))*(N(y-_.ref.vol*np.sqrt(_.T)) -\
+                                                                      N(y1-_.ref.vol*np.sqrt(_.T)))
                 pdo = p - pdi
 
         if (_.right == 'call'):
@@ -327,7 +328,7 @@ class Barrier(OptionValuation):
 
         elif self.dir == 'in' and self.right == 'call' and self.knock == 'up':
 
-            o = European.European(ref=self.ref, right='call', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
+            o = European(ref=self.ref, right='call', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
             call_px = o.calc_px(method='BS').px_spec.px   # save interim results to self.px_spec. Equivalent to repr(o)
             in_px = call_px - out_px
             self.px_spec.add(px=in_px, method='LT', sub_method='in out parity',
@@ -336,7 +337,7 @@ class Barrier(OptionValuation):
 
         elif self.dir == 'in' and self.right == 'put' and self.knock == 'up':
 
-            o = European.European(ref=self.ref, right='put', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
+            o = European(ref=self.ref, right='put', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
             put_px = o.calc_px(method='BS').px_spec.px   # save interim results to self.px_spec. Equivalent to repr(o)
             in_px = put_px - out_px
             self.px_spec.add(px=in_px, method='LT', sub_method='in out parity',
@@ -344,7 +345,7 @@ class Barrier(OptionValuation):
 
         elif self.dir == 'in' and self.right == 'put' and self.knock == 'down':
 
-            o = European.European(ref=self.ref, right='put', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
+            o = European(ref=self.ref, right='put', K=self.K, T=self.T, rf_r=self.rf_r, desc='reference')
             put_px = o.calc_px(method='BS').px_spec.px   # save interim results to self.px_spec. Equivalent to repr(o)
             in_px = put_px - out_px
             self.px_spec.add(px=in_px, method='LT', sub_method='in out parity',

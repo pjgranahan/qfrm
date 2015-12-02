@@ -49,8 +49,8 @@ class Basket(OptionValuation):
 
         Notes
         -----
-        The examples can be verified at:
-          http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=panier.html
+        The examples can be verified with `Online option pricer
+        <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=panier.html>`_.
         The results might differ a little due to the simulations.
         Since it takes time to run more paths and steps, the number of simulations is not very large in examples.
         To improve accuracy, please improve the ``npaths`` and ``nsteps``.
@@ -68,17 +68,16 @@ class Basket(OptionValuation):
         >>> s = Stock(S0=(50,85,65,80,75), vol=(.20,.10,.05,.20,.30))
         >>> o = Basket(ref=s, right='put', K=80, T=1, rf_r=.05, desc='Hull p.612')
 
-        >>> o.calc_px(method='MC',mu=(0.05,0,0.1,0,0),weight=(0.2,0.2,0.2,0.2,0.2),corr=[[1,0,0,0.9,0],\
+        >>> o.pxMC(mu=(0.05,0,0.1,0,0),weight=(0.2,0.2,0.2,0.2,0.2),corr=[[1,0,0,0.9,0],\
         [0,1,0,0,0],[0,0,1,-0.1,0],[0.9,0,-0.1,1,0],[0,0,0,0,1]],\
-        npaths=10,nsteps=10).px_spec.px   # save interim results to self.px_spec. Equivalent to repr(o)
-        5.865304292765618
+        npaths=10,nsteps=10)   # save interim results to self.px_spec. Equivalent to repr(o)
+        5.865304293
 
         >>> s = Stock(S0=(30,50), vol=(.20,.15))
         >>> o = Basket(ref=s, right='put', K=55, T=3, rf_r=.05, desc='Hull p.612')
 
-        >>> o.calc_px(method='MC',mu=(0.06,0.05),weight=(0.4,0.6),corr=[[1,0.7],[0.7,1]],\
-        npaths=10,nsteps=10).px_spec.px
-        6.1471894937486695
+        >>> o.pxMC(mu=(0.06,0.05), weight=(0.4,0.6),corr=[[1,0.7],[0.7,1]], npaths=10, nsteps=10)
+        6.147189494
 
         >>> from pandas import Series
         >>> expiries = range(1,11)

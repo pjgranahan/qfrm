@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-import scipy.stats as st
 import numpy as np
 
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
@@ -45,10 +44,11 @@ class Asian(OptionValuation):
                 Required. Calculation of price using 'Geometric' or 'Arithmetic' averages.
                 Case-insensitive and may use partial string w/first letter.
         strike : str
-                Required. If 'K', then the average asset price is compared against a fixed strike variable K to
-                determine payoff. If 'S', then the asset price at maturity is compared against the average asset price
-                over [0,T], i.e. the average underyingbecomes the strike and what is assigned to variable K in
-                OptionValuation is ignored.
+                Required.
+                If `'K'`, then the average asset price is compared against a fixed strike variable K to determine payoff.
+                If `'S'`, then the asset price at maturity is compared against the average asset price
+                over [0,T], i.e. the average underlying becomes the strike and what is assigned to variable ``K`` in
+                ``OptionValuation`` is ignored.
 
 
         Returns
@@ -57,87 +57,49 @@ class Asian(OptionValuation):
 
         Notes
         -----
-        BS; LT Notes
+        **BS and LT Notes**
         ------------
         `Verification of First and Second Examples <http://investexcel.net/asian-options-excel>`_
 
-        MC Notes
+        **MC Notes**
         --------
-        The referenced example is found in Lars Nielsen's 2001 paper, Pricing Asian Options at
-        <quantlabs.net/academy/download/free_quant_instituitional_books_/[Nielsen] Pricing Asian Options.pdf>
-        in section 4.3. The results emulate the sigma = {0.05;0.15;0.45} elements of the third (C-hat) column of table
-        4.1 on page 23. The computed MC prices for these simulations all fall within 2 standard errors of C-hat.
+        The referenced example is found in Lars Nielsen's 2001 paper,
+        `Pricing Asian Options
+        <quantlabs.net/academy/download/free_quant_instituitional_books_/[Nielsen] Pricing Asian Options.pdf>`_
+        in section 4.3.
+        The results emulate the ``sigma`` = {0.05; 0.15; 0.45} elements of the third (C-hat) column of table
+        4.1 on p.23. The computed MC prices for these simulations all fall within 2 standard errors of C-hat.
 
         Examples
         --------
+        The examples can be verified with
+        `Asian Options - Tutorial and Excel Spreadsheet by Samir Khan <http://investexcel.net/asian-options-excel>`_
 
         >>> # SEE NOTES to verify first two examples
         >>> s = Stock(S0=30, vol=.3, q = .02)
-        >>> o = Asian(ref=s, right='call', K=29, T=1., rf_r=.08, \
-        desc='http://investexcel.net/asian-options-excel/ - GEO Call')
-        >>> o.calc_px(method='BS').px_spec
-        PriceSpec
-        keep_hist: false
-        method: BSM
-        npaths: 10000
-        nsteps: 3
-        px: 2.777361113
-        rng_seed: 1
-        strike: K
-        sub_method: Geometric
+        >>> o = Asian(ref=s, right='call', K=29, T=1., rf_r=.08, desc='See investexcel.net - GEO Call')
+        >>> o.calc_px(method='BS').px_spec     # doctest: +ELLIPSIS
+        PriceSpec...px: 2.777361113...
 
         >>> s = Stock(S0=30, vol=.3, q = .02)
-        >>> o = Asian(ref=s, right='put', K=29, T=1., rf_r=.08, \
-        desc='http://investexcel.net/asian-options-excel/ - GEO Put')
-        >>> o.calc_px(method='BS').px_spec
-        PriceSpec
-        keep_hist: false
-        method: BSM
-        npaths: 10000
-        nsteps: 3
-        px: 1.224078447
-        rng_seed: 1
-        strike: K
-        sub_method: Geometric
+        >>> o = Asian(ref=s, right='put', K=29, T=1., rf_r=.08, desc='See investexcel.net - GEO Put')
+        >>> o.calc_px(method='BS').px_spec     # doctest: +ELLIPSIS
+        PriceSpec...px: 1.224078447...
 
         >>> s = Stock(S0=30, vol=.3, q = .02)
         >>> o = Asian(ref=s, right='put', K=30., T=1., rf_r=.08)
-        >>> o.calc_px(method='BS').px_spec
-        PriceSpec
-        keep_hist: false
-        method: BSM
-        npaths: 10000
-        nsteps: 3
-        px: 1.634104799
-        rng_seed: 1
-        strike: K
-        sub_method: Geometric
+        >>> o.calc_px(method='BS').px_spec     # doctest: +ELLIPSIS
+        PriceSpec...px: 1.634104799...
 
         >>> s = Stock(S0=20, vol=.3, q = .00)
         >>> o = Asian(ref=s, right='put', K=21., T=1., rf_r=.08)
-        >>> o.calc_px(method='BS').px_spec
-        PriceSpec
-        keep_hist: false
-        method: BSM
-        npaths: 10000
-        nsteps: 3
-        px: 1.489497403
-        rng_seed: 1
-        strike: K
-        sub_method: Geometric
+        >>> o.calc_px(method='BS').px_spec     # doctest: +ELLIPSIS
+        PriceSpec...px: 1.489497403...
 
         >>> s = Stock(S0=20, vol=.3, q = .00)
         >>> o = Asian(ref=s, right='put', K=21., T=2., rf_r=.08)
-        >>> o.calc_px(method='BS').px_spec
-        PriceSpec
-        keep_hist: false
-        method: BSM
-        npaths: 10000
-        nsteps: 3
-        px: 1.616211808
-        rng_seed: 1
-        strike: K
-        sub_method: Geometric
+        >>> o.calc_px(method='BS').px_spec     # doctest: +ELLIPSIS
+        PriceSpec...px: 1.616211808...
 
         >>> s = Stock(S0=20, vol=.3, q = .00)
         >>> o = Asian(ref=s, right='put', K=21., T=2., rf_r=.08)
@@ -148,25 +110,27 @@ class Asian(OptionValuation):
         >>> # import matplotlib.pyplot as plt
         >>> # plt.show() # run last two lines to show plot
 
-        MC Examples
-        -----------
+        **MC Examples**
 
         In the following 3 examples, show the effect of changing volatility on price.
-        First run with vol = 5%
+        First run with ``vol`` = 5%
+
         >>> s = Stock(S0=100, vol=.05, q = 0.0)
         >>> o = Asian(ref=s, right='call', K=100, T=1., rf_r=.05, desc='Nielsen, Lars. 2001. Pricing Asian Options.')
         >>> o.pxMC(nsteps=12, npaths=50000, rng_seed=1, sub_method='A', strike='K')
         ... # doctest: +ELLIPSIS
         2.94037098...
 
-        Second run with vol = 15%
+        Second run with ``vol`` = 15%
+
         >>> s = Stock(S0=100, vol=.15, q = 0.0)
         >>> o = Asian(ref=s, right='call', K=100, T=1., rf_r=.05, desc='Nielsen, Lars. 2001. Pricing Asian Options.')
         >>> o.pxMC(nsteps=12, npaths=50000, rng_seed=1, sub_method='A', strike='K')
         ... # doctest: +ELLIPSIS
         5.04298420...
 
-        Third run with vol = 45%
+        Third run with ``vol`` = 45%
+
         >>> s = Stock(S0=100, vol=.45, q = 0.0)
         >>> o = Asian(ref=s, right='call', K=100, T=1., rf_r=.05, desc='Nielsen, Lars. 2001. Pricing Asian Options.')
         >>> o.pxMC(nsteps=12, npaths=50000, rng_seed=1, sub_method='A', strike='K')
@@ -174,6 +138,7 @@ class Asian(OptionValuation):
         12.0311406...
 
         In the following example the previous test will be run with only 100 trials on a different seed.
+
         >>> s = Stock(S0=100, vol=.05, q = 0.0)
         >>> o = Asian(ref=s, right='call', K=100, T=1., rf_r=.05, desc='Nielsen, Lars. 2001. Pricing Asian Options.')
         >>> o.pxMC(nsteps=12, npaths=100, rng_seed=1, sub_method='A', strike='K')
@@ -181,6 +146,7 @@ class Asian(OptionValuation):
         3.15932733...
 
         In the following example, a average strike geometric put with the Hull example inputs is priced.
+
         >>> s = Stock(S0=50, vol=.4, q = 0.0)
         >>> o = Asian(ref=s, right='put', K=50, T=1., rf_r=.1, desc='Hull p. 610 Example 26.3')
         >>> o.pxMC(nsteps=12, npaths=50000, rng_seed=12, sub_method='G', strike='S')
@@ -188,6 +154,7 @@ class Asian(OptionValuation):
         0.217125522...
 
         In the following example, a vector of fixed strikes generates a vector of Asian prices and is plotted.
+
         >>> import matplotlib.pyplot as plt
         >>> from numpy import linspace
         >>> Karr = linspace(30,70,101)
@@ -211,13 +178,15 @@ class Asian(OptionValuation):
 
 
         -------------------------------------
-        FD Examples
+        **FD Examples**
 
-        Example Verify: http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=asiat_trapeze.html
+        Example Verify:
+        `Online option pricer <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=asiat_trapeze.html>`_
 
         Note that for FD method, the result can be quite volatile
-        This is because the choice of nsteps/npaths, and the choice the Smax/Smin can affect the result a lot
-        Also, it will be more accurate to increase npaths and nsteps
+        This is because the choice of ``nsteps`` / ``npaths``,
+        and the choice of ``Smax`` / ``Smin`` can affect the result a lot
+        Also, it will be more accurate to increase ``npaths`` and ``nsteps``
 
         >>> s = Stock(S0=0.5, vol=.01, q=.0)
         >>> o = Asian(ref=s, right='call', K=0.45, T=0.5, rf_r=.001)
@@ -246,9 +215,9 @@ class Asian(OptionValuation):
         >>> plt.show()
 
         :Authors:
-            Scott Morgan
-            Andrew Weatherly
-            Andy Liao <Andy.Liao@rice.edu>
+            Scott Morgan,
+            Andrew Weatherly,
+            Andy Liao <Andy.Liao@rice.edu>,
             Hanting Li <hl45@rice.edu>
 
         """
@@ -464,12 +433,13 @@ class Asian(OptionValuation):
         d2 = d1 - vola * np.sqrt(T)
 
         # Calculate the value of the option using the BS Equation
+        N = Util.norm_cdf
         if right == 'call':
-            px = S * np.exp((a - r) * T) * st.norm.cdf(d1) - K * np.exp(-r * T) * st.norm.cdf(d2)
+            px = S * np.exp((a - r) * T) * N(d1) - K * np.exp(-r * T) * N(d2)
             self.px_spec.add(px=float(px), method='BSM', sub_method='Geometric')
 
         else:
-            px = K * np.exp(-r * T) * st.norm.cdf(-d2) - S * np.exp((a - r) * T) * st.norm.cdf(-d1)
+            px = K * np.exp(-r * T) * N(-d2) - S * np.exp((a - r) * T) * N(-d1)
             self.px_spec.add(px=float(px), method='BSM', sub_method='Geometric')
         return self
 
