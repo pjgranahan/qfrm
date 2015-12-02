@@ -1,5 +1,4 @@
 import math
-from scipy import stats
 import numpy.random
 import numpy as np
 
@@ -150,8 +149,8 @@ class Spread(OptionValuation):
         d1 = (1./(vol*math.sqrt(self.T)))*math.log((self.S2.S0*math.exp(-self.S2.q*self.T))/(self.ref.S0*math.exp(-self.ref.q*self.T)))
         d2 = d1 - (vol*math.sqrt(self.T)/2.)
         d1 = d1 + (vol*math.sqrt(self.T)/2.)
-        p = self.S2.S0*math.exp(-self.S2.q*self.T)*stats.norm.cdf(d1)
-        p = p - self.ref.S0*math.exp(-self.ref.q*self.T)*stats.norm.cdf(d2)
+        p = self.S2.S0*math.exp(-self.S2.q*self.T) * Util.norm_cdf(d1)
+        p = p - self.ref.S0*math.exp(-self.ref.q*self.T) * Util.norm_cdf(d2)
 
         self.px_spec.add(px=float(p), method='BS')
 
