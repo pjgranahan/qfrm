@@ -1,7 +1,6 @@
 import math
 import numpy as np
 import scipy.linalg as la
-import scipy.stats as st
 import matplotlib.pyplot as plt
 
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
@@ -56,7 +55,8 @@ class Chooser(OptionValuation):
         **FD Notes**
 
         Mathworks Chooser BSM result gives a price of 8.9308 for the first FD example, below.
-        See: <http://www.mathworks.com/help/fininst/chooserbybls.html>. The difference between the 
+        See: `MathWorks chooserbybls() documentation
+        <http://www.mathworks.com/help/fininst/chooserbybls.html>`_. The difference between the
         BSM result and the FD result is a discretization error.
 
         Examples
@@ -66,27 +66,28 @@ class Chooser(OptionValuation):
 
         EXOTIC OPTIONS: A CHOOSER OPTION AND ITS PRICING by Raimonda Martinkkute-Kauliene (Dec 2012)
         https://www.dropbox.com/s/r9lvi0uzdehwlm4/101-330-1-PB%20%284%29.pdf?dl=0
+
         >>> s = Stock(S0=50, vol=0.2, q=0.05)
         >>> o = Chooser(ref=s, right='put', K=50, T=1, rf_r=.1, desc= 'Exotic options paper page 297 Table 2 time 0.5')
         >>> o.pxBS(tau=6/12)
-        6.5878963235321955
+        6.587896324
 
         >>> s = Stock(S0=50, vol=0.2, q=0.05)
         >>> o = Chooser(ref=s, right='put', K=50, T=1, rf_r=.1, desc= 'Exotic options paper page 297 Table 2 time 1.00')
         >>> o.pxBS(tau=12/12)
-        7.6213022738289808
+        7.621302274
 
         >>> s = Stock(S0=50, vol=0.25, q=0.08)
         >>> o = Chooser(ref=s, right='put', K=50, T=.5, rf_r=.08)
         >>> o.pxBS(tau=3/12)
-        5.7775783438734258
+        5.777578344
 
         **LT Examples**
 
         >>> s = Stock(S0=50, vol=0.2, q=0.05)
         >>> o = Chooser(ref=s, right='put', K=50, T=1, rf_r=.1, desc= 'Exotic options paper page 297 Table 2 time 0.5')
         >>> o.pxLT(tau=3/12, nsteps=2)
-        6.755605274510829
+        6.755605275
 
         >>> o.calc_px(tau=3/12, method='LT', nsteps=2, keep_hist=True).px_spec.ref_tree
         ((50.0,), (43.40617226972924, 57.595495508445445), (37.68191582218824, 49.99999999999999, 66.3448220572672))
@@ -106,30 +107,35 @@ class Chooser(OptionValuation):
         **FD Examples**
 
         First example: see referenced result for comparison
+
         >>> s = Stock(S0=50, vol=0.2, q=0.05)
         >>> o = Chooser(ref=s, right='put', K=60, T=6/12, rf_r=.1, desc= 'Mathworks example')
         >>> o.pxFD(tau=3/12,nsteps=100,npaths=100) # doctest: +ELLIPSIS
         8.94395152...
         
         Second example: coarsen the grid to increase deviation from the BSM price
+
         >>> s = Stock(S0=50, vol=0.2, q=0.05)
         >>> o = Chooser(ref=s, right='put', K=60, T=6/12, rf_r=.1, desc= 'Mathworks example')
         >>> o.pxFD(tau=3/12,nsteps=10,npaths=10) # doctest: +ELLIPSIS
         9.49812976...
         
         Third example: Change the maturity
+
         >>> s = Stock(S0=50, vol=0.2, q=0.05)
         >>> o = Chooser(ref=s, right='put', K=60, T=12/12, rf_r=.1, desc= 'Mathworks example')
         >>> o.pxFD(tau=3/12,nsteps=100,npaths=100) # doctest: +ELLIPSIS
         8.49747834...
         
         Fourth example: make choice at t=0: price collapses to a European call.
+
         >>> s = Stock(S0=50, vol=0.2, q=0.05)
         >>> o = Chooser(ref=s, right='put', K=60, T=12/12, rf_r=.1, desc= 'Mathworks example')
         >>> o.pxFD(tau=0/12,nsteps=100,npaths=100) # doctest: +ELLIPSIS
         8.27396786...
         
         Vectorization example with plot: exploration of tau-space.
+
         >>> tarr = np.linspace(0,12/12,11)
         >>> px = tuple(map(lambda i: Chooser(ref=s, right='put', K=60, T=12/12, rf_r=.1).pxFD(tau=tarr[i],nsteps=100,
         ... npaths=100), range(tarr.shape[0])))
@@ -183,19 +189,18 @@ class Chooser(OptionValuation):
         :Authors:
             Thawda Aung
         """
-        from scipy.stats import norm
-        from math import sqrt, exp, log
 
         _ = self
+        N = Util.norm_cdf
 
-        d2 = (log(_.ref.S0/_.K) + ((_.rf_r - _.ref.q  - _.ref.vol**2/2)*_.T) ) / ( _.ref.vol * sqrt(_.T))
-        d1 =  d2 + _.ref.vol * sqrt(_.T)
+        d2 = (math.log(_.ref.S0/_.K) + ((_.rf_r - _.ref.q  - _.ref.vol**2/2)*_.T) ) / ( _.ref.vol * math.sqrt(_.T))
+        d1 =  d2 + _.ref.vol * math.sqrt(_.T)
 
-        d2n = (log(_.ref.S0/_.K) + (_.rf_r - _.ref.q) * _.T - _.ref.vol**2 * _.tau /2) / ( _.ref.vol * sqrt(_.tau))
-        d1n = d2n + _.ref.vol * sqrt(_.tau)
+        d2n = (math.log(_.ref.S0/_.K) + (_.rf_r - _.ref.q) * _.T - _.ref.vol**2 * _.tau /2) / ( _.ref.vol * math.sqrt(_.tau))
+        d1n = d2n + _.ref.vol * math.sqrt(_.tau)
 
-        px = _.ref.S0 * exp(-_.ref.q * _.T) * norm.cdf(d1) - _.K* exp(-_.rf_r * _.T ) * norm.cdf(d2) +\
-             _.K* exp(-_.rf_r * _.T ) * norm.cdf(-d2n)  - _.ref.S0* exp(-_.ref.q * _.T) * norm.cdf(-d1n)
+        px = _.ref.S0 * math.exp(-_.ref.q * _.T) * N(d1) - _.K* math.exp(-_.rf_r * _.T ) * N(d2) +\
+             _.K* math.exp(-_.rf_r * _.T ) * N(-d2n)  - _.ref.S0* math.exp(-_.ref.q * _.T) * N(-d1n)
         self.px_spec.add(px=px, d1=d1, d2=d2)
 
         return self
@@ -208,13 +213,12 @@ class Chooser(OptionValuation):
         :Authors:
             Yen-fei Chen <yensfly@gmail.com>
         """
-        from numpy import cumsum, log, arange, insert, exp, sum, maximum
 
         n = getattr(self.px_spec, 'nsteps', 3)
         _ = self.LT_specs(n)
 
-        S = self.ref.S0 * _['d'] ** arange(n, -1, -1) * _['u'] ** arange(0, n + 1)
-        O = maximum(maximum((S - self.K), 0), maximum(-1*(S - self.K), 0))
+        S = self.ref.S0 * _['d'] ** np.arange(n, -1, -1) * _['u'] ** np.arange(0, n + 1)
+        O = np.maximum(np.maximum((S - self.K), 0), np.maximum(-1*(S - self.K), 0))
         S_tree, O_tree = None, None
 
         if getattr(self.px_spec, 'keep_hist', False):
@@ -230,9 +234,9 @@ class Chooser(OptionValuation):
 
             out = O_tree[0][0]
         else:
-            csl = insert(cumsum(log(arange(n) + 1)), 0, 0)  # logs avoid overflow & truncation
-            tmp = csl[n] - csl - csl[::-1] + log(_['p']) * arange(n + 1) + log(1 - _['p']) * arange(n + 1)[::-1]
-            out = (_['df_T'] * sum(exp(tmp) * tuple(O)))
+            csl = np.insert(np.cumsum(np.log(np.arange(n) + 1)), 0, 0)  # logs avoid overflow & truncation
+            tmp = csl[n] - csl - csl[::-1] + np.log(_['p']) * np.arange(n + 1) + np.log(1 - _['p']) * np.arange(n + 1)[::-1]
+            out = (_['df_T'] * sum(np.exp(tmp) * tuple(O)))
 
         self.px_spec.add(px=float(out), sub_method='binomial tree; Hull Ch.135',
                          LT_specs=_, ref_tree=S_tree, opt_tree=O_tree)

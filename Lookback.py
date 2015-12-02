@@ -1,7 +1,5 @@
-import warnings
-import numpy as np
 import math
-import scipy.stats
+import numpy as np
 
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
 except:   from OptionValuation import *  # development: if not installed and running from source
@@ -67,7 +65,7 @@ class Lookback(OptionValuation):
         >>> s = Stock(S0=50, vol=.4, q=.0)
         >>> o = Lookback(ref=s, right='call', K=50, T=0.25, rf_r=.1, desc='Example from Hull Ch.26 Example 26.2 (p608)')
         >>> o.pxBS(Sfl = 50.0)
-        8.037120139607019
+        8.03712014
 
         >>> o.calc_px(method = 'BS', Sfl = 50.0) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         Lookback...px: 8.03712014...
@@ -75,7 +73,7 @@ class Lookback(OptionValuation):
         >>> s = Stock(S0=50, vol=.4, q=.0)
         >>> o = Lookback(ref=s, right='put', K=50, T=0.25, rf_r=.1, desc='Example from Internet')
         >>> o.pxBS(Sfl = 50.0)
-        7.79021925989035
+        7.79021926
 
         >>> o.px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         PriceSpec...px: 7.79021926...
@@ -93,7 +91,7 @@ class Lookback(OptionValuation):
         >>> s = Stock(S0=35., vol=.05, q=.00)
         >>> o = Lookback(ref=s, right='call', K=30, T=0.25, rf_r=.1, desc='Hull p607')
         >>> o.pxLT(nsteps=100,keep_hist=False, Sfl = 50.0)
-        1.829899147224415
+        1.829899147
 
         >>> o.px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         PriceSpec...px: 1.829899147...
@@ -101,13 +99,13 @@ class Lookback(OptionValuation):
         >>> s = Stock(S0=50., vol=.4, q=.0)
         >>> o = Lookback(ref=s, right='call', T=3/12, K=30, rf_r=.1, desc='Hull p607')
         >>> o.pxLT(nsteps=1000,keep_hist=False, Sfl = 50.0)
-        8.13575890392886
+        8.135758904
 
 
         >>> s = Stock(S0=100., vol=.02, q=.0)
         >>> o = Lookback(ref=s, right='call', T=3, K=30, rf_r=.01, desc='Hull p607')
         >>> o.pxLT(nsteps=50,keep_hist=False, Sfl = 50.0)
-        6.436996102693329
+        6.436996103
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
@@ -117,11 +115,25 @@ class Lookback(OptionValuation):
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
+        FD Examples
+        -----------
+        # Note: FD price is sensitive to nsteps.
+        >>> s = Stock(S0=50, vol=.4, q=.0)
+        >>> o = Lookback(ref=s, right='put', K=50, T=0.25, rf_r=.1, desc='Example from Hull Ch.26 Example 26.2 (p608)')
+        >>> o.pxFD(Sfl = 50.0, nsteps=3, npaths=19)
+        7.917890003
+
+        >>> s = Stock(S0=50, vol=.4, q=.0)
+        >>> o = Lookback(ref=s, right='call', K=50, T=0.25, rf_r=.1, desc='Example from Hull Ch.26 Example 26.2 (p608)')
+        >>> o.pxFD(Sfl = 50.0, nsteps=3, npaths=19)
+        8.067753794
+
         :Authors:
             Mengyan Xie <xiemengy@gmail.com>,
-            Hanting Li <hl45@rice.edu>
+            Hanting Li <hl45@rice.edu>,
+            Yen-fei Chen <yensfly@gmail.com>
        """
-
+        self.Sfl = Sfl
         return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, Sfl = Sfl)
 
     def _calc_LT(self):
@@ -205,6 +217,7 @@ class Lookback(OptionValuation):
 
         # compute the new stock price
         S_new = _.ref.S0 / _.px_spec.Sfl if _.signCP == 1 else _.px_spec.Sfl / _.ref.S0
+        N = Util.norm_cdf
 
         # compute each a and c parameters from Hull p607
         a1 = (math.log(S_new) + (_.signCP * (_.rf_r - _.ref.q) + _.ref.vol ** 2 / 2) * _.T) / \
@@ -215,18 +228,18 @@ class Lookback(OptionValuation):
         Y1 = _.signCP * (-2 * (_.rf_r - _.ref.q - _.ref.vol ** 2 / 2) * math.log(S_new)) / (_.ref.vol ** 2)
 
         # compute call option price
-        c1 = _.ref.S0 * math.exp(-_.ref.q * _.T) * scipy.stats.norm.cdf(a1)
-        c2 = _.ref.S0 * math.exp(-_.ref.q * _.T) * (_.ref.vol ** 2) * scipy.stats.norm.cdf(-a1)/(2 * (_.rf_r - _.ref.q))
-        c3 = - _.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (scipy.stats.norm.cdf(a2) - _.ref.vol ** 2 * math.exp(Y1) * \
-                                                          scipy.stats.norm.cdf(-a3) / (2 * (_.rf_r - _.ref.q)))
+        c1 = _.ref.S0 * math.exp(-_.ref.q * _.T) * N(a1)
+        c2 = _.ref.S0 * math.exp(-_.ref.q * _.T) * (_.ref.vol ** 2) * N(-a1)/(2 * (_.rf_r - _.ref.q))
+        c3 = - _.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (N(a2) - _.ref.vol ** 2 * math.exp(Y1) * \
+                                                          N(-a3) / (2 * (_.rf_r - _.ref.q)))
 
         c = c1 - c2 + c3
 
         # compute put option price
-        p1 = self.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (scipy.stats.norm.cdf(a1) - _.ref.vol ** 2 * math.exp(Y1) * \
-                                                           scipy.stats.norm.cdf(-a3) / (2 * (_.rf_r - _.ref.q)))
-        p2 = _.ref.S0 * math.exp(-_.ref.q * _.T) * (_.ref.vol ** 2) * scipy.stats.norm.cdf(-a2)/(2 * (_.rf_r - _.ref.q))
-        p3 = _.ref.S0 * math.exp(-_.ref.q * _.T) * scipy.stats.norm.cdf(a2)
+        p1 = self.px_spec.Sfl * math.exp(-_.rf_r * _.T) * (N(a1) - _.ref.vol ** 2 * math.exp(Y1) * \
+                                                           N(-a3) / (2 * (_.rf_r - _.ref.q)))
+        p2 = _.ref.S0 * math.exp(-_.ref.q * _.T) * (_.ref.vol ** 2) * N(-a2)/(2 * (_.rf_r - _.ref.q))
+        p3 = _.ref.S0 * math.exp(-_.ref.q * _.T) * N(a2)
         p = p1 + p2 - p3
 
 
@@ -250,5 +263,46 @@ class Lookback(OptionValuation):
 
         See ``calc_px()`` for complete documentation.
         """
+        _ = self
+        M = getattr(self.px_spec, 'npaths', 5) # no. intervals of stock price
+        J = np.arange(1,M) # indices of stock prices
+        Smax = 2*_.ref.S0
+        dS = Smax/M # stock price interval
+        S = np.arange(0, Smax+0.00001, dS)
+        #print(S)
+
+        N = getattr(self.px_spec, 'nsteps', 5) # no. intervals of time
+        dt = _.T/N # time interval
+
+        a = (-0.5*(_.rf_r - _.ref.q)*J*dt+0.5*_.ref.vol**2*J**2*dt)/(1+_.rf_r*dt)
+        b = (1-_.ref.vol**2*J**2*dt)/(1+_.rf_r*dt)
+        c = (0.5*(_.rf_r - _.ref.q)*J*dt+0.5*_.ref.vol**2*J**2*dt)/(1+_.rf_r*dt)
+        A = np.diag(b) + np.diag(a[1:M-1], k=-1) + np.diag(c[0:M-2], k=+1)
+
+        # set up boundary condition
+        p = np.zeros((N+1, M+1)) # FD option price storage
+        p[-1,:] = np.array(np.maximum(_.signCP*(S-_.Sfl), [0]*(M+1))) # option price when t=T
+        p[:,-1] = np.array( [np.maximum(_.signCP*(Smax-_.Sfl), 0)]*(N+1) ) # option price when S=Smax
+        p[:,0] = np.array( [np.maximum(_.signCP*(0-_.Sfl), 0)]*(N+1) ) # option price when S=0
+
+        for i in range(N,0,-1):
+            y = np.zeros(M-1)
+            y[0] = a[0]*p[i,0]
+            y[-1] = c[-1]*p[i,-1]
+            p[i-1,1:M] = np.dot(p[i,1:M],A)+y
+            p[i-1,:] = np.maximum(_.signCP*(S-_.Sfl), p[i-1,:])
+
+        #from pandas import DataFrame, options
+        #options.display.float_format = '{:.3f}'.format
+        #out = DataFrame(p)
+        #print(out)
+
+        if _.signCP==1:
+            index = np.where(S>_.ref.S0)
+            self.px_spec.add(px=float(p[0, index[0][0]]), method='FD', sub_method='Explicit', FD_specs=_)
+        else:
+            index = np.where(S<=_.ref.S0)
+            self.px_spec.add(px=float(p[0,index[0][-1]-1]), method='FD', sub_method='Explicit', FD_specs=_)
 
         return self
+

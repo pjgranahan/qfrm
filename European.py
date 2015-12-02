@@ -1,7 +1,7 @@
-from scipy import stats
 import warnings
-import numpy as np
 import math
+import numpy as np
+# from scipy import stats
 
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
 except:   from OptionValuation import *  # development: if not installed and running from source
@@ -54,7 +54,8 @@ class European(OptionValuation):
         PriceSpec...px: 0.808599373...
 
         >>> (o.px_spec.px, o.px_spec.d1, o.px_spec.d2, o.px_spec.method)  # alternative attribute access
-        (0.8085993729000922, 0.7692626281060315, 0.627841271868722, 'BS')
+        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        (0.808599372..., 0.769262628..., 0.627841271..., 'BS')
 
         >>> o.update(right='call').pxBS()  # change option object to a put
         4.759422393
@@ -103,10 +104,14 @@ class European(OptionValuation):
         # if calc of both prices is cheap, do both and include them into Price object.
         # Price.px should always point to the price of interest to the user
         # Save values as basic data types (int, floats, str), instead of np.array
-        px_call = float(_.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(d1)
-                        - _.K * math.exp(-_.rf_r * _.T) * stats.norm.cdf(d2))
-        px_put = float(- _.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(-d1)
-                       + _.K * math.exp(-_.rf_r * _.T) * stats.norm.cdf(-d2))
+        # px_call = float(_.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(d1)
+        #                 - _.K * math.exp(-_.rf_r * _.T) * stats.norm.cdf(d2))
+        # px_put = float(- _.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(-d1)
+        #                + _.K * math.exp(-_.rf_r * _.T) * stats.norm.cdf(-d2))
+        px_call = float(_.ref.S0 * math.exp(-_.ref.q * _.T) * Util.norm_cdf(d1)
+                        - _.K * math.exp(-_.rf_r * _.T) * Util.norm_cdf(d2))
+        px_put = float(- _.ref.S0 * math.exp(-_.ref.q * _.T) * Util.norm_cdf(-d1)
+                       + _.K * math.exp(-_.rf_r * _.T) * Util.norm_cdf(-d2))
         px = px_call if _.signCP == 1 else px_put if _.signCP == -1 else None
 
         self.px_spec.add(px=px, sub_method='standard; Hull p.335', px_call=px_call, px_put=px_put, d1=d1, d2=d2)

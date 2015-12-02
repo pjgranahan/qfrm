@@ -1,6 +1,5 @@
-import numpy as np
 import math
-import scipy.stats
+import numpy as np
 
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
 except:   from OptionValuation import *  # development: if not installed and running from source
@@ -60,7 +59,7 @@ class Binary(OptionValuation):
 
         References
         -------------
-        [1] https://en.wikipedia.org/wiki/Binary_option
+        [1] `Binary Option on Wikipedia <https://en.wikipedia.org/wiki/Binary_option>`_
 
         Examples
         ------------
@@ -114,16 +113,18 @@ class Binary(OptionValuation):
         Verification of examples: DerivaGem software, Binary option (both cash_or_nothing and asset_or_nothing)
 
         Please note that the following LT examples will only generate results that matches the output of DerivaGem\
-        if we use nsteps=365. For fast runtime purpose, I use nsteps=10 in the following examples, which may\
+        if we use ``nsteps=365``. For fast runtime purpose, I use ``nsteps=10`` in the following examples, which may\
         not generate results that match the output of DerivaGem
 
 
 
         Use a binomial tree model to price a cash-or-nothing binary option
 
-        The following example will generate px = 640.435924845...with nsteps = 365, which can be verified by GerivaGem
-        However, for the purpose if fast runtime, I use nstep = 10 in all following examples, whose result does not
-        match verification. If you want to verify my code, please use nsteps = 365.
+        The following example will generate px = 640.435924845...with ``nsteps = 365``, \
+        which can be verified by GerivaGem However, for the purpose if fast runtime, I use ``nstep = 10`` \
+        in all following examples, whose result does not match verification. \
+        If you want to verify my code, please use ``nsteps = 365``.
+
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05, desc='call @641.237 put @263.6  DerivaGem')
         >>> o.calc_px(method='LT', nsteps=10, \
@@ -145,20 +146,24 @@ class Binary(OptionValuation):
         For the purpose of illustration, I only use a 2-step tree to display, \
         where the option price here is not accurate. This is just for viewing purpose.
         #the reference tree
+
         >>> o.calc_px(method='LT', nsteps=2, payout_type="cash-or-nothing", Q=1000, \
         keep_hist=True).px_spec.ref_tree #doctest: +ELLIPSIS
         ((50.000000000...,), (37.040911034..., 67.492940378...), (27.440581804..., 50.000000000..., 91.105940019...))
 
-        #the option value tree
+        #display the option value tree
+
         >>> o.calc_px(method='LT', nsteps=2, payout_type="cash-or-nothing", Q=1000, \
         keep_hist=True).px_spec.opt_tree # doctest: +ELLIPSIS
         ((687.356107822...,), (484.880509831..., 951.229424500...), (0.0, 1000.0, 1000.0))
 
 
         Another way to display option price
-        The following example will generate px = 640.435924845...with nsteps = 365, which can be verified by GerivaGem
-        However, for the purpose if fast runtime, I use nstep = 10 in all following examples, whose result does not
-        match verification. If you want to verify my code, please use nsteps = 365.
+        The following example will generate px = 640.435924845...with ``nsteps = 365``, \
+        which can be verified by GerivaGem.
+        However, for the purpose if fast runtime, I use ``nstep = 10`` in all following examples, \
+        whose result does not match verification. If you want to verify my code, please use ``nsteps = 365``.
+
         >>> (o.pxLT(nsteps=10, keep_hist=True, \
         payout_type='cash-or-nothing',Q=1000))
         572.299478497
@@ -166,9 +171,11 @@ class Binary(OptionValuation):
         >>> (o.px_spec.px, o.px_spec.method)  # doctest: +ELLIPSIS
         (572.299478496..., 'LT')
 
-        The following example will generate px = 264.401493191...with nsteps = 365, which can be verified by GerivaGem
-        However, for the purpose if fast runtime, I use nstep = 10 in all following examples, whose result does not
-        match verification. If you want to verify my code, please use nsteps = 365.
+        The following example will generate px = 264.401493191...with ``nsteps = 365``, \
+        which can be verified by GerivaGem.
+        However, for the purpose if fast runtime, I use ``nstep = 10`` in all following examples, \
+        whose result does not match verification. If you want to verify my code, please use ``nsteps = 365``.
+
         >>> Binary(clone=o, right='put', desc='call @641.237 put @263.6  DerivaGem').calc_px(method='LT',\
         nsteps=10, payout_type='cash-or-nothing',Q=1000).px_spec.px #doctest: +ELLIPSIS
         332.537939539...
@@ -176,9 +183,10 @@ class Binary(OptionValuation):
 
         Use a binomial tree model to price an asset-or-nothing binary option
 
-        The following example will generate px = 41.717204143...with nsteps = 365, which can be verified by GerivaGem
-        However, for the purpose if fast runtime, I use nstep = 10 in all following examples, whose result does not
-        match verification. If you want to verify my code, please use nsteps = 365.
+        The following example will generate px = 41.717204143...with ``nsteps = 365``, \
+        which can be verified by GerivaGem.
+        However, for the purpose if fast runtime, I use ``nstep = 10`` in all following examples, \
+        whose result does not match verification. If you want to verify my code, please use ``nsteps = 365``.
 
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05, desc='call @41.74 put @8.254 DerivaGem')
@@ -191,6 +199,7 @@ class Binary(OptionValuation):
 
 
         Another way to view the specification of the binomial tree
+
         >>> o.calc_px(method='LT', nsteps=10, \
         payout_type="asset-or-nothing")# doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         Binary...px: 39.009817494...
@@ -208,18 +217,22 @@ class Binary(OptionValuation):
         ((44.032186316...,), (24.244025491..., 67.492940378...), (0.0, 50.000000000..., 91.105940019...))
 
         Another way to display option price
-        The following example will generate px = 41.717204143...with nsteps = 365, which can be verified by GerivaGem
-        However, for the purpose if fast runtime, I use nstep = 10 in all following examples, whose result does not
-        match verification. If you want to verify my code, please use nsteps = 365.
+        The following example will generate px = 41.717204143...with ``nsteps = 365``, \
+        which can be verified by GerivaGem.
+        However, for the purpose if fast runtime, I use ``nstep = 10`` in all following examples, \
+        whose result does not match verification. If you want to verify my code, please use ``nsteps = 365``.
+
         >>> (o.pxLT(nsteps=10, keep_hist=True, payout_type='asset-or-nothing'))
         39.009817494
 
         >>> (o.px_spec.px, o.px_spec.method)  #doctest: +ELLIPSIS
         (39.009817494..., 'LT')
 
-        The following example will generate px = 8.282795856...with nsteps = 365, which can be verified by GerivaGem
-        However, for the purpose if fast runtime, I use nstep = 10 in all following examples, whose result does not
-        match verification. If you want to verify my code, please use nsteps = 365.
+        The following example will generate px = 8.282795856...with ``nsteps = 365``, \
+        which can be verified by GerivaGem.
+        However, for the purpose if fast runtime, I use ``nstep = 10`` in all following examples, \
+        whose result does not match verification. If you want to verify my code, please use ``nsteps = 365``.
+
         >>> Binary(clone=o, right='put', desc='call @41.74 put @8.254 DerivaGem').calc_px(method='LT',\
         nsteps=10, payout_type='asset-or-nothing').px_spec.px #doctest: +ELLIPSIS
         10.990182505...
@@ -273,8 +286,8 @@ class Binary(OptionValuation):
             discount = self.ref.S0 * math.exp(-self.ref.q * self.T)
 
             # Compute the put and call price
-            px_call = discount * scipy.stats.norm.cdf(d1)
-            px_put = discount * scipy.stats.norm.cdf(-d1)
+            px_call = discount * Util.norm_cdf(d1)
+            px_put = discount * Util.norm_cdf(-d1)
 
         # Price the cash-or-nothing binary option
         elif payout_type == "cash-or-nothing":
@@ -282,8 +295,8 @@ class Binary(OptionValuation):
             discount = Q * math.exp(-self.rf_r * self.T)
 
             # Compute the put and call price
-            px_call = discount * scipy.stats.norm.cdf(d2)
-            px_put = discount * scipy.stats.norm.cdf(-d2)
+            px_call = discount * Util.norm_cdf(d2)
+            px_put = discount * Util.norm_cdf(-d2)
 
         # The underlying is unknown
         else:
@@ -304,7 +317,8 @@ class Binary(OptionValuation):
 
         Notes
         ----------------
-        [1] `Implementing Binomial Trees:   <http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181>`
+        [1] `Implementing Binomial Trees, Manfred Gilli & Enrico Schumann, 2009
+            <http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181>`_
 
         :Authors:
             Tianyi Yao <ty13@rice.edu>

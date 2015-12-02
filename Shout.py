@@ -61,13 +61,13 @@ class Shout(OptionValuation):
         -----------
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Shout(ref=s, right='call', K=52, T=2, rf_r=.05, desc='Example from internet excel spread sheet')
-        >>> o.pxLT(nsteps=2, keep_hist=False)
-        11.803171356649463
+        >>> o.pxLT(nsteps=2)
+        11.803171357
 
         >>> o.calc_px(method='LT', nsteps=2, keep_hist=True).px_spec.opt_tree
         ((11.803171356649463,), (0.0, 24.34243306821051), (0.0, 0.0, 39.10594001952546))
 
-        >>> o.calc_px(method='LT', nsteps=2, keep_hist=False) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.calc_px(method='LT', nsteps=2) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         Shout...px: 11.803171357...
 
         >>> from pandas import Series
@@ -81,10 +81,11 @@ class Shout(OptionValuation):
         MC Examples
         -----------
         See example on p.26, p.28 in http://core.ac.uk/download/pdf/1568393.pdf
+
         >>> s = Stock(S0=36, vol=.2)
         >>> o = Shout(ref=s, right='put', K=40, T=1, rf_r=.2, desc='http://core.ac.uk/download/pdf/1568393.pdf')
         >>> o.pxMC(nsteps=252, npaths=10000, keep_hist=True, seed=1212)
-        4.131257046216974
+        4.131257046
 
         >>> o.calc_px(method='MC', nsteps=252, npaths=10000, keep_hist=True, seed=1212).px_spec
         ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
@@ -157,8 +158,8 @@ class Shout(OptionValuation):
             S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
 
             # payoff of shout
-            Shout = self.signCP * S / np.exp(self.ref.q * tleft) * scipy.stats.norm.cdf(self.signCP * d1) - \
-                    self.signCP * S / np.exp(self.rf_r * tleft) * scipy.stats.norm.cdf(self.signCP * d2) + \
+            Shout = self.signCP * S / np.exp(self.ref.q * tleft) * Util.norm_cdf(self.signCP * d1) - \
+                    self.signCP * S / np.exp(self.rf_r * tleft) * Util.norm_cdf(self.signCP * d2) + \
                     self.signCP * (S - self.K) / np.exp(self.rf_r * tleft)
 
             # final payoff is the maximum of shout or not shout

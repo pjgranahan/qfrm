@@ -62,15 +62,14 @@ class Bermudan(OptionValuation):
         Notes
         -----
 
-
-        LT Notes
+        **LT Notes**
 
         Referenced example is from p.9 of
         `Bermudan Option Pricing using Binomial Models Seminar in Analytical Finance I
         <http://janroman.dhis.org/stud/I2012/Bermuda/reportFinal.pdf>`_
 
 
-        MC Notes
+        **MC Notes**
 
         For our Monte Carlo pricing, we use the Longstaff-Schwartz algorithm.
         Our implementation is drawn heavily from
@@ -83,7 +82,6 @@ class Bermudan(OptionValuation):
 
         Examples
         --------
-
         
        **LT Examples**
 
@@ -91,18 +89,18 @@ class Bermudan(OptionValuation):
 
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Bermudan(ref=s, right='put', K=52, T=2, rf_r=.05)
-        >>> o.pxLT(keep_hist=True) # doctest: +ELLIPSIS
-        7.25141036...
+        >>> o.pxLT(keep_hist=True)
+        7.251410364
         
         Changing the maturity
 
         >>> o = Bermudan(ref=s, right='put', K=52, T=1, rf_r=.05)
-        >>> o.pxLT(keep_hist=True) # doctest: +ELLIPSIS
-        5.91682696...
+        >>> o.pxLT(keep_hist=True)
+        5.916826966
 
         >>> o = Bermudan(ref=s, right='put', K=52, T=.5, rf_r=.05)
-        >>> o.pxLT(keep_hist=True) # doctest: +ELLIPSIS     
-        4.70511074...
+        >>> o.pxLT(keep_hist=True)
+        4.705110749
 
         Explicit input of exercise schedule
 
@@ -110,15 +108,15 @@ class Bermudan(OptionValuation):
         >>> rlist = np.random.normal(1,1,20)
         >>> times = tuple(map(lambda i: float(str(round(abs(rlist[i]),2))), range(20)))
         >>> o = Bermudan(ref=s, right='put', K=52, T=1., rf_r=.05)
-        >>> o.pxLT(tex=times, keep_hist=True) # doctest: +ELLIPSIS
-        5.82464967...
+        >>> o.pxLT(tex=times, keep_hist=True)
+        5.824649677
 
         Example from outside reference
 
         >>> times = (3/12,6/12,9/12,12/12,15/12,18/12,21/12,24/12)
         >>> o = Bermudan(ref=Stock(50, vol=.6), right='put', K=52, T=2, rf_r=0.1)
-        >>> o.pxLT(tex=times, nsteps=40, keep_hist=False) # doctest: +ELLIPSIS       
-        13.2065099...
+        >>> o.pxLT(tex=times, nsteps=40, keep_hist=False)
+        13.206509996
 
         Price vs. strike curve - example of vectorization of price calculation
 
@@ -172,7 +170,7 @@ class Bermudan(OptionValuation):
         >>> s = Stock(S0=11, vol=.4)
         >>> b = Bermudan(ref=s, right='put', K=15, T=1, rf_r=.05, desc="in-the-money Bermudan put")
         >>> b.pxMC(R=3, npaths=10, tex=list([(i+1)/10 for i in range(10)]))  # doctest: +ELLIPSIS
-        4.0913465936735687
+        4.091346594
         >>> plt.title("Histogram of prices on different MC paths")  # doctest: +ELLIPSIS
         <...>
         >>> plt.xlabel("Price")  # doctest: +ELLIPSIS

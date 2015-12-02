@@ -1,6 +1,5 @@
 import math
 import numpy as np
-import scipy.stats
 
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
 except:   from OptionValuation import *  # development: if not installed and running from source
@@ -9,7 +8,7 @@ except:   from OptionValuation import *  # development: if not installed and run
 class ForwardStart(OptionValuation):
     """ ForwardStart option class
 
-    Inherits all methods and properties of Optionvalueation class.
+    Inherits all methods and properties of ``Optionvalueation`` class.
     """
 
     def calc_px(self, T_s=1, method='BS', nsteps=None, npaths=None, keep_hist=False):
@@ -45,39 +44,40 @@ class ForwardStart(OptionValuation):
 
         Notes
         -----
-        [1] https://en.wikipedia.org/wiki/Forward_start_option  -- WikiPedia: Forward start option
-        [2] http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf -- \
-        How to pricing forward start opions, resource for Example 1
-        [3] http://www.globalriskguard.com/resources/deriv/fwd_4.pdf -- \
-        How to pricing forward start opions, resource for Example 2
+        [1] `Wikipedia: Forward start option <https://en.wikipedia.org/wiki/Forward_start_option>`_
+        [2] Verify example 1 with
+        `How to pricing forward start options <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf>`_
+        [3] Verify example 4 with
+        `How to pricing forward start options <http://www.globalriskguard.com/resources/deriv/fwd_4.pdf>`_
 
-
-
+        Please note that in this implementation, we assume that at time ``T_s``, the strike is automatically set\
+        to be equal to the underlying price at ``T_s``, meaning we have at-the-money option. \
+        Hence, the user-supplied strike price ``K`` is ignored.
 
         Examples
         --------
         **BS Examples**
 
-        #http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
+        `Forward Start Options, p.2 <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf>`_
+
         >>> s = Stock(S0=50, vol=.15,q=0.05)
-        >>> o=ForwardStart(ref=s, K=50,right='call', T=0.5, \
-        rf_r=.1).calc_px(method='BS',T_s=0.5)
-        >>> o.px_spec.px #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        2.628777266...
-
-
+        >>> ForwardStart(ref=s, K=50,right='call', T=0.5, rf_r=.1).pxBS(T_s=0.5)
+        2.628777267
 
         >>> s = Stock(S0=60, vol=.30,q=0.04)
-        >>> o=ForwardStart(ref=s, K=66,right='call', T=0.75, \
-        rf_r=.08).calc_px(method='BS',T_s=0.25)
+        >>> o=ForwardStart(ref=s, K=66,right='call', T=0.75, rf_r=.08).calc_px(method='BS',T_s=0.25)
         >>> o.px_spec #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         PriceSpec...px: 6.760976029...
 
+        >>> s = Stock(S0=60, vol=.30,q=0.04)
+        >>> o=ForwardStart(ref=s, K=66,right='put', T=0.75, rf_r=.08).calc_px(method='BS',T_s=0.25)
+        >>> o.px_spec #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 5.057238874
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
         >>> O = Series([ForwardStart(ref=s, K=66,right='call', T=0.75, \
-        rf_r=.08).update(T=t).calc_px(method='BS',T_s=0.25).px_spec.px for t in expiries], expiries)
+        rf_r=.08).update(T=t).pxBS(T_s=0.25) for t in expiries], expiries)
         >>> O.plot(grid=1, title='ForwardStart option Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> plt.show()
@@ -89,21 +89,24 @@ class ForwardStart(OptionValuation):
 
         Notes
         -----
-        Verification of examples: page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
+        Verification of examples:
+        `Forward Start Options, p.2 <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf>`_
 
-        Please note that the following MC examples will only generate results that matches the output of online source\
-        if we use nsteps=365 and npaths = 10000. For fast runtime purpose, I use nsteps=10 and npaths = 10 \
+        Please note that the following MC examples will only generate results that matches the output of online source
+        if we use ``nsteps=365`` and ``npaths = 10000``.
+        For fast runtime purpose, I use ``nsteps=10`` and ``npaths = 10``
         in the following examples, which may not generate results that match the output of online source
 
 
 
         Use a Monte Carlo simulation to price a forwardstart option
 
-        The following example will generate px = 2.620293977...with nsteps = 365 and npaths = 10000, \
-        which can be verified by page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
-        However, for the purpose if fast runtime, I use nstep = 10 and npaths = 10 in all following examples, \
+        The following example will generate ``px = 2.620293977...`` with ``nsteps = 365`` and ``npaths = 10000``,
+        which can be verified by
+        `Forward Start Options, p.2 <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf>`_
+        However, for the purpose if fast runtime, I use ``nstep = 10`` and ``npaths = 10`` in all following examples,
         whose result does not match verification.
-        If you want to verify my code, please use nsteps = 365 and npaths = 10000 in the following example.
+        If you want to verify my code, please use ``nsteps = 365`` and ``npaths = 10000`` in the following example.
 
         >>> s = Stock(S0=50, vol=.15,q=0.05)
         >>> o=ForwardStart(ref=s, K=100, right='call', T=0.5, rf_r=.1, \
@@ -112,7 +115,8 @@ class ForwardStart(OptionValuation):
         >>> o.px_spec.px#doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         3.434189097...
 
-        The following example uses the same parameter as the example above, but uses pxMC()
+        The following example uses the same parameter as the example above, but uses ``pxMC()``
+
         >>> s = Stock(S0=50, vol=.15,q=0.05)
         >>> o=ForwardStart(ref=s, K=100, right='call', T=0.5, rf_r=.1, \
                desc='example from page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf')
@@ -120,11 +124,12 @@ class ForwardStart(OptionValuation):
         3.434189097
 
 
-        The following example will generate px = 1.438603501...with nsteps = 365 and npaths = 10000, \
-        which can be verified by the xls file in http://investexcel.net/forward-start-options/
-        However, for the purpose if fast runtime, I use nstep = 10 and npaths = 10 in all following examples, \
+        The following example will generate ``px = 1.438603501...`` with ``nsteps = 365`` and ``npaths = 10000``,
+        which can be verified by the xls file in
+        `Forward Start Options - Intro and Spreadsheet <http://investexcel.net/forward-start-options/>`_
+        However, for the purpose if fast runtime, I use ``nstep = 10`` and ``npaths = 10`` in all following examples,
         whose result does not match verification.
-        If you want to verify my code, please use nsteps = 365 and npaths = 10000
+        If you want to verify my code, please use ``nsteps = 365`` and ``npaths = 10000``
 
         >>> s = Stock(S0=50, vol=.15,q=0.05)
         >>> o=ForwardStart(ref=s, K=100, right='call', T=0.5, rf_r=.1, \
@@ -153,13 +158,32 @@ class ForwardStart(OptionValuation):
 
         Notes
         -----
-        Verification of examples: page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
+        Verification of examples:
+        `Forward Start Options, p.2 <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf>`_
+
+        The result of this method is influenced by many parameters.
+        This method is approximate and extremely unstable.
+        The answers are thus only an approximate of the BSM Solution
 
         >>> s = Stock(S0=50, vol=.15,q=0.05)
         >>> o=ForwardStart(ref=s, K=50, right='call', T=1, rf_r=.01, \
                desc='example from page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf')
-        >>> o.pxFD(nsteps=4,T_s=0.5) #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        2.363964889
+        >>> o.pxFD(nsteps=4, npaths = 9, T_s=0.5) #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        2.38237683
+
+        >>> s = Stock(S0=60, vol=.30,q=0.04)
+        >>> o=ForwardStart(ref=s, K=66,right='call', T=0.75, \
+        rf_r=.08).calc_px(method='FD', nsteps=4, npaths = 9, T_s=0.25)
+        >>> o.px_spec #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 6.4149988...
+
+        >>> from pandas import Series
+        >>> expiries = range(1,5)
+        >>> O = Series([ForwardStart(ref=s, K=66,right='call', T=0.5, \
+        rf_r=.01).update(T=t).calc_px(method='FD',T_s=0.5).px_spec.px for t in expiries], expiries)
+        >>> O.plot(grid=1, title='ForwardStart option Price vs expiry (in years)') # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at ...>
+        >>> plt.show()
 
         :Authors:
             Runmin Zhang <Runmin.Zhang@rice.edu>,
@@ -231,12 +255,11 @@ class ForwardStart(OptionValuation):
 
 
         # Calculate the option price
+        N = Util.norm_cdf
         if right=='c':
-            px = S0*math.exp(-q*T_s)*( math.exp(-q*T)*scipy.stats.norm.cdf(d1)\
-                                       -math.exp(-r*T)*scipy.stats.norm.cdf(d2) )
+            px = S0*math.exp(-q*T_s)*( math.exp(-q*T)*N(d1) -math.exp(-r*T)*N(d2) )
         elif right=='p':
-            px = S0*math.exp(-q*T_s)*( -math.exp(-q*T)*scipy.stats.norm.cdf(-d1)\
-                                       +math.exp(-r*T)*scipy.stats.norm.cdf(-d2) )
+            px = S0*math.exp(-q*T_s)*( -math.exp(-q*T)*N(-d1) +math.exp(-r*T)*N(-d2) )
 
         self.px_spec.add(px=float(px), method='BS', sub_method=None)
         return self
@@ -311,29 +334,33 @@ class ForwardStart(OptionValuation):
 
         Note
         ----
-        [1] `<http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf>`
+        [1] http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
 
         :Authors:
             Mengyan Xie <xiemengy@gmail.com>
 
         """
 
-        keep_hist = getattr(self.px_spec, 'keep_hist', False)
         n = getattr(self.px_spec, 'nsteps', 3)
+        m = getattr(self.px_spec, 'npaths', 3)
         _ = self
         dt = _.T / n
 
-        # Get the Price based on Binomial Tree
-        S = np.linspace(0.5*_.ref.S0, 1.5*_.ref.S0, 9)[::-1]
-        O = np.maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
+        # Get the Price based on FD method
+        S = np.linspace(0.5*_.ref.S0, 1.5*_.ref.S0, m)[::-1]
+
+        # Find the index of S which nearest to the strike price K
+        idx = (np.abs(S - _.K)).argmin()
+
+        # Make sure S_S is set to the expected underlying price at T_S
+        S_S = _.ref.S0 * np.exp((_.rf_r - _.ref.q) * _.px_spec.T_s)
+
+        O = np.maximum(_.signCP * (S - S_S), 0)          # terminal option payouts
         max_O = max(O)
         min_O = min(O)
 
-        Payout = np.maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
-
-        # The end node of tree
-        S_tree = (tuple([float(s) for s in S]),)  # use tuples of floats (instead of numpy.float)
-        O_tree = (tuple([float(o) for o in O]),)
+        # The end node of grid
+        O_grid = (tuple([float(o) for o in O]),)
 
         # Calculate a, b and c parameters
         a = [1 / (1 + _.rf_r * dt) * (-0.5 * (_.rf_r - _.ref.q) * j * dt + \
@@ -352,35 +379,11 @@ class ForwardStart(OptionValuation):
             O = a * O_a + b * O_b + c * O_c
             O_new = np.insert(O, min_O, max_O)
             O_new = np.append(O_new, 0)
-            O = np.maximum(O_new, Payout)
 
-            # Left number until duration
-            left = n - i + 1
-            # Left time until duration
-            tleft = left * _.T / n
+            # final payoff is the maximum of payoff and 0
+            O = np.maximum(O_new, 0)
+            O_grid = (tuple([float(o) for o in O]),) + O_grid
 
-            #~~~~~ need to add ts
-
-            # d1 and d2 from BS model
-            d1 = (_.rf_r - _.ref.q + _.ref.vol ** 2 / 2) * tleft / (_.ref.vol * np.sqrt(tleft))
-            d2 = d1 - _.ref.vol * np.sqrt(tleft)
-            S = S * np.exp(-_.ref.q * ())
-            # payoff of forward start
-            F_S = _.signCP * S / np.exp(_.ref.q * tleft) * scipy.stats.norm.cdf(self.signCP * d1) - \
-                    _.signCP * S / np.exp(_.rf_r * tleft) * scipy.stats.norm.cdf(self.signCP * d2) + \
-                    _.signCP * (S - _.K) / np.exp(self.rf_r * tleft)
-
-            # final payoff is the maximum of shout or not shout
-            Payout = np.maximum(F_S, 0)
-            O = np.maximum(O, Payout)
- #           print(O)
-            S_tree = (tuple([float(s) for s in S]),) + S_tree
-            O_tree = (tuple([float(o) for o in O]),) + O_tree
-
-        out = O_tree[0][4]
-#        print(out)
-
-        self.px_spec.add(px=float(out), method='FD', sub_method='Finite difference; Hull Ch.13',
-                        FD_specs=_, ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
-
+        out = O_grid[0][idx]
+        self.px_spec.add(px=float(out), method='FDM', sub_method='Explicit')
         return self
