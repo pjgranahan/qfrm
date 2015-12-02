@@ -3,6 +3,7 @@ import numpy as np
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
 except:   from OptionValuation import *  # development: if not installed and running from source
 
+from scipy import sparse
 
 class LowExercisePrice(OptionValuation):
     """ LowExercisePrice option class.
@@ -48,13 +49,13 @@ class LowExercisePrice(OptionValuation):
         #From DeriGem. S0=5, K=0.01, vol=0.30, T=4, rf_r=0.1, Steps=4, BSM European Call
         >>> s = Stock(S0=5, vol=.30)
         >>> o = LowExercisePrice(ref=s,T=4,rf_r=.10)
-        >>> print(o.calc_px(method='LT',nsteps=4,keep_hist=False).px_spec.px)
+        >>> print(o.calc_px(method='LT',nsteps=4,npaths=10).px_spec.px)
         ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         4.99329679...
 
         >>> s = Stock(S0=19.6, vol=.21)
         >>> o = LowExercisePrice(ref=s,T=5,rf_r=.05)
-        >>> o.calc_px(method='LT',nsteps=4) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.calc_px(method='LT',nsteps=4,npaths=10) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         LowExercisePrice...px: 19.592211992...
         <BLANKLINE>
 
@@ -78,12 +79,30 @@ class LowExercisePrice(OptionValuation):
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> plt.show()
 
+        ===============
+        FD Examples
+        ===============
+        >>> s = Stock(S0=5, vol=.30)
+        >>> o = LowExercisePrice(ref=s,T=4,rf_r=.10)
+        >>> o.pxFD(nsteps=4,npaths=10)
+        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        4.407303373
+
+        >>> s = Stock(S0=19.6, vol=.21)
+        >>> o = LowExercisePrice(ref=s,T=5,rf_r=.05)
+        >>> o.calc_px(method='FD',nsteps=4,npaths=10) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        LowExercisePrice...px: 18.657861519...
+        <BLANKLINE>
+
+        # From DeriGem. S0=5, K=0.01, vol=0.30, T=2, rf_r=0.1, Steps=4, Binomial European Call
+        >>> s = Stock(S0=5, vol=.30)
+        >>> o = LowExercisePrice(ref=s,T=2,rf_r=.10)
+        >>> print(o.calc_px(method='FD',nsteps=4,npaths = 10,keep_hist=False).px_spec.px) # doctest: +ELLIPSIS
+        4.841966227...
+
+
         Notes
         -----
-        A Low Exercise Price Option (LEPO) is an Australian Stock Exchange traded option with a low exercise price that
-        was specifically designed to be traded on margin.  It is a European style call option with a low exercise price
-        of $0.01 and a contract size of 100 shares to be delivered on exercise.
-
         [1] Wikipedia: Low Exercise Price Option - https://en.wikipedia.org/wiki/Low_Exercise_Price_Option
         [2] LEPOs Explanatory Booklet http://www.asx.com.au/documents/resources/UnderstandingLEPOs.pdf
 
@@ -114,11 +133,18 @@ class LowExercisePrice(OptionValuation):
 
     def _calc_LT(self):
         """ Internal function for option valuation.
+        Modified from European Call Option.
 
-        See ``calc_px()`` for complete documentation.
+        Returns
+        -------
+        self: LowExercisePrice.
 
-        :Authors:
-            Runmin Zhang <z.runmin@gmail.com>
+        .. sectionauthor:: Runmin Zhang
+
+
+
+        Examples
+        -------
         """
 
 
@@ -171,18 +197,96 @@ class LowExercisePrice(OptionValuation):
         """
         return self
 
-    def _calc_FD(self, nsteps=3, npaths=4, keep_hist=False):
+    def _calc_FD(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: Barrier
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor::
-
+        :Authors:
+            Thawda Aung (thawda.aung1@gmail.com)
         """
+
+
+        assert self.right in ['call', 'put'], 'right must be "call" or "put" '
+        assert self.ref.vol > 0, 'vol must be >=0'
+        assert self.K > 0, 'K must be > 0'
+        assert self.T > 0, 'T must be > 0'
+        assert self.ref.S0 >= 0, 'S must be >= 0'
+        assert self.rf_r >= 0, 'r must be >= 0'
+
+        S0 = self.ref.S0
+        vol = self.ref.vol
+        ttm = self.T
+        K = 0.01
+        K2 = 0
+        r = self.rf_r
+        try: q = self.ref.q
+        except: pass
+
+        time_steps = getattr(self.px_spec, 'nsteps', 3)
+        px_paths = getattr(self.px_spec, 'npaths', 3)
+
+        # Initial the matrix. Hull's P482
+        S_max = S0*2
+        S_min = 0.0
+        d_px = S_max/(px_paths-1)
+        d_t = ttm/(time_steps-1)
+        S_vec = np.linspace(S_min,S_max,px_paths)
+        t_vec = np.linspace(0,ttm,time_steps)
+
+        f_px = np.zeros((px_paths,time_steps))
+
+
+        M = px_paths - 1
+        N = time_steps-1
+
+        f_px[:,-1]=S_vec
+
+        # Set boundary conditions.
+
+
+        if self.right=='call':
+            # Payout at the maturity time
+            init_cond = np.maximum((S_vec-K),0)*(S_vec>=K2)
+            # Boundary condition
+            upper_bound = 0
+            # Calculate the current value
+            lower_bound = np.maximum((S_vec[-1]-K),0)*(S_vec[-1]>=K2)*np.exp(-r*(ttm-t_vec))
+        elif self.right=='put':
+            # Payout at the maturity time
+            init_cond = np.maximum((K-S_vec),0)*(S_vec<=K2)
+            # Boundary condition
+            upper_bound = np.maximum((K-S_vec[0]),0)*(S_vec[0]<=K2)*np.exp(-r*(ttm-t_vec))
+            # Calculate the current value
+            lower_bound = 0
+
+
+        #Generate Matrix B in http://www.goddardconsulting.ca/option-pricing-finite-diff-implicit.html
+        j_list = np.arange(0,M+1)
+        a_list = 0.5*d_t*((r-q)*j_list-vol**2*j_list**2)
+        b_list = 1+d_t*(vol**2*j_list**2 + r)
+        c_list = 0.5*d_t*(-(r-q)*j_list-vol**2*j_list**2)
+
+        data = (a_list[2:M],b_list[1:M],c_list[1:M-1])
+        B=sparse.diags(data,[-1,0,1]).tocsc()
+
+
+
+        #K = np.zeros(M-1)
+        f_px[:,N] = init_cond
+        f_px[0,:] = upper_bound
+        f_px[M,:]=lower_bound
+        Offset = np.zeros(M-1)
+        for idx in np.arange(N-1,-1,-1):
+            Offset[0] = -a_list[1]*f_px[0,idx]
+            Offset[-1] = -c_list[M-1]*f_px[M,idx]
+            #f_px[1:M,idx] = scipy.linalg.solve(B,f_px[1:M,idx+1]-K)
+            f_px[1:M,idx]=sparse.linalg.spsolve(B,f_px[1:M,idx+1]+Offset)
+            f_px[:,-1] = init_cond
+            f_px[0,:] = upper_bound
+            f_px[-1,:]=lower_bound
+
+        self.px_spec.add(px=float(np.interp(S0,S_vec,f_px[:,0])), sub_method='Implicit Method')
+        # if self.keep_hist == True:
+        #     self.px_spec.add(opt_tree=f_px)
         return self
-
-
-
-
