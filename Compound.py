@@ -1,6 +1,11 @@
 import numpy as np
-from OptionValuation import *
-from American import American
+
+try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:   from OptionValuation import *  # development: if not installed and running from source
+
+try: from qfrm.American import *  # production:  if qfrm package is installed
+except:   from American import *  # development: if not installed and running from source
+
 
 
 class Compound(OptionValuation):
@@ -9,19 +14,23 @@ class Compound(OptionValuation):
     Inherits all methods and properties of OptionValuation class.
     """
 
-
     def calc_px(self, option, method='BS', on = 'put', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
 
-        User passes parameters to calc_px, which saves them to local ``PriceSpec`` object
-        and calls specific pricing function (``_calc_BS``,...).
-        This makes significantly less docstrings to write, since user is not interfacing pricing functions,
-        but a wrapper function ``calc_px()``.
+        All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
+        specific pricing method (``_calc_BS()``,...) is called.
+        An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
+        is calculating price via a shorter method wrapper ``.pxBS(...)``.
+        The same works for all methods (BS, LT, MC, FD).
 
         Parameters
         ----------
         method : str
-                Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
+                Required. Indicates a valuation method to be used:
+                ``BS``: Black-Scholes Merton calculation
+                ``LT``: Lattice tree (such as binary tree)
+                ``MC``: Monte Carlo simulation methods
+                ``FD``: finite differencing methods
         on : str
                 Either 'call' or 'put'. i.e. 'call' is for call on call or put on call (depends on right)
         rho : float
@@ -36,53 +45,52 @@ class Compound(OptionValuation):
         Returns
         -------
         self : Spread
-            Spread exotic option object (sub class of ``OptionValuation`` object)
+            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
 
         Examples
         --------
         - `Compound Options Introduction and Pricing Spreadsheet <http://investexcel.net/compound-options-excel>`_
 
-        Finite Diff
-        ================
+        **Finite Differencing**
 
         Method is approximate and extremely unstable.
         The answers are thus only an approximate of the BSM Solution
 
-        **Put on Put**
+        *Put on Put*
 
         >>> s = Stock(S0=90., vol=.12, q=.04)
         >>> o = American(ref=s, right='put', K=80., T=12./12., rf_r=.05, \
         desc='http://investexcel.net/compound-options-excel/: POP')
         >>> o2 = Compound(right='put',T=6./12., K = 20.)
-        >>> o2.calc_px(method='FD',option=o,npaths=40,nsteps = 10000).px_spec.px
-        19.506198232393796
+        >>> o2.calc_px(method='FD',option=o,npaths=10, nsteps = 10).px_spec.px
+        19.505177573647167
 
-        **Call on Put**
+        *Call on Put*
 
         >>> s = Stock(S0=90., vol=.12, q=.04)
         >>> o = American(ref=s, right='put', K=80., T=12./12., rf_r=.05, \
         desc='http://investexcel.net/compound-options-excel/: COP')
         >>> o2 = Compound(right='call',T=6./12., K = 20.)
-        >>> o2.calc_px(method='FD',option=o,npaths=40,nsteps = 10000).px_spec.px
-        9.1037774290081246e-12
+        >>> o2.calc_px(method='FD',option=o,npaths=10, nsteps = 10).px_spec.px
+        0.00011247953032440167
 
-        **Put on Call**
+        *Put on Call*
 
         >>> s = Stock(S0=90., vol=.12, q=.04)
         >>> o = American(ref=s, right='call', K=80., T=12./12., rf_r=.05, \
         desc='http://investexcel.net/compound-options-excel/: POC')
         >>> o2 = Compound(right='put',T=6./12., K = 20.)
-        >>> o2.calc_px(method='FD',option=o,npaths=40,nsteps = 10000).px_spec.px
-        10.568210941320897
+        >>> o2.calc_px(method='FD',option=o, npaths=10,nsteps = 10).px_spec.px
+        10.46547097001881
 
-        **Call on Call**
+        *Call on Call*
 
         >>> s = Stock(S0=90., vol=.12, q=.04)
         >>> o = American(ref=s, right='call', K=80., T=12./12., rf_r=.05, \
         desc='http://investexcel.net/compound-options-excel/: COC')
         >>> o2 = Compound(right='call',T=6./12., K = 20.)
-        >>> o2.calc_px(method='FD',option=o,npaths=40,nsteps = 10000).px_spec.px
-        0.13415146197967964
+        >>> o2.calc_px(method='FD',option=o, npaths=10, nsteps = 10).px_spec.px
+        0.19033219221798756
 
         :Authors:
             Scott Morgan

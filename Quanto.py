@@ -1,6 +1,10 @@
 import numpy.random as rnd
-from OptionValuation import *
-from American import *
+
+try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:   from OptionValuation import *  # development: if not installed and running from source
+
+try: from qfrm.American import *  # production:  if qfrm package is installed
+except:   from American import *  # development: if not installed and running from source
 
 
 class Quanto(OptionValuation):
@@ -11,29 +15,32 @@ class Quanto(OptionValuation):
 
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, vol_ex=0.0, correlation=0.0, seed=1,
                 deg=5):
-        """ Wrapper function that calls appropriate valuation method.
+        """ Calculates the value of a plain vanilla Quanto option.
 
-        User passes parameters to calc_px, which saves them to local PriceSpec object
-        and calls specific pricing function (_calc_BS,...).
-        This makes significantly less docstrings to write, since user is not interfacing pricing functions,
-        but a wrapper function calc_px().
-
-        Calculates the value of a plain vanilla Quanto option.
+        All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
+        specific pricing method (``_calc_BS()``,...) is called.
+        An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
+        is calculating price via a shorter method wrapper ``.pxBS(...)``.
+        The same works for all methods (BS, LT, MC, FD).
 
         Parameters
         ----------
-        correlation : float
-                LT. The correlation between the asset and the exchange rate.
-        vol_ex : float
-                LT. Volatility of the exchange rate.
         method : str
-                Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
+                Required. Indicates a valuation method to be used:
+                ``BS``: Black-Scholes Merton calculation
+                ``LT``: Lattice tree (such as binary tree)
+                ``MC``: Monte Carlo simulation methods
+                ``FD``: finite differencing methods
         nsteps : int
                 LT, MC, FD methods require number of times steps
         npaths : int
                 MC, FD methods require number of simulation paths
         keep_hist : bool
                 If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
+        correlation : float
+                LT. The correlation between the asset and the exchange rate.
+        vol_ex : float
+                LT. Volatility of the exchange rate.
         seed: int
                 MC random seed
         deg: int
@@ -42,6 +49,7 @@ class Quanto(OptionValuation):
         Returns
         -------
         self : Quanto
+            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
 
         Notes
         -----
@@ -49,8 +57,7 @@ class Quanto(OptionValuation):
         Examples
         --------
 
-        LT Examples
-        -----------
+        **LT Examples**
 
         Example #1: Calculate the price of a Quanto option.
 
@@ -87,8 +94,8 @@ class Quanto(OptionValuation):
         >>> o.plot_px_convergence()
 
 
-        MC Examples
-        -----------
+        **MC Examples**
+
         Calculate the price of a Quanto option using MC method. This example comes from Hull ch.30, ex.30.5 (p.701-702)
         >>> s = Stock(S0=1200, vol=.25, q=0.015)
         >>> o = Quanto(ref=s, right='call', K=1200, T=2, rf_r=.03, frf_r=0.05)

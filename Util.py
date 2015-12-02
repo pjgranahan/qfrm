@@ -1,8 +1,9 @@
+import re
 import yaml
 import numbers
-import numpy as np
-import re
 import functools
+import math
+import numpy as np
 
 
 class Util():
@@ -251,6 +252,45 @@ class Util():
         try:  return tuple((Util.to_tuple(i)) for i in a)
         except TypeError: return float(a) if leaf_as_float else a
 
+    @staticmethod
+    def norm_cdf(x, mu=0, sigma=1):
+        """
+
+        Parameters
+        ----------
+        x :
+        mu : float
+            distribution's mean
+        sigma : float
+            distribution's standard deviation
+
+        Returns
+        -------
+        float
+            pdf or cdf value, depending on input flag ``f``
+
+        Notes
+        -----
+        http://stackoverflow.com/questions/809362/how-to-calculate-cumulative-normal-distribution-in-python
+
+        Examples
+        --------
+        Compares total squared error for 100 values
+
+        >>> from scipy.stats import norm
+        >>> sum([(Util.norm_cdf(x) - norm.cdf(x))**2 for x in range(100)])
+
+        """
+        y = 0.5 * (1 - math.erf(-(x - mu)/(sigma * math.sqrt(2.0))))
+        if y > 1: y = 1
+        return y
+
+    @staticmethod
+    def norm_pdf(x, mu=0, sigma=1):
+        u = (x - mu)/abs(sigma)
+        y = (1/(math.sqrt(2 * math.pi) * abs(sigma))) * math.exp(-u*u/2)
+        return y
+
 
 class SpecPrinter:
     r""" Helper class for printing class's internal variables.
@@ -359,9 +399,10 @@ class SpecPrinter:
         # s = s.replace('\n...\n','')   # trim trailing new line (explicit end)
         s = re.sub(u'(?imu)^\s*\n', u'', s)  # removes lines of spaces
 
-        s = s.replace('!!python/object:','').replace('!!python/tuple','')
-        s = s.replace('__main__.','').replace(type(self).__name__ + '.','').replace('SpecPrinter.', '')
-        s = s.replace('OptionValuation.','').replace('OptionSeries.','').replace('Util.', '')
+        s = s.replace('!!python/object:', '').replace('!!python/tuple', '')
+        s = s.replace('__main__.', '').replace(type(self).__name__ + '.', '').replace('SpecPrinter.', '')
+        s = s.replace('OptionValuation.', '').replace('OptionSeries.', '')
+        s = s.replace('qfrm.', '').replace('Util.', '')
 
         s = s.replace(' {', '{')
         s = re.sub(re.compile(r'(,\s){2,}'), ', ', s)  # ", , , , , ... "   |->  ", "

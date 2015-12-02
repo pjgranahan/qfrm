@@ -1,32 +1,38 @@
-from math import sqrt
-from numpy import cumsum, maximum, sum,  exp, mean, zeros, log
-from numpy.random import normal, seed
-from math import exp as mexp
-from math import log as mlog
-from scipy.stats import norm
-from OptionValuation import *
+import matplotlib.pyplot as plt
+import scipy.stats as st
+import numpy as np
+
+try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:   from OptionValuation import *  # development: if not installed and running from source
 
 
 class Asian(OptionValuation):
     """ Asian option class.
 
     Inherits all methods and properties of OptionValuation class.
-    Asian options pay by the averaged historical value up to maturity of an underlying as the strike, against the maturity 
+    Asian options pay by the averaged historical value up to maturity of an underlying as the strike, against the maturity
     value of the underlying, or they compare the averaged value of the underlying up to maturity against a fixed strike.
     """
 
-    def calc_px(self, method='MC', nsteps=3, npaths=10000, keep_hist=False, rng_seed=1, sub_method='Arithmetic', strike='K'):
+    def calc_px(self, method='MC', nsteps=3, npaths=10000, keep_hist=False, rng_seed=1, sub_method='Arithmetic',
+                strike='K'):
         """ Wrapper function that calls appropriate valuation method.
 
-        User passes parameters to calc_px, which saves them to local PriceSpec object
-        and calls specific pricing function (``_calc_BS``,...).
-        This makes significantly less docstrings to write, since user is not interfacing pricing functions,
-        but a wrapper function ``calc_px()``.
+        All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
+        specific pricing method (``_calc_BS()``,...) is called.
+        An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
+        is calculating price via a shorter method wrapper ``.pxBS(...)``.
+        The same works for all methods (BS, LT, MC, FD).
+
 
         Parameters
         ----------
         method : str
-                Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
+                Required. Indicates a valuation method to be used:
+                ``BS``: Black-Scholes Merton calculation
+                ``LT``: Lattice tree (such as binary tree)
+                ``MC``: Monte Carlo simulation methods
+                ``FD``: finite differencing methods
         nsteps : int
                 LT, MC, FD methods require number of times steps
         npaths : int
@@ -34,14 +40,15 @@ class Asian(OptionValuation):
         keep_hist : bool
                 If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
         rng_seed : int
-                MC method requires the seed for RNG to generate historical prices in (0,T). 
+                MC method requires the seed for RNG to generate historical prices in (0,T).
         sub_method : str
-                Required. Calculation of price using 'Geometric' or 'Arithmetic' averages. 
-                Case-insensitive and may use partial string w/first letter. 
+                Required. Calculation of price using 'Geometric' or 'Arithmetic' averages.
+                Case-insensitive and may use partial string w/first letter.
         strike : str
-                Required. If 'K', then the average asset price is compared against a fixed strike variable K to determine payoff.
-                If 'S', then the asset price at maturity is compared against the average asset price over [0,T], i.e. the average underying
-                becomes the strike and what is assigned to variable K in OptionValuation is ignored.
+                Required. If 'K', then the average asset price is compared against a fixed strike variable K to
+                determine payoff. If 'S', then the asset price at maturity is compared against the average asset price
+                over [0,T], i.e. the average underyingbecomes the strike and what is assigned to variable K in
+                OptionValuation is ignored.
 
 
         Returns
@@ -50,29 +57,16 @@ class Asian(OptionValuation):
 
         Notes
         -----
-        BS; LT Methods,
+        BS; LT Notes
+        ------------
         `Verification of First and Second Examples <http://investexcel.net/asian-options-excel>`_
 
-        MONTE CARLO METHODS
-        ===================
-        When you use the Monte Carlo method to price the Asian option, you will find that the result is an
-        approximation of the BS result described in the Hull 9e textbook. By going through the examples 
-        below, you will also see the dependency of the goodness of the MC method, as approximation, 
-        against the "analytic" results, against the number of observations and paths for the discrete scenario.
-        The MC generated distribution does not necessarily generate a lognormal distribution around the BS result,
-        they converge to an overestimate by up to 3%. What you will see however, is that the relation between 
-        the step number for the discrete scenario and the price follows what is predicted analytically, and they 
-        converge to the continuous case.
-        
-        To improve the speed of convergence, an antithetic control variate approach is recommended.
-        This method is not implemented here.
-        
-        The continuous case is not implemented here. It makes little sense to do so, since the prices generated
-        by the GBM process are discrete.
-        
-        Finally the referenced examples are only for the Geometric, Fixed-Strike variant of the Asian option.
-        To obtain pricing for other variants of Asian options, I suggest that you pick up a copy of
-        DerivaGem software.
+        MC Notes
+        --------
+        The referenced example is found in Lars Nielsen's 2001 paper, Pricing Asian Options at
+        <quantlabs.net/academy/download/free_quant_instituitional_books_/[Nielsen] Pricing Asian Options.pdf>
+        in section 4.3. The results emulate the sigma = {0.05;0.15;0.45} elements of the third (C-hat) column of table
+        4.1 on page 23. The computed MC prices for these simulations all fall within 2 standard errors of C-hat.
 
         Examples
         --------
@@ -91,7 +85,6 @@ class Asian(OptionValuation):
         rng_seed: 1
         strike: K
         sub_method: Geometric
-        <BLANKLINE>
 
         >>> s = Stock(S0=30, vol=.3, q = .02)
         >>> o = Asian(ref=s, right='put', K=29, T=1., rf_r=.08, \
@@ -106,7 +99,6 @@ class Asian(OptionValuation):
         rng_seed: 1
         strike: K
         sub_method: Geometric
-        <BLANKLINE>
 
         >>> s = Stock(S0=30, vol=.3, q = .02)
         >>> o = Asian(ref=s, right='put', K=30., T=1., rf_r=.08)
@@ -120,7 +112,6 @@ class Asian(OptionValuation):
         rng_seed: 1
         strike: K
         sub_method: Geometric
-        <BLANKLINE>
 
         >>> s = Stock(S0=20, vol=.3, q = .00)
         >>> o = Asian(ref=s, right='put', K=21., T=1., rf_r=.08)
@@ -134,7 +125,6 @@ class Asian(OptionValuation):
         rng_seed: 1
         strike: K
         sub_method: Geometric
-        <BLANKLINE>
 
         >>> s = Stock(S0=20, vol=.3, q = .00)
         >>> o = Asian(ref=s, right='put', K=21., T=2., rf_r=.08)
@@ -148,7 +138,6 @@ class Asian(OptionValuation):
         rng_seed: 1
         strike: K
         sub_method: Geometric
-        <BLANKLINE>
 
         >>> s = Stock(S0=20, vol=.3, q = .00)
         >>> o = Asian(ref=s, right='put', K=21., T=2., rf_r=.08)
@@ -158,61 +147,55 @@ class Asian(OptionValuation):
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> # import matplotlib.pyplot as plt
         >>> # plt.show() # run last two lines to show plot
-        
-        >>> #BEGIN MONTE CARLO EXAMPLES-----
-        
-        >>> #In the following 3 examples, show the effect of changing observation number on price. 
-        >>> #Compare with the analytic result on Hull p 610, example 26.3:
-        >>> #Given the input parameters quoted in the examples following, 
-        >>> #for ((nsteps,px)) -> ((12,6.00),(52,5.70),(250,5.63))
-        
-        >>> #12 steps
-        >>> s = Stock(S0=50, vol=.4, q = 0.0)
-        >>> o = Asian(ref=s, right='call', K=50, T=1., rf_r=.1, desc='Hull p. 610 Example 26.3')
-        >>> o.calc_px(method='MC', nsteps=12, npaths=10000, rng_seed=38, sub_method='G', strike='K').px_spec.px 
+
+        MC Examples
+        -----------
+
+        In the following 3 examples, show the effect of changing volatility on price.
+        First run with vol = 5%
+        >>> s = Stock(S0=100, vol=.05, q = 0.0)
+        >>> o = Asian(ref=s, right='call', K=100, T=1., rf_r=.05, desc='Nielsen, Lars. 2001. Pricing Asian Options.')
+        >>> o.pxMC(nsteps=12, npaths=50000, rng_seed=1, sub_method='A', strike='K')
         ... # doctest: +ELLIPSIS
-        6.32551519...
-        
-        >>> #52 steps
-        >>> s = Stock(S0=50, vol=.4, q = 0.0)
-        >>> o = Asian(ref=s, right='call', K=50, T=1., rf_r=.1, desc='Hull p. 610 Example 26.3')
-        >>> o.calc_px(method='MC', nsteps=52, npaths=10000, rng_seed=38, sub_method='G', strike='K').px_spec.px
+        2.94037098...
+
+        Second run with vol = 15%
+        >>> s = Stock(S0=100, vol=.15, q = 0.0)
+        >>> o = Asian(ref=s, right='call', K=100, T=1., rf_r=.05, desc='Nielsen, Lars. 2001. Pricing Asian Options.')
+        >>> o.pxMC(nsteps=12, npaths=50000, rng_seed=1, sub_method='A', strike='K')
         ... # doctest: +ELLIPSIS
-        5.75569993...
-        
-        >>> #250 steps
-        >>> s = Stock(S0=50, vol=.4, q = 0.0)
-        >>> o = Asian(ref=s, right='call', K=50, T=1., rf_r=.1, desc='Hull p. 610 Example 26.3')
-        >>> o.calc_px(method='MC', nsteps=250, npaths=10000, rng_seed=38, sub_method='G', strike='K').px_spec.px
+        5.04298420...
+
+        Third run with vol = 45%
+        >>> s = Stock(S0=100, vol=.45, q = 0.0)
+        >>> o = Asian(ref=s, right='call', K=100, T=1., rf_r=.05, desc='Nielsen, Lars. 2001. Pricing Asian Options.')
+        >>> o.pxMC(nsteps=12, npaths=50000, rng_seed=1, sub_method='A', strike='K')
         ... # doctest: +ELLIPSIS
-        5.68771397...
-        
-        >>> #In the following example the previous test will be run with only 100 trials on a different seed.
-        >>> #This will demonstrate that having too few trials give unreliable estimates and 
-        >>> #The Asian price converges slowly without control-variate techniques.
-        >>> #250 steps
-        >>> s = Stock(S0=50, vol=.4, q = 0.0)
-        >>> o = Asian(ref=s, right='call', K=50, T=1., rf_r=.1, desc='Hull p. 610 Example 26.3')
-        >>> o.calc_px(method='MC', nsteps=250, npaths=100, rng_seed=0, sub_method='G', strike='K').px_spec.px
+        12.0311406...
+
+        In the following example the previous test will be run with only 100 trials on a different seed.
+        >>> s = Stock(S0=100, vol=.05, q = 0.0)
+        >>> o = Asian(ref=s, right='call', K=100, T=1., rf_r=.05, desc='Nielsen, Lars. 2001. Pricing Asian Options.')
+        >>> o.pxMC(nsteps=12, npaths=100, rng_seed=1, sub_method='A', strike='K')
         ... # doctest: +ELLIPSIS
-        5.28352690...
-                
-        >>> #In the following example, a average strike arithmetic put with the Hull example inputs is priced.
+        3.15932733...
+
+        In the following example, a average strike geometric put with the Hull example inputs is priced.
         >>> s = Stock(S0=50, vol=.4, q = 0.0)
         >>> o = Asian(ref=s, right='put', K=50, T=1., rf_r=.1, desc='Hull p. 610 Example 26.3')
-        >>> o.calc_px(method='MC', nsteps=250, npaths=10000, rng_seed=38, sub_method='A', strike='S').px_spec.px
+        >>> o.pxMC(nsteps=12, npaths=50000, rng_seed=12, sub_method='G', strike='S')
         ... # doctest: +ELLIPSIS
-        3.66169948...
-                
-        >>> #In the following example, a vector of fixed strikes generates a vector of Asian prices and is plotted.
+        0.217125522...
+
+        In the following example, a vector of fixed strikes generates a vector of Asian prices and is plotted.
         >>> import matplotlib.pyplot as plt
         >>> from numpy import linspace
         >>> Karr = linspace(30,70,101)
         >>> px = tuple(map(lambda i:  Asian(ref=Stock(50, vol=.6), right='call', K=Karr[i], T=1, rf_r=0.1).
-        ... calc_px(method='MC', nsteps=12, npaths=10000, rng_seed=i, sub_method='G', strike='K').px_spec.px, 
+        ... pxMC(nsteps=12, npaths=10000, rng_seed=i, sub_method='G', strike='K'),
         ... range(Karr.shape[0])))
         >>> fig = plt.figure()
-        >>> ax = fig.add_subplot(111) 
+        >>> ax = fig.add_subplot(111)
         >>> ax.plot(Karr,px,label='AGK-call') # doctest: +ELLIPSIS
         [<...>]
         >>> ax.set_title('Price of AGK-call vs K') # doctest: +ELLIPSIS
@@ -224,15 +207,55 @@ class Asian(OptionValuation):
         >>> ax.grid()
         >>> ax.legend() # doctest: +ELLIPSIS
         <...>
-        >>> plt.show()                
+        >>> plt.show()
 
+
+        -------------------------------------
+        FD Examples
+
+        Example Verify: http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=asiat_trapeze.html
+
+        Note that for FD method, the result can be quite volatile
+        This is because the choice of nsteps/npaths, and the choice the Smax/Smin can affect the result a lot
+        Also, it will be more accurate to increase npaths and nsteps
+
+        >>> s = Stock(S0=0.5, vol=.01, q=.0)
+        >>> o = Asian(ref=s, right='call', K=0.45, T=0.5, rf_r=.001)
+
+        >>> o.calc_px(method='FD',nsteps=10,npaths=10).px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px:  0.025869147...
+
+        >>> s = Stock(S0=1.5, vol=.01, q=.0)
+        >>> o = Asian(ref=s, right='put', K=2, T=0.5, rf_r=.01)
+
+        >>> o.calc_px(method='FD',npaths=10,nsteps=10).px_spec.px
+        0.5770208101062311
+
+        >>> s = Stock(S0=1.5, vol=.01)
+        >>> o = Asian(ref=s, right='put', K=3.5, T=1.5, rf_r=.01)
+
+        >>> o.calc_px(method='FD',npaths=10,nsteps=10).px_spec.px
+        2.062508335359562
+
+        >>> from pandas import Series
+        >>> expiries = range(1,11)
+        >>> O = Series([o.update(T=t).calc_px(method='FD',npaths=2,nsteps=3).px_spec.px for t in expiries], expiries)
+        >>> O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at ...>
+        >>> import matplotlib.pyplot as plt
+        >>> plt.show()
 
         :Authors:
-            Scott Morgan, Andrew Weatherly, Andy Liao
+            Scott Morgan
+            Andrew Weatherly
+            Andy Liao <Andy.Liao@rice.edu>
+            Hanting Li <hl45@rice.edu>
+
         """
 
+
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, \
-            rng_seed=rng_seed, sub_method=sub_method, strike=strike)        
+            rng_seed=rng_seed, sub_method=sub_method, strike=strike)
         return getattr(self, '_calc_' + method.upper())()
 
     def _calc_LT(self):
@@ -436,17 +459,17 @@ class Asian(OptionValuation):
 
         # Parameters for Value Calculation (see link in docstring)
         a = .5 * (r - q - (vol ** 2) / 6.)
-        vola = vol / sqrt(3.)
-        d1 = (mlog(S * mexp(a * T) / K) + (vola ** 2) * .5 * T) / (vola * sqrt(T))
-        d2 = d1 - vola * sqrt(T)
+        vola = vol / np.sqrt(3.)
+        d1 = (np.log(S * np.exp(a * T) / K) + (vola ** 2) * .5 * T) / (vola * np.sqrt(T))
+        d2 = d1 - vola * np.sqrt(T)
 
         # Calculate the value of the option using the BS Equation
         if right == 'call':
-            px = S * mexp((a - r) * T) * norm.cdf(d1) - K * mexp(-r * T) * norm.cdf(d2)
+            px = S * np.exp((a - r) * T) * st.norm.cdf(d1) - K * np.exp(-r * T) * st.norm.cdf(d2)
             self.px_spec.add(px=float(px), method='BSM', sub_method='Geometric')
 
         else:
-            px = K * mexp(-r * T) * norm.cdf(-d2) - S * mexp((a - r) * T) * norm.cdf(-d1)
+            px = K * np.exp(-r * T) * st.norm.cdf(-d2) - S * np.exp((a - r) * T) * st.norm.cdf(-d1)
             self.px_spec.add(px=float(px), method='BSM', sub_method='Geometric')
         return self
 
@@ -456,9 +479,9 @@ class Asian(OptionValuation):
         See ``calc_px()`` for complete documentation.
 
         :Authors:
-            Andy Liao
+            Andy Liao <Andy.Liao@rice.edu>
         """
-        
+
         #Throw exception if inputs are not the right type.
         try:
             right   =   self.right
@@ -473,7 +496,7 @@ class Asian(OptionValuation):
             rng_seed =  int(self.px_spec.rng_seed)
             sub_method =    self.px_spec.sub_method
             strike =    self.px_spec.strike
-            
+
         except:
             print('right must be String. ')
             print('S, K, T, vol, r, q must be floats or be able to be coerced to float; nsteps, npaths, rng_seed to \
@@ -483,49 +506,107 @@ class Asian(OptionValuation):
 
         #Generate evenly spaced observations of stock price with the Geometric Brownian Motion process.
         dt = T / n_steps
-        
-        seed(seed=rng_seed)
-        S = S0 * exp(cumsum(normal((r - 0.5 * vol ** 2) * dt, vol * sqrt(dt), (n_steps + 1, n_paths)), axis=0)) 
-        S[0] = S0
-        S = S.transpose()[:][1:]
+
+        np.random.seed(seed=rng_seed)
+        S = S0*np.cumprod(np.exp((r-0.5*vol**2)*dt+vol*np.sqrt(dt)*np.random.randn(n_paths,n_steps)),1)
 
         #Calculate an average stock price over (0,T] for each path by the selected sub-method.
-        S_avg = zeros(S.shape[1])
+        S_avg = np.zeros(S.shape[1])
         if sub_method[0] == 'g' or sub_method[0] == 'G':
-            self.px_spec.add(sub_method='Geometric')  
-            S_avg = exp(sum(log(S),axis=1)/(n_steps+1))
+            self.px_spec.add(sub_method='Geometric')
+            S_avg = np.exp(np.sum(np.log(S),axis=1)/(n_steps+1))
         if sub_method[0] == 'A' or sub_method[0] == 'A':
-            self.px_spec.add(sub_method='Arithmethic')  
-            S_avg = mean(S,axis=1)    
+            self.px_spec.add(sub_method='Arithmethic')
+            S_avg = np.mean(S,axis=1)
 
         #The price at maturity is needed if the user wants a Average-Strike Asian option.
         S_T = S.transpose()[n_steps-1]
-        
+
+        df = np.exp(-r*T)
+
         #Payoffs calculated: 2 rights x 2 variants = 4 outcomes
         #Payoffs calculated: 4 outcomes x 2 definitions of "mean" = 8 different prices
-        pay = zeros(S_avg.shape)
+        pay = np.zeros(S_avg.shape)
         if strike == 'K':
             if right == 'call':
-                pay = maximum(0,S_avg-K) #fixed strike call
-            if right == 'put': 
-                pay = maximum(0,K-S_avg) #fixed strike put
+                pay = np.maximum(0,S_avg-K) #fixed strike call
+            if right == 'put':
+                pay = np.maximum(0,K-S_avg) #fixed strike put
         if strike == 'S':
             if right == 'call':
-                pay = maximum(0,S_T-S_avg) #average strike call
+                pay = np.maximum(0,S_T-S_avg) #average strike call
             if right == 'put':
-                pay = maximum(0,S_avg-S_T) #average strike put
-                               
+                pay = np.maximum(0,S_avg-S_T) #average strike put
+
         #compute the average of the distribution as the price of the option.
-        v0 = sum(pay)/n_paths
-        
+        v0 = sum(pay)/n_paths*df
         self.px_spec.add(px=v0)
         return self
 
     def _calc_FD(self):
         """ Internal function for option valuation.
 
-        See ``calc_px()`` for complete documentation.
+        :Authors:
+            Hanting Li <hl45@rice.edu>
 
         """
+
+        # Get Parameters
+        M = getattr(self.px_spec, 'npaths', 3)
+        N = getattr(self.px_spec, 'nsteps', 3)
+        signCP = 1 if self.right == 'call' else -1
+        T = self.T
+        vol = self.ref.vol
+        S0 = self.ref.S0
+        Smax = 2*S0
+        Smin = S0/2
+        r = self.rf_r
+        q = self.ref.q
+        dt = T/(N)
+        dS = (Smax-Smin)/M
+        K = self.K
+        df = np.exp(-r*dt)
+
+        # Define the grid
+        PriceM = np.matrix(np.zeros(shape=(N+1,M+1)))
+
+        # Simulate a price path, to get the average price
+        # Compute the stock price at t
+        def calS(St,mu,sigma,param):
+            deltaS = mu*St*dt + sigma*St*param*np.sqrt(dt)
+            S_update = St+deltaS
+            return(S_update.item())
+
+        Nsimu = 50
+
+        np.random.seed(0)
+        param = np.random.normal(0,0.1,Nsimu)
+        # Generate one path
+        def one_path(S0,mu,vol,param):
+            S0 = (S0,)
+            for i in range(Nsimu):
+                parami = param[i]
+                S0 = S0 + (calS(S0[len(S0)-1],mu,vol,parami),)
+            return(S0)
+
+        # Set Boundary Condition
+        for i in range(0,M+1):
+            Sinput = Smin + i*dS
+            PriceM[N,i] = np.maximum(signCP*(np.mean(one_path(Sinput,0,vol,param))-K),0)
+        PriceM[:,0] = np.matrix(list(map(lambda i: (PriceM[N,0]*np.exp(-r*(N-i)*dt)), \
+                                range(0,N+1)))).transpose()
+        PriceM[:,M] = np.matrix(list(map(lambda i: (PriceM[N,M]*np.exp(-r*(N-i)*dt)), \
+                                range(0,N+1)))).transpose()
+
+        # Compute the grid
+        for i in np.arange(N-1,-1,-1):
+            for k in range(1,M):
+                j = M-k
+                PriceM[i,k] = df*(.5*dt*((vol**2)*(j**2)-(r-q)*j))*PriceM[i+1,k+1] + \
+                         df*(1 - dt*((vol**2)*(j**2)))*PriceM[i+1,k] + \
+                         df*(.5*dt*((vol**2)*(j**2)+(r-q)*j))*PriceM[i+1,k-1]
+
+        # Return
+        self.px_spec.add(px=float(np.maximum(PriceM[0,(S0-Smin)/dS],0)), method='FD')
 
         return self

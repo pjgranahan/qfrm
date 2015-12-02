@@ -1,8 +1,10 @@
-from scipy import stats
 import warnings
 import numpy as np
 import math
-from OptionValuation import *
+from scipy import stats
+
+try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:   from OptionValuation import *  # development: if not installed and running from source
 
 
 class European(OptionValuation):
@@ -14,10 +16,12 @@ class European(OptionValuation):
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
 
-        User passes parameters to ``calc_px``, which saves them to local ``PriceSpec`` object
-        and calls specific pricing function (``_calc_BS``,...).
-        This makes significantly less docstrings to write, since user is not interfacing pricing functions,
-        but a wrapper function ``calc_px()``.
+        All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
+        specific pricing method (``_calc_BS()``,...) is called.
+        An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
+        is calculating price via a shorter method wrapper ``.pxBS(...)``.
+        The same works for all methods (BS, LT, MC, FD).
+
 
         Parameters
         ----------
@@ -42,8 +46,6 @@ class European(OptionValuation):
 
         Examples
         --------
-
-        See .. _my-label:
 
         >>> s = Stock(S0=42, vol=.20)
         >>> o = European(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @0.81, put @4.76, Hull p.339')
@@ -101,7 +103,11 @@ class European(OptionValuation):
         # if calc of both prices is cheap, do both and include them into Price object.
         # Price.px should always point to the price of interest to the user
         # Save values as basic data types (int, floats, str), instead of np.array
-        px_call = float(_.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(d1)
+        # px_call = float(_.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(d1)
+        #                 - _.K * math.exp(-_.rf_r * _.T) * stats.norm.cdf(d2))
+        # px_put = float(- _.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(-d1)
+        #                + _.K * math.exp(-_.rf_r * _.T) * stats.norm.cdf(-d2))
+        px_call = float(_.ref.S0 * math.exp(-_.ref.q * _.T) * Util.ncdf(d1)
                         - _.K * math.exp(-_.rf_r * _.T) * stats.norm.cdf(d2))
         px_put = float(- _.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(-d1)
                        + _.K * math.exp(-_.rf_r * _.T) * stats.norm.cdf(-d2))

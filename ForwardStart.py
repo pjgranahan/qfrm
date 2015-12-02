@@ -1,7 +1,9 @@
-import scipy.stats
 import math
 import numpy as np
-from OptionValuation import *
+import scipy.stats
+
+try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:   from OptionValuation import *  # development: if not installed and running from source
 
 
 class ForwardStart(OptionValuation):
@@ -13,15 +15,20 @@ class ForwardStart(OptionValuation):
     def calc_px(self, T_s=1, method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
 
-        User passes parameters to calc_px, which saves them to local PriceSpec object
-        and calls specific pricing function (``_calc_BS``,...).
-        This makes significantly less docstrings to write, since user is not interfacing pricing functions,
-        but a wrapper function ``calc_px()``.
+        All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
+        specific pricing method (``_calc_BS()``,...) is called.
+        An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
+        is calculating price via a shorter method wrapper ``.pxBS(...)``.
+        The same works for all methods (BS, LT, MC, FD).
 
         Parameters
         ----------
         method : str
-                Required. Indicates a valuation method to be used: 'BS', 'LT', 'MC', 'FD'
+                Required. Indicates a valuation method to be used:
+                ``BS``: Black-Scholes Merton calculation
+                ``LT``: Lattice tree (such as binary tree)
+                ``MC``: Monte Carlo simulation methods
+                ``FD``: finite differencing methods
         nsteps : int
                 LT, MC, FD methods require number of times steps
         npaths : int
@@ -30,10 +37,11 @@ class ForwardStart(OptionValuation):
                 If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
         T_s : float
                 Required. Indicates the time that the option starts.
+
         Returns
         -------
         ForwardStart
-            Returned object contains specifications and calculated price in embedded PriceSpec object.
+            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
 
         Notes
         -----
@@ -48,8 +56,8 @@ class ForwardStart(OptionValuation):
 
         Examples
         --------
-        BS Examples
-        -----------
+        **BS Examples**
+
         #http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
         >>> s = Stock(S0=50, vol=.15,q=0.05)
         >>> o=ForwardStart(ref=s, K=50,right='call', T=0.5, \
@@ -57,14 +65,17 @@ class ForwardStart(OptionValuation):
         >>> o.px_spec.px #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         2.628777266...
 
-
-
         >>> s = Stock(S0=60, vol=.30,q=0.04)
         >>> o=ForwardStart(ref=s, K=66,right='call', T=0.75, \
         rf_r=.08).calc_px(method='BS',T_s=0.25)
         >>> o.px_spec #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         PriceSpec...px: 6.760976029...
 
+        >>> s = Stock(S0=60, vol=.30,q=0.04)
+        >>> o=ForwardStart(ref=s, K=66,right='put', T=0.75, \
+        rf_r=.08).calc_px(method='BS',T_s=0.25)
+        >>> o.px_spec #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 5.057238874
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
@@ -138,11 +149,43 @@ class ForwardStart(OptionValuation):
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> plt.show()
 
+
+
+        Examples using _calc_FD()
+        -------------------------------------
+
+        Notes
+        -----
+        Verification of examples: page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
+
+        The result of this method is influenced by many parameters.
+        This method is approximate and extremely unstable.
+        The answers are thus only an approximate of the BSM Solution
+
+        >>> s = Stock(S0=50, vol=.15,q=0.05)
+        >>> o=ForwardStart(ref=s, K=50, right='call', T=1, rf_r=.01, \
+               desc='example from page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf')
+        >>> o.pxFD(nsteps=4,T_s=0.5) #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        2.38237683
+
+        >>> s = Stock(S0=60, vol=.30,q=0.04)
+        >>> o=ForwardStart(ref=s, K=66,right='call', T=0.75, \
+        rf_r=.08).calc_px(method='FD',T_s=0.25)
+        >>> o.px_spec #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 6.402007239...
+
+        >>> from pandas import Series
+        >>> expiries = range(1,5)
+        >>> O = Series([ForwardStart(ref=s, K=66,right='call', T=0.5, \
+        rf_r=.01).update(T=t).calc_px(method='FD',T_s=0.5).px_spec.px for t in expiries], expiries)
+        >>> O.plot(grid=1, title='ForwardStart option Price vs expiry (in years)') # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at ...>
+        >>> plt.show()
+
         :Authors:
-            Runmin Zhang <Runmin.Zhang@rice.edu>
-            Tianyi Yao   <ty13@rice.edu>
-
-
+            Runmin Zhang <Runmin.Zhang@rice.edu>,
+            Tianyi Yao   <ty13@rice.edu>,
+            Mengyan Xie  <xiemengy@gmail.com>
         """
 
 
@@ -287,11 +330,58 @@ class ForwardStart(OptionValuation):
 
         See ``calc_px()`` for complete documentation.
 
+        Note
+        ----
+        [1] http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
+
         :Authors:
+            Mengyan Xie <xiemengy@gmail.com>
 
         """
 
+        keep_hist = getattr(self.px_spec, 'keep_hist', False)
+        n = getattr(self.px_spec, 'nsteps', 3)
+        _ = self
+        dt = _.T / n
+
+        # Get the Price based on FD method
+        S = np.linspace(0.5*_.ref.S0, 1.5*_.ref.S0, 9)[::-1]
+
+        # Find the index of S which nearest to the strike price K
+        idx = (np.abs(S - _.K)).argmin()
+
+        # Make sure S_S is set to the expected underlying price at T_S
+        S_S = _.ref.S0 * np.exp((_.rf_r - _.ref.q) * _.px_spec.T_s)
+
+        O = np.maximum(_.signCP * (S - S_S), 0)          # terminal option payouts
+        max_O = max(O)
+        min_O = min(O)
+
+        # The end node of grid
+        O_grid = (tuple([float(o) for o in O]),)
+
+        # Calculate a, b and c parameters
+        a = [1 / (1 + _.rf_r * dt) * (-0.5 * (_.rf_r - _.ref.q) * j * dt + \
+                                      0.5 * (_.ref.vol**2) * (j**2) * dt) for j in range(1, len(O)-1)]
+        b = [1 / (1 + _.rf_r * dt) * (1 - (_.ref.vol**2) * (j**2) * dt) for j in range(1, len(O)-1)]
+        c = [1 / (1 + _.rf_r * dt) * (0.5 * (_.rf_r - _.ref.q) * j * dt + 0.5 * (_.ref.vol**2) * (j**2) * dt)\
+             for j in range(1, len(O)-1)]
+
+        # Backward calculate each node of payoff
+        for i in range(n, 0, -1):
+            O_a = O[:-2]
+            O_b = O[1:-1]
+            O_c = O[2:]
+
+            # original payoff
+            O = a * O_a + b * O_b + c * O_c
+            O_new = np.insert(O, min_O, max_O)
+            O_new = np.append(O_new, 0)
+
+            # final payoff is the maximum of payoff and 0
+            O = np.maximum(O_new, 0)
+            O_grid = (tuple([float(o) for o in O]),) + O_grid
+
+        out = O_grid[0][idx]
+        self.px_spec.add(px=float(out), method='FDM', sub_method='Explicit')
         return self
-
-
-
