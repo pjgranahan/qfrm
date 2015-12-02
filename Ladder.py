@@ -9,6 +9,16 @@ class Ladder(OptionValuation):
     Ladder option class.
     """
 
+    def __init__(self, rungs, *args, **kwargs):
+        """
+        Parameters
+        ----------
+        rungs : tuple
+                Required. The predetermined profit lock-in price levels.
+        """
+        super().__init__(*args, **kwargs)
+        self.rungs = sorted(rungs)
+
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
 
@@ -60,7 +70,7 @@ class Ladder(OptionValuation):
             Patrick Granahan
         """
 
-        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
+        return super().calc_px(rungs=self.rungs, method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
 
     def _calc_BS(self):
         """ Internal function for option valuation.
@@ -105,32 +115,32 @@ class Ladder(OptionValuation):
         # Used to divide S_max into deltas. M + 1 stock prices/paths will be considered
         M = getattr(self.px_spec, 'npaths')
 
-        S_max = choose_S_max(M, self.ref.S0)
+        # Create the grid/matrix
+        grid = np.zeros(shape=(M + 1, N + 1))
 
+        # Define stock price parameters
+        S_max, d_S = Ladder._choose_S_max(M, self.ref.S0)  # Maximum stock price, stock price change interval
         S_min = 0.0  # Minimum stock price
-        d_t = self.T / (N - 1)  # Time step
-        S_vec = np.linspace(S_min, S_max, M)  # Initialize the possible stock price vector
-        t_vec = np.linspace(0, self.T, N)  # Initialize the time vector
+        S_vec = np.arange(S_min, S_max + 1, d_S)  # Possible stock price vector. (+1 to S_max so that S_max is included)
 
-        f_px = np.zeros((M, N))  # Initialize the matrix. Hull's P482
-
-        M = M - 1
-        N = N - 1
+        # Define time parameters
+        d_T = self.T / N  # Time step
+        t_vec = np.arange(0, self.T + 1, d_T)  # Time vector. (+1 to T so that T is included)
 
         # Set boundary conditions.
-        f_px[:, -1] = S_vec
+        grid[:, -1] = S_vec
+
+        # Payout at the maturity time
+        init_cond = np.maximum(self.signCP * (S_vec - self.K),
+                               S_min)  # TODO need to updated S_vec to include the ladder rungs lol
 
         if self.right == 'call':
-            # Payout at the maturity time
-            init_cond = np.maximum((S_vec - self.K), 0) * (S_vec >= self.K2)
             # Boundary condition
             upper_bound = 0
             # Calculate the current value
             lower_bound = np.maximum((S_vec[-1] - self.K), 0) * (S_vec[-1] >= self.K2) * np.exp(
                 -self.rf_r * (self.T - t_vec))
         elif self.right == 'put':
-            # Payout at the maturity time
-            init_cond = np.maximum((self.K - S_vec), 0) * (S_vec <= self.K2)
             # Boundary condition
             upper_bound = np.maximum((self.K - S_vec[0]), 0) * (S_vec[0] <= self.K2) * np.exp(
                 -self.rf_r * (self.T - t_vec))
@@ -139,27 +149,27 @@ class Ladder(OptionValuation):
 
         # Generate Matrix B in http://www.goddardconsulting.ca/option-pricing-finite-diff-implicit.html
         j_list = np.arange(0, M + 1)
-        a_list = 0.5 * d_t * ((self.rf_r - self.ref.q) * j_list - self.ref.vol ** 2 * j_list ** 2)
-        b_list = 1 + d_t * (self.ref.vol ** 2 * j_list ** 2 + self.rf_r)
-        c_list = 0.5 * d_t * (-(self.rf_r - self.ref.q) * j_list - self.ref.vol ** 2 * j_list ** 2)
+        a_list = 0.5 * d_T * ((self.rf_r - self.ref.q) * j_list - self.ref.vol ** 2 * j_list ** 2)
+        b_list = 1 + d_T * (self.ref.vol ** 2 * j_list ** 2 + self.rf_r)
+        c_list = 0.5 * d_T * (-(self.rf_r - self.ref.q) * j_list - self.ref.vol ** 2 * j_list ** 2)
 
         data = (a_list[2:M], b_list[1:M], c_list[1:M - 1])
         B = sparse.diags(data, [-1, 0, 1]).tocsc()
 
         # Using Implicit method to solve B-S equation
-        f_px[:, N] = init_cond
-        f_px[0, :] = upper_bound
-        f_px[M, :] = lower_bound
+        grid[:, N] = init_cond
+        grid[0, :] = upper_bound
+        grid[M, :] = lower_bound
         Offset = np.zeros(M - 1)
         for idx in np.arange(N - 1, -1, -1):
-            Offset[0] = -a_list[1] * f_px[0, idx]
-            Offset[-1] = -c_list[M - 1] * f_px[M, idx]
-            f_px[1:M, idx] = sparse.linalg.spsolve(B, f_px[1:M, idx + 1] + Offset)
-            f_px[:, -1] = init_cond
-            f_px[0, :] = upper_bound
-            f_px[-1, :] = lower_bound
+            Offset[0] = -a_list[1] * grid[0, idx]
+            Offset[-1] = -c_list[M - 1] * grid[M, idx]
+            grid[1:M, idx] = sparse.linalg.spsolve(B, grid[1:M, idx + 1] + Offset)
+            grid[:, -1] = init_cond
+            grid[0, :] = upper_bound
+            grid[-1, :] = lower_bound
 
-        self.px_spec.add(px=float(np.interp(self.ref.S0, S_vec, f_px[:, 0])), sub_method='Implicit Method')
+        self.px_spec.add(px=float(np.interp(self.ref.S0, S_vec, grid[:, 0])), sub_method='Implicit Method')
 
         return self
 
@@ -205,7 +215,43 @@ class Ladder(OptionValuation):
         (100.81967213114754, 0.819672131147541)
         """
 
-        d_S = S0 / (math.floor(M/2))
+        d_S = S0 / (math.floor(M / 2))
         S_max = d_S * M
 
         return S_max, d_S
+
+    def payoff(self, price_history):
+        """
+        Calculates the payoff of a Ladder option given a price history.
+
+        Parameters
+        ----------
+        price_history : tuple
+            The history of prices for this option.
+
+        Returns
+        -------
+        payoff : float
+            The payoff for this option.
+
+        Examples
+        --------
+        >>>
+        """
+        # Find the extreme price in time for this option. Max for a call, min for a put
+        if self.signCP == 1:
+            extreme_historical_price = max(price_history)
+        elif self.signCP == -1:
+            extreme_historical_price = min(price_history)
+        else:
+            raise Exception("Unrecognized right for a Ladder option.")
+
+        # The base case has the extreme stock price never reaching a rung
+        rung_reached = -1
+        # Climb the ladder, rung by rung, until the extreme stock price can't reach the next rung
+        # (Note that each rung step could represent an increase OR decrease in strike, depending on the option right)
+        while extreme_historical_price >= self.rungs[rung_reached + 1]:
+            rung_reached += 1
+
+        payoff = max(self.signCP * (self.rungs[rung_reached] - self.K), 0)
+        return payoff
