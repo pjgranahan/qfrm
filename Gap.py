@@ -48,6 +48,8 @@ class Gap(OptionValuation):
 
         Parameters
         ----------
+        K2: float
+                Required. The secondary strike price in Gap option.
         method : str
                 Required. Indicates a valuation method to be used:
                 ``BS``: Black-Scholes Merton calculation
@@ -60,6 +62,8 @@ class Gap(OptionValuation):
                 MC, FD methods require number of simulation paths
         keep_hist : bool
                 If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
+        Seed : int
+                Random seed in MC methods.
 
         Returns
         -----------------------------------------------------

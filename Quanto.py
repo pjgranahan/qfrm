@@ -110,7 +110,7 @@ class Quanto(OptionValuation):
         >>> o.pxMC(nsteps=10,npaths=10, vol_ex=0.06, correlation=0.4)
         91.901775513
 
-        Example of option price convergence (MC method) with increasing paths
+        Example of option price (MC method) with increasing time
         For an accurate result, use nsteps=100, npaths=5000
         >>> from pandas import Series
         >>> expiries = range(1,11)
