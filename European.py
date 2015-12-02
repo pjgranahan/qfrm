@@ -1,7 +1,7 @@
-from scipy import stats
 import warnings
 import numpy as np
 import math
+from scipy import stats
 
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
 except:   from OptionValuation import *  # development: if not installed and running from source
@@ -103,7 +103,11 @@ class European(OptionValuation):
         # if calc of both prices is cheap, do both and include them into Price object.
         # Price.px should always point to the price of interest to the user
         # Save values as basic data types (int, floats, str), instead of np.array
-        px_call = float(_.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(d1)
+        # px_call = float(_.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(d1)
+        #                 - _.K * math.exp(-_.rf_r * _.T) * stats.norm.cdf(d2))
+        # px_put = float(- _.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(-d1)
+        #                + _.K * math.exp(-_.rf_r * _.T) * stats.norm.cdf(-d2))
+        px_call = float(_.ref.S0 * math.exp(-_.ref.q * _.T) * Util.ncdf(d1)
                         - _.K * math.exp(-_.rf_r * _.T) * stats.norm.cdf(d2))
         px_put = float(- _.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(-d1)
                        + _.K * math.exp(-_.rf_r * _.T) * stats.norm.cdf(-d2))
