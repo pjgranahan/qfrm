@@ -8,6 +8,7 @@ try: from qfrm.European import *  # production:  if qfrm package is installed
 except:   from European import *  # development: if not installed and running from source
 
 
+
 class American(OptionValuation):
     """ American option class.
 

@@ -1,6 +1,5 @@
 import math
 import numpy as np
-from scipy import stats
 import scipy
 
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
@@ -35,7 +34,7 @@ class Exchange(OptionValuation):
         npaths : int
                 MC, FD methods require number of simulation paths
         keep_hist : bool
-                If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
+                If ``True``, historical information (trees, simulations, grid) are saved in ``self.px_spec`` object.
         cor: float, between 0 and 1
                 Required. This specifies the correlation between the two assets of interest.
 
@@ -47,31 +46,33 @@ class Exchange(OptionValuation):
         Notes
         -----
 
-        In my implementation of all the pricers of exhange option, I assume that this is an option to exchange \
-        the first asset for the second. The payoff profile is max{S0_2(T)-S0_1(T),0} where S0_2(T) is the price\
-        of asset 2 at maturity and S0_1(T) is the price of asset 1 at maturity. This is equivalent to restating this\
-        exchange option as a call (resp. put) option on asset 2 (resp. asset 1) with a strike price equal\
-        to the future value of asset 1 (resp. asset 2). When you use this function, please use the following input\
-        format: S0=(asset1,asset2)
+        In my implementation of all the pricers of exhange option, I assume that this is an option to exchange
+        the first asset for the second. The payoff profile is ``max{S0_2(T)-S0_1(T),0}`` where ``S0_2(T)`` is the price
+        of asset 2 at maturity and ``S0_1(T)`` is the price of asset 1 at maturity. This is equivalent to restating this
+        exchange option as a call (resp. put) option on asset 2 (resp. asset 1) with a strike price equal
+        to the future value of asset 1 (resp. asset 2). When you use this function, please use the following input
+        format: ``S0=(asset1,asset2)``
 
         Examples
         --------
 
         **BS Examples**
 
-        Verification: page 4 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L3exchange.pdf
+        Verification:
+        `Exchange Options, p.4 <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L3exchange.pdf>`_
+
         >>> s = Stock(S0=(100,100), vol=(0.15,0.20), q=(0.04,0.05))
         >>> o = Exchange(ref=s, right='call', K=40, T=1, rf_r=.1, \
         desc='px @4.578 page 4 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L3exchange.pdf')
-        >>> o.calc_px(method='BS',cor=0.75).px_spec.px # doctest: +ELLIPSIS
-        4.578049200...
+        >>> o.pxBS(cor=0.75)
+        4.5780492
 
         >>> o.calc_px(method='BS', cor=0.75).px_spec # save interim results to self.px_spec. Equivalent to repr(o)
         ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         PriceSpec...px: 4.5780492...
 
         >>> (o.px_spec.px, o.px_spec.d1, o.px_spec.d2, o.px_spec.method)  # alternative attribute access
-        (4.578049200203779, -0.009449111825230689, -0.14173667737846024, 'BS')
+        (4.578049200203772, -0.009449111825230689, -0.14173667737846024, 'BS')
 
         >>> Exchange(clone=o).pxBS(cor=0.75)
         4.5780492
@@ -91,21 +92,23 @@ class Exchange(OptionValuation):
 
         Notes
         -----
-        Verification of examples: page 4 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L3exchange.pdf
+        Verification of examples:
+        `Exchange Options, p.4 <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L3exchange.pdf>`_
 
-        Please note that the following FD examples will only generate results that matches the output of online source\
-        if we use nsteps=10 and npaths = 101. For fast runtime purpose, I use nsteps=10 and npaths = 9 \
+        Please note that the following FD examples will only generate results that matches the output of online source
+        if we use ``nsteps=10`` and ``npaths = 101``. For fast runtime purpose, I use nsteps=10 and npaths = 9
         in the following examples, which may not generate results that match the output of online source
 
 
 
         Use a finite difference method to price an exchange option
 
-        The following example will generate px = 4.558805242...with nsteps = 10 and npaths = 101, \
-        which can be verified by page 4 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L3exchange.pdf
-        However, for the purpose of fast runtime, I use nstep = 10 and npaths = 9 in all following examples, \
+        The following example will generate ``px = 4.558805242`` with ``nsteps = 10`` and ``npaths = 101``,
+        which can be verified with
+        `Exchange Options, p.4 <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L3exchange.pdf>`_
+        However, for the purpose of fast runtime, I use ``nstep = 10`` and ``npaths = 9`` in all following examples,
         whose result does not match verification.
-        If you want to verify my code, please use nsteps = 10 and npaths = 101 in the following example.
+        If you want to verify my code, please use ``nsteps = 10`` and ``npaths = 101`` in the following example.
 
         >>> s = Stock(S0=(100,100), vol=(0.15,0.20), q=(0.04,0.05))
         >>> o = Exchange(ref=s, right='call', K=40, T=1, rf_r=.1, \
@@ -118,7 +121,7 @@ class Exchange(OptionValuation):
         PriceSpec...px: 3.993309432...
 
         >>> (o.px_spec.px, o.px_spec.method)  # alternative attribute access
-        (3.993309432456476, 'FD')
+        (3.993309432456474, 'FD')
 
         >>> Exchange(clone=o).pxFD(cor=0.75, nsteps=10, npaths=9)
         3.993309432
@@ -171,7 +174,7 @@ class Exchange(OptionValuation):
         d1 = (np.log(S0_2 / S0_1) + ((q_1 - q_2 + (vol_a / 2)) * T)) / (np.sqrt(vol_a) * np.sqrt(T))
         d2 = d1 - np.sqrt(vol_a) * np.sqrt(T)
 
-        px = (S0_2 * np.exp(-q_2 * T) * stats.norm.cdf(d1) - S0_1 * np.exp(-q_1 * T) * stats.norm.cdf(d2))
+        px = (S0_2 * np.exp(-q_2 * T) * Util.norm_cdf(d1) - S0_1 * np.exp(-q_1 * T) * Util.norm_cdf(d2))
 
         self.px_spec.add(px=float(px), sub_method=None, d1=d1, d2=d2)
 

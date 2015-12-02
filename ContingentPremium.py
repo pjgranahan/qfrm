@@ -1,11 +1,13 @@
 import numpy as np
 import math
 import scipy.optimize
-import scipy.stats
 import matplotlib.pyplot as plt
 
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
 except:   from OptionValuation import *  # development: if not installed and running from source
+
+try: from qfrm.European import *  # production:  if qfrm package is installed
+except:   from European import *  # development: if not installed and running from source
 
 
 class ContingentPremium(OptionValuation):
@@ -36,7 +38,7 @@ class ContingentPremium(OptionValuation):
         npaths : int
                 MC, FD methods require number of simulation paths
         keep_hist : bool
-                If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
+                If ``True``, historical information (trees, simulations, grid) are saved in ``self.px_spec`` object.
 
         Returns
         -------
@@ -55,40 +57,40 @@ class ContingentPremium(OptionValuation):
 
         Examples
         -------
+        >>> from qfrm import *
         >>> s = Stock(S0=1/97, vol=.2, q=.032)
         >>> o = ContingentPremium(ref=s, right='call', K=1/100, T=.25, rf_r=.059)
-        >>> o.calc_px(method='LT', nsteps=2000, keep_hist=False).px_spec.px
-        0.000995798782229753
+        >>> o.pxLT(nsteps=100)
+        0.000997259
 
-        >>> o.calc_px(method='LT', nsteps=2000, keep_hist=False)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        ContingentPremium...px: 0.000995799...
+        >>> o.calc_px(method='LT', nsteps=100)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        ContingentPremium...px: 0.000997259...
 
         >>> s = Stock(S0=1/97, vol=.2, q=.032)
         >>> o = ContingentPremium(ref=s, right='call', K=1/100, T=.25, rf_r=.059)
-        >>> o.calc_px(method='MC', nsteps=5, npaths=1000, keep_hist=False, Seed=0).px_spec.px
-        0.0009809635535918107
-        >>> o.calc_px(method='MC', nsteps=5, npaths=1000, keep_hist=False, Seed=0)  # doctest: +ELLIPSIS
-        ContingentPremium...px: 0.000980964...
+        >>> o.pxMC(nsteps=100, npaths=100, Seed=0)
+        0.000682276
+        >>> o.calc_px(method='MC', nsteps=100, npaths=100, Seed=0)  # doctest: +ELLIPSIS
+        ContingentPremium...px: 0.000682276...
 
         >>> s = Stock(S0=45, vol=.3, q=.02)
         >>> o = ContingentPremium(ref=s, right='call', K=52, T=3, rf_r=.05)
-        >>> o.calc_px(method='LT', nsteps=10, keep_hist=False).px_spec.px
-        25.921951519642672
-        >>> o.calc_px(method='LT', nsteps=10, keep_hist=False)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        ContingentPremium...px: 25.92195152...
+        >>> o.pxLT(nsteps=100)
+        25.365713103
+        >>> o.calc_px(method='LT', nsteps=100)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        ContingentPremium...px: 25.365713103...
 
 
         >>> s = Stock(S0=100, vol=.4)
         >>> o = ContingentPremium(ref=s, right='put', K=100, T=1, rf_r=.08)
-        >>> o.calc_px(method='MC', nsteps=500, npaths=100, keep_hist=False).px_spec.px
-        25.583209835369427
-        >>> o.calc_px(method='MC', nsteps=500, npaths=100, keep_hist=False)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        ContingentPremium...px: 25.583209835...
+        >>> o.pxMC(nsteps=100, npaths=100)
+        33.079676917
+        >>> o.calc_px(method='MC', nsteps=100, npaths=100)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        ContingentPremium...px: 33.079676917...
 
         >>> s = Stock(S0=50, vol=.2, q=.01)
         >>> strike = range(40, 61)
-        >>> o = [ContingentPremium(ref=s, right='call', K=strike[i], T=1, rf_r=.05).calc_px(method='LT', nsteps=100)\
-        .px_spec.px for i in range(0, 21)]
+        >>> o = [ContingentPremium(ref=s, right='call', K=strike[i], T=1, rf_r=.05).pxLT(nsteps=100) for i in range(0, 21)]
         >>> plt.plot(strike, o, label='Changing Strike') # doctest: +ELLIPSIS
         [<matplotlib.lines.Line2D object at...
         >>> plt.xlabel('Strike Price') # doctest: +ELLIPSIS
@@ -121,8 +123,8 @@ class ContingentPremium(OptionValuation):
         d2 = (math.log(self.ref.S0 / self.K) + (self.rf_r - self.ref.q - .5 * self.ref.vol ** 2) * self.T) / (
             self.ref.vol * math.sqrt(self.T))
         d1 = d2 + self.ref.vol * math.sqrt(self.T)
-        Q = self.ref.S0 * math.exp((self.rf_r - self.ref.q) * self.T) * scipy.stats.norm.cdf(d1) / \
-            scipy.stats.norm.cdf(d2) - self.K
+        Q = self.ref.S0 * math.exp((self.rf_r - self.ref.q) * self.T) * Util.norm_cdf(d1) / \
+            Util.norm_cdf(d2) - self.K
 
     def _calc_LT(self):
         """ Internal function for option valuation.
@@ -157,12 +159,10 @@ class ContingentPremium(OptionValuation):
         _ = self.LT_specs(n)
         if self.ref.q is not None:
             vanilla = European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol, q=self.ref.q), right=self.right,
-                           K=self.K, rf_r=self.rf_r, T=self.T).calc_px(method='LT', nsteps=n, keep_hist=False)\
-                .px_spec.px
+                           K=self.K, rf_r=self.rf_r, T=self.T).pxLT(nsteps=n, keep_hist=False)
         else:
             vanilla = European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol), right=self.right,
-                           K=self.K, rf_r=self.rf_r, T=self.T).calc_px(method='LT', nsteps=n, keep_hist=False)\
-                .px_spec.px
+                           K=self.K, rf_r=self.rf_r, T=self.T).pxLT(nsteps=n, keep_hist=False)
 
         def binary(Q):
             #  Calculate d1 and d2
@@ -172,8 +172,8 @@ class ContingentPremium(OptionValuation):
             # Calculate the discount
             discount = Q * math.exp(-self.rf_r * self.T)
             # Compute the put and call price
-            px_call = discount * scipy.stats.norm.cdf(d2)
-            px_put = discount * scipy.stats.norm.cdf(-d2)
+            px_call = discount * Util.norm_cdf(d2)
+            px_put = discount * Util.norm_cdf(-d2)
             px = px_call if self.signCP == 1 else px_put if self.signCP == -1 else None
             return px - vanilla
 
@@ -225,8 +225,8 @@ class ContingentPremium(OptionValuation):
             # Calculate the discount
             discount = Q * math.exp(-self.rf_r * self.T)
             # Compute the put and call price
-            px_call = discount * scipy.stats.norm.cdf(d2)
-            px_put = discount * scipy.stats.norm.cdf(-d2)
+            px_call = discount * Util.norm_cdf(d2)
+            px_put = discount * Util.norm_cdf(-d2)
             px = px_call if self.signCP == 1 else px_put if self.signCP == -1 else None
             return px - vanilla
 

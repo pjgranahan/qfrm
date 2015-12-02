@@ -59,25 +59,22 @@ class PerpetualAmerican(OptionValuation):
 
 
 
-        `This examples below can be verified by this online tools: <http://www.coggit.com/freetools>`
-        >>> s = Stock(S0=50, vol=.3, q=0.01)
-        >>> o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.08, \
-        desc='call @37.19 put @8.68 example from Internet')
+        This examples below can be verified with
+        `Coggit's Perpetual Option Pricing tool <http://www.coggit.com/freetools>`_
 
-        >>> o.calc_px(method='BS').px_spec.px # doctest: +ELLIPSIS
-        37.190676833...
+        >>> s = Stock(S0=50, vol=.3, q=0.01)
+        >>> o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.08, desc='call @37.19, put @8.68. See www.coggit.com/freetools')
+        >>> o.pxBS()
+        37.190676834
 
         >>> o.calc_px(method="BS").px_spec  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         PriceSpec...px: 37.190676834...
-
 
         >>> o.calc_px(method='BS')  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         PerpetualAmerican...px: 37.190676834...
 
 
-
-
-        `Change the option to a put, can verified by this online tools: <http://www.coggit.com/freetools>`
+        `Change the option to a put, can verified by this online tools: <http://www.coggit.com/freetools>`_
         >>> o.update(right='put').calc_px().px_spec.px # doctest: +ELLIPSIS
         8.676279289...
 
@@ -85,17 +82,17 @@ class PerpetualAmerican(OptionValuation):
         PerpetualAmerican...px: 8.67627929...
 
 
-
-
         Another example with different dividend and risk free interest rate
         `This examples below can be verified by this online tools: <http://www.coggit.com/freetools>`
+
         >>> s = Stock(S0=50, vol=.3, q=0.02)
         >>> o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.05, \
-        desc='call @27.47 put @13.43 example from Internet')
-        >>> o.calc_px(method='BS').px_spec.px # doctest: +ELLIPSIS
-        27.465595636...
+        desc='call @27.47, put @13.43. See www.coggit.com/freetools')
+        >>> o.pxBS()
+        27.465595637
 
         `Change the option to a put, can be verified by this online tools: <http://www.coggit.com/freetools>`
+
         >>> o.update(right='put').calc_px().px_spec.px# doctest: +ELLIPSIS
         13.427262534...
 

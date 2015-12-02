@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-import scipy.stats as st
 import numpy as np
 
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
@@ -141,15 +140,17 @@ class VarianceSwap(OptionValuation):
         """
 
         _ = self
+        N = Util.norm_cdf
+
         d1 = tuple(map(lambda i: (np.log(_.ref.S0 / _.K[i]) + (_.rf_r + _.ref.vol[i] ** 2 / 2.) * _.T)/(_.ref.vol[i] * \
             np.sqrt(_.T)), range(len(_.K))))
         d2 = tuple(map(lambda i: d1[i] - _.ref.vol[i] * np.sqrt(_.T), range(len(_.K)))) 
 
         #Compute the call and put prices for the sequence of options with strikes K_i with BSM.
-        px_call = tuple(map(lambda i: _.ref.S0 * np.exp(-_.ref.q * _.T) * st.norm.cdf(d1[i]) - _.K[i] * np.exp(-_.rf_r * _.T )
-            * st.norm.cdf(d2[i]), range(len(_.K))))
-        px_put = tuple(map(lambda i: -_.ref.S0 * np.exp(-_.ref.q * _.T) * st.norm.cdf(-d1[i]) + _.K[i] * np.exp(-_.rf_r * _.T) \
-            * st.norm.cdf(-d2[i]), range(len(_.K))))
+        px_call = tuple(map(lambda i: _.ref.S0 * np.exp(-_.ref.q * _.T) * N(d1[i]) - _.K[i] * np.exp(-_.rf_r * _.T )
+            * N(d2[i]), range(len(_.K))))
+        px_put = tuple(map(lambda i: -_.ref.S0 * np.exp(-_.ref.q * _.T) * N(-d1[i]) + _.K[i] * np.exp(-_.rf_r * _.T) \
+            * N(-d2[i]), range(len(_.K))))
 
         #The machinery of the variance swap pricing, from Hull 9. ed. p. 613-614.
         Ka = np.asarray(_.K)

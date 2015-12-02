@@ -1,8 +1,5 @@
 import math
 import numpy as np
-import scipy.stats
-import scipy.sparse
-
 
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
 except:   from OptionValuation import *  # development: if not installed and running from source
@@ -47,42 +44,37 @@ class ForwardStart(OptionValuation):
 
         Notes
         -----
-        [1] https://en.wikipedia.org/wiki/Forward_start_option  -- WikiPedia: Forward start option
-        [2] http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf -- \
-        How to pricing forward start opions, resource for Example 1
-        [3] http://www.globalriskguard.com/resources/deriv/fwd_4.pdf -- \
-        How to pricing forward start opions, resource for Example 2
-
-
+        [1] `Wikipedia: Forward start option <https://en.wikipedia.org/wiki/Forward_start_option>`_
+        [2] Verify example 1 with
+        `How to pricing forward start options <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf>`_
+        [3] Verify example 4 with
+        `How to pricing forward start options <http://www.globalriskguard.com/resources/deriv/fwd_4.pdf>`_
 
 
         Examples
         --------
         **BS Examples**
 
-        #http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
+        `Forward Start Options, p.2 <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf>`_
+
         >>> s = Stock(S0=50, vol=.15,q=0.05)
-        >>> o=ForwardStart(ref=s, K=50,right='call', T=0.5, \
-        rf_r=.1).calc_px(method='BS',T_s=0.5)
-        >>> o.px_spec.px #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        2.628777266...
+        >>> ForwardStart(ref=s, K=50,right='call', T=0.5, rf_r=.1).pxBS(T_s=0.5)
+        2.628777267
 
         >>> s = Stock(S0=60, vol=.30,q=0.04)
-        >>> o=ForwardStart(ref=s, K=66,right='call', T=0.75, \
-        rf_r=.08).calc_px(method='BS',T_s=0.25)
+        >>> o=ForwardStart(ref=s, K=66,right='call', T=0.75, rf_r=.08).calc_px(method='BS',T_s=0.25)
         >>> o.px_spec #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         PriceSpec...px: 6.760976029...
 
         >>> s = Stock(S0=60, vol=.30,q=0.04)
-        >>> o=ForwardStart(ref=s, K=66,right='put', T=0.75, \
-        rf_r=.08).calc_px(method='BS',T_s=0.25)
+        >>> o=ForwardStart(ref=s, K=66,right='put', T=0.75, rf_r=.08).calc_px(method='BS',T_s=0.25)
         >>> o.px_spec #doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         PriceSpec...px: 5.057238874
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
         >>> O = Series([ForwardStart(ref=s, K=66,right='call', T=0.75, \
-        rf_r=.08).update(T=t).calc_px(method='BS',T_s=0.25).px_spec.px for t in expiries], expiries)
+        rf_r=.08).update(T=t).pxBS(T_s=0.25) for t in expiries], expiries)
         >>> O.plot(grid=1, title='ForwardStart option Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> plt.show()
@@ -94,21 +86,24 @@ class ForwardStart(OptionValuation):
 
         Notes
         -----
-        Verification of examples: page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
+        Verification of examples:
+        `Forward Start Options, p.2 <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf>`_
 
-        Please note that the following MC examples will only generate results that matches the output of online source\
-        if we use nsteps=365 and npaths = 10000. For fast runtime purpose, I use nsteps=10 and npaths = 10 \
+        Please note that the following MC examples will only generate results that matches the output of online source
+        if we use ``nsteps=365`` and ``npaths = 10000``.
+        For fast runtime purpose, I use ``nsteps=10`` and ``npaths = 10``
         in the following examples, which may not generate results that match the output of online source
 
 
 
         Use a Monte Carlo simulation to price a forwardstart option
 
-        The following example will generate px = 2.620293977...with nsteps = 365 and npaths = 10000, \
-        which can be verified by page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
-        However, for the purpose if fast runtime, I use nstep = 10 and npaths = 10 in all following examples, \
+        The following example will generate ``px = 2.620293977...`` with ``nsteps = 365`` and ``npaths = 10000``,
+        which can be verified by
+        `Forward Start Options, p.2 <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf>`_
+        However, for the purpose if fast runtime, I use ``nstep = 10`` and ``npaths = 10`` in all following examples,
         whose result does not match verification.
-        If you want to verify my code, please use nsteps = 365 and npaths = 10000 in the following example.
+        If you want to verify my code, please use ``nsteps = 365`` and ``npaths = 10000`` in the following example.
 
         >>> s = Stock(S0=50, vol=.15,q=0.05)
         >>> o=ForwardStart(ref=s, K=100, right='call', T=0.5, rf_r=.1, \
@@ -117,7 +112,8 @@ class ForwardStart(OptionValuation):
         >>> o.px_spec.px#doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         3.434189097...
 
-        The following example uses the same parameter as the example above, but uses pxMC()
+        The following example uses the same parameter as the example above, but uses ``pxMC()``
+
         >>> s = Stock(S0=50, vol=.15,q=0.05)
         >>> o=ForwardStart(ref=s, K=100, right='call', T=0.5, rf_r=.1, \
                desc='example from page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf')
@@ -125,11 +121,12 @@ class ForwardStart(OptionValuation):
         3.434189097
 
 
-        The following example will generate px = 1.438603501...with nsteps = 365 and npaths = 10000, \
-        which can be verified by the xls file in http://investexcel.net/forward-start-options/
-        However, for the purpose if fast runtime, I use nstep = 10 and npaths = 10 in all following examples, \
+        The following example will generate ``px = 1.438603501...`` with ``nsteps = 365`` and ``npaths = 10000``,
+        which can be verified by the xls file in
+        `Forward Start Options - Intro and Spreadsheet <http://investexcel.net/forward-start-options/>`_
+        However, for the purpose if fast runtime, I use ``nstep = 10`` and ``npaths = 10`` in all following examples,
         whose result does not match verification.
-        If you want to verify my code, please use nsteps = 365 and npaths = 10000
+        If you want to verify my code, please use ``nsteps = 365`` and ``npaths = 10000``
 
         >>> s = Stock(S0=50, vol=.15,q=0.05)
         >>> o=ForwardStart(ref=s, K=100, right='call', T=0.5, rf_r=.1, \
@@ -158,7 +155,8 @@ class ForwardStart(OptionValuation):
 
         Notes
         -----
-        Verification of examples: page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
+        Verification of examples:
+        `Forward Start Options, p.2 <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf>`_
 
         The result of this method is influenced by many parameters.
         This method is approximate and extremely unstable.
@@ -254,12 +252,11 @@ class ForwardStart(OptionValuation):
 
 
         # Calculate the option price
+        N = Util.norm_cdf
         if right=='c':
-            px = S0*math.exp(-q*T_s)*( math.exp(-q*T)*scipy.stats.norm.cdf(d1)\
-                                       -math.exp(-r*T)*scipy.stats.norm.cdf(d2) )
+            px = S0*math.exp(-q*T_s)*( math.exp(-q*T)*N(d1) -math.exp(-r*T)*N(d2) )
         elif right=='p':
-            px = S0*math.exp(-q*T_s)*( -math.exp(-q*T)*scipy.stats.norm.cdf(-d1)\
-                                       +math.exp(-r*T)*scipy.stats.norm.cdf(-d2) )
+            px = S0*math.exp(-q*T_s)*( -math.exp(-q*T)*N(-d1) +math.exp(-r*T)*N(-d2) )
 
         self.px_spec.add(px=float(px), method='BS', sub_method=None)
         return self
