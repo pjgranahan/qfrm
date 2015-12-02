@@ -80,6 +80,10 @@ class LowExercisePrice(OptionValuation):
 
         Notes
         -----
+        A Low Exercise Price Option (LEPO) is an Australian Stock Exchange traded option with a low exercise price that
+        was specifically designed to be traded on margin.  It is a European style call option with a low exercise price
+        of $0.01 and a contract size of 100 shares to be delivered on exercise.
+
         [1] Wikipedia: Low Exercise Price Option - https://en.wikipedia.org/wiki/Low_Exercise_Price_Option
         [2] LEPOs Explanatory Booklet http://www.asx.com.au/documents/resources/UnderstandingLEPOs.pdf
 
@@ -110,18 +114,11 @@ class LowExercisePrice(OptionValuation):
 
     def _calc_LT(self):
         """ Internal function for option valuation.
-        Modified from European Call Option.
 
-        Returns
-        -------
-        self: LowExercisePrice.
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor:: Runmin Zhang
-
-
-
-        Examples
-        -------
+        :Authors:
+            Runmin Zhang <z.runmin@gmail.com>
         """
 
 

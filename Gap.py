@@ -1,7 +1,8 @@
 import math
 import numpy as np
 from scipy import stats
-import matplotlib.pyplot as plt
+from scipy import sparse
+
 
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
 except:   from OptionValuation import *  # development: if not installed and running from source
@@ -80,17 +81,16 @@ class Gap(OptionValuation):
         Examples
         --------------------------------------------------------
 
-        BS Examples
-        --------------------------------------------------------
+        **BS Examples**
         >>> s = Stock(S0=500000, vol=.2)
         >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='Hull p.601 Example 26.1')
         >>> o.pxBS(K2=350000)
-        1895.6889443965902
+        1895.688944397
 
         >>> s = Stock(S0=50, vol=.2)
         >>> o = Gap(ref=s, right='call', K=57, T=1, rf_r=.09)
         >>> o.pxBS(K2=50)
-        2.266910325361735
+        2.266910325
 
         >>> o.calc_px(K2=50, method='BS').px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         PriceSpec...px: 2.266910325...
@@ -103,38 +103,42 @@ class Gap(OptionValuation):
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
-        LT Examples
-        ----------------------------------------------------------
+        **LT Examples**
+        The price depends on the number of tree paths. n=22 can give an answer in Hull's example
         >>> s = Stock(S0=500000, vol=.2,  q = 0)
-        >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, on = (90000,)*23, desc = 'HULL p. 601 Exp 26.1')
-        >>> o.calc_px(K2=350000, nsteps = 22, method='LT').px_spec.px
-        1895.8012967929049
+        >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, on = (90000,)*4, desc = 'HULL p. 601 Exp 26.1')
+        >>> o.calc_px(K2=350000, nsteps = 3, method='LT').px_spec.px
+        1895.8012967929053
 
         >>> s = Stock(S0=50, vol=.2,  q = 0)
-        >>> o = Gap(ref=s, right='call', K=57, T=1, rf_r=.09, on = (90000,)*23)
-        >>> o.calc_px(K2=50, nsteps = 22, method='LT').px_spec.px
-        2.2749024276146068
+        >>> o = Gap(ref=s, right='call', K=57, T=1, rf_r=.09, on = (90000,)*4)
+        >>> o.calc_px(K2=50, nsteps = 3, method='LT').px_spec.px
+        2.2749024276146073
 
         >>> s = Stock(S0=50, vol=.2,  q = 0)
-        >>> o = Gap(ref=s, right='put', K=57, T=1, rf_r=.09, on = (90000,)*23)
-        >>> o.calc_px(K2=50, nsteps = 22, method='LT').px_spec.px
-        4.3689799979566706
+        >>> o = Gap(ref=s, right='put', K=57, T=1, rf_r=.09, on = (90000,)*4)
+        >>> o.calc_px(K2=50, nsteps = 3, method='LT').px_spec.px
+        4.3689799979566697
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
-        >>> o = Series([o.update(T=t).calc_px(method='LT', K2 = 50, nsteps=5).px_spec.px for t in expiries], expiries)
-        >>> o.plot(grid=1, title='Price vs expiry (in years)')
+        >>> o = Series([o.update(T=t).calc_px(method='LT', K2 = 50, nsteps=3).px_spec.px for t in expiries], expiries)
+        >>> o.plot(grid=1,title='Price vs expiry (in years)') # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at ...>
 
 
-        MC Examples
-        -----------------------------------------------------------
+        **MC Examples**
         Because different number of seed, npaths and nsteps will influence the option price. The result of MC method
         may not as accurate as BSM and LT method.
 
+        The following example will generate px = 1895.64429636 with nsteps = 998 and npaths = 1000, \
+        which can be verified by Hull p.601 Example 26.1
+        However, for the purpose if fast runtime, I use nstep = 10 and npaths = 10 in all following examples, \
+        whose result does not match verification.
         >>> s = Stock(S0=500000, vol=.2)
         >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='Hull p.601 Example 26.1')
-        >>> o.pxMC(K2=350000,seed=1, npaths=1000, nsteps=998)
-        1895.6442963600562
+        >>> o.pxMC(K2=350000,seed=10, npaths=50, nsteps=10)
+        2283.059032245
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
@@ -145,16 +149,45 @@ class Gap(OptionValuation):
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
+        The following example will generate px = 2.258897568 with nsteps = 90 and npaths = 101, \
+        which is similar to BS example.
         >>> s = Stock(S0=50, vol=.2)
         >>> o = Gap(ref=s, right='call', K=57, T=1, rf_r=.09)
-        >>> o.calc_px(K2=50, method='MC',seed=2, npaths=101, nsteps=90).px_spec.px
-        2.258897568193636
+        >>> o.calc_px(K2=50, method='MC',seed=2, npaths=10, nsteps=50).px_spec.px
+        1.342195428464781
 
+        The following example will generate px = 4.35362028... with nsteps = 100 and npaths = 250, \
+        which is similar to BS example.
         >>> s = Stock(S0=50, vol=.2)
         >>> o = Gap(ref=s, right='put', K=57, T=1, rf_r=.09)
-        >>> o.calc_px(K2=50, method='MC',seed=2, npaths=250, nsteps=100).px_spec
+        >>> o.calc_px(K2=50, method='MC',seed=2, npaths=10, nsteps=50).px_spec
         ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PriceSpec...px: 4.35362028...
+        PriceSpec...px: 3.672556646...
+
+
+        **FD Examples**
+        FD methods require sufficient fine grids.  npath=100,nsteps=100 can give the right answer in the verified
+        example.
+        >>> s = Stock(S0=500000, vol=.2)
+        >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='Hull p.601 Example 26.1')
+        >>> o.pxFD(K2=350000,npaths=10, nsteps=10)
+        5745.438398555
+
+        >>> s = Stock(S0=50, vol=.2)
+        >>> o = Gap(ref=s, right='call', K=50, T=1, rf_r=.09)
+        >>> o.pxFD(K2=50, npaths=10, nsteps=10)
+        6.811132138
+
+        >>> s = Stock(S0=500000, vol=.2)
+        >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='Hull p.601 Example 26.1')
+        >>> from pandas import Series
+        >>> expiries = range(1,11)
+        >>> O = Series([o.update(T=t).calc_px(K2 = 350000,method='FD',seed=1, npaths=10,nsteps=3).px_spec.px \
+        for t in expiries], expiries)
+        >>> O.plot(grid=1, title='Price vs expiry (in years)-FD') # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at ...>
+        >>> import matplotlib.pyplot as plt
+        >>> plt.show()
 
         See Also
         ---------------------------------------------------------
@@ -165,7 +198,7 @@ class Gap(OptionValuation):
             Yen-fei Chen <yensfly@gmail.com>
             Thawda Aung
             Mengyan Xie <xiemengy@gmail.com>
-
+            Runmin Zhang <z.runmin@gmail.com>
         """
         self.K2 = float(K2)
         self.seed0 = seed
@@ -300,8 +333,82 @@ class Gap(OptionValuation):
         See ``calc_px()`` for complete documentation.
 
         :Authors:
-            Oleg Melnikov <xisreal@gmail.com>
+            Runmin Zhang <z.runmin@gmail.com>
         """
+        # Get parameters
+        time_steps = getattr(self.px_spec, 'nsteps', 5)
+        px_paths = getattr(self.px_spec, 'npaths', 5)
 
+        # Verify all the inputs are meaning full
+        assert self.right in ['call', 'put'], 'right must be "call" or "put" '
+        assert self.ref.vol > 0, 'vol must be >=0'
+        assert self.K > 0, 'K must be > 0'
+        assert self.K2 > 0, 'K2 must be > 0'
+        assert self.T > 0, 'T must be > 0'
+        assert self.ref.S0 >= 0, 'S must be >= 0'
+        assert self.rf_r >= 0, 'r must be >= 0'
+
+        S0 = self.ref.S0
+        vol = self.ref.vol
+        ttm = self.T
+        K = self.K
+        K2 = self.K2
+        r = self.rf_r
+        try: q = self.ref.q
+        except: pass
+
+        S_max   = S0*2                                # Maximum stock price
+        S_min   = 0.0                                 # Minimum stock price
+        d_t     = ttm/(time_steps-1)                  # Time step
+        S_vec   = np.linspace(S_min,S_max,px_paths)   # Initialize the possible stock price vector
+        t_vec   = np.linspace(0,ttm,time_steps)       # Initialize the time vector
+
+        f_px    = np.zeros((px_paths,time_steps))     # Initialize the matrix. Hull's P482
+
+        M = px_paths - 1
+        N = time_steps-1
+
+        # Set boundary conditions.
+        f_px[:,-1]=S_vec
+
+        if self.right=='call':
+            # Payout at the maturity time
+            init_cond = np.maximum((S_vec-K),0)*(S_vec>=K2)
+            # Boundary condition
+            upper_bound = 0
+            # Calculate the current value
+            lower_bound = np.maximum((S_vec[-1]-K),0)*(S_vec[-1]>=K2)*np.exp(-r*(ttm-t_vec))
+        elif self.right=='put':
+            # Payout at the maturity time
+            init_cond = np.maximum((K-S_vec),0)*(S_vec<=K2)
+            # Boundary condition
+            upper_bound = np.maximum((K-S_vec[0]),0)*(S_vec[0]<=K2)*np.exp(-r*(ttm-t_vec))
+            # Calculate the current value
+            lower_bound = 0
+
+
+        #Generate Matrix B in http://www.goddardconsulting.ca/option-pricing-finite-diff-implicit.html
+        j_list = np.arange(0,M+1)
+        a_list = 0.5*d_t*((r-q)*j_list-vol**2*j_list**2)
+        b_list = 1+d_t*(vol**2*j_list**2 + r)
+        c_list = 0.5*d_t*(-(r-q)*j_list-vol**2*j_list**2)
+
+        data = (a_list[2:M],b_list[1:M],c_list[1:M-1])
+        B=sparse.diags(data,[-1,0,1]).tocsc()
+
+        # Using Implicit method to solve B-S equation
+        f_px[:,N] = init_cond
+        f_px[0,:] = upper_bound
+        f_px[M,:]=lower_bound
+        Offset = np.zeros(M-1)
+        for idx in np.arange(N-1,-1,-1):
+            Offset[0] = -a_list[1]*f_px[0,idx]
+            Offset[-1] = -c_list[M-1]*f_px[M,idx]
+            f_px[1:M,idx]=sparse.linalg.spsolve(B,f_px[1:M,idx+1]+Offset)
+            f_px[:,-1] = init_cond
+            f_px[0,:] = upper_bound
+            f_px[-1,:]=lower_bound
+
+        self.px_spec.add(px=float(np.interp(S0,S_vec,f_px[:,0])), sub_method='Implicit Method')
         return self
 
