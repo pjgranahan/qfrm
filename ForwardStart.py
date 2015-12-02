@@ -8,7 +8,7 @@ except:   from OptionValuation import *  # development: if not installed and run
 class ForwardStart(OptionValuation):
     """ ForwardStart option class
 
-    Inherits all methods and properties of Optionvalueation class.
+    Inherits all methods and properties of ``Optionvalueation`` class.
     """
 
     def calc_px(self, T_s=1, method='BS', nsteps=None, npaths=None, keep_hist=False):
