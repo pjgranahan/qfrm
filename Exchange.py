@@ -134,6 +134,13 @@ class Exchange(OptionValuation):
         >>> Exchange(clone=o).pxFD(cor=0.75, nsteps=10, npaths=9)
         3.993309432
 
+        Another example with different volatility and correlation
+
+        >>> s = Stock(S0=(100,100), vol=(0.15,0.30), q=(0.04,0.05))
+        >>> o = Exchange(ref=s, right='call', K=40, T=1, rf_r=.1)
+        >>> o.calc_px(method='FD',cor=0.6, nsteps=10, npaths=9).px_spec.px # doctest: +ELLIPSIS
+        7.996470439...
+
         Example of option price development (FD method) with increasing maturities
 
         >>> from pandas import Series
