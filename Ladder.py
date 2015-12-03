@@ -37,9 +37,9 @@ class Ladder(OptionValuation):
                 ``MC``: Monte Carlo simulation methods
                 ``FD``: finite differencing methods
         nsteps : int
-                LT, MC, FD methods require number of times steps
+                LT, MC, FD methods require number of times steps. Must be >2.
         npaths : int
-                MC, FD methods require number of simulation paths
+                MC, FD methods require number of simulation paths. Must be >2.
         keep_hist : bool
                 If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
 
@@ -62,13 +62,33 @@ class Ladder(OptionValuation):
         Examples
         ------------
 
-        FD Examples
-        --------------
+        **FD Examples**
 
-        >>> s = Stock(S0=50, vol=0.2, q=0.1)
+        Example #1
+
+        >>> s = Stock(S0=50, vol=0.20, q=0.03)
         >>> o = Ladder(rungs=(51, 52, 53, 54, 55), ref=s, right='call', K=51, T=1, rf_r=0.05)
-        >>> o.pxFD(npaths = 10, nsteps=5)
+        >>> o.pxFD(npaths = 25, nsteps=10, keep_hist=True)
+        3.6497147019999998
 
+        Example #2 (plot)
+        Shows the finite difference grid that is produced in Example #1
+
+        >>> plt.matshow(o.px_spec.grid); plt.show()  # doctest: +ELLIPSIS
+        <...>
+
+        Example #3 (verifiable)
+        As the number of rungs in a Ladder option approaches infinity, it becomes effectively the same as a Lookback.
+        So, we can use a Lookback to validate the price of a Ladder option with many rungs.
+
+        >>> s = Stock(S0=50, vol=.4, q=.0)
+        >>> o = Ladder(rungs=([px for px in range(50, -1, -1)]), ref=s, right='put', K=50, T=0.25, rf_r=.1,
+        ... desc='Example from Hull Ch.26 Example 26.2 (p608)')
+        >>> actual = o.pxFD(npaths = 6, nsteps=10); expected = 8.067753794
+        >>> (abs(actual - expected) / expected) < 0.10  # Verify within 10% of expected
+        True
+
+        Example 3
 
         :Authors:
             Patrick Granahan
@@ -125,7 +145,8 @@ class Ladder(OptionValuation):
         # Define stock price parameters
         S_max, d_S = Ladder._choose_S_max(M, self.ref.S0)  # Maximum stock price, stock price change interval
         S_min = 0.0  # Minimum stock price
-        S_vec = np.arange(S_min, S_max + d_S, d_S)  # Possible stock price vector. (+d_S to S_max so that S_max is included)
+        S_vec = np.arange(S_min, S_max + d_S,
+                          d_S)  # Possible stock price vector. (+d_S to S_max so that S_max is included)
 
         # Define time parameters
         d_T = self.T / N  # Time step
@@ -143,22 +164,31 @@ class Ladder(OptionValuation):
 
         # Explicit finite difference equations
         def a(j):
-            discount = (1/(1 + (self.rf_r * d_T)))
+            discount = (1 / (1 + (self.rf_r * d_T)))
             return discount * (.5 * d_T * ((self.ref.vol ** 2 * j ** 2) - ((self.rf_r - self.ref.q) * j)))
 
         def b(j):
-            discount = (1/(1 + (self.rf_r * d_T)))
+            discount = (1 / (1 + (self.rf_r * d_T)))
             return discount * (1 - (d_T * self.ref.vol ** 2 * j ** 2))
 
         def c(j):
-            discount = (1/(1 + (self.rf_r * d_T)))
+            discount = (1 / (1 + (self.rf_r * d_T)))
             return discount * (.5 * d_T * ((self.ref.vol ** 2 * j ** 2) + ((self.rf_r - self.ref.q) * j)))
 
         # Fill out the finite difference grid, by stepping backwards through the y axis and solving 1 row at a time
         for i in range(N - 1, -1, -1):
             for k in range(1, M):
                 j = M - k
-                grid[i, k] = a(j) * grid[i + 1, k + 1] + b(j) * grid[i + 1, k] + c(j) * grid[i + 1, k - 1]
+                value = a(j) * grid[i + 1, k + 1] + b(j) * grid[i + 1, k] + c(j) * grid[i + 1, k - 1]
+                if value == float("inf") or value == float("-inf") or math.isnan(value):
+                    raise Exception(
+                        "(-)Infinity or NaN found while attempting to fill the finite difference grid. "
+                        "Maybe your inputs were too small.")
+                grid[i, k] = value
+
+        # Record the history if requested
+        if getattr(self.px_spec, 'keep_hist'):
+            self.px_spec.add(grid=grid)
 
         # Record the price
         self.px_spec.add(px=grid[0, M - (self.ref.S0 / d_S)], method='FDM', sub_method='Explicit')
