@@ -7,7 +7,7 @@ except:   from OptionValuation import *  # development: if not installed and run
 class PerpetualAmerican(OptionValuation):
     """ perpetual American option class.
 
-    Inherits all methods and properties of OptionValuation class.
+    Inherits all methods and properties of ``OptionValuation`` class.
     """
 
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
@@ -46,6 +46,8 @@ class PerpetualAmerican(OptionValuation):
         In finance, a perpetual American option is a special type of American option which does not have a
         maturity date.
 
+        Please note that this perpetual American option has no expiry data. Hence, the parameter ``T`` is not used.
+
         [1] Formula reference: Hull P.599 Perpetual American
 
         Examples
@@ -54,7 +56,7 @@ class PerpetualAmerican(OptionValuation):
         Use the Black-Scholes model to price a perpetual American option
 
         Verification of examples:
-        `All the examples below can be verified by this online tools: <http://www.coggit.com/freetools>`
+        `All the examples below can be verified by this online tools: <http://www.coggit.com/freetools>`_
 
 
 
@@ -75,6 +77,7 @@ class PerpetualAmerican(OptionValuation):
 
 
         `Change the option to a put, can verified by this online tools: <http://www.coggit.com/freetools>`_
+
         >>> o.update(right='put').calc_px().px_spec.px # doctest: +ELLIPSIS
         8.676279289...
 
@@ -83,7 +86,7 @@ class PerpetualAmerican(OptionValuation):
 
 
         Another example with different dividend and risk free interest rate
-        `This examples below can be verified by this online tools: <http://www.coggit.com/freetools>`
+        `This examples below can be verified by this online tools: <http://www.coggit.com/freetools>`_
 
         >>> s = Stock(S0=50, vol=.3, q=0.02)
         >>> o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.05, \
@@ -91,7 +94,7 @@ class PerpetualAmerican(OptionValuation):
         >>> o.pxBS()
         27.465595637
 
-        `Change the option to a put, can be verified by this online tools: <http://www.coggit.com/freetools>`
+        `Change the option to a put, can be verified by this online tools: <http://www.coggit.com/freetools>`_
 
         >>> o.update(right='put').calc_px().px_spec.px# doctest: +ELLIPSIS
         13.427262534...
@@ -104,6 +107,7 @@ class PerpetualAmerican(OptionValuation):
 
         # Example of option price development (BS method) with increasing maturities (This would give a horizontal line\
         because this perpetual American option does not have an expiry)
+
         >>> from pandas import Series
         >>> expiries = range(1,11)
         >>> O = Series([o.update(T=t).calc_px(method='BS').px_spec.px for t in expiries], expiries)
