@@ -65,7 +65,7 @@ class Ladder(OptionValuation):
         FD Examples
         --------------
 
-        >>> s = Stock(S0=50)
+        >>> s = Stock(S0=50, vol=0.2, q=0.1)
         >>> o = Ladder(rungs=(51, 52, 53, 54, 55), ref=s, right='call', K=51, T=1, rf_r=0.05)
         >>> o.pxFD(npaths = 10, nsteps=5)
 
@@ -125,12 +125,12 @@ class Ladder(OptionValuation):
         # Define stock price parameters
         S_max, d_S = Ladder._choose_S_max(M, self.ref.S0)  # Maximum stock price, stock price change interval
         S_min = 0.0  # Minimum stock price
-        S_vec = np.arange(S_min, S_max + 1, d_S)  # Possible stock price vector. (+1 to S_max so that S_max is included)
+        S_vec = np.arange(S_min, S_max + d_S, d_S)  # Possible stock price vector. (+d_S to S_max so that S_max is included)
 
         # Define time parameters
         d_T = self.T / N  # Time step
-        t_vec = np.arange(0, self.T + 1, d_T)  # Time vector. (+1 to T so that T is included)
-        discount_vec = np.exp(-self.rf_r * (self.T - t_vec))  # Discount vector
+        d_T_vec = np.arange(0, self.T + d_T, d_T)  # Delta time vector. (+d_T to T so that T is included)
+        discount_vec = np.exp(-self.rf_r * (self.T - d_T_vec))  # Discount vector
 
         # Fill the matrix boundary at maturity
         grid[N, :] = [self.payoff((stock_price,)) for stock_price in S_vec]
@@ -139,7 +139,7 @@ class Ladder(OptionValuation):
         grid[:, 0] = discount_vec * self.payoff((S_min,))
 
         # Fill the matrix boundary when the stock price is S_max
-        grid[:, 0] = discount_vec * self.payoff((S_max,))
+        grid[:, M] = discount_vec * self.payoff((S_max,))
 
         # Explicit finite difference equations
         def a(j):
@@ -154,7 +154,7 @@ class Ladder(OptionValuation):
             discount = (1/(1 + (self.rf_r * d_T)))
             return discount * (.5 * d_T * ((self.ref.vol ** 2 * j ** 2) + ((self.rf_r - self.ref.q) * j)))
 
-        # Fill out the finite difference grid, by stepping backwards through the x axis and solving 1 column at a time
+        # Fill out the finite difference grid, by stepping backwards through the y axis and solving 1 row at a time
         for i in range(N - 1, -1, -1):
             for k in range(1, M):
                 j = M - k
