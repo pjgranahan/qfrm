@@ -1,7 +1,4 @@
-import warnings
 import math
-import numpy as np
-# from scipy import stats
 
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
 except:   from OptionValuation import *  # development: if not installed and running from source
@@ -72,11 +69,11 @@ class European(OptionValuation):
         59.867529938
 
         >>> o.px_spec.ref_tree  # prints reference tree  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        ((810.0,), (746.491768087...878.911232579...), (687.962913360...810.0, 953.685129326...),
+        ((810.0,), (746.491768087...878.911232579...), (687.962913360...810.0..., 953.685129326...),
          (634.023026633...746.491768087...878.911232579...1034.8204598880159))
 
         >>> o.calc_px(method='LT', nsteps=2, keep_hist=True).px_spec.opt_tree
-        ((53.39471637496134,), (5.062315192620067, 100.66143225703827), (0.0, 10.0, 189.3362341097378))
+        ((53.39471637496134,), (5.062315192620067, 100.66143225703827), (0, 10.0, 189.3362341097378))
 
         >>> o.calc_px(method='LT', nsteps=2)   # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         European...px: 53.394716375...
@@ -100,18 +97,13 @@ class European(OptionValuation):
         _ = self
         d1 = (math.log(_.ref.S0 / _.K) + (_.rf_r + _.ref.vol ** 2 / 2.) * _.T)/(_.ref.vol * math.sqrt(_.T))
         d2 = d1 - _.ref.vol * math.sqrt(_.T)
+        N = Util.norm_cdf
 
         # if calc of both prices is cheap, do both and include them into Price object.
         # Price.px should always point to the price of interest to the user
         # Save values as basic data types (int, floats, str), instead of np.array
-        # px_call = float(_.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(d1)
-        #                 - _.K * math.exp(-_.rf_r * _.T) * stats.norm.cdf(d2))
-        # px_put = float(- _.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(-d1)
-        #                + _.K * math.exp(-_.rf_r * _.T) * stats.norm.cdf(-d2))
-        px_call = float(_.ref.S0 * math.exp(-_.ref.q * _.T) * Util.norm_cdf(d1)
-                        - _.K * math.exp(-_.rf_r * _.T) * Util.norm_cdf(d2))
-        px_put = float(- _.ref.S0 * math.exp(-_.ref.q * _.T) * Util.norm_cdf(-d1)
-                       + _.K * math.exp(-_.rf_r * _.T) * Util.norm_cdf(-d2))
+        px_call = float(_.ref.S0 * math.exp(-_.ref.q * _.T) * N(d1) - _.K * math.exp(-_.rf_r * _.T) * N(d2))
+        px_put = float(- _.ref.S0 * math.exp(-_.ref.q * _.T) * N(-d1) + _.K * math.exp(-_.rf_r * _.T) * N(-d2))
         px = px_call if _.signCP == 1 else px_put if _.signCP == -1 else None
 
         self.px_spec.add(px=px, sub_method='standard; Hull p.335', px_call=px_call, px_put=px_put, d1=d1, d2=d2)
@@ -129,32 +121,27 @@ class European(OptionValuation):
 
         n = getattr(self.px_spec, 'nsteps', 3)
         _ = self.LT_specs(n)
+        incr_n, decr_n = Vec(Util.arange(0, n + 1)), Vec(Util.arange(n, -1)) #Vectorized tuple. See Util.py. 0..n; n..0.
 
-        S = self.ref.S0 * _['d'] ** np.arange(n, -1, -1) * _['u'] ** np.arange(0, n + 1)
-        O = np.maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
+        S = Vec(_['d'])**decr_n * Vec(_['u'])**incr_n * self.ref.S0
+        O = ((S - self.K) * self.signCP ).max(0)
         S_tree, O_tree = None, None
 
         if getattr(self.px_spec, 'keep_hist', False):
-            S_tree = (tuple([float(s) for s in S]),)
-            O_tree = (tuple([float(o) for o in O]),)
+            S_tree, O_tree = (S,), (O,)
 
             for i in range(n, 0, -1):
-                O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
-                S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
-
-                S_tree = (tuple([float(s) for s in S]),) + S_tree
-                O_tree = (tuple([float(o) for o in O]),) + O_tree
+                O = (Vec(O[:i]) * (1 - _['p']) + Vec(O[1:]) * (_['p'])) * _['df_dt'] # prior option prices (@time step=i-1)
+                S = Vec(S[1:i+1]) * _['d']                   # prior stock prices (@time step=i-1)
+                S_tree, O_tree = (tuple(S),) + S_tree, (tuple(O),) + O_tree
 
             out = O_tree[0][0]
         else:
-            csl = np.insert(np.cumsum(np.log(np.arange(n) + 1)), 0, 0)         # logs avoid overflow & truncation
-            tmp = csl[n] - csl - csl[::-1] + np.log(_['p']) * np.arange(n + 1) \
-                  + np.log(1 - _['p']) * np.arange(n + 1)[::-1]
-            out = (_['df_T'] * sum(np.exp(tmp) * tuple(O)))
+            csl = (0.,) + Vec(Util.cumsum(Util.log(Util.arange(1, n + 1))))         # logs avoid overflow & truncation
+            tmp = Vec(csl[n]) - csl - tuple(reversed(csl)) + incr_n * math.log(_['p']) + decr_n * math.log(1 - _['p'])
+            out = (sum(tmp.exp * _['df_T'] * tuple(O)))
 
-        self.px_spec.add(px=float(out), sub_method='binomial tree; Hull Ch.135',
-                         LT_specs=_, ref_tree=S_tree, opt_tree=O_tree)
-
+        self.px_spec.add(px=float(out), sub_method='binary tree; Hull p.135', LT_specs=_, ref_tree=S_tree, opt_tree=O_tree)
         return self
 
     def _calc_MC(self):

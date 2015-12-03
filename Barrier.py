@@ -52,7 +52,7 @@ class Barrier(OptionValuation):
         Examples can be verified at:
 
         - `Barrier Option Calculator
-          <http://www.fintools.com/resources/online-calculators/exotics-calculators/exoticscalc-barrier/>`_
+          <http://www.fintools.com/resources/online-calculators/exotics-calculators/exoticscalc-barrier>`_
         -  DerivaGem software (accompanies J.C.Hull's OFOD textbook)
 
         Examples
