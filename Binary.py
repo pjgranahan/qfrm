@@ -251,31 +251,31 @@ class Binary(OptionValuation):
 
         FD Examples
         --------------
-        Example #1 (verifiable using DerivaGem):Use the Black-Scholes model to price an asset-or-nothing binary option
+        Example #1
 
         >>> s = Stock(S0=42, vol=.20)
         >>> o = Binary(ref=s, right='put', K=40, T=.5, rf_r=.1)
         >>> o.pxFD(payout_type="asset-or-nothing")  # doctest: +ELLIPSIS
         9.27648578
 
-        Example #2 (verifiable using DerivaGem): Change the option to be a call
+        Example #2
 
         >>> o.update(right='call').pxFD(payout_type="asset-or-nothing")  # doctest: +ELLIPSIS
         32.72351422
 
-        Example #3 (verifiable using DerivaGem): Use the Black-Scholes model to price a cash-or-nothing binary option
+        Example #3
 
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05)
         >>> o.pxFD(payout_type="cash-or-nothing", Q=1000)  # doctest: +ELLIPSIS
         641.237705232
 
-        Example #4 (verifiable using DerivaGem): Change the option to be a put
+        Example #4
 
         >>> o.update(right='put').pxFD(payout_type="cash-or-nothing", Q=1000)  #doctest: +ELLIPSIS
         263.599712804
 
-        Example #5 (plot): Example of option price development (BS method) with increasing maturities
+        Example #5 (plot): Example of option price development (FD method) with increasing maturities
 
         >>> from pandas import Series
         >>> O = Series([o.update(T=t).pxFD(payout_type="asset-or-nothing") for t in range(1,11)], range(1,11))
@@ -527,7 +527,7 @@ class Binary(OptionValuation):
                 # Top and Bottom boundary conditions
                 for i in range(N + 1):
                     t = i * dt
-                    C[t, M] = Q * math.exp(-r * t), 5
+                    C[t, M] = Q * math.exp(-r * (T - t)), 5
                     C[t, 0] = 0
 
             else:
@@ -542,14 +542,14 @@ class Binary(OptionValuation):
                 for i in range(N + 1):
                     t = i * dt
                     C[t, M] = 0
-                    C[t, 0] = Q * math.exp(-r * t), 5
+                    C[t, 0] = Q * math.exp(-r * (T - t)), 5
 
         for i in range(N - 1, -1, -1):
             for k in range(1, M):
                 j = M - k
                 C[i, k] = a(j) * C[i + 1, k + 1] + b(j) * C[i + 1, k] + c(j) * C[i + 1, k - 1]
 
-        self.px_spec.add(px=np.interp(S0, S_vec, C[0, :]), method='FD', sub_method='Explicit')
+        self.px_spec.add(px=np.interp(S0, S_vec, C[0, :]), method='FD', sub_method='Implicit')
         return self
 
 s = Stock(S0=42, vol=.2)

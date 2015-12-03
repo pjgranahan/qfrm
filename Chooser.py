@@ -249,8 +249,10 @@ class Chooser(OptionValuation):
         See ``calc_px()`` for complete documentation.
 
         :Authors:
-            Oleg Melnikov <xisreal@gmail.com>
+            Andrew Weatherly <amw13@rice.edu>
         """
+        n = getattr(self.px_spec, 'nsteps', 3)
+
         return self
 
     def _calc_FD(self, nsteps=3, npaths=4, keep_hist=False):
