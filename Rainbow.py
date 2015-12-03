@@ -1,4 +1,5 @@
 import numpy as np
+import math
 
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
 except:   from OptionValuation import *  # development: if not installed and running from source
@@ -111,7 +112,7 @@ class Rainbow(OptionValuation):
         n_paths = getattr(_.px_spec, 'npaths', 3)
 
         dt = _.T / n_steps
-        df = np.exp(-_.rf_r * dt)
+        df = math.exp(-_.rf_r * dt)
         np.random.seed(_.seed0)
         h = list()
 
