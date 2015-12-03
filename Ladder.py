@@ -68,7 +68,7 @@ class Ladder(OptionValuation):
 
         >>> s = Stock(S0=50, vol=0.20, q=0.03)
         >>> o = Ladder(rungs=(51, 52, 53, 54, 55), ref=s, right='call', K=51, T=1, rf_r=0.05)
-        >>> o.pxFD(npaths = 25, nsteps=10, keep_hist=True)
+        >>> o.pxFD(npaths = 25, nsteps=10, keep_hist=True)  # npaths > 10 so that the plot is pretty
         3.6497147019999998
 
         Example #2 (plot)
