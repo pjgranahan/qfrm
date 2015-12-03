@@ -1,8 +1,11 @@
 import math
+
 import numpy as np
 
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+try:
+    from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:
+    from OptionValuation import *  # development: if not installed and running from source
 
 
 class Binary(OptionValuation):
@@ -64,40 +67,38 @@ class Binary(OptionValuation):
         Examples
         ------------
 
-        BS Examples
-        --------------
+        **BS Examples**
 
-        Example #1 (verifiable using DerivaGem):Use the Black-Scholes model to price an asset-or-nothing binary option
+        Example #1 (verifiable using DerivaGem): Use the Black-Scholes model to price an asset-or-nothing binary option
 
         >>> s = Stock(S0=42, vol=.20)
         >>> o = Binary(ref=s, right='put', K=40, T=.5, rf_r=.1)
-        >>> o.pxBS(payout_type="asset-or-nothing")  # doctest: +ELLIPSIS
+        >>> o.pxBS(payout_type="asset-or-nothing")
         9.27648578
 
         Example #2 (verifiable using DerivaGem): Change the option to be a call
 
-        >>> o.update(right='call').pxBS(payout_type="asset-or-nothing")  # doctest: +ELLIPSIS
+        >>> o.update(right='call').pxBS(payout_type="asset-or-nothing")
         32.72351422
 
         Example #3 (verifiable using DerivaGem): Use the Black-Scholes model to price a cash-or-nothing binary option
 
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05)
-        >>> o.pxBS(payout_type="cash-or-nothing", Q=1000)  # doctest: +ELLIPSIS
+        >>> o.pxBS(payout_type="cash-or-nothing", Q=1000)
         641.237705232
 
         Example #4 (verifiable using DerivaGem): Change the option to be a put
 
-        >>> o.update(right='put').pxBS(payout_type="cash-or-nothing", Q=1000)  #doctest: +ELLIPSIS
+        >>> o.update(right='put').pxBS(payout_type="cash-or-nothing", Q=1000)
         263.599712804
 
         Example #5 (plot): Example of option price development (BS method) with increasing maturities
 
         >>> from pandas import Series
         >>> O = Series([o.update(T=t).pxBS(payout_type="asset-or-nothing") for t in range(1,11)], range(1,11))
-        >>> O.plot(grid=1, title='Price vs expiry (in years)')  # doctest: +ELLIPSIS
+        >>> O.plot(grid=1, title='Price vs expiry (in years)'); plt.show()  # doctest: +ELLIPSIS
         <...>
-        >>> plt.show()
 
 
 
@@ -257,6 +258,7 @@ class Binary(OptionValuation):
 
         return super().calc_px(method=method, sub_method=payout_type, nsteps=nsteps, \
                                npaths=npaths, keep_hist=keep_hist, payout_type=payout_type, Q=Q)
+
     def _calc_BS(self):
         """ Internal function for option valuation.
 
