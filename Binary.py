@@ -67,8 +67,7 @@ class Binary(OptionValuation):
         Examples
         ------------
 
-        BS Examples
-        --------------
+        **BS Examples**
 
         Example #1 (verifiable using DerivaGem): Use the Black-Scholes model to price an asset-or-nothing binary option
 

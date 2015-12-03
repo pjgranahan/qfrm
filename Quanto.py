@@ -1,10 +1,14 @@
 import numpy.random as rnd
 
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+try:
+    from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:
+    from OptionValuation import *  # development: if not installed and running from source
 
-try: from qfrm.American import *  # production:  if qfrm package is installed
-except:   from American import *  # development: if not installed and running from source
+try:
+    from qfrm.American import *  # production:  if qfrm package is installed
+except:
+    from American import *  # development: if not installed and running from source
 
 
 class Quanto(OptionValuation):
@@ -74,18 +78,18 @@ class Quanto(OptionValuation):
         Example #3 (verifiable from Hull ch.30, ex.30.5 (p.701-702)): Calculate the price of a Quanto option.
         Uncomment to run (number of paths required is too high for doctests)
 
-        # >>> s = Stock(S0=1200, vol=.25, q=0.015)
-        # >>> o = Quanto(ref=s, right='call', K=1200, T=2, rf_r=.03, frf_r=0.05)
-        # >>> o.pxLT(nsteps=100, vol_ex=0.12, correlation=0.2, keep_hist=True)
-        179.82607364328157
+        >>> s = Stock(S0=1200, vol=.25, q=0.015)
+        >>> o = Quanto(ref=s, right='call', K=1200, T=2, rf_r=.03, frf_r=0.05)
+        >>> o.pxLT(nsteps=100, vol_ex=0.12, correlation=0.2, keep_hist=True)
+        179.826073643
 
         Example #4 (verifiable from Hull ch.30, problem.30.9.b (p.704)): Calculate the price of a Quanto option.
         Uncomment to run (number of paths required is too high for doctests)
 
-        # >>> s = Stock(S0=400, vol=.2, q=0.03)
-        # >>> o = Quanto(ref=s, right='call', K=400, T=2, rf_r=.06, frf_r=0.04)
-        # >>> o.pxLT(nsteps=100, vol_ex=0.06, correlation=0.4)
-        57.50700503047851
+        >>> s = Stock(S0=400, vol=.2, q=0.03)
+        >>> o = Quanto(ref=s, right='call', K=400, T=2, rf_r=.06, frf_r=0.04)
+        >>> o.pxLT(nsteps=100, vol_ex=0.06, correlation=0.4)
+        57.50700503
 
         Example #5 (plot): Convergence
 
@@ -147,7 +151,7 @@ class Quanto(OptionValuation):
         keep_hist = getattr(self.px_spec, 'keep_hist')
         n = getattr(self.px_spec, 'nsteps')
 
-        # Compute the foreign numeraire dividend yield
+        # Compute the foreign numeraire dividend yield  TODO: this calculation can be extracted to a class method
         growth_rate_of_underlying = (correlation * self.ref.vol * vol_ex)
         domestic_numeraire = self.rf_r - self.ref.q
         foreign_numeraire = domestic_numeraire + growth_rate_of_underlying
@@ -198,7 +202,6 @@ class Quanto(OptionValuation):
         n_steps = getattr(self.px_spec, 'nsteps', 3) # # of steps
         n_paths = getattr(self.px_spec, 'npaths', 5000) # of paths in MC simulation
         _ = self
-
 
         # Compute the foreign numeraire dividend yield
         growth_rate_of_underlying = (correlation * self.ref.vol * vol_ex)
