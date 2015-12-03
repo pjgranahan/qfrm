@@ -253,10 +253,12 @@ class Binary(OptionValuation):
         :Authors:
             Patrick Granahan,
             Tianyi Yao <ty13@rice.edu>
+            Andrew Weatherly <amw13@rice.edu>
         """
 
         return super().calc_px(method=method, sub_method=payout_type, nsteps=nsteps, \
                                npaths=npaths, keep_hist=keep_hist, payout_type=payout_type, Q=Q)
+
     def _calc_BS(self):
         """ Internal function for option valuation.
 
@@ -402,7 +404,75 @@ class Binary(OptionValuation):
         -------
         self: Binary
 
-        .. sectionauthor::
+        .. sectionauthor:: Andrew Weatherly
 
+        Notes
+        -----
+
+        Formulas: http://www.mathnet.or.kr/mathnet/thesis_file/BKMS-48-2-413-426.pdf
         """
+
+        _ = self.px_spec
+
+        # getting attributes
+        M = getattr(_, 'npaths', 3)
+        N = getattr(_, 'nsteps', 3)
+        payout_type = getattr(_, 'payout_type')
+        Q = getattr(self.px_spec, 'Q')
+
+        # value grid
+        C = np.matrix(np.zeros(shape=(N + 1, M + 1)))
+
+        # helpful parameters
+        signCP = 1 if self.right.lower() == 'call' else -1
+        T = self.T
+        vol = self.ref.vol
+        S0 = self.ref.S0
+        S_Max = 2 * S0
+        S_Min = 0
+        r = self.rf_r
+        q = self.ref.q
+        dt = T / (N + 0.0)
+        dS = S_Max / (M + 0.0)
+        N = int(T / dt)
+        M = int(S_Max / dS)
+        K = self.K
+        df = np.exp(-r * dt)
+
+        # equations defined by hull on pg. 481
+        def a(x):
+            return 1 * (.5 * dt * ((vol ** 2) * (x ** 2) - (r - q) * x))
+
+        def b(x):
+            return 1 * (1 - dt * ((vol ** 2) * (x ** 2)))
+
+        def c(x):
+            return 1 * (.5 * dt * ((vol ** 2) * (x ** 2) + (r - q) * x))
+
+        if payout_type == 'asset-or-nothing':
+            # t = T boundary conditions
+            for k in range(M + 1):
+                S = dS * k
+                if S > K:
+                    C[N, k] = S
+                else:
+                    C[N, k] = 0
+        else:
+            # t = T boundary conditions
+            for k in range(M + 1):
+                S = dS * k
+                if S > K:
+                    C[N, k] = Q * np.exp(-r * T)
+                else:
+                    C[N, k] = 0
+
+        for i in np.arange(N - 1, -1, -1):
+            for k in range(1, M):
+                j = M - k
+                C[i, k] = a(j) * C[i + 1, k + 1] + b(j) * C[i + 1, k] + c(j) * C[i + 1, k - 1]
+
         return self
+
+s = Stock(S0=50, vol=.3)
+e = Binary(ref=s, right='call', K=50, T=2, rf_r=.05)
+print(e.calc_px(method='FD', nsteps=10, payout_type="asset-or-nothing").px_spec.px)
