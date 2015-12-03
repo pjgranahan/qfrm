@@ -1,4 +1,3 @@
-import numpy.random
 import numpy as np
 
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
@@ -11,7 +10,7 @@ class Rainbow(OptionValuation):
     Inherits all methods and properties of OptionValuation class.
     """
 
-    def calc_px(self, method='BS', corr = 0.65, nsteps=None, npaths=None, keep_hist=False):
+    def calc_px(self, method='BS', corr = 0.65, nsteps=None, npaths=None, seed0 = None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
 
         All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
@@ -50,20 +49,22 @@ class Rainbow(OptionValuation):
         To improve accuracy, please improve the ``npaths`` and ``nsteps``.
 
         Examples
-        -------
+        --------
+
+        **MC Examples**
+        Because different number of seed, ``npaths`` and ``nsteps`` will influence the option price.
+        The result of MC method may not as accurate as ``BS`` and ``LT`` methods.
 
         >>> s = Stock(S0=(100,50), vol=(.25,.45))
         >>> o = Rainbow(ref=s, right='call', K=40, T=.25, rf_r=.05, desc='http://goo.gl/7H3U0N p.23')
-
-        >>> o.calc_px(method='MC',corr=0.65,npaths=10,nsteps=10).px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PriceSpec...px: 14.394869309...
+        >>> o.calc_px(method='MC',corr=0.65,seed0 = 0,npaths=100,nsteps=1).px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        PriceSpec...px: 14.908873539...
 
 
         >>> s = Stock(S0=(100,50), vol=(.25,.45))
         >>> o = Rainbow(ref=s, right='put', K=55, T=0.25, rf_r=.05, desc='Hull p.612')
-
-        >>> o.pxMC(corr=0.65, npaths=10, nsteps=10)
-        6.147189494
+        >>> o.pxMC(corr=0.65,seed0 = 2, npaths=100, nsteps=1)
+        13.91461925
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
@@ -81,6 +82,7 @@ class Rainbow(OptionValuation):
         self.corr = corr
         self.npaths = npaths
         self.nsteps = nsteps
+        self.seed0 = seed0
         return super().calc_px(method=method,corr = corr, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
 
     def _calc_BS(self):
@@ -108,32 +110,35 @@ class Rainbow(OptionValuation):
         n_steps = getattr(_.px_spec, 'nsteps', 3)
         n_paths = getattr(_.px_spec, 'npaths', 3)
 
-
         dt = _.T / n_steps
         df = np.exp(-_.rf_r * dt)
         np.random.seed(_.seed0)
+        h = list()
 
-        # Stock price paths
+        for path in range(0,n_paths):
+            # Generate correlated Wiener Processes
+            # Compute random variables with correlation
+            z1 = np.random.normal(loc=0.0, scale=1.0, size=n_steps)
+            z2 = np.random.normal(loc=0.0, scale=1.0, size=n_steps)
+            r1 = z1
+            r2 = _.corr * z1 + math.sqrt(1 - _.corr ** 2) * z2
 
+            # Simulate the paths
+            S1 = [_.ref.S0[0]]
+            S2 = [_.ref.S0[1]]
+            mu = (_.rf_r - _.ref.q) * dt
 
-        S = _.ref.S0 * np.exp(np.cumsum(np.random.normal((_.rf_r - 0.5 * _.ref.vol ** 2) * dt,\
-                                                         _.ref.vol * np.sqrt(dt), (n_steps + 1, n_paths)), axis=0))
-        print(S)
-        #S[0] = _.ref.S0
-        #s2 = S
+            # Compute stock price
+            for t in range(0, n_steps):
+                S1.append(S1[-1] * (mu + _.ref.vol[0] * r1[t]) + S1[-1])
+                S2.append(S2[-1] * (mu + _.ref.vol[1] * r2[t]) + S2[-1])
 
-        # When the stock price is greater than K2
-        #V = np.maximum(_.signCP * (S - _.K2), 0)
-
-        # The payout is signCP * (S - K1)
-        #payout = np.maximum(_.signCP * (s2 - _.K), 0) #payout
-        #h = np.where(V > 0.0, payout, V) # payout if V > 0.0, payout else 0.0
-
-        # Add the time value of each steps
-        #for t in range(n_steps-1, -1, -1):
-        #    h[t,:] = h[t+1,:] * df
-
-        #self.px_spec.add(px=float(np.mean(h[0,:])), sub_method='Hull p.601')
+            # Maximum payout of S1 and S2
+            payout = np.maximum(_.signCP * (S1[-1] - S1[0]), _.signCP * (S2[-1] - S2[0]))
+            v = np.maximum(payout, 0.0) * df
+            # The payout is maximum of V and 0
+            h.append(v)
+        self.px_spec.add(px=float(np.mean(h)), sub_method='Hull p.601')
 
         return self
 
@@ -150,7 +155,3 @@ class Rainbow(OptionValuation):
         """
         return self
 
-s = Stock(S0=(100,50), vol=(.25,.45))
-o = Rainbow(ref=s, right='call', K=40, T=.25, rf_r=.05, desc='http://goo.gl/7H3U0N p.23')
-
-o.calc_px(method='MC',corr=0.65,npaths=10,nsteps=10)
