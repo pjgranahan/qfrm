@@ -128,6 +128,8 @@ class Ladder(OptionValuation):
 
         See ``calc_px()`` for full documentation.
 
+        WARNING: Varying npaths or nsteps can produce dramatically different results.
+
         Returns
         -------
         self: Ladder
