@@ -130,57 +130,38 @@ class Ladder(OptionValuation):
         # Define time parameters
         d_T = self.T / N  # Time step
         t_vec = np.arange(0, self.T + 1, d_T)  # Time vector. (+1 to T so that T is included)
+        discount_vec = np.exp(-self.rf_r * (self.T - t_vec))  # Discount vector
 
-        # # Set boundary conditions.
-        # grid[:, -1] = S_vec
-        #
-        # # Payout at maturity. Seeded with the prices in S_vec, which have no price history
-        # init_cond = [self.payoff((stock_price,)) for stock_price in S_vec]
-
-
-        # Fill the matrix boundary at time T
+        # Fill the matrix boundary at maturity
         grid[N, :] = [self.payoff((stock_price,)) for stock_price in S_vec]
 
+        # Fill the matrix boundary when the stock price is S_min
+        grid[:, 0] = discount_vec * self.payoff((S_min,))
 
+        # Fill the matrix boundary when the stock price is S_max
+        grid[:, 0] = discount_vec * self.payoff((S_max,))
 
+        # Explicit finite difference equations
+        def a(j):
+            discount = (1/(1 + (self.rf_r * d_T)))
+            return discount * (.5 * d_T * ((self.ref.vol ** 2 * j ** 2) - ((self.rf_r - self.ref.q) * j)))
 
+        def b(j):
+            discount = (1/(1 + (self.rf_r * d_T)))
+            return discount * (1 - (d_T * self.ref.vol ** 2 * j ** 2))
 
-        if self.signCP == 1:
-            # Boundary condition
-            upper_bound = 0
-            # Calculate the current value
-            lower_bound = np.maximum((S_vec[-1] - self.K), 0) * (S_vec[-1] >= self.K2) * np.exp(
-                -self.rf_r * (self.T - t_vec))
-        elif self.signCP == -1:
-            # Boundary condition
-            upper_bound = np.maximum((self.K - S_vec[0]), 0) * (S_vec[0] <= self.K2) * np.exp(
-                -self.rf_r * (self.T - t_vec))
-            # Calculate the current value
-            lower_bound = 0
+        def c(j):
+            discount = (1/(1 + (self.rf_r * d_T)))
+            return discount * (.5 * d_T * ((self.ref.vol ** 2 * j ** 2) + ((self.rf_r - self.ref.q) * j)))
 
-        # Generate Matrix B in http://www.goddardconsulting.ca/option-pricing-finite-diff-implicit.html
-        j_list = np.arange(0, M + 1)
-        a_list = 0.5 * d_T * ((self.rf_r - self.ref.q) * j_list - self.ref.vol ** 2 * j_list ** 2)
-        b_list = 1 + d_T * (self.ref.vol ** 2 * j_list ** 2 + self.rf_r)
-        c_list = 0.5 * d_T * (-(self.rf_r - self.ref.q) * j_list - self.ref.vol ** 2 * j_list ** 2)
+        # Fill out the finite difference grid, by stepping backwards through the x axis and solving 1 column at a time
+        for i in range(N - 1, -1, -1):
+            for k in range(1, M):
+                j = M - k
+                grid[i, k] = a(j) * grid[i + 1, k + 1] + b(j) * grid[i + 1, k] + c(j) * grid[i + 1, k - 1]
 
-        data = (a_list[2:M], b_list[1:M], c_list[1:M - 1])
-        B = sparse.diags(data, [-1, 0, 1]).tocsc()
-
-        # Using Implicit method to solve B-S equation
-        grid[:, N] = init_cond
-        grid[0, :] = upper_bound
-        grid[M, :] = lower_bound
-        Offset = np.zeros(M - 1)
-        for idx in np.arange(N - 1, -1, -1):
-            Offset[0] = -a_list[1] * grid[0, idx]
-            Offset[-1] = -c_list[M - 1] * grid[M, idx]
-            grid[1:M, idx] = sparse.linalg.spsolve(B, grid[1:M, idx + 1] + Offset)
-            grid[:, -1] = init_cond
-            grid[0, :] = upper_bound
-            grid[-1, :] = lower_bound
-
-        self.px_spec.add(px=float(np.interp(self.ref.S0, S_vec, grid[:, 0])), sub_method='Implicit Method')
+        # Record the price
+        self.px_spec.add(px=grid[0, M - (self.ref.S0 / d_S)], method='FDM', sub_method='Explicit')
 
         return self
 
