@@ -418,11 +418,12 @@ class Binary(OptionValuation):
         M = getattr(_, 'npaths', 3)
         N = getattr(_, 'nsteps', 3)
         payout_type = getattr(_, 'payout_type')
-        Q = getattr(self.px_spec, 'Q')
+        assert payout_type in ['asset-or-nothing', 'cash-or-nothing']
+        if payout_type == 'cash-or-nothing':
+            Q = getattr(_, 'Q', 5)
 
         # value grid
-        C = np.matrix(np.zeros(shape=(N + 1, M + 1)))
-
+        C = np.zeros(shape=(N + 1, M + 1))
         # helpful parameters
         signCP = 1 if self.right.lower() == 'call' else -1
         T = self.T
@@ -430,6 +431,7 @@ class Binary(OptionValuation):
         S0 = self.ref.S0
         S_Max = 2 * S0
         S_Min = 0
+        S_vec = np.linspace(S_Min, S_Max, M + 1)
         r = self.rf_r
         q = self.ref.q
         dt = T / (N + 0.0)
@@ -437,7 +439,7 @@ class Binary(OptionValuation):
         N = int(T / dt)
         M = int(S_Max / dS)
         K = self.K
-        df = np.exp(-r * dt)
+        df = math.exp(-r * dt)
 
         # equations defined by hull on pg. 481
         def a(x):
@@ -450,29 +452,66 @@ class Binary(OptionValuation):
             return 1 * (.5 * dt * ((vol ** 2) * (x ** 2) + (r - q) * x))
 
         if payout_type == 'asset-or-nothing':
-            # t = T boundary conditions
-            for k in range(M + 1):
-                S = dS * k
-                if S > K:
-                    C[N, k] = S
-                else:
-                    C[N, k] = 0
+            if signCP == 1:
+                # t = T boundary conditions
+                for k in range(M + 1):
+                    S = dS * k
+                    if S > K:
+                        C[N, k] = S
+                    else:
+                        C[N, k] = 0
+                for i in range(N + 1):
+                    t = i * dt
+                    C[t, M] = S_Max
+                    C[t, 0] = 0
+            else:
+                # t = T boundary conditions
+                for k in range(M + 1):
+                    S = dS * k
+                    if S < K:
+                        C[N, k] = S
+                    else:
+                        C[N, k] = 0
+                for i in range(N + 1):
+                    t = i * dt
+                    C[t, M] = 0
+                    C[t, 0] = S_Min
         else:
-            # t = T boundary conditions
-            for k in range(M + 1):
-                S = dS * k
-                if S > K:
-                    C[N, k] = Q * np.exp(-r * T)
-                else:
-                    C[N, k] = 0
+            if signCP == 1:
+                # t = T boundary conditions
+                for k in range(M + 1):
+                    S = dS * k
+                    if S > K:
+                        C[N, k] = Q * math.exp(-r * T)
+                    else:
+                        C[N, k] = 0
+                for i in range(N + 1):
+                    t = i * dt
+                    C[t, M] = Q * math.exp(-r * t)
+                    C[t, 0] = 0
+
+            else:
+                # t = T boundary conditions
+                for k in range(M + 1):
+                    S = dS * k
+                    if S < K:
+                        C[N, k] = Q * math.exp(-r * T)
+                    else:
+                        C[N, k] = 0
+                for i in range(N + 1):
+                    t = i * dt
+                    C[t, M] = 0
+                    C[t, 0] = Q * math.exp(-r * t)
 
         for i in np.arange(N - 1, -1, -1):
             for k in range(1, M):
                 j = M - k
                 C[i, k] = a(j) * C[i + 1, k + 1] + b(j) * C[i + 1, k] + c(j) * C[i + 1, k - 1]
 
+        self.px_spec.add(px=np.interp(S0, S_vec, C[0, :]), method='FD', sub_method='Explicit')
         return self
 
 s = Stock(S0=50, vol=.3)
-e = Binary(ref=s, right='call', K=50, T=2, rf_r=.05)
-print(e.calc_px(method='FD', nsteps=10, payout_type="asset-or-nothing").px_spec.px)
+e = Binary(ref=s, right='call', K=60, T=2, rf_r=.05)
+print(e.calc_px(method='FD', nsteps=10000, npaths=10, payout_type="cash-or-nothing", Q=10).px_spec.px)
+print(e.calc_px(method='BS', payout_type="cash-or-nothing", Q=10).px_spec.px)
