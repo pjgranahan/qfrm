@@ -11,7 +11,7 @@ except:   from European import *  # development: if not installed and running fr
 
 
 class ContingentPremium(OptionValuation):
-    """ Boston Option Valuation Class
+    """ Contingent Premium Option Valuation Class
 
     Inherits all methods and properties of OptionValuation class.
     """
@@ -116,9 +116,8 @@ class ContingentPremium(OptionValuation):
         -------
         self: ContingentPremium
 
-        .. sectionauthor:: Andrew Weatherly
-
-
+        :Authors:
+            Andrew Weatherly
         """
         d2 = (math.log(self.ref.S0 / self.K) + (self.rf_r - self.ref.q - .5 * self.ref.vol ** 2) * self.T) / (
             self.ref.vol * math.sqrt(self.T))
@@ -133,7 +132,8 @@ class ContingentPremium(OptionValuation):
         -------
         self: ContingentPremium
 
-        .. sectionauthor:: Andrew Weatherly
+        :Authors:
+            Andrew Weatherly
 
         References
         -------
@@ -242,23 +242,11 @@ class ContingentPremium(OptionValuation):
         -------
         self: ContingentPremium
 
-        .. sectionauthor:: Andrew Weatherly
+        :Authors:
+            Andrew Weatherly
 
 
         """
         return self
 
 
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
-
-"""
-s = Stock(S0=50, vol=.2, q=.01)
-
-o = ContingentPremium(ref=s, right='call', K=50, T=1, rf_r=.05)
-o.calc_px(method='MC', nsteps=20000, npaths=100, Seed=0)
-print(o)
-o.calc_px(method='LT', nsteps=100)
-#print(o)
-"""
