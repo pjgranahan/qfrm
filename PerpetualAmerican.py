@@ -65,7 +65,8 @@ class PerpetualAmerican(OptionValuation):
         `Coggit's Perpetual Option Pricing tool <http://www.coggit.com/freetools>`_
 
         >>> s = Stock(S0=50, vol=.3, q=0.01)
-        >>> o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.08, desc='call @37.19, put @8.68. See www.coggit.com/freetools')
+        >>> o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.08, \
+        desc='call @37.19, put @8.68. See www.coggit.com/freetools')
         >>> o.pxBS()
         37.190676834
 
@@ -105,8 +106,8 @@ class PerpetualAmerican(OptionValuation):
 
 
 
-        # Example of option price development (BS method) with increasing maturities (This would give a horizontal line\
-        because this perpetual American option does not have an expiry)
+        # Example of option price development (BS method) with increasing maturities \
+        (This would give a horizontal line because this perpetual American option does not have an expiry)
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
