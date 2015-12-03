@@ -120,7 +120,7 @@ class Ladder(OptionValuation):
         M = getattr(self.px_spec, 'npaths')
 
         # Create the grid/matrix
-        grid = np.zeros(shape=(M + 1, N + 1))
+        grid = np.zeros(shape=(N + 1, M + 1))
 
         # Define stock price parameters
         S_max, d_S = Ladder._choose_S_max(M, self.ref.S0)  # Maximum stock price, stock price change interval
@@ -131,19 +131,27 @@ class Ladder(OptionValuation):
         d_T = self.T / N  # Time step
         t_vec = np.arange(0, self.T + 1, d_T)  # Time vector. (+1 to T so that T is included)
 
-        # Set boundary conditions.
-        grid[:, -1] = S_vec
+        # # Set boundary conditions.
+        # grid[:, -1] = S_vec
+        #
+        # # Payout at maturity. Seeded with the prices in S_vec, which have no price history
+        # init_cond = [self.payoff((stock_price,)) for stock_price in S_vec]
 
-        # Payout at the maturity time. Seeded with the prices in S_vec, which have no price history
-        init_cond = [self.payoff((stock_price,)) for stock_price in S_vec]
 
-        if self.right == 'call':
+        # Fill the matrix boundary at time T
+        grid[N, :] = [self.payoff((stock_price,)) for stock_price in S_vec]
+
+
+
+
+
+        if self.signCP == 1:
             # Boundary condition
             upper_bound = 0
             # Calculate the current value
             lower_bound = np.maximum((S_vec[-1] - self.K), 0) * (S_vec[-1] >= self.K2) * np.exp(
                 -self.rf_r * (self.T - t_vec))
-        elif self.right == 'put':
+        elif self.signCP == -1:
             # Boundary condition
             upper_bound = np.maximum((self.K - S_vec[0]), 0) * (S_vec[0] <= self.K2) * np.exp(
                 -self.rf_r * (self.T - t_vec))
