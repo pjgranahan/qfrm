@@ -13,31 +13,7 @@ class Gap(OptionValuation):
     Inherits all methods and properties of OptionValuation class.
     """
 
-    def __init__(self, on = None, *args, **kwargs):
-
-        """ Constructor for Gap option class
-
-        Passes additional arguments to OptionValuation class
-
-        Parameters
-        ---------------------------------------
-        on : Numeric Vector
-                A vector of number of steps to be used in binomial tree averaging, vector of positive intergers
-        dir : string
-                'in' or 'out'
-        *args, **kwargs: varies
-                arguments required by the constructor of OptionValuation class
-
-
-        :Authors:
-            Thawda Aung
-       """
-
-        self.on = on
-
-        super().__init__(*args,**kwargs)
-
-    def calc_px(self, K2=None, method='BS', nsteps=None, npaths=None, keep_hist=False, seed=None):
+    def calc_px(self, K2=None, method='BS', nsteps=None, npaths=None, keep_hist=False, seed=None, on = None):
         """ Wrapper function that calls appropriate valuation method.
 
         All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
@@ -48,6 +24,8 @@ class Gap(OptionValuation):
 
         Parameters
         ----------
+        K2: float
+                Required. The secondary strike price in Gap option.
         method : str
                 Required. Indicates a valuation method to be used:
                 ``BS``: Black-Scholes Merton calculation
@@ -60,6 +38,8 @@ class Gap(OptionValuation):
                 MC, FD methods require number of simulation paths
         keep_hist : bool
                 If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
+        Seed : int
+                Random seed in MC methods.
 
         Returns
         -----------------------------------------------------
@@ -103,23 +83,23 @@ class Gap(OptionValuation):
         The price depends on the number of tree paths. ``n=22`` can give an answer in Hull's example
 
         >>> s = Stock(S0=500000, vol=.2,  q = 0)
-        >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, on = (90000,)*4, desc = 'HULL p. 601 Exp 26.1')
-        >>> o.pxLT(K2=350000, nsteps = 3)
-        1895.8012967929999
+        >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05,  desc = 'HULL p. 601 Exp 26.1')
+        >>> o.pxLT(K2=350000, nsteps = 3, on = (1000,)*4,)
+        1839.1542566569999
 
         >>> s = Stock(S0=50, vol=.2,  q = 0)
-        >>> o = Gap(ref=s, right='call', K=57, T=1, rf_r=.09, on = (90000,)*4)
-        >>> o.pxLT(K2=50, nsteps = 3)
-        2.2749024279999999
+        >>> o = Gap(ref=s, right='call', K=57, T=1, rf_r=.09)
+        >>> o.pxLT(K2=50, nsteps = 3, on = (1000,)*4,)
+        2.341912846
 
         >>> s = Stock(S0=50, vol=.2,  q = 0)
-        >>> o = Gap(ref=s, right='put', K=57, T=1, rf_r=.09, on = (90000,)*4)
-        >>> o.pxLT(K2=50, nsteps = 3)
-        4.3689799980000004
+        >>> o = Gap(ref=s, right='put', K=57, T=1, rf_r=.09)
+        >>> o.pxLT(K2=50, nsteps = 3, on = (1000,)*4,)
+        4.4359904060000002
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
-        >>> o = Series([o.update(T=t).pxLT(K2 = 50, nsteps=3) for t in expiries], expiries)
+        >>> o = Series([o.update(T=t).pxLT(K2 = 50, nsteps=3, on = (1000,)*4,) for t in expiries], expiries)
         >>> o.plot(grid=1,title='Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
 
@@ -199,6 +179,7 @@ class Gap(OptionValuation):
             Mengyan Xie <xiemengy@gmail.com>,
             Runmin Zhang <z.runmin@gmail.com>
         """
+        self.on = on
         self.K2 = float(K2)
         self.seed0 = seed
         return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
