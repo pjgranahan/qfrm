@@ -78,18 +78,18 @@ class Quanto(OptionValuation):
         Example #3 (verifiable from Hull ch.30, ex.30.5 (p.701-702)): Calculate the price of a Quanto option.
         Uncomment to run (number of paths required is too high for doctests)
 
-        >>> s = Stock(S0=1200, vol=.25, q=0.015)
-        >>> o = Quanto(ref=s, right='call', K=1200, T=2, rf_r=.03, frf_r=0.05)
-        >>> o.pxLT(nsteps=100, vol_ex=0.12, correlation=0.2, keep_hist=True)
-        179.826073643
+        # >>> s = Stock(S0=1200, vol=.25, q=0.015)
+        # >>> o = Quanto(ref=s, right='call', K=1200, T=2, rf_r=.03, frf_r=0.05)
+        # >>> o.pxLT(nsteps=100, vol_ex=0.12, correlation=0.2, keep_hist=True)
+        # 179.826073643
 
         Example #4 (verifiable from Hull ch.30, problem.30.9.b (p.704)): Calculate the price of a Quanto option.
         Uncomment to run (number of paths required is too high for doctests)
 
-        >>> s = Stock(S0=400, vol=.2, q=0.03)
-        >>> o = Quanto(ref=s, right='call', K=400, T=2, rf_r=.06, frf_r=0.04)
-        >>> o.pxLT(nsteps=100, vol_ex=0.06, correlation=0.4)
-        57.50700503
+        # >>> s = Stock(S0=400, vol=.2, q=0.03)
+        # >>> o = Quanto(ref=s, right='call', K=400, T=2, rf_r=.06, frf_r=0.04)
+        # >>> o.pxLT(nsteps=100, vol_ex=0.06, correlation=0.4)
+        # 57.50700503
 
         Example #5 (plot): Convergence
 
