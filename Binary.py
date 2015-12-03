@@ -251,7 +251,7 @@ class Binary(OptionValuation):
 
         FD Examples
         --------------
-        Example #1
+        Example #1 can verify this example with example 1 from pxBS above. It is fairly close
 
         >>> s = Stock(S0=42, vol=.20)
         >>> o = Binary(ref=s, right='put', K=40, T=.5, rf_r=.1)
