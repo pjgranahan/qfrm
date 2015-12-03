@@ -1,9 +1,7 @@
 import re
 import yaml
 import numbers
-import functools
 import math
-import warnings
 import numpy as np
 import operator as op
 
@@ -319,6 +317,7 @@ class Util():
 
         >>> from scipy.stats import norm
         >>> sum( [abs(Util.norm_cdf(x) - norm.cdf(x)) for x in range(100)])
+        3.3306690738754696e-16
         """
 
         y = 0.5 * (1 - math.erf(-(x - mu)/(sigma * math.sqrt(2.0))))
@@ -330,8 +329,6 @@ class Util():
         u = (x - mu)/abs(sigma)
         y = (1/(math.sqrt(2 * math.pi) * abs(sigma))) * math.exp(-u*u/2)
         return y
-
-    # @staticmethod
 
     @staticmethod
     def maximum(x, y):
@@ -353,9 +350,13 @@ class Util():
         Compare max from both functions
 
         >>> Util.maximum(x, y) - numpy.maximum(x, y)
+        array([ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.])
         >>> Util.maximum(x, y[0]) - numpy.maximum(x, y[0])
+        array([ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.])
         >>> Util.maximum(x[0], y) - numpy.maximum(x[0], y)
+        array([ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.])
         >>> Util.maximum(x, float(y[0])) - numpy.maximum(x, float(y[0]))
+        array([ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.])
 
         Compare timing with tuples
 
@@ -370,7 +371,6 @@ class Util():
         >>> x = [random() for i in range(100)]; y = [random() for i in range(len(x))]
         >>> (timeit.timeit('Util.maximum(x, y)', 'from __main__ import Util, x, y', number=100),
         ... timeit.timeit('maximum(x, y)', 'from __main__ import maximum, x, y', number=100))
-
         """
         x = x if Util.is_iterable(x) else [x]
         y = y if Util.is_iterable(y) else [y]
@@ -382,7 +382,7 @@ class Util():
 
     @staticmethod
     def minimum(x, y):
-        """ Similar to ``numpy.maximum``.
+        """ Simulates ``numpy.maximum``.
 
         The only difference is that maximum does not handle comparison with NaN values.
 
@@ -402,9 +402,13 @@ class Util():
         Compare max from both functions
 
         >>> Util.minimum(x, y) - numpy.minimum(x, y)
+        array([ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.])
         >>> Util.minimum(x, y[0]) - numpy.minimum(x, y[0])
+        array([ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.])
         >>> Util.minimum(x[0], y) - numpy.minimum(x[0], y)
+        array([ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.])
         >>> Util.minimum(x, float(y[0])) - numpy.minimum(x, float(y[0]))
+        array([ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.])
         """
         x = x if Util.is_iterable(x) else [x]
         y = y if Util.is_iterable(y) else [y]
@@ -415,8 +419,8 @@ class Util():
         return Util.demote((min(i) for i in tuple(zip(x,y))))
 
     @staticmethod
-    def arange(start=None, stop=None, step=1, incl_start=True, incl_stop=False):
-        """ Similar to ``numpy.arange()``.
+    def arange(start=None, stop=None, step=None, incl_start=True, incl_stop=False):
+        """ Simulates ``numpy.arange()``.
 
         In contrast to ``numpy.arange()`` this function does not allow ``dtype`` specification.
         See `numpy.arange docs <http://docs.scipy.org/doc/numpy-1.10.1/reference/generated/numpy.arange.html>`_
@@ -448,6 +452,8 @@ class Util():
         ((1, 2, 3, 4), array([1, 2, 3, 4]))
         >>> (Util.arange(1, 5), arange(1, 5))
         ((1, 2, 3, 4), array([1, 2, 3, 4]))
+        >>> (Util.arange(5, 1), arange(5, 1))  # note different behavior. np.arange requires step.
+        ((5, 4, 3, 2), array([], dtype=int32))
         >>> (Util.arange(5), arange(5))
         ((0, 1, 2, 3, 4), array([0, 1, 2, 3, 4]))
         >>> (Util.arange(5, 1, -1), arange(5, 1, -1))
@@ -470,9 +476,9 @@ class Util():
         [0.0, 0.0, 0.0, 0.0, -1.7763568394002505e-15, -3.5527136788005009e-15, -5.3290705182007514e-15]
         """
 
-        if step is None: step = 1
         if stop is None: stop = start; start = 0
         if start is None: start = 0
+        if step is None: step = (start < stop) * 2 - 1  # +1 for increasing, -1 for decreasing sequence
 
         if (start < stop and step < 0) or (start > stop and step > 0):
             seq = ()
@@ -590,7 +596,7 @@ class Util():
         (2, 3, 4)
         >>> Util.add(1, [1,2,3])
         (2, 3, 4)
-        >>> Util.add([1, 2, 3], (4, 5 ))
+        >>> Util.add([1, 2, 3], (4, 5, 6))
         (5, 7, 9)
         """
         if Util.is_number(y): y = (y,)
@@ -603,13 +609,13 @@ class Util():
     def sub(x, y, as_tuple=True):
         """ Subtracts y from x. They can be iterables or scalars.
         >>> Util.sub(1, 2)
-        (3,)
+        (-1,)
         >>> Util.sub((1,2,3), 1)
-        (2, 3, 4)
+        (0, 1, 2)
         >>> Util.sub(1, [1,2,3])
-        (2, 3, 4)
-        >>> Util.sub([1, 2, 3], (4, 5 ))
-        (5, 7, 9)
+        (0, -1, -2)
+        >>> Util.sub([1, 2, 3], (4, 5, 5))
+        (-3, -3, -2)
         """
         if Util.is_number(y): y = (y,)
         x = Util.promote(x, len(y));
@@ -804,56 +810,61 @@ class Vec(tuple):
 
     Examples
     --------
-    >>> from numpy import array; from timeit import repeat; a = Vec((1, 2)); na = array([1, 2, 3]);
-
-    >>> [a + 1, a + 1., a + (1,), a + a]  # right addition only! These will fail: -10 + a, (-10,) + a, a + array(1)
-    [(2, 3), (2.0, 3.0), (2, 3), (2, 4)
-    >>> [a - 1, a - 1., a - (1,), a - a, op.sub(a,1)]  # right subtraction only!
-    [(0, 1), (0.0, 1.0), (0, 1), (0, 0), (0, 0)]
-    >>> [a * 2, a * 2., a * (2,), a * a]  # right multiplication only!
+    >>> from numpy import array; from timeit import repeat; v = Vec((1, 2)); nv = array([1, 2, 3]);
+    >>> [type(Vec(4)), isinstance(Vec(4), tuple)]
+    [<class 'Util.Vec'>, True]
+    >>> [Vec(1) + v, v + 1, v + 1., v + (1,), v + v]  # right addition only! These will fail: -10 + a, (-10,) + a, a + array(1)
+    [(2, 3), (2, 3), (2.0, 3.0), (2, 3), (2, 4)]
+    >>> [v - 1, v - 1., v - (1,), v - v, op.sub(v,1)]  # right subtraction only!
+    [(0, 1), (0.0, 1.0), (0, 1), (0, 0), (0, 1)]
+    >>> [v * 2, v * 2., v * (2,), v * v]  # right multiplication only!
     [(2, 4), (2.0, 4.0), (2, 4), (1, 4)]
-    >>> [a / 2, a / 2., a / (2,), a / a]  # right division only!
+    >>> [v / 2, v / 2., v / (2,), v / v]  # right division only!
     [(0.5, 1.0), (0.5, 1.0), (0.5, 1.0), (1.0, 1.0)]
-    >>> [a > 1, a > 1., a > (1,), a > a]
+    >>> [v ** 2, v ** 2., v ** (2,), v ** v]  # right multiplication only!
+    [(1, 4), (1.0, 4.0), (1, 4), (1, 4)]
+    >>> [v > 1, v > 1., v > (1,), v > v]
     [(False, True), (False, True), (False, True), (False, False)]
-    >>> [a >= 2, a >= 2., a >= (2,), a >= a]
+    >>> [v >= 2, v >= 2., v >= (2,), v >= v]
     [(False, True), (False, True), (False, True), (True, True)]
-    >>> [a == 1, a == 1., a == (1,), a / a]
+    >>> [v == 1, v == 1., v == (1,), v / v]
     [(True, False), (True, False), (True, False), (1.0, 1.0)]
-    >>> [a != 1, a != 1., a != (1,), a != a]
+    >>> [v != 1, v != 1., v != (1,), v != v]
     [(False, True), (False, True), (False, True), (False, False)]
-    >>> [a < 2, a < 2., a < (2,), a < a]
+    >>> [v < 2, v < 2., v < (2,), v < v]
     [(True, False), (True, False), (True, False), (False, False)]
-    >>> [a <= 1, a <= 1., a <= (1,), a <= a]
+    >>> [v <= 1, v <= 1., v <= (1,), v <= v]
     [(True, False), (True, False), (True, False), (True, True)]
-    >>> (-a, op.neg(a), a.__neg__())
+    >>> (-v, op.neg(v), v.__neg__())
     ((-1, -2), (-1, -2), (-1, -2))
-    >>> [op.abs(-a), (-a).__abs__()]
+    >>> [op.abs(-v), (-v).__abs__()]
     [(1, 2), (1, 2)]
-    >>> (op.concat(a, 1), op.concat(a, (1,)), op.concat(a, a))
-    >>> a.exp()
-    (2.718281828459045, 7.38905609893065)
-    >>> a.log()
-    (0.0, 0.6931471805599453, 1.0986122886681098)
-    >>> [a.max(1.5), a.max((1.5,)), a.max(a + .5), Vec((-2,-1,0,1,2)).max(0)]
+    >>> [v.max(1.5), v.max((1.5,)), v.max(v + .5), Vec((-2,-1,0,1,2)).max(0)]
     [(1.5, 2), (1.5, 2), (1.5, 2.5), (0, 0, 0, 1, 2)]
-    >>> [a.min(1.5), a.min((1.5,)), a.min(a + .5), Vec((-2,-1,0,1,2)).min(0)]
+    >>> [v.min(1.5), v.min((1.5,)), v.min(v + .5), Vec((-2,-1,0,1,2)).min(0)]
     [(1, 1.5), (1, 1.5), (1, 2), (-2, -1, 0, 0, 0)]
-    >>> a.cumsum()
-    (1, 3, 6)
-    >>> a.pow(2)
-    (1, 4, 9)
-    >>> a.map(math.log10)
-    (0.0, 0.3010299956639812, 0.47712125471966244)
+    >>> v.exp
+    (2.718281828459045, 7.38905609893065)
+    >>> v.log
+    (0.0, 0.6931471805599453)
+    >>> v.sqrt
+    (1.0, 1.4142135623730951)
+    >>> Vec([1,2,3,4,5]).cumsum
+    (1, 3, 6, 10, 15)
+    >>> v.map(math.log10)
+    (0.0, 0.3010299956639812)
 
-    Performance comparison to ``numpy``:
+    Compare performance to ``numpy``:
 
-    >>> repeat('a + 5', 'from __main__ import a', number=100000)     # 3x slower  # doctest: +ELLIPSIS
-    >>> repeat('na + 5', 'from __main__ import na', number=100000)   # doctest: +ELLIPSIS
+    >>> repeat('v + 5', 'from __main__ import v', number=10000)     # 3x slower  # doctest: +ELLIPSIS
+    >>> repeat('nv + 5', 'from __main__ import nv', number=10000)   # doctest: +ELLIPSIS
 
-    >>> repeat('Vec((1, 2)) + 5', 'from __main__ import Vec', number=100000)      # 1.5x slower # doctest: +ELLIPSIS
-    >>> repeat('array((1, 2)) + 5', 'from __main__ import array', number=100000)  # doctest: +ELLIPSIS
+    >>> repeat('Vec((1, 2)) + 5', 'from __main__ import Vec', number=10000)      # 1.5x slower # doctest: +ELLIPSIS
+    >>> repeat('array((1, 2)) + 5', 'from __main__ import array', number=10000)  # doctest: +ELLIPSIS
     """
+    def __new__(self, x):  # Vec(4)
+        if isinstance(x, numbers.Number): x = Vec((x,))
+        return super(Vec, self).__new__(self, x)
     def __add__(self, y): return self.op(y, op.add)
     def __sub__(self, y): return self.op(y, op.sub)
     def __mul__(self, y): return self.op(y, op.mul)
@@ -867,55 +878,27 @@ class Vec(tuple):
     def __gt__(self, y): return self.op(y, op.gt)
     def __neg__(self): return Vec(map(op.neg, self))
     def __abs__(self): return Vec(map(op.abs, self))
-    def __concat__(self, y): return self.op(y, op.concat)  # concatination of vectors
+    @property
     def exp(self): return Vec(map(math.exp, self))
+    @property
     def log(self): return Vec(map(math.log, self))
+    @property
     def sqrt(self): return Vec(map(math.sqrt, self))
-    def map(self, fun): return Vec(map(fun, self))
     def max(self, y): return self.op(y, max)
     def min(self, y): return self.op(y, min)
-    def cumsum(self): pass
+    def map(self, fun): return Vec(map(fun, self))
+    @property
+    def cumsum(self):
+        def cumsum_(it):
+            total = 0
+            for a in it:  total += a; yield total
+        return Vec(cumsum_(self))
     def op(self, y, op):
         if isinstance(y, numbers.Number): out = [op(i, y) for i in self]
         else:
             if len(y) == 1: out = [op(i, y[0]) for i in self]
+            elif len(self) == 1: out = [op(self[0], j) for j in y]
             elif len(y) == len(self): out =[op(i, j) for i, j in zip(self, y)]
             else: print('Opeartion failed. Assure y is a number, singleton or iterable of matching length')
         return Vec(out)
 
-
-#
-# class tupleX(tuple):
-#     """
-#     >>> a = tupleX((1, 2, 3));     b = tupleX([3, 4, 5])
-#     >>> a.add(10)
-#     (11, 12, 13)
-#     >>> a.sub(1)
-#     (11, 12, 13)
-#     >>> a.add(b)
-#     (4, 6, 8)
-#     >>> a.mult(10)
-#     (10, 20, 30)
-#     >>> a.mult(b)
-#     (3, 8, 15)
-#     >>> a.exp()
-#     (2.718281828459045, 7.38905609893065, 20.085536923187668)
-#     >>> a.log()
-#     (0.0, 0.6931471805599453, 1.0986122886681098)
-#     >>> a.cumsum()
-#     (1, 3, 6)
-#     >>> a.pow(2)
-#     (1, 4, 9)
-#     >>> a.map(math.log10)
-#     (0.0, 0.3010299956639812, 0.47712125471966244)
-#     """
-#     def add(self, y):  return tupleX(Util.add(self, y))
-#     def sub(self, y): return tupleX(Util.sub(self, y))
-#     def mult(self, y): return tupleX(Util.mult(self, y))
-#     def exp(self): return tupleX(Util.exp(self))
-#     def log(self): return tupleX(Util.log(self))
-#     def cumsum(self): return tupleX(Util.cumsum(self))
-#     def pow(self, y): return tupleX(Util.pow(self, y))
-#     def sqrt(self): return tupleX(Util.sqrt(self))
-#     def map(self, fun): return tupleX(Util.map(fun, self))
-#     # def __pow__(self, power): return self.pow(self, power)

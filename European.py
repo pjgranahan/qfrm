@@ -1,7 +1,4 @@
-import warnings
 import math
-import numpy as np
-# from scipy import stats
 
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
 except:   from OptionValuation import *  # development: if not installed and running from source
@@ -72,11 +69,11 @@ class European(OptionValuation):
         59.867529938
 
         >>> o.px_spec.ref_tree  # prints reference tree  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        ((810.0,), (746.491768087...878.911232579...), (687.962913360...810.0, 953.685129326...),
+        ((810.0,), (746.491768087...878.911232579...), (687.962913360...810.0..., 953.685129326...),
          (634.023026633...746.491768087...878.911232579...1034.8204598880159))
 
         >>> o.calc_px(method='LT', nsteps=2, keep_hist=True).px_spec.opt_tree
-        ((53.39471637496134,), (5.062315192620067, 100.66143225703827), (0.0, 10.0, 189.3362341097378))
+        ((53.39471637496134,), (5.062315192620067, 100.66143225703827), (0, 10.0, 189.3362341097378))
 
         >>> o.calc_px(method='LT', nsteps=2)   # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         European...px: 53.394716375...
@@ -124,41 +121,27 @@ class European(OptionValuation):
 
         n = getattr(self.px_spec, 'nsteps', 3)
         _ = self.LT_specs(n)
+        incr_n, decr_n = Vec(Util.arange(0, n + 1)), Vec(Util.arange(n, -1)) #Vectorized tuple. See Util.py. 0..n; n..0.
 
-        # S = self.ref.S0 * _['d'] ** np.arange(n, -1, -1) * _['u'] ** np.arange(0, n + 1)
-        Steps = Util.arange(n, -1, -1)       # a vectorized tuple defined in Util module
-        Payoffs = tupleX(reversed(Steps))     # NPayoffs = Util.arange(0, n + 1)
-
-        S = tuple(self.ref.S0 * _['d'] ** ns * _['u'] ** np for ns, np in zip(Steps, Payoffs))
-        # O = np.maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
-        diff = (self.signCP * (s - self.K) for s in S)
-        O = tuple(max(x) for x in zip(diff, [0] * len(S)))
+        S = Vec(_['d'])**decr_n * Vec(_['u'])**incr_n * self.ref.S0
+        O = ((S - self.K) * self.signCP ).max(0)
         S_tree, O_tree = None, None
 
         if getattr(self.px_spec, 'keep_hist', False):
-            S_tree = (tuple([s for s in S]),)
-            O_tree = (tuple([o for o in O]),)
+            S_tree, O_tree = (S,), (O,)
 
             for i in range(n, 0, -1):
-                O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
-                S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
-
-                S_tree = (tuple([s for s in S]),) + S_tree
-                O_tree = (tuple([o for o in O]),) + O_tree
+                O = (Vec(O[:i]) * (1 - _['p']) + Vec(O[1:]) * (_['p'])) * _['df_dt'] # prior option prices (@time step=i-1)
+                S = Vec(S[1:i+1]) * _['d']                   # prior stock prices (@time step=i-1)
+                S_tree, O_tree = (tuple(S),) + S_tree, (tuple(O),) + O_tree
 
             out = O_tree[0][0]
         else:
-            csl = (0.,) + Util.cumsum(Util.log(Util.arange(1, n + 1)))         # logs avoid overflow & truncation
-            # csl2 = np.insert(np.cumsum(np.log(np.arange(n) + 1)), 0, 0)         # logs avoid overflow & truncation
-            # tmp2 = csl2[n] - csl2 - csl2[::-1] + np.log(_['p']) * np.arange(n + 1) \
-            #       + np.log(1 - _['p']) * np.arange(n + 1)[::-1]
-            tmp_csl = tupleX((csl[n],)).sub(csl).sub(tuple(reversed(csl)))
-            tmp = Payoffs.mult(math.log(_['p'])).add(Payoffs.mult(math.log(1 - _['p']))).add(tmp_csl)
-            out = (_['df_T'] * sum(Util.exp(tmp) * tuple(O)))
+            csl = (0.,) + Vec(Util.cumsum(Util.log(Util.arange(1, n + 1))))         # logs avoid overflow & truncation
+            tmp = Vec(csl[n]) - csl - tuple(reversed(csl)) + incr_n * math.log(_['p']) + decr_n * math.log(1 - _['p'])
+            out = (sum(tmp.exp * _['df_T'] * tuple(O)))
 
-        self.px_spec.add(px=float(out), sub_method='binomial tree; Hull Ch.135',
-                         LT_specs=_, ref_tree=S_tree, opt_tree=O_tree)
-
+        self.px_spec.add(px=float(out), sub_method='binary tree; Hull p.135', LT_specs=_, ref_tree=S_tree, opt_tree=O_tree)
         return self
 
     def _calc_MC(self):
@@ -181,9 +164,3 @@ class European(OptionValuation):
         """
         return self
 
-
-
-s = Stock(S0=42, vol=.20)
-o = European(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @0.81, put @4.76, Hull p.339')
-o.calc_px(method='BS').px_spec   # save interim results to self.px_spec. Equivalent to repr(o)
-European(clone=o, K=41, desc='Ex. copy params; new strike.').pxLT()
