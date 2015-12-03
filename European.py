@@ -100,18 +100,13 @@ class European(OptionValuation):
         _ = self
         d1 = (math.log(_.ref.S0 / _.K) + (_.rf_r + _.ref.vol ** 2 / 2.) * _.T)/(_.ref.vol * math.sqrt(_.T))
         d2 = d1 - _.ref.vol * math.sqrt(_.T)
+        N = Util.norm_cdf
 
         # if calc of both prices is cheap, do both and include them into Price object.
         # Price.px should always point to the price of interest to the user
         # Save values as basic data types (int, floats, str), instead of np.array
-        # px_call = float(_.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(d1)
-        #                 - _.K * math.exp(-_.rf_r * _.T) * stats.norm.cdf(d2))
-        # px_put = float(- _.ref.S0 * math.exp(-_.ref.q * _.T) * stats.norm.cdf(-d1)
-        #                + _.K * math.exp(-_.rf_r * _.T) * stats.norm.cdf(-d2))
-        px_call = float(_.ref.S0 * math.exp(-_.ref.q * _.T) * Util.norm_cdf(d1)
-                        - _.K * math.exp(-_.rf_r * _.T) * Util.norm_cdf(d2))
-        px_put = float(- _.ref.S0 * math.exp(-_.ref.q * _.T) * Util.norm_cdf(-d1)
-                       + _.K * math.exp(-_.rf_r * _.T) * Util.norm_cdf(-d2))
+        px_call = float(_.ref.S0 * math.exp(-_.ref.q * _.T) * N(d1) - _.K * math.exp(-_.rf_r * _.T) * N(d2))
+        px_put = float(- _.ref.S0 * math.exp(-_.ref.q * _.T) * N(-d1) + _.K * math.exp(-_.rf_r * _.T) * N(-d2))
         px = px_call if _.signCP == 1 else px_put if _.signCP == -1 else None
 
         self.px_spec.add(px=px, sub_method='standard; Hull p.335', px_call=px_call, px_put=px_put, d1=d1, d2=d2)
@@ -130,27 +125,36 @@ class European(OptionValuation):
         n = getattr(self.px_spec, 'nsteps', 3)
         _ = self.LT_specs(n)
 
-        S = self.ref.S0 * _['d'] ** np.arange(n, -1, -1) * _['u'] ** np.arange(0, n + 1)
-        O = np.maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
+        # S = self.ref.S0 * _['d'] ** np.arange(n, -1, -1) * _['u'] ** np.arange(0, n + 1)
+        Steps = Util.arange(n, -1, -1)       # a vectorized tuple defined in Util module
+        Payoffs = tupleX(reversed(Steps))     # NPayoffs = Util.arange(0, n + 1)
+
+        S = tuple(self.ref.S0 * _['d'] ** ns * _['u'] ** np for ns, np in zip(Steps, Payoffs))
+        # O = np.maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
+        diff = (self.signCP * (s - self.K) for s in S)
+        O = tuple(max(x) for x in zip(diff, [0] * len(S)))
         S_tree, O_tree = None, None
 
         if getattr(self.px_spec, 'keep_hist', False):
-            S_tree = (tuple([float(s) for s in S]),)
-            O_tree = (tuple([float(o) for o in O]),)
+            S_tree = (tuple([s for s in S]),)
+            O_tree = (tuple([o for o in O]),)
 
             for i in range(n, 0, -1):
                 O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
                 S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
 
-                S_tree = (tuple([float(s) for s in S]),) + S_tree
-                O_tree = (tuple([float(o) for o in O]),) + O_tree
+                S_tree = (tuple([s for s in S]),) + S_tree
+                O_tree = (tuple([o for o in O]),) + O_tree
 
             out = O_tree[0][0]
         else:
-            csl = np.insert(np.cumsum(np.log(np.arange(n) + 1)), 0, 0)         # logs avoid overflow & truncation
-            tmp = csl[n] - csl - csl[::-1] + np.log(_['p']) * np.arange(n + 1) \
-                  + np.log(1 - _['p']) * np.arange(n + 1)[::-1]
-            out = (_['df_T'] * sum(np.exp(tmp) * tuple(O)))
+            csl = (0.,) + Util.cumsum(Util.log(Util.arange(1, n + 1)))         # logs avoid overflow & truncation
+            # csl2 = np.insert(np.cumsum(np.log(np.arange(n) + 1)), 0, 0)         # logs avoid overflow & truncation
+            # tmp2 = csl2[n] - csl2 - csl2[::-1] + np.log(_['p']) * np.arange(n + 1) \
+            #       + np.log(1 - _['p']) * np.arange(n + 1)[::-1]
+            tmp_csl = tupleX((csl[n],)).sub(csl).sub(tuple(reversed(csl)))
+            tmp = Payoffs.mult(math.log(_['p'])).add(Payoffs.mult(math.log(1 - _['p']))).add(tmp_csl)
+            out = (_['df_T'] * sum(Util.exp(tmp) * tuple(O)))
 
         self.px_spec.add(px=float(out), sub_method='binomial tree; Hull Ch.135',
                          LT_specs=_, ref_tree=S_tree, opt_tree=O_tree)
@@ -177,3 +181,9 @@ class European(OptionValuation):
         """
         return self
 
+
+
+s = Stock(S0=42, vol=.20)
+o = European(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @0.81, put @4.76, Hull p.339')
+o.calc_px(method='BS').px_spec   # save interim results to self.px_spec. Equivalent to repr(o)
+European(clone=o, K=41, desc='Ex. copy params; new strike.').pxLT()
