@@ -13,7 +13,7 @@ class Shout(OptionValuation):
     Inherits all methods and properties of OptionValuation class.
     """
 
-    def calc_px(self, method='LT', nsteps=None, npaths=None, keep_hist=False, seed=None):
+    def calc_px(self, method='LT', nsteps=None, npaths=None, keep_hist=False, seed=None, deg=3):
         """ Wrapper function that calls appropriate valuation method.
 
         All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
@@ -38,6 +38,8 @@ class Shout(OptionValuation):
                 If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
         seed : int
                 Seed number for Monte Carlo simulation
+        deg : int
+                degree of polynomial fit in MC
 
         Returns
         -------
@@ -80,19 +82,25 @@ class Shout(OptionValuation):
 
         MC Examples
         -----------
-        See example on p.26, p.28 in http://core.ac.uk/download/pdf/1568393.pdf
+        See example on p.26, p.28 in `<http://core.ac.uk/download/pdf/1568393.pdf>`_
+        Note 1:
+        MC gives an approximate price. The price will not exactly fit the price in the reference example but fall
+        in a range that is close to the example price.
+        Suggest parameters: ``nsteps=252``, ``nsteps=10000``
+        Note 2:
+        Numpy Polyfit will give warnings: Polyfit may be poorly conditioned warnings.warn(msg, RankWarning)
 
         >>> s = Stock(S0=36, vol=.2)
         >>> o = Shout(ref=s, right='put', K=40, T=1, rf_r=.2, desc='http://core.ac.uk/download/pdf/1568393.pdf')
-        >>> o.pxMC(nsteps=252, npaths=10000, keep_hist=True, seed=1212)
-        4.131257046
+        >>> o.pxMC(nsteps=5, npaths=5, keep_hist=True, seed=1212)
+        4.0
 
-        >>> o.calc_px(method='MC', nsteps=252, npaths=10000, keep_hist=True, seed=1212).px_spec
+        >>> o.calc_px(method='MC', nsteps=5, npaths=5, keep_hist=True, seed=1212).px_spec
         ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PriceSpec...px: 4.131257046...
+        PriceSpec...px: 4.0...
 
-        >>> from pandas import Series;  steps = [10,50,100,150,200,250]
-        >>> O = Series([o.pxMC(nsteps=s, npaths=10000, keep_hist=True, seed=1212) for s in steps], steps)
+        >>> from pandas import Series;  steps = [1,2,3,4,5]
+        >>> O = Series([o.pxMC(nsteps=s, npaths=5, keep_hist=True, seed=1212) for s in steps], steps)
         >>> O.plot(grid=1, title='MC Price vs nsteps')# doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
@@ -104,6 +112,7 @@ class Shout(OptionValuation):
             Yen-fei Chen <yensfly@gmail.com>
 
        """
+        self.deg = deg
         self.seed = seed
         return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
 
@@ -218,25 +227,26 @@ class Shout(OptionValuation):
         df = np.exp(-_.rf_r * dt)
         np.random.seed(_.seed)
 
-        h = np.zeros((n_steps+1, n_paths) ,'d') # option value matrix
+        option_px = np.zeros((n_steps+1, n_paths) ,'d')
         S = np.zeros((n_steps+1, n_paths) ,'d') # stock price matrix
         S[0,:] = _.ref.S0 # initial value
 
         # stock price paths
         for t in range(1,n_steps+1):
-            ran = scipy.stats.norm.rvs(loc=0, scale=1, size=n_paths) # pseudo - random numbers
-            S[t,:] = S[t-1,:] * np.exp((_.rf_r-_.ref.vol**2/2)*dt + _.ref.vol*ran*np.sqrt(dt))
+            random = scipy.stats.norm.rvs(loc=0, scale=1, size=n_paths)
+            S[t,:] = S[t-1,:] * np.exp((_.rf_r-_.ref.vol**2/2)*dt + _.ref.vol*random*np.sqrt(dt))
 
-        h = np.maximum(_.signCP*(S-_.K), 0) # payoff when not shout
+        option_px = np.maximum(_.signCP*(S-_.K), 0) # payoff when not shout
         final_payoff = np.repeat(S[-1,:], n_steps+1, axis=0).reshape(n_paths,n_steps+1)
-        V = np.maximum(_.signCP*(final_payoff.transpose()-_.K), _.signCP*(S-_.K))# payoff when shout
+        shout_px = np.maximum(_.signCP*(final_payoff.transpose()-_.K), _.signCP*(S-_.K))
 
-        for t in range (n_steps-1,-1,-1): # valuation process ia similar to American option
-            rg = np.polyfit(S[t,:], df*np.array(h[t+1,:]), 3) # regression at time t
+        for t in range (n_steps-1,-1,-1): # valuation process is similar to American option
+            rg = np.polyfit(S[t,:], df*np.array(option_px[t+1,:]), _.deg) # regression at time t
             C= np.polyval(rg, S[t,:]) # continuation values
-            h[t,:]= np.where(V[t,:]>C, V[t,:], h[t+1,:]*df) # exercise decision: shout or not shout
+            # exercise decision: shout or not shout
+            option_px[t,:]= np.where(shout_px[t,:]>C, shout_px[t,:], option_px[t+1,:]*df)
 
-        self.px_spec.add(px=float(np.mean(h[0,:])), sub_method='Hull p.609')
+        self.px_spec.add(px=float(np.mean(option_px[0,:])), sub_method='Hull p.609')
         return self
 
     def _calc_FD(self):
@@ -254,3 +264,4 @@ class Shout(OptionValuation):
         """
 
         return self
+

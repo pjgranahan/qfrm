@@ -92,14 +92,14 @@ class Chooser(OptionValuation):
         >>> o.calc_px(tau=3/12, method='LT', nsteps=2, keep_hist=True).px_spec.ref_tree
         ((50.0,), (43.40617226972924, 57.595495508445445), (37.68191582218824, 49.99999999999999, 66.3448220572672))
 
-        >>> o.calc_px(tau=3/12, method='LT', nsteps=2, keep_hist=True).px_spec
+        >>> o.px_spec
         ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         PriceSpec...px: 6.755605275...
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
         >>> o = Series([o.update(T=t).pxLT(tau=3/12, nsteps=2) for t in expiries], expiries)
-        >>> o.plot(grid=1, title='Price vs expiry (in years)')# doctest: +ELLIPSIS
+        >>> o.plot(grid=1, title='LT Price vs expiry (in years)')# doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
@@ -336,4 +336,3 @@ class Chooser(OptionValuation):
         _.px_spec.add(px=cpx+ppx)
 
         return self
-

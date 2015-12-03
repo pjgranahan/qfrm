@@ -6,6 +6,8 @@ from scipy import sparse
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
 except:   from OptionValuation import *  # development: if not installed and running from source
 
+try: from qfrm.European import *  # production:  if qfrm package is installed
+except:   from European import *  # development: if not installed and running from source
 
 class Gap(OptionValuation):
     """ Gap option class.
@@ -170,8 +172,8 @@ class Gap(OptionValuation):
 
         See Also
         ---------------------------------------------------------
-        [1] http://www.actuarialbookstore.com/samples/3MFE-BRE-12FSM%20Sample%20_4-12-12.pdf
-        [2] https://www.ma.utexas.edu/users/mcudina/Lecture14_3_4_5.pdf
+        `<http://www.actuarialbookstore.com/samples/3MFE-BRE-12FSM%20Sample%20_4-12-12.pdf>`_
+        `<https://www.ma.utexas.edu/users/mcudina/Lecture14_3_4_5.pdf>`_
 
         :Authors:
             Yen-fei Chen <yensfly@gmail.com>,
@@ -194,8 +196,11 @@ class Gap(OptionValuation):
         """
 
         _ = self
-        d1 = (np.log(_.ref.S0 / _.K2) + (_.rf_r - _.ref.q + _.ref.vol ** 2 / 2.) * _.T)/(_.ref.vol * np.sqrt(_.T))
-        d2 = d1 - _.ref.vol * np.sqrt(_.T)
+
+        o = European(ref=Stock(S0=_.ref.S0, vol=_.ref.vol, q=_.ref.q), right=_.right,
+                      K=_.K2, rf_r=_.rf_r, T=_.T).calc_px(method='BS')
+        d1 = o.px_spec.d1
+        d2 = o.px_spec.d2
 
         # if calc of both prices is cheap, do both and include them into Price object.
         # Price.px should always point to the price of interest to the user
@@ -390,4 +395,3 @@ class Gap(OptionValuation):
 
         self.px_spec.add(px=float(np.interp(S0,S_vec,f_px[:,0])), sub_method='Implicit Method')
         return self
-

@@ -123,10 +123,18 @@ class Lookback(OptionValuation):
         >>> o.pxFD(Sfl = 50.0, nsteps=3, npaths=19)
         7.917890003
 
-        >>> s = Stock(S0=50, vol=.4, q=.0)
         >>> o = Lookback(ref=s, right='call', K=50, T=0.25, rf_r=.1, desc='Example from Hull Ch.26 Example 26.2 (p608)')
         >>> o.pxFD(Sfl = 50.0, nsteps=3, npaths=19)
         8.067753794
+
+        >>> o = Lookback(ref=s, right='call', K=50, T=0.25, rf_r=.1, desc='Example from Hull Ch.26 Example 26.2 (p608)')
+        >>> from pandas import Series
+        >>> expiries = range(1,11)
+        >>> O = Series([o.update(T=t).pxFD(Sfl = 50.0, nsteps=3, npaths=19) for t in expiries], expiries)
+        >>> O.plot(grid=1, title='FD Price vs expiry (in years)') # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at ...>
+        >>> import matplotlib.pyplot as plt
+        >>> plt.show()
 
         :Authors:
             Mengyan Xie <xiemengy@gmail.com>,
