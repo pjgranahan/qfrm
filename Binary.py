@@ -255,30 +255,32 @@ class Binary(OptionValuation):
 
         >>> s = Stock(S0=42, vol=.20)
         >>> o = Binary(ref=s, right='put', K=40, T=.5, rf_r=.1)
-        >>> o.pxFD(payout_type="asset-or-nothing")  # doctest: +ELLIPSIS
-        9.27648578
+        >>> o.pxFD(payout_type="asset-or-nothing", nsteps=10, npaths=10)  # doctest: +ELLIPSIS
+        8.35783977
 
         Example #2
 
-        >>> o.update(right='call').pxFD(payout_type="asset-or-nothing")  # doctest: +ELLIPSIS
-        32.72351422
+        >>> o.update(right='call').pxFD(payout_type="asset-or-nothing", nsteps=10, npaths=10)  # doctest: +ELLIPSIS
+        29.550733261
 
         Example #3
 
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05)
-        >>> o.pxFD(payout_type="cash-or-nothing", Q=1000)  # doctest: +ELLIPSIS
-        641.237705232
+        >>> o.pxFD(payout_type="cash-or-nothing", Q=1000, nsteps=10, npaths=10)  # doctest: +ELLIPSIS
+        473.924342837
 
         Example #4
 
-        >>> o.update(right='put').pxFD(payout_type="cash-or-nothing", Q=1000)  #doctest: +ELLIPSIS
-        263.599712804
+        >>> o.update(right='put').pxFD(payout_type="cash-or-nothing", Q=1000, nsteps=10, npaths=10)  #doctest: +ELLIPSIS
+        154.068135942
 
         Example #5 (plot): Example of option price development (FD method) with increasing maturities
 
         >>> from pandas import Series
-        >>> O = Series([o.update(T=t).pxFD(payout_type="asset-or-nothing") for t in range(1,11)], range(1,11))
+        >>> s = Stock(S0=50, vol=.3)
+        >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05)
+        >>> O = Series([o.update(T=t).pxFD(payout_type="asset-or-nothing",nsteps=t*5) for t in range(1,11)],range(1,11))
         >>> O.plot(grid=1, title='Price vs expiry (in years)')  # doctest: +ELLIPSIS
         <...>
         >>> plt.show()
@@ -407,10 +409,8 @@ class Binary(OptionValuation):
                   np.log(1 - _['p']) * np.arange(n + 1)[::-1]
             out = (_['df_T'] * sum(np.exp(tmp) * tuple(O)))
 
-
         self.px_spec.add(px=float(out), sub_method=None,
                          LT_specs=_, ref_tree=S_tree, opt_tree=O_tree)
-
 
         return self
 
@@ -430,7 +430,7 @@ class Binary(OptionValuation):
         """
         return self
 
-    def _calc_FD(self, nsteps=3, npaths=4, keep_hist=False):
+    def _calc_FD(self, nsteps=10, npaths=10, keep_hist=False):
         """ Internal function for option valuation.
 
         Returns
@@ -521,13 +521,13 @@ class Binary(OptionValuation):
                 for k in range(M + 1):
                     S = dS * k
                     if S > K:
-                        C[N, k] = Q * math.exp(-r * T), 5
+                        C[N, k] = Q * math.exp(-r * T)
                     else:
                         C[N, k] = 0
                 # Top and Bottom boundary conditions
                 for i in range(N + 1):
                     t = i * dt
-                    C[t, M] = Q * math.exp(-r * (T - t)), 5
+                    C[t, M] = Q * math.exp(-r * (T - t))
                     C[t, 0] = 0
 
             else:
@@ -535,14 +535,14 @@ class Binary(OptionValuation):
                 for k in range(M + 1):
                     S = dS * k
                     if S < K:
-                        C[N, k] = Q * math.exp(-r * T), 5
+                        C[N, k] = Q * math.exp(-r * T)
                     else:
                         C[N, k] = 0
                 # Top and Bottom boundary conditions
                 for i in range(N + 1):
                     t = i * dt
                     C[t, M] = 0
-                    C[t, 0] = Q * math.exp(-r * (T - t)), 5
+                    C[t, 0] = Q * math.exp(-r * (T - t))
 
         for i in range(N - 1, -1, -1):
             for k in range(1, M):
@@ -552,7 +552,4 @@ class Binary(OptionValuation):
         self.px_spec.add(px=np.interp(S0, S_vec, C[0, :]), method='FD', sub_method='Implicit')
         return self
 
-s = Stock(S0=42, vol=.2)
-e = Binary(ref=s, right='call', K=40, T=.5, rf_r=.1)
-print(e.pxFD(nsteps=5, npaths=5, payout_type="asset-or-nothing"))
-#print(e.calc_px(method='BS', payout_type="cash-or-nothing", Q=10).px_spec.px)
+
