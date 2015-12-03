@@ -147,26 +147,26 @@ class Bermudan(OptionValuation):
         Example #2 (verifiable): See reference [1], section 5.1 and table 5.1 with arguments N=10^2, R=3
         Uncomment to run (number of paths required is too high for doctests)
 
-        >>> s = Stock(S0=11, vol=.4)
-        >>> T = 1; tex = np.arange(0.1, T + 0.1, 0.1)
-        >>> o = Bermudan(ref=s, right='put', K=15, T=T, rf_r=.05, desc="in-the-money Bermudan put")
-        >>> actual = o.pxMC(R=3, npaths=10**2, tex=tex); expected = 4.200888
-        >>> actual
-        4.0403015590000004
-        >>> (abs(actual - expected) / expected) < 0.10  # Verify within 10% of expected
-        True
+        # >>> s = Stock(S0=11, vol=.4)
+        # >>> T = 1; tex = np.arange(0.1, T + 0.1, 0.1)
+        # >>> o = Bermudan(ref=s, right='put', K=15, T=T, rf_r=.05, desc="in-the-money Bermudan put")
+        # >>> actual = o.pxMC(R=3, npaths=10**2, tex=tex); expected = 4.200888
+        # >>> actual
+        # 4.0403015590000004
+        # >>> (abs(actual - expected) / expected) < 0.10  # Verify within 10% of expected
+        # True
 
         Example #3 (verifiable): See reference [1], section 5.1 and table 5.1 with arguments N=10^5, R=6
         Uncomment to run (number of paths required is too high for doctests)
 
-        >>> s = Stock(S0=11, vol=.4)
-        >>> T = 1; tex = np.arange(0.1, T + 0.1, 0.1)
-        >>> o = Bermudan(ref=s, right='put', K=15, T=T, rf_r=.05, desc="in-the-money Bermudan put")
-        >>> actual = o.pxMC(R=6, npaths=10**5, tex=tex); expected = 4.204823
-        >>> actual
-        3.9492928389999999
-        >>> (abs(actual - expected) / expected) < 0.10  # Verify within 10% of expected
-        True
+        # >>> s = Stock(S0=11, vol=.4)
+        # >>> T = 1; tex = np.arange(0.1, T + 0.1, 0.1)
+        # >>> o = Bermudan(ref=s, right='put', K=15, T=T, rf_r=.05, desc="in-the-money Bermudan put")
+        # >>> actual = o.pxMC(R=6, npaths=10**5, tex=tex); expected = 4.204823
+        # >>> actual
+        # 3.9492928389999999
+        # >>> (abs(actual - expected) / expected) < 0.10  # Verify within 10% of expected
+        # True
 
         Example #4 (plot)
 
