@@ -10,7 +10,7 @@ except:   from qfrm.option import *  # development: if not installed and running
 
 
 
-class Spread(OptionValuation):
+class Spread(option):
     """ Spread option class.
 
     Inherits all methods and properties of OptionValuation class.

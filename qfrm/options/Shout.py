@@ -5,7 +5,7 @@ try: from qfrm.OptionValuation import *  # production:  if qfrm package is insta
 except:   from qfrm.option import *  # development: if not installed and running from source
 
 
-class Shout(OptionValuation):
+class Shout(option):
     """ Shout option class.
 
     Inherits all methods and properties of OptionValuation class.

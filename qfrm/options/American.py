@@ -6,7 +6,7 @@ except:   from qfrm.options.European import *  # development: if not installed a
 
 
 
-class American(OptionValuation):
+class American(option):
     """ American option class.
 
     Inherits all methods and properties of ``OptionValuation`` class.

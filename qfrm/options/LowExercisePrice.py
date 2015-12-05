@@ -5,7 +5,7 @@ except:   from qfrm.option import *  # development: if not installed and running
 
 from scipy import sparse
 
-class LowExercisePrice(OptionValuation):
+class LowExercisePrice(option):
     """ LowExercisePrice option class.
 
 

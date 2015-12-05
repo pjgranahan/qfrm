@@ -11,7 +11,7 @@ except:   from qfrm.option import *  # development: if not installed and running
 try: from qfrm.European import *  # production:  if qfrm package is installed
 except:   from qfrm.options.European import *  # development: if not installed and running from source
 
-class Gap(OptionValuation):
+class Gap(option):
     """ Gap option class.
 
     Inherits all methods and properties of OptionValuation class.

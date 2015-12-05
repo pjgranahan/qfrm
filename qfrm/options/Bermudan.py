@@ -9,7 +9,7 @@ except:
     from qfrm.option import *  # development: if not installed and running from source
 
 
-class Bermudan(OptionValuation):
+class Bermudan(option):
     """ Bermudan option class.
 
     Inherits all methods and properties of OptionValuation class.

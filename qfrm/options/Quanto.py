@@ -13,7 +13,7 @@ except:
     from qfrm.options.American import *  # development: if not installed and running from source
 
 
-class Quanto(OptionValuation):
+class Quanto(option):
     """ Quanto option class.
 
     Inherits all methods and properties of OptionValuation class.

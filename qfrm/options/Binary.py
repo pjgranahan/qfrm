@@ -8,7 +8,7 @@ except:
     from qfrm.option import *  # development: if not installed and running from source
 
 
-class Binary(OptionValuation):
+class Binary(option):
     """
     Binary option class.
 

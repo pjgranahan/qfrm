@@ -7,7 +7,7 @@ try: from qfrm.OptionValuation import *  # production:  if qfrm package is insta
 except:   from qfrm.option import *  # development: if not installed and running from source
 
 
-class Chooser(OptionValuation):
+class Chooser(option):
     """ Chooser option class.
 
     Inherits all methods and properties of OptionValuation class.

@@ -4,7 +4,7 @@ except:
     from qfrm.option import *  # development: if not installed and running from source
 
 
-class Ladder(OptionValuation):
+class Ladder(option):
     """
     Ladder option class.
     """

@@ -14,7 +14,7 @@ try: from qfrm.European import *  # production:  if qfrm package is installed
 except:   from qfrm.options.European import *  # development: if not installed and running from source
 
 
-class ContingentPremium(OptionValuation):
+class ContingentPremium(option):
     """ Contingent Premium Option Valuation Class
 
     Inherits all methods and properties of OptionValuation class.

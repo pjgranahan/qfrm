@@ -4,7 +4,7 @@ import warnings
 
 import matplotlib.pyplot as plt
 import pandas as pd
-from pricespec import PriceSpec
+import qfrm.pricespec
 
 from qfrm.optionseries import OptionSeries
 
@@ -12,7 +12,7 @@ try: from qfrm.Util import *  # production:  if qfrm package is installed
 except:   from qfrm.util import *  # development: if not installed and running from source
 
 
-class OptionValuation(OptionSeries):
+class option(OptionSeries):
     """ Adds interest rates and some methods shared by subclasses.
 
     The class inherits from a simpler class that describes an option.
@@ -49,7 +49,7 @@ class OptionValuation(OptionSeries):
         Examples
         --------
 
-        >>> OptionValuation(ref=Stock(S0=50), rf_r=.05, frf_r=.01)
+        >>> option(ref=Stock(S0=50), rf_r=.05, frf_r=.01)
         OptionValuation
         frf_r: 0.01
         px_spec: PriceSpec{}
@@ -90,13 +90,13 @@ class OptionValuation(OptionSeries):
         Examples
         --------
         >>> from pprint import pprint
-        >>> pprint(OptionValuation(ref=Stock(S0=42, vol=.2), right='call', K=40, T=.5, rf_r=.1).LT_specs(2))
+        >>> pprint(option(ref=Stock(S0=42, vol=.2), right='call', K=40, T=.5, rf_r=.1).LT_specs(2))
         ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         {'a': 1.025315120...'d': 0.904837418...'df_T': 0.951229424...
          'df_dt': 0.975309912...'dt': 0.25, 'p': 0.601385701...'u': 1.105170918...}
 
         >>> s = Stock(S0=50, vol=.3)
-        >>> pprint(OptionValuation(ref=s,right='put', K=52, T=2, rf_r=.05, desc={'See Hull p.288'}).LT_specs(3))
+        >>> pprint(option(ref=s,right='put', K=52, T=2, rf_r=.05, desc={'See Hull p.288'}).LT_specs(3))
         ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         {'a': 1.033895113...'d': 0.782744477...'df_T': 0.904837418...
          'df_dt': 0.967216100...'dt': 0.666...'p': 0.507568158...'u': 1.277556123...}
@@ -289,7 +289,7 @@ class OptionValuation(OptionSeries):
         Examples
         --------
         >>> from pprint import pprint; from qfrm import *
-        >>> o = OptionValuation(rf_r=0.05); pprint(vars(o))
+        >>> o = option(rf_r=0.05); pprint(vars(o))
         {'frf_r': 0, 'px_spec': PriceSpec{}, 'rf_r': 0.05, 'seed0': None}
 
         >>> o.update(rf_r=0.04)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
@@ -326,7 +326,7 @@ class OptionValuation(OptionSeries):
         Examples
         --------
 
-        >>> OptionValuation().calc_px()  # prints a UserWarning and returns None
+        >>> option().calc_px()  # prints a UserWarning and returns None
         ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE, +IGNORE_EXCEPTION_DETAIL
 
         >>> from qfrm import *; European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5).calc_px()
@@ -346,7 +346,7 @@ class OptionValuation(OptionSeries):
             return None
 
         else:
-            self.px_spec = PriceSpec(**kwargs)
+            self.px_spec = qfrm.pricespec.PriceSpec(**kwargs)
             assert getattr(self, 'ref') is not None, 'Ooops. Please supply referenced (underlying) asset, `ref`'
             assert getattr(self, 'rf_r') is not None, 'Ooops. Please supply risk free rate `rf_r`'
             assert getattr(self, 'K') is not None, 'Ooops. Please supply strike `K`'

@@ -10,7 +10,7 @@ except:   from qfrm.options.American import *  # development: if not installed a
 
 
 
-class Compound(OptionValuation):
+class Compound(option):
     """ Asian option class.
 
     Inherits all methods and properties of OptionValuation class.

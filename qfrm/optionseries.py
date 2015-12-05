@@ -1,6 +1,6 @@
 import warnings
 
-from pricespec import PriceSpec
+from qfrm.pricespec import PriceSpec
 
 from qfrm.specprinter import SpecPrinter
 

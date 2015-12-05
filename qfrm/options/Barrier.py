@@ -13,7 +13,7 @@ try: from qfrm.European import *  # production:  if qfrm package is installed
 except:   from qfrm.options.European import *  # development: if not installed and running from source
 
 
-class Barrier(OptionValuation):
+class Barrier(option):
     """ European option class.
 
     Inherits all methods and properties of OptionValuation class.

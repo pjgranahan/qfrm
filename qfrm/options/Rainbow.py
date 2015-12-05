@@ -6,7 +6,7 @@ try: from qfrm.OptionValuation import *  # production:  if qfrm package is insta
 except:   from qfrm.option import *  # development: if not installed and running from source
 
 
-class Rainbow(OptionValuation):
+class Rainbow(option):
     """ Rainbow option class.
 
     Inherits all methods and properties of OptionValuation class.
