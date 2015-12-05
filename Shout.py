@@ -54,15 +54,15 @@ class Shout(OptionValuation):
         of the call option if this is greater than the minimum. In spirit this is the same as the binomial method for
         pricing American options.
 
-        Verification of Shout option: <http://goo.gl/02jISW>
+        Verification of Shout option: `<http://goo.gl/02jISW>`_
         Hull Ch26.12 P609
 
 
         Examples
         --------
         This two excel spreadsheet price shout option.
-        <http://goo.gl/1rrTCG>
-        <http://goo.gl/AdgcqY>
+        `<http://goo.gl/1rrTCG>`_
+        `<http://goo.gl/AdgcqY>`_
 
         LT Examples
         -----------
