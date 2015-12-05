@@ -21,7 +21,7 @@ class European(OptionValuation):
 
 
         Parameters
-        ----------
+        -------------
         method : str
                 Required. Indicates a valuation method to be used:
                 ``BS``: Black-Scholes Merton calculation
@@ -125,16 +125,15 @@ class European(OptionValuation):
 
         S = Vec(_['d'])**decr_n * Vec(_['u'])**incr_n * self.ref.S0
         O = ((S - self.K) * self.signCP ).max(0)
-        S_tree, O_tree = None, None
+        S_tree = O_tree = None
 
         if getattr(self.px_spec, 'keep_hist', False):
-            S_tree, O_tree = (S,), (O,)
+            S_tree, O_tree = (tuple(S),), (tuple(O),)
 
             for i in range(n, 0, -1):
-                O = (Vec(O[:i]) * (1 - _['p']) + Vec(O[1:]) * (_['p'])) * _['df_dt'] # prior option prices (@time step=i-1)
-                S = Vec(S[1:i+1]) * _['d']                   # prior stock prices (@time step=i-1)
+                O = (O[:i] * (1 - _['p']) + O[1:] * (_['p'])) * _['df_dt']  # prior option prices (@time step=i-1)
+                S = S[1:i+1] * _['d']                   # prior stock prices (@time step=i-1)
                 S_tree, O_tree = (tuple(S),) + S_tree, (tuple(O),) + O_tree
-
             out = O_tree[0][0]
         else:
             csl = (0.,) + Vec(Util.cumsum(Util.log(Util.arange(1, n + 1))))         # logs avoid overflow & truncation

@@ -4,6 +4,7 @@ import numbers
 import math
 import numpy as np
 import operator as op
+import itertools
 
 
 class Util():
@@ -20,6 +21,8 @@ class Util():
     def is_iterable(x):
         """ Checks if ``x`` is iterable.
 
+        `hasattr <http://stackoverflow.com/questions/7197710/hasattrobj-iter-vs-collections>`_
+
         Parameters
         ----------
         x : object
@@ -29,6 +32,7 @@ class Util():
         -------
         bool
             ``True`` if ``x`` is iterable, ``False`` otherwise
+
 
         Exmaples
         --------
@@ -42,11 +46,13 @@ class Util():
         >>> Util.is_iterable([1,'blah',3])
         True
         """
-        try:
-            (a for a in x)
+        if hasattr(x, '__iter__') and not isinstance(x, str):  # faster, but not reliable with collections.Sequence
             return True
-        except TypeError:
-            return False
+        else:
+            try:
+                a = iter(x) # (a for a in x)
+                return True
+            except TypeError: return False
 
     @staticmethod
     def is_number(x):
@@ -363,14 +369,14 @@ class Util():
         >>> import timeit; from numpy import maximum, random
         >>> x = random.random(100); y = random.random(len(x))
         >>> (timeit.timeit('Util.maximum(x, y)', 'from __main__ import Util, x, y', number=100),
-        ... timeit.timeit('maximum(x, y)', 'from __main__ import maximum, x, y', number=100))
+        ... timeit.timeit('maximum(x, y)', 'from __main__ import maximum, x, y', number=100)) # doctest: +SKIP
 
         Compare timing with arrays
 
         >>> import timeit; from random import random; from numpy import maximum
         >>> x = [random() for i in range(100)]; y = [random() for i in range(len(x))]
         >>> (timeit.timeit('Util.maximum(x, y)', 'from __main__ import Util, x, y', number=100),
-        ... timeit.timeit('maximum(x, y)', 'from __main__ import maximum, x, y', number=100))
+        ... timeit.timeit('maximum(x, y)', 'from __main__ import maximum, x, y', number=100)) # doctest: +SKIP
         """
         x = x if Util.is_iterable(x) else [x]
         y = y if Util.is_iterable(y) else [y]
@@ -810,10 +816,14 @@ class Vec(tuple):
 
     Examples
     --------
-    >>> from numpy import array; from timeit import repeat; v = Vec((1, 2)); nv = array([1, 2, 3]);
-    >>> [type(Vec(4)), isinstance(Vec(4), tuple)]
-    [<class 'Util.Vec'>, True]
-    >>> [Vec(1) + v, v + 1, v + 1., v + (1,), v + v]  # right addition only! These will fail: -10 + a, (-10,) + a, a + array(1)
+    >>> from numpy import array; from timeit import repeat; v = Vec((1, 2)); nv = array([1, 2]);
+    >>> [Vec(1), Vec((1,2,3)), Vec(v)]  # Constractor. Note: instantiates from a number too (but tuple(1) fails).
+    [(1,), (1, 2, 3), (1, 2)]
+    >>> [isinstance(Vec(4), tuple), type(Vec((4,))), ]  # type tuple and Vec
+    [True, <class 'Util.Vec'>]
+    >>> [Vec(1)[0], type(Vec(1)[0]), Vec(v)[0:1], type(Vec(v)[0:1]), Vec(v)[0:2], type(Vec(v)[0:2])] # slicing and indexing
+    [1, <class 'int'>, (1,), <class 'Util.Vec'>, (1, 2), <class 'Util.Vec'>]
+    >>> [Vec((1,)) + v, v + 1, v + 1., v + (1,), v + v]  # right addition only! These will fail: -10 + a, (-10,) + a, a + array(1)
     [(2, 3), (2, 3), (2.0, 3.0), (2, 3), (2, 4)]
     >>> [v - 1, v - 1., v - (1,), v - v, op.sub(v,1)]  # right subtraction only!
     [(0, 1), (0.0, 1.0), (0, 1), (0, 0), (0, 1)]
@@ -821,8 +831,8 @@ class Vec(tuple):
     [(2, 4), (2.0, 4.0), (2, 4), (1, 4)]
     >>> [v / 2, v / 2., v / (2,), v / v]  # right division only!
     [(0.5, 1.0), (0.5, 1.0), (0.5, 1.0), (1.0, 1.0)]
-    >>> [v ** 2, v ** 2., v ** (2,), v ** v]  # right multiplication only!
-    [(1, 4), (1.0, 4.0), (1, 4), (1, 4)]
+    >>> [v ** 2, v ** 2., v ** (2,), v ** v, Vec(2)**[0, 1, 2, 3]]  # right multiplication only!
+    [(1, 4), (1.0, 4.0), (1, 4), (1, 4), (1, 2, 4, 8)]
     >>> [v > 1, v > 1., v > (1,), v > v]
     [(False, True), (False, True), (False, True), (False, False)]
     >>> [v >= 2, v >= 2., v >= (2,), v >= v]
@@ -839,6 +849,8 @@ class Vec(tuple):
     ((-1, -2), (-1, -2), (-1, -2))
     >>> [op.abs(-v), (-v).__abs__()]
     [(1, 2), (1, 2)]
+    >>> [v[0], v[0:2], v[0:2], type(v[0:2])]  # subscripting also returns Vec type
+    [1, (1, 2), (1, 2), <class 'Util.Vec'>]
     >>> [v.max(1.5), v.max((1.5,)), v.max(v + .5), Vec((-2,-1,0,1,2)).max(0)]
     [(1.5, 2), (1.5, 2), (1.5, 2.5), (0, 0, 0, 1, 2)]
     >>> [v.min(1.5), v.min((1.5,)), v.min(v + .5), Vec((-2,-1,0,1,2)).min(0)]
@@ -856,15 +868,14 @@ class Vec(tuple):
 
     Compare performance to ``numpy``:
 
-    >>> repeat('v + 5', 'from __main__ import v', number=10000)     # 3x slower  # doctest: +ELLIPSIS
-    >>> repeat('nv + 5', 'from __main__ import nv', number=10000)   # doctest: +ELLIPSIS
+    >>> repeat('v + 5', 'from __main__ import v', number=10000)     # 3x slower  # doctest: +SKIP
+    >>> repeat('nv + 5', 'from __main__ import nv', number=10000)   # doctest: +SKIP
 
-    >>> repeat('Vec((1, 2)) + 5', 'from __main__ import Vec', number=10000)      # 1.5x slower # doctest: +ELLIPSIS
-    >>> repeat('array((1, 2)) + 5', 'from __main__ import array', number=10000)  # doctest: +ELLIPSIS
+    >>> repeat('Vec((1, 2)) + 5', 'from __main__ import Vec', number=10000)      # 1.5x slower # doctest: +SKIP
+    >>> repeat('array((1, 2)) + 5', 'from __main__ import array', number=10000)  # doctest: +SKIP
     """
-    def __new__(self, x):  # Vec(4)
-        if isinstance(x, numbers.Number): x = Vec((x,))
-        return super(Vec, self).__new__(self, x)
+
+    def __new__(self, x): return super(Vec, self).__new__(self, (x,) if isinstance(x, numbers.Number) else x)
     def __add__(self, y): return self.op(y, op.add)
     def __sub__(self, y): return self.op(y, op.sub)
     def __mul__(self, y): return self.op(y, op.mul)
@@ -878,6 +889,7 @@ class Vec(tuple):
     def __gt__(self, y): return self.op(y, op.gt)
     def __neg__(self): return Vec(map(op.neg, self))
     def __abs__(self): return Vec(map(op.abs, self))
+    def __getitem__(self, idx): return tuple(self)[idx] if isinstance(idx, int) else Vec(tuple(self)[idx])
     @property
     def exp(self): return Vec(map(math.exp, self))
     @property
@@ -888,17 +900,14 @@ class Vec(tuple):
     def min(self, y): return self.op(y, min)
     def map(self, fun): return Vec(map(fun, self))
     @property
-    def cumsum(self):
-        def cumsum_(it):
-            total = 0
-            for a in it:  total += a; yield total
-        return Vec(cumsum_(self))
+    def cumsum(self): return Vec(itertools.accumulate(self))
     def op(self, y, op):
         if isinstance(y, numbers.Number): out = [op(i, y) for i in self]
         else:
             if len(y) == 1: out = [op(i, y[0]) for i in self]
             elif len(self) == 1: out = [op(self[0], j) for j in y]
-            elif len(y) == len(self): out =[op(i, j) for i, j in zip(self, y)]
+            elif len(y) == len(self): out = [op(i, j) for i, j in zip(self, y)]
             else: print('Opeartion failed. Assure y is a number, singleton or iterable of matching length')
         return Vec(out)
+
 

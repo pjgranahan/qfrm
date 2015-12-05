@@ -1,6 +1,3 @@
-import numpy as np
-import matplotlib.pyplot as plt
-
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
 except:   from OptionValuation import *  # development: if not installed and running from source
 
@@ -26,7 +23,7 @@ class American(OptionValuation):
 
 
         Parameters
-        ----------
+        -------------
         method : str
                 Required. Indicates a valuation method to be used:
                 ``BS``: Black-Scholes Merton calculation
@@ -53,10 +50,10 @@ class American(OptionValuation):
 
         >>> o = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc='7.42840, See J.C.Hull p.288')
         >>> o.calc_px(method='LT', nsteps=2, keep_hist=True).px_spec.px
-        7.42840190270483
+        7.428401902704835
 
         >>> o.px_spec.ref_tree  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        ((50.000...), (37.040911034...67.49294037880017), (27.440581804...50.000...91.10594001952546))
+        ((50.000...), (37.040911034...67.49294037880017), (27.440581804...50.0...91.10594001952546))
 
         >>> o.calc_px(method='LT', nsteps=2, keep_hist=False)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         American...px: 7.428401903...
@@ -105,22 +102,16 @@ class American(OptionValuation):
         n = getattr(self.px_spec, 'nsteps', 3)
         _ = self.LT_specs(n)
 
-        S = self.ref.S0 * _['d'] ** np.arange(n, -1, -1) * _['u'] ** np.arange(0, n + 1)  # terminal stock prices
-        O = np.maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
-        # tree = ((S, O),)
-        S_tree = (tuple([float(s) for s in S]),)  # use tuples of floats (instead of numpy.float)
-        O_tree = (tuple([float(o) for o in O]),)
-        # tree = ([float(s) for s in S], [float(o) for o in O],)
+        S = Vec(_['d']) ** Util.arange(n, -1, -1) * Vec(_['u']) ** Util.arange(0, n + 1) * self.ref.S0  # terminal stock prices
+        O = Vec(Util.maximum((S - self.K) * self.signCP, 0))          # terminal option payouts
+        S_tree, O_tree  = (tuple(S),), (tuple(O),)      # use tuples of floats (instead of numpy.float)
 
         for i in range(n, 0, -1):
-            O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
-            S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
-            Payout = np.maximum(self.signCP * (S - self.K), 0)   # payout at time step i-1 (moving backward in time)
-            O = np.maximum(O, Payout)
-            # tree = tree + ((S, O),)
-            S_tree = (tuple([float(s) for s in S]),) + S_tree
-            O_tree = (tuple([float(o) for o in O]),) + O_tree
-            # tree = tree + ([float(s) for s in S], [float(o) for o in O],)
+            O = (O[:i] * (1 - _['p']) + O[1:] * _['p']) * _['df_dt']  #prior option prices (@time step=i-1)
+            S = S[1:i+1] * _['d']                   # prior stock prices (@time step=i-1)
+            Payout = ((S - self.K) * self.signCP).max(0)   # payout at time step i-1 (moving backward in time)
+            O = O.max(Payout)  #Util.maximum(O, Payout)
+            S_tree, O_tree = (tuple(S),) + S_tree, (tuple(O),) + O_tree
 
         self.px_spec.add(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
                         LT_specs=_, ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
@@ -236,4 +227,3 @@ class American(OptionValuation):
         """
 
         return self
-
