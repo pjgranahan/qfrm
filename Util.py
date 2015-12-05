@@ -6,6 +6,8 @@ import numpy as np
 import operator as op
 import itertools
 
+# import numpy as np; np.random.seed(0);  np.random.random(10)
+# import random as rnd; rnd.seed(0);  print([rnd.random() for i in range(10)])
 
 class Util():
     """ A collection of utility functions, most of which are static methods,
@@ -136,8 +138,9 @@ class Util():
         --------
 
         >>> # convert $6 semiannula (SA) coupon bond payments to indexed cash flows
-        >>> print(Util.cpn2cf(6,2,2.1))  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        {...}
+        >>> cf = Util.cpn2cf(6,2,2.1)
+        >>> sorted(cf.items(), key = lambda x: x[1])# doctest: +ELLIPSIS
+        [('ttcf', (0.100..., 0.60..., 1.1, 1.6, 2.1)), ('cf', (3.0, 3.0, 3.0, 3.0, 103.0))]
 
         """
 
@@ -148,7 +151,7 @@ class Util():
         start = period if (ttm % period) == 0 else ttm % period  # time length from now till next cpn, yrs
         c = float(cpn)/freq   # coupon payment per period, $
 
-        ttcf = tuple((float(x) for x in np.arange(start, end, period)))        # times to cash flows (tuple of floats)
+        ttcf = tuple((float(x) for x in Util.arange(start, end, period)))        # times to cash flows (tuple of floats)
         cf = tuple(map(lambda i: c if i < (len(ttcf) - 1) else c + 100, range(len(ttcf)))) # cash flows(tuple of floats)
         return {'ttcf': ttcf, 'cf': cf}
 
@@ -909,5 +912,7 @@ class Vec(tuple):
             elif len(y) == len(self): out = [op(i, j) for i, j in zip(self, y)]
             else: print('Opeartion failed. Assure y is a number, singleton or iterable of matching length')
         return Vec(out)
+
+
 
 

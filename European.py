@@ -24,10 +24,15 @@ class European(OptionValuation):
         -------------
         method : str
                 Required. Indicates a valuation method to be used:
-                ``BS``: Black-Scholes Merton calculation
-                ``LT``: Lattice tree (such as binary tree)
-                ``MC``: Monte Carlo simulation methods
-                ``FD``: finite differencing methods
+
+                ``BS`` -- Black-Scholes Merton calculation
+
+                ``LT`` -- Lattice tree (such as binary tree)
+
+                ``MC`` -- Monte Carlo simulation methods
+
+                ``FD`` -- finite differencing methods
+
         nsteps : int
                 LT, MC, FD methods require number of times steps
         npaths : int

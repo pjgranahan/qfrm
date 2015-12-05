@@ -1,3 +1,7 @@
+import numpy as np # import cumsum, maximum, sum, where, polyval, polyfit, exp, random, mean, copy
+# from pandas import DataFrame
+# import matplotlib.pyplot as plt
+
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
 except:   from OptionValuation import *  # development: if not installed and running from source
 
@@ -12,7 +16,7 @@ class American(OptionValuation):
     Inherits all methods and properties of ``OptionValuation`` class.
     """
 
-    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
+    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, rng_seed=0, deg=5):
         """ Wrapper function that calls appropriate valuation method.
 
         All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
@@ -36,57 +40,163 @@ class American(OptionValuation):
                 MC, FD methods require number of simulation paths
         keep_hist : bool
                 If ``True``, historical information (trees, simulations, grid) are saved in ``self.px_spec`` object.
+        rng_seed : int, None
+            (non-negative) integer used to seed random number generator (RNG) for MC pricing.
+
+            ``None`` -- no seeding; generates random sequence for MC
+        deg : int
+            Degree of polynomial used for least Squares Monte Carlo (LSM) method (in MC pricing).
+            Normally, ``deg=5`` is used to fit 5th degree polynomial to payouts at each step in backward induction.
 
         Returns
         -------
         self : American
             Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
 
+
+        Notes
+        -----
+
+        **Black-Scholes Merton (BS)**, i.e. exact solution pricing.
+        This pricing method uses Black Scholes Merton differential equation to price the American option.
+        Due to the optimal stopping problem, this is technically impossible,
+        so the methods below are approximations that have been developed by financial computation scientists.
+        *Important*: for dividend-paying underlying stock, BSM can only accept semi-annual dividends rate.
+
+        *References:*
+
+        - `The Use of Control Variate Technique in Option-Pricing, J.C.Hull & A.D.White, 2001 <http://1drv.ms/1XR2rQw>`_
+        - `The Closed-form Solution for Pricing American Options, Wang Xiaodong, 2006 <http://1drv.ms/1NaB3rI>`_
+        - `Closed-Form American Call Option Pricing (Teaching notes), Roll-Geske-Whaley, 2008 <http://1drv.ms/1NaB3rI>`_
+        - `Black's approximation (Wikipedia) <https://en.wikipedia.org/wiki/Black%27s_approximation>`_ (dividend call)
+        - Black's Approximation, OFOD, J.C.Hull, 9ed, 2014, p.346
+        - Control Variate Techniques, OFOD, J.C.Hull, 9ed, 2014, pp.463-465
+
+
+        **Lattice Tree (LT)**, i.e. binomial or binary (recombining) tree pricing.
+        Binomial tree is used to (discretely) grow the underlying stock price.
+        Then backward induction is used to compute option payoff
+        at each time step and (discretely) discount it to the present time.
+        OFOD textbook by John C. Hull has an excellent overview of this method with many examples and exercises.
+
+
+        *References:*
+
+        - Binomial Trees, Ch.13, OFOD, J.C.Hull, 9ed, 2014, p.274
+
+        **Monte Carlo simulation(MC)**.
+        A naive approach is to simulate stock prices, according to Geometric Brownian motion (GBM) model.
+        Then discount the the payouts along each path. Unfortunately, this will overstate the option price,
+        since inn such way we discount deterministic (known-in-advance) future option prices.
+        A proper technique is to determine a distribution of option prices, compute expected value and discount it
+        to present, while comparing it to the option payouts at each node.
+        Among many other methods, Longstaff and Schwartz (UCLA, 2011) developed Least Squares MC (LSM) model
+        that fits a polynomial (usually, of degree 5) to the payouts at each node.
+        The fitted coefficients are used to derive the need expected value of the option price.
+        This is equivalent to computing linear regression coefficients for a dependent variable x in different powers:
+
+        y = a_0 + a_1*x + a_2*x^2 + a_3*x^3 + a_4*x^4 + a_5*x^5
+
+        where a_i are unknown coefficients.
+
+        *References*
+
+        - `Pricing American Options. A Comparison of Monte Carlo Simulation Approaches, M.C.Fu, et al, 1999 <http://1drv.ms/1Q7kItH>`_
+        - `Derivatives Analytics with Python & Numpy, Y.J.Hilpisch, 2011  <http://1drv.ms/21Fuoj6>`_
+        - `Pricing American Options using Monte Carlo Methods, Quiya Jia, 2009. <http://1drv.ms/21FuvLr>`_
+        - `Monte Carlo Simulations for American Options, Russel E. Caflisch, 2005. <http://1drv.ms/1lF24fF>`_
+        - `Pricing options using Monte Carlo simulations, 2013. <http://1drv.ms/1OakkEL>`_
+
+
         Examples
         --------
-        >>> s = Stock(S0=50, vol=.3)
-        >>> American(ref=s, right='put', K=52, T=2, rf_r=.05, desc='7.42840, See J.C.Hull p.288').pxLT(nsteps=2)
-        7.428401903
 
-        >>> o = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc='7.42840, See J.C.Hull p.288')
-        >>> o.calc_px(method='LT', nsteps=2, keep_hist=True).px_spec.px
-        7.428401902704835
+        **BS:**
+        *Verifiable example:*
+        See `Hull and White paper <http://1drv.ms/1XR2rQw>`_:
+        2nd example in list, on p.246; bottom-right option price of 0.4326 in Table 1,
+        since we use control variate for ``n = 100`` (herein ``nsteps = 100``).
 
-        >>> o.px_spec.ref_tree  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        ((50.000...), (37.040911034...67.49294037880017), (27.440581804...50.0...91.10594001952546))
+        >>> s = Stock(S0=40, vol=.2)
+        >>> o = American(ref=s, right='put', K=35, T=.5833, rf_r=.0488, desc='Example From Hull and White 2001')
+        >>> o.pxBS()   # Computes option price via BS approximation
+        0.432627059
 
-        >>> o.calc_px(method='LT', nsteps=2, keep_hist=False)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        American...px: 7.428401903...
+        Same price computation, but all specs (incl. price) are displayed:
 
-        >>> s = Stock(S0=30, vol=.3)
-        >>> o = American(ref=s, right='call', K=30, T=1., rf_r=.08)
-        >>> o.calc_px(method='BS')  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        American...px: 4.713393764...
-
-        >>> print(o.px_spec)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PriceSpec...px: 4.713393764...
-
-        >>> t = Stock(S0=40, vol=.2)
-        >>> z = American(ref=t, right='put', K=35, T=.5833, rf_r=.0488, desc='Example From Hull and White 2001')
-        >>> z.calc_px(method='BS')   # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.calc_px(method='BS')   # doctest: +ELLIPSIS
         American...px: 0.432627059...
 
-        >>> print(z.px_spec)   # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        The following displays only computed specs:
+
+        >>> o.px_spec   # doctest: +ELLIPSIS
         PriceSpec...px: 0.432627059...
 
-        >>> p = Stock(S0=50, vol=.25, q=.02)
-        >>> v = American(ref=p, right='call', K=40, T=2, rf_r=.05)
-        >>> print(v.calc_px(method='BS'))  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> s = Stock(S0=50, vol=.25, q=.02)
+        >>> o = American(ref=s, right='call', K=40, T=2, rf_r=.05)
+        >>> o.calc_px(method='BS')    # doctest: +ELLIPSIS
         American...px: 11.337850838...
 
-        >>> print(v.px_spec)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.px_spec  # doctest: +ELLIPSIS
         PriceSpec...px: 11.337850838...
+
+        >>> s = Stock(S0=30, vol=.3)
+        >>> American(ref=s, right='call', K=30, T=1., rf_r=.08).pxBS()
+        4.713393764
+
+
+
+        **LT:**
+        *Verifiable example:*
+        See J.C.Hull's OFOD, Fig.13.10, p.289, Binomial tree yields option price of 7.43.
+
+
+        >>> s = Stock(S0=50, vol=.3)
+        >>> American(ref=s, right='put', K=52, T=2, rf_r=.05, desc='price:7.42840, See J.C.Hull p.288').pxLT(nsteps=2)
+        7.428401903
+
+        >>> o = American(ref=s, right='put', K=52, T=2, rf_r=.05, desc='price:7.42840, See J.C.Hull p.288')
+        >>> o.pxLT(nsteps=2, keep_hist=True)
+        7.428401903
+
+        Returns a binomial (recombining) tree for price progression of a referenced underlying asset (stock):
+
+        >>> o.px_spec.ref_tree  # doctest: +ELLIPSIS
+        ((50.00...), (37.040911034...67.49294037880017), (27.440581804...50.0...91.10594001952546))
+
+        Returns a binomial (recombining) tree for price progression of the American option:
+
+        >>> o.px_spec.opt_tree  # doctest: +ELLIPSIS
+        ((7.428401902...), (14.959088965...0.932697829...), (24.559418195..., 2.0, 0))
+
+        >>> o.pxLT(nsteps=10, keep_hist=False)  # Higher precision price.  doctest: +ELLIPSIS
+        7.509768467
+
+
+
+        **MC:**
+
+        >>> s = Stock(S0=50, vol=.3)
+        >>> American(ref=s, right='put', K=52, T=2, rf_r=.05, desc='').pxMC(nsteps=10, npaths=10)
+        8.3915333010000008
 
         :Authors:
             Oleg Melnikov <xisreal@gmail.com>, Andrew Weatherly
         """
-        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
-        return getattr(self, '_calc_' + method.upper())()
+        # self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
+
+        # if method == 'MC':
+        #     if not(isinstance(deg, int) and deg > 1 and deg < 11):
+        #         deg = 5
+        #         self.px_spec.add(deg__warning='Assert: 1 < deg (int) < 11. Using default: 5.')
+        #     # self.px_spec.add(deg=deg)
+        #
+        #     if not(isinstance(rng_seed, int) and rng_seed > 0):
+        #         rng_seed = 0
+        #         self.px_spec.add(rng_seed__warning='Assert: 0 <= rng_seed (int). Using default: 0.')
+        #     # self.px_spec.add()
+
+        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, rng_seed=rng_seed, deg=deg)
 
     def _calc_LT(self):
         """ Internal function for option valuation.
@@ -123,28 +233,7 @@ class American(OptionValuation):
 
         See ``calc_px()`` for complete documentation.
 
-        The ``_calc_BS()`` function is called through ``calc_PX()`` and uses the Black Scholes Merton
-        differential equation to price the American option. Due to the optimal stopping problem,
-        this is technically impossible, so the methods below are
-        approximations that have been developed by financial computation scientists.
-
-
-        Notes
-        -----
-        Important that if you plan on giving a dividend paying stock that it is semi-annual percentage dividends.
-        This is currently the only type of dividends that the BSM can accept.
-
-        :Formulae:
-        - `The Closed-form Solution for Pricing American Options <http://aeconf.com/articles/may2007/aef080111.pdf>`_
-        - `Black's approximation <https://en.wikipedia.org/wiki/Black%27s_approximation>`_ (dividend call)
-        -
-            `Closed-Form American Call Option Pricing by Roll-Geske-Whaley, 2008
-            <http://www.bus.lsu.edu/academics/finance/faculty/dchance/Instructional/TN98-01.pdf>`_
-
-        *Verifiable Example:*
-        See `The Use of Control Variate Technique in Option-Pricing by Hull & White 2001
-        <https://www.researchgate.net/publication/46543317_The_Use_of_Control_Variate_Technique_in_Option-Pricing>`_.
-        2nd example in list, on p.246; the very bottom right number b/c we use control variate for n = 100
+        The ``_calc_BS()`` function is called through ``calc_px()``.
 
         :Authors:
             Andrew Weatherly
@@ -158,16 +247,14 @@ class American(OptionValuation):
         assert self.rf_r >= 0, 'r must be >= 0'
 
         #Imports
-        from math import exp
-        from numpy import linspace
 
         if self.right == 'call' and self.ref.q != 0:
             # Black's approximations outlined on pg. 346
             # Dividend paying stocks assume semi-annual payments
             if self.T > .5:
-                dividend_val1 = sum([self.ref.q * self.ref.S0 * exp(-self.rf_r * i) for i in linspace(.5, self.T - .5,
+                dividend_val1 = sum([self.ref.q * self.ref.S0 * math.exp(-self.rf_r * i) for i in np.linspace(.5, self.T - .5,
                                     self.T * 2 - .5)])
-                dividend_val2 = sum([self.ref.q * self.ref.S0 * exp(-self.rf_r * i) for i in linspace(.5, self.T - 1,
+                dividend_val2 = sum([self.ref.q * self.ref.S0 * math.exp(-self.rf_r * i) for i in np.linspace(.5, self.T - 1,
                                     self.T * 2 - 1)])
             else:
                 dividend_val1 = 0
@@ -215,6 +302,42 @@ class American(OptionValuation):
         :Authors:
             Oleg Melnikov <xisreal@gmail.com>
         """
+
+        n = getattr(self.px_spec, 'nsteps', 3)
+        m = getattr(self.px_spec, 'npaths', 3)
+        Seed, deg = self.px_spec.rng_seed, self.px_spec.deg
+        _ = self.LT_specs(n)
+        # dt = T / n_steps; df = exp(-r * dt)
+        # signCP = 1 if right.lower()[0] == 'c' else -1
+        dt, df = self.LT_specs(n)['dt'], self.LT_specs(n)['df_dt']
+        S0, vol = self.ref.S0, self.ref.vol
+        K, r, signCP = self.K, self.rf_r, self._signCP
+
+        np.random.seed(Seed)
+        norm_mtx = np.random.normal((r - 0.5 * vol ** 2) * dt, vol * math.sqrt(dt), (n + 1, m))
+        S = S0 * np.exp(np.cumsum(norm_mtx, axis=0))
+        S[0] = S0
+        payout = np.maximum(signCP * (S - K), 0)
+        v = np.copy(payout)  # terminal payouts
+
+        # Least-Squares Monte Carlo (LSM):
+        for i in range(n - 1, 0, -1):          # American Option Valuation by Backwards Induction
+            rg = np.polyfit(S[i], v[i + 1] * df, deg)      # fit 5th degree polynomial to PV of current inner values
+            C = np.polyval(rg, S[i])              # continuation values.
+            v[i] = np.where(payout[i] > C, payout[i], v[i + 1] * df)  # exercise decision
+        v[0] = v[1] * df
+
+        v0 = np.mean(v[0])
+        self.px_spec.add(px=v0, submethod='Least Squares Monte Carlo (LSM)')
+
+        # if plot:
+        #     # fig, ax = plt.subplots(nrows=3, ncols=1);
+        #     fig = plt.figure(); ax1 = plt.subplot(221); ax2 = plt.subplot(223); ax3 = plt.subplot(122)
+        #     DataFrame(S).plot(ax=ax1, grid=1, title='stock price realizations (vs time steps)', legend=0)
+        #     DataFrame(payout).plot(ax=ax2, grid=1, title='payouts (vs time steps)', legend=0)
+        #     DataFrame(v).plot(ax=ax3, grid=1, title=out, legend=0)
+        #     plt.tight_layout(); plt.show()
+
         return self
 
     def _calc_FD(self):
