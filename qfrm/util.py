@@ -1,7 +1,10 @@
-import math
+import re
+import yaml
 import numbers
-
+import math
 import numpy as np
+import operator as op
+import itertools
 
 
 class Util():
@@ -18,6 +21,8 @@ class Util():
     def is_iterable(x):
         """ Checks if ``x`` is iterable.
 
+        `hasattr <http://stackoverflow.com/questions/7197710/hasattrobj-iter-vs-collections>`_
+
         Parameters
         ----------
         x : object
@@ -27,6 +32,7 @@ class Util():
         -------
         bool
             ``True`` if ``x`` is iterable, ``False`` otherwise
+
 
         Exmaples
         --------
@@ -40,11 +46,13 @@ class Util():
         >>> Util.is_iterable([1,'blah',3])
         True
         """
-        try:
-            (a for a in x)
+        if hasattr(x, '__iter__') and not isinstance(x, str):  # faster, but not reliable with collections.Sequence
             return True
-        except TypeError:
-            return False
+        else:
+            try:
+                a = iter(x) # (a for a in x)
+                return True
+            except TypeError: return False
 
     @staticmethod
     def is_number(x):
@@ -361,14 +369,14 @@ class Util():
         >>> import timeit; from numpy import maximum, random
         >>> x = random.random(100); y = random.random(len(x))
         >>> (timeit.timeit('Util.maximum(x, y)', 'from __main__ import Util, x, y', number=100),
-        ... timeit.timeit('maximum(x, y)', 'from __main__ import maximum, x, y', number=100))
+        ... timeit.timeit('maximum(x, y)', 'from __main__ import maximum, x, y', number=100)) # doctest: +SKIP
 
         Compare timing with arrays
 
         >>> import timeit; from random import random; from numpy import maximum
         >>> x = [random() for i in range(100)]; y = [random() for i in range(len(x))]
         >>> (timeit.timeit('Util.maximum(x, y)', 'from __main__ import Util, x, y', number=100),
-        ... timeit.timeit('maximum(x, y)', 'from __main__ import maximum, x, y', number=100))
+        ... timeit.timeit('maximum(x, y)', 'from __main__ import maximum, x, y', number=100)) # doctest: +SKIP
         """
         x = x if Util.is_iterable(x) else [x]
         y = y if Util.is_iterable(y) else [y]
@@ -631,5 +639,6 @@ class Util():
         assert len(x) == len(y), 'Assert that inputs are of the same length'
         out = (i * j for i, j in zip(x, y))
         return tuple(out) if as_tuple else out
+
 
 
