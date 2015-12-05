@@ -117,8 +117,8 @@ class Gap(OptionValuation):
 
         >>> s = Stock(S0=500000, vol=.2)
         >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='Hull p.601 Example 26.1')
-        >>> o.pxMC(K2=350000, seed=10, npaths=50, nsteps=10)
-        2283.059032245
+        >>> o.pxMC(K2=350000, seed=10, npaths=10, nsteps=10)
+        7534.017075587
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
@@ -133,17 +133,17 @@ class Gap(OptionValuation):
 
         >>> s = Stock(S0=50, vol=.2)
         >>> o = Gap(ref=s, right='call', K=57, T=1, rf_r=.09)
-        >>> o.pxMC(K2=50, seed=2, npaths=10, nsteps=50)
-        1.342195428
+        >>> o.pxMC(K2=50, seed=2, npaths=5, nsteps=10)
+        3.700735328
 
         The following example will generate px = 4.35362028... with nsteps = 100 and npaths = 250, \
         which is similar to BS example.
 
         >>> s = Stock(S0=50, vol=.2)
         >>> o = Gap(ref=s, right='put', K=57, T=1, rf_r=.09)
-        >>> o.calc_px(K2=50, method='MC',seed=2, npaths=10, nsteps=50).px_spec
+        >>> o.calc_px(K2=50, method='MC',seed=2, npaths=5, nsteps=10).px_spec
         ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PriceSpec...px: 3.672556646...
+        PriceSpec...px: 6.803865574...
 
 
         **FD Examples**
