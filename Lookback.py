@@ -71,7 +71,7 @@ class Lookback(OptionValuation):
         Lookback...px: 8.03712014...
 
         >>> s = Stock(S0=50, vol=.4, q=.0)
-        >>> o = Lookback(ref=s, right='put', K=50, T=0.25, rf_r=.1, desc='Example from Internet')
+        >>> o = Lookback(ref=s, right='put', K=50, T=0.25, rf_r=.1, desc='Hull p607')
         >>> o.pxBS(Sfl = 50.0)
         7.79021926
 
@@ -207,8 +207,8 @@ class Lookback(OptionValuation):
 
         Notes
         -----
-        John C. Hull, 9ed, 2014, ISBN 0133456315 http://amzn.com/0133456315  p.607
-        Lookback option on Wikipedia https://goo.gl/euwJeE
+        John C. Hull, 9ed, 2014, ISBN 0133456315 <http://amzn.com/0133456315>  p.607
+        Lookback option on Wikipedia <https://goo.gl/euwJeE>
 
         :Authors:
             Mengyan Xie <xiemengy@gmail.com>
