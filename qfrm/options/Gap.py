@@ -1,13 +1,15 @@
 import math
+
 import numpy as np
 from scipy import sparse
 
+from qfrm.stock import Stock
 
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+except:   from qfrm.option import *  # development: if not installed and running from source
 
 try: from qfrm.European import *  # production:  if qfrm package is installed
-except:   from European import *  # development: if not installed and running from source
+except:   from qfrm.options.European import *  # development: if not installed and running from source
 
 class Gap(OptionValuation):
     """ Gap option class.

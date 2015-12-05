@@ -1,13 +1,16 @@
-import scipy.stats
-import numpy as np
-import scipy.special
 import math
 
+import numpy as np
+import scipy.special
+import scipy.stats
+
+from qfrm.pricespec import PriceSpec
+
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+except:   from qfrm.option import *  # development: if not installed and running from source
 
 try: from qfrm.European import *  # production:  if qfrm package is installed
-except:   from European import *  # development: if not installed and running from source
+except:   from qfrm.options.European import *  # development: if not installed and running from source
 
 
 class Barrier(OptionValuation):

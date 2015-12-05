@@ -1,9 +1,12 @@
 import math
-import numpy.random
+
 import numpy as np
+import numpy.random
+
+from qfrm.pricespec import PriceSpec
 
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+except:   from qfrm.option import *  # development: if not installed and running from source
 
 
 

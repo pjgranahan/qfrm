@@ -1,7 +1,9 @@
 import math
 
+from qfrm.vec import Vec
+
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+except:   from qfrm.option import *  # development: if not installed and running from source
 
 
 class European(OptionValuation):
@@ -121,7 +123,7 @@ class European(OptionValuation):
 
         n = getattr(self.px_spec, 'nsteps', 3)
         _ = self.LT_specs(n)
-        incr_n, decr_n = Vec(Util.arange(0, n + 1)), Vec(Util.arange(n, -1)) #Vectorized tuple. See Util.py. 0..n; n..0.
+        incr_n, decr_n = Vec(Util.arange(0, n + 1)), Vec(Util.arange(n, -1)) #Vectorized tuple. See util.py. 0..n; n..0.
 
         S = Vec(_['d'])**decr_n * Vec(_['u'])**incr_n * self.ref.S0
         O = ((S - self.K) * self.signCP ).max(0)
