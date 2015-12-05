@@ -334,7 +334,7 @@ class ForwardStart(OptionValuation):
 
         Note
         ----
-        [1] http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
+        [1] `<http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf>`_
 
         :Authors:
             Mengyan Xie <xiemengy@gmail.com>
