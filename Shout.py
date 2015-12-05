@@ -49,15 +49,20 @@ class Shout(OptionValuation):
 
         Notes
         -----
-        Verification of Shout option: http://goo.gl/02jISW
+        The shout option is usually a call option, but with a difference: at any time t before maturity, the holder may
+        "shout". The effect of this is that he is guaranteed a minimum payoff of St - K, although he will get the payoff
+        of the call option if this is greater than the minimum. In spirit this is the same as the binomial method for
+        pricing American options.
+
+        Verification of Shout option: <http://goo.gl/02jISW>
         Hull Ch26.12 P609
 
 
         Examples
         --------
         This two excel spreadsheet price shout option.
-        http://goo.gl/1rrTCG
-        http://goo.gl/AdgcqY
+        <http://goo.gl/1rrTCG>
+        <http://goo.gl/AdgcqY>
 
         LT Examples
         -----------
@@ -124,9 +129,6 @@ class Shout(OptionValuation):
         -------
         self: Shout
 
-        :Authors:
-            Mengyan Xie <xiemengy@gmail.com>
-
         Notes
         -----
 
@@ -135,10 +137,10 @@ class Shout(OptionValuation):
         of the call option if this is greater than the minimum. In spirit this is the same as the binomial method for
         pricing American options.
 
-
+        :Authors:
+            Mengyan Xie <xiemengy@gmail.com>
 
         """
-
 
         keep_hist = getattr(self.px_spec, 'keep_hist', False)
         n = getattr(self.px_spec, 'nsteps', 3)
@@ -167,13 +169,13 @@ class Shout(OptionValuation):
             S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
 
             # payoff of shout
-            Shout = self.signCP * S / np.exp(self.ref.q * tleft) * Util.norm_cdf(self.signCP * d1) - \
+            shout = self.signCP * S / np.exp(self.ref.q * tleft) * Util.norm_cdf(self.signCP * d1) - \
                     self.signCP * S / np.exp(self.rf_r * tleft) * Util.norm_cdf(self.signCP * d2) + \
                     self.signCP * (S - self.K) / np.exp(self.rf_r * tleft)
 
             # final payoff is the maximum of shout or not shout
-            Payout = np.maximum(Shout, 0)
-            O = np.maximum(O, Payout)
+            payout = np.maximum(shout, 0)
+            O = np.maximum(O, payout)
 
             S_tree = (tuple([float(s) for s in S]),) + S_tree
             O_tree = (tuple([float(o) for o in O]),) + O_tree
