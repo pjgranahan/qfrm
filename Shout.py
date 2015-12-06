@@ -11,9 +11,13 @@ class Shout(OptionValuation):
     """ Shout option class.
 
     Inherits all methods and properties of OptionValuation class.
+    The shout option is usually a call option, but with a difference: at any time t before maturity, the holder may
+    "shout". The effect of this is that he is guaranteed a minimum payoff of St - K, although he will get the payoff
+    of the call option if this is greater than the minimum. In spirit this is the same as the binomial method for
+    pricing American options.
     """
 
-    def calc_px(self, method='LT', nsteps=None, npaths=None, keep_hist=False, seed=None, deg=3):
+    def calc_px(self, method='LT', nsteps=None, npaths=None, keep_hist=False, seed=None, deg=0):
         """ Wrapper function that calls appropriate valuation method.
 
         All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
@@ -49,21 +53,15 @@ class Shout(OptionValuation):
 
         Notes
         -----
-        The shout option is usually a call option, but with a difference: at any time t before maturity, the holder may
-        "shout". The effect of this is that he is guaranteed a minimum payoff of St - K, although he will get the payoff
-        of the call option if this is greater than the minimum. In spirit this is the same as the binomial method for
-        pricing American options.
-
-        Verification of Shout option: `<http://goo.gl/02jISW>`_
-        Hull Ch26.12 P609
-
+        Verification of Shout option:
+        [1] Options, Futures and Other Derivatives, Hull, 2014, p.609
+        [2] `<http://goo.gl/02jISW>`_
+        This two excel spreadsheet price shout option.
+        [3] `<http://goo.gl/1rrTCG>`_
+        [4] `<http://goo.gl/AdgcqY>`_
 
         Examples
         --------
-        This two excel spreadsheet price shout option.
-        `<http://goo.gl/1rrTCG>`_
-        `<http://goo.gl/AdgcqY>`_
-
         **LT**
 
         >>> s = Stock(S0=50, vol=.3)
@@ -86,25 +84,25 @@ class Shout(OptionValuation):
         >>> plt.show()
 
         **MC**
-        See example on p.26, p.28 in `<http://core.ac.uk/download/pdf/1568393.pdf>`_
-        Note 1:
-        MC gives an approximate price. The price will not exactly fit the price in the reference example but fall
-        in a range that is close to the example price.
-        Suggest parameters: ``nsteps=252``, ``nsteps=10000``
-        Note 2:
-        Numpy Polyfit will give warnings: Polyfit may be poorly conditioned warnings.warn(msg, RankWarning)
+        Note: When deg is too large, Numpy Polyfit will give warnings: Polyfit may be poorly
+        conditioned warnings.warn(msg, RankWarning)
+
+        >>> s = Stock(S0=110, vol=.2, q=0.04)
+        >>> o = Shout(ref=s, right='call', K=100, T=0.5, rf_r=.05, desc='See example in Notes [3]')
+        >>> o.pxMC(nsteps=10, npaths=10, keep_hist=True, seed=314)
+        15.848463442
 
         >>> s = Stock(S0=36, vol=.2)
         >>> o = Shout(ref=s, right='put', K=40, T=1, rf_r=.2, desc='http://core.ac.uk/download/pdf/1568393.pdf')
-        >>> o.pxMC(nsteps=5, npaths=5, keep_hist=True, seed=1212)
-        4.0
+        >>> o.pxMC(nsteps=10, npaths=10, keep_hist=True, seed=0)
+        4.349069451
 
-        >>> o.calc_px(method='MC', nsteps=5, npaths=5, keep_hist=True, seed=1212).px_spec
+        >>> o.calc_px(method='MC', nsteps=10, npaths=10, keep_hist=True, seed=0).px_spec
         ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PriceSpec...px: 4.0...
+        PriceSpec...px: 4.349069451...
 
         >>> from pandas import Series;  steps = [1,2,3,4,5]
-        >>> O = Series([o.pxMC(nsteps=s, npaths=5, keep_hist=True, seed=1212) for s in steps], steps)
+        >>> O = Series([o.pxMC(nsteps=s, npaths=10, keep_hist=True, seed=0) for s in steps], steps)
         >>> O.plot(grid=1, title='MC Price vs nsteps')# doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
@@ -215,7 +213,7 @@ class Shout(OptionValuation):
 
         Note
         ----
-        [1] http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L4shout.pdf
+        [1] `<http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L4shout.pdf>`_
         [2] Hull, J.C., Options, Futures and Other Derivatives, 9ed, 2014. Prentice Hall, p609.
 
         """
@@ -265,4 +263,3 @@ class Shout(OptionValuation):
         """
 
         return self
-
