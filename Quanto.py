@@ -53,7 +53,8 @@ class Quanto(OptionValuation):
         Returns
         -------
         self : Quanto
-            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
+
 
         Notes
         -----
@@ -61,7 +62,7 @@ class Quanto(OptionValuation):
         Examples
         --------
 
-        **LT Examples**
+        **LT**
 
         Example #1: Calculate the price of a Quanto option.
 
@@ -98,10 +99,11 @@ class Quanto(OptionValuation):
         >>> o.plot_px_convergence()
 
 
-        **MC Examples**
+        **MC**
 
         Calculate the price of a Quanto option using MC method. This example comes from Hull ch.30, ex.30.5 (p.701-702)
         For an accurate result, use nsteps=100, npaths=5000
+
         >>> s = Stock(S0=1200, vol=.25, q=0.015)
         >>> o = Quanto(ref=s, right='call', K=1200, T=2, rf_r=.03, frf_r=0.05)
         >>> print(o.pxMC(nsteps=10, npaths=10,vol_ex=0.12, correlation=0.2))
@@ -109,13 +111,15 @@ class Quanto(OptionValuation):
 
         Calculate the price of a Quanto option. This example comes from Hull ch.30, problem.30.9.b (p.704)
         For an accurate result, use nsteps=100, npaths=4000
+
         >>> s = Stock(S0=400, vol=.2, q=0.03)
         >>> o = Quanto(ref=s, right='call', K=400, T=2, rf_r=.06, frf_r=0.04)
         >>> o.pxMC(nsteps=10,npaths=10, vol_ex=0.06, correlation=0.4)
         91.901775513
 
         Example of option price (MC method) with increasing time
-        For an accurate result, use nsteps=100, npaths=5000
+        For an accurate result, use ``nsteps=100``, ``npaths=5000``
+
         >>> from pandas import Series
         >>> expiries = range(1,11)
         >>> O = Series([o.update(T=t).calc_px(method='MC', nsteps=10, npaths=10, vol_ex=0.12, correlation=0.2)\

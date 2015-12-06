@@ -29,21 +29,21 @@ class American(OptionValuation):
         Parameters
         -------------
         method : str
-                Required. Indicates a valuation method to be used:
+            Required. Indicates a valuation method to be used:
 
-                ``BS`` -- Black-Scholes Merton calculation
+            ``BS`` -- Black-Scholes Merton calculation
 
-                ``LT`` -- Lattice tree (such as binary tree or binomial tree)
+            ``LT`` -- Lattice tree (such as binary tree or binomial tree)
 
-                ``MC`` -- Monte Carlo simulation methods
+            ``MC`` -- Monte Carlo simulation methods
 
-                ``FD`` -- finite differencing methods
+            ``FD`` -- finite differencing methods
         nsteps : int
-                LT, MC, FD methods require number of times steps
+            LT, MC, FD methods require number of times steps
         npaths : int
-                MC, FD methods require number of simulation paths
+            MC, FD methods require number of simulation paths
         keep_hist : bool
-                If ``True``, historical information (trees, simulations, grid) are saved in ``self.px_spec`` object.
+            If ``True``, historical information (trees, simulations, grid) are saved in ``self.px_spec`` object.
         rng_seed : int, None
             (non-negative) integer used to seed random number generator (RNG) for MC pricing.
 
@@ -55,7 +55,7 @@ class American(OptionValuation):
         Returns
         -------
         self : American
-            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
 
 
         Notes

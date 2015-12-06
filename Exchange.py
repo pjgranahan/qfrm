@@ -40,8 +40,8 @@ class Exchange(OptionValuation):
 
         Returns
         -------
-        Exchange
-            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
+        self : Exchange
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
 
         Notes
         -----
@@ -62,7 +62,7 @@ class Exchange(OptionValuation):
         Examples
         --------
 
-        **BS Examples**
+        **BS**
 
         Verification:
         `Exchange Options, p.4 <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L3exchange.pdf>`_
@@ -94,11 +94,8 @@ class Exchange(OptionValuation):
         >>> plt.show()
 
 
-        **FD Examples**
-
-        Notes
-        -----
-        Verification of examples:
+        **FD**
+        *Verification of examples*:
         `Exchange Options, p.4 <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L3exchange.pdf>`_
 
         Please note that the following FD examples will only generate results that matches the output of online\

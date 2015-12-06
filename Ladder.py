@@ -46,7 +46,7 @@ class Ladder(OptionValuation):
         Returns
         ------------
         self : Ladder
-            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
 
 
         Notes

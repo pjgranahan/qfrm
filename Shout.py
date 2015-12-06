@@ -44,7 +44,7 @@ class Shout(OptionValuation):
         Returns
         -------
         self : Shout
-            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
 
 
         Notes
@@ -59,8 +59,8 @@ class Shout(OptionValuation):
         http://goo.gl/1rrTCG
         http://goo.gl/AdgcqY
 
-        LT Examples
-        -----------
+        **LT**
+
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Shout(ref=s, right='call', K=52, T=2, rf_r=.05, desc='Example from internet excel spread sheet')
         >>> o.pxLT(nsteps=2)
@@ -80,8 +80,7 @@ class Shout(OptionValuation):
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
-        MC Examples
-        -----------
+        **MC**
         See example on p.26, p.28 in `<http://core.ac.uk/download/pdf/1568393.pdf>`_
         Note 1:
         MC gives an approximate price. The price will not exactly fit the price in the reference example but fall

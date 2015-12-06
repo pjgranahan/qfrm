@@ -45,7 +45,8 @@ class Barrier(OptionValuation):
         Returns
         -------
         self : Barrier
-            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
+
 
         Notes
         ---------
@@ -58,7 +59,7 @@ class Barrier(OptionValuation):
         Examples
         ---------
 
-        **BS Examples**
+        **BS**
         See notes for verification
 
         >>> from qfrm import *
@@ -127,7 +128,7 @@ class Barrier(OptionValuation):
         <matplotlib.axes._subplots.AxesSubplot object at ...>
 
 
-        **MC Examples** All examples below can be verified with DerivaGem software
+        **MC** All examples below can be verified with DerivaGem software
         *Note*: you would like to get the close results you would have to use ``nsteps = 500``, ``npaths = 10000``
 
         >>> s = Stock(S0=50., vol=.3, q=.00)

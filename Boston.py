@@ -38,7 +38,7 @@ class Boston(OptionValuation):
         Returns
         -------
         self : Boston
-            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
 
 
         Notes
