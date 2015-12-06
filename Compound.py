@@ -63,8 +63,8 @@ class Compound(OptionValuation):
         >>> o = American(ref=s, right='put', K=80., T=12./12., rf_r=.05, \
         desc='http://investexcel.net/compound-options-excel/: POP')
         >>> o2 = Compound(right='put',T=6./12., K = 20.)
-        >>> o2.calc_px(method='FD',option=o,npaths=10, nsteps = 10).px_spec.px
-        19.505177573647167
+        >>> o2.calc_px(method='FD',option=o,npaths=10, nsteps = 10).px_spec.px # doctest: +ELLIPSIS
+        19.505177573...
 
         *Call on Put*
 
@@ -72,8 +72,8 @@ class Compound(OptionValuation):
         >>> o = American(ref=s, right='put', K=80., T=12./12., rf_r=.05, \
         desc='http://investexcel.net/compound-options-excel/: COP')
         >>> o2 = Compound(right='call',T=6./12., K = 20.)
-        >>> o2.calc_px(method='FD',option=o,npaths=10, nsteps = 10).px_spec.px
-        0.00011247953032440167
+        >>> o2.calc_px(method='FD',option=o,npaths=10, nsteps = 10).px_spec.px # doctest: +ELLIPSIS
+        0.000112479...
 
         *Put on Call*
 
@@ -81,8 +81,8 @@ class Compound(OptionValuation):
         >>> o = American(ref=s, right='call', K=80., T=12./12., rf_r=.05, \
         desc='http://investexcel.net/compound-options-excel/: POC')
         >>> o2 = Compound(right='put',T=6./12., K = 20.)
-        >>> o2.calc_px(method='FD',option=o, npaths=10,nsteps = 10).px_spec.px
-        10.46547097001881
+        >>> o2.calc_px(method='FD',option=o, npaths=10,nsteps = 10).px_spec.px # doctest: +ELLIPSIS
+        10.465470970...
 
         *Call on Call*
 
@@ -90,8 +90,16 @@ class Compound(OptionValuation):
         >>> o = American(ref=s, right='call', K=80., T=12./12., rf_r=.05, \
         desc='http://investexcel.net/compound-options-excel/: COC')
         >>> o2 = Compound(right='call',T=6./12., K = 20.)
-        >>> o2.calc_px(method='FD',option=o, npaths=10, nsteps = 10).px_spec.px
-        0.19033219221798756
+        >>> o2.calc_px(method='FD',option=o, npaths=10, nsteps = 10).px_spec.px # doctest: +ELLIPSIS
+        0.190332192...
+
+        >>> s = Stock(S0=90., vol=.12, q=.04)
+        >>> o = American(ref=s, right='call', K=80., T=12./12., rf_r=.05, \
+        desc='http://investexcel.net/compound-options-excel/: COC')
+        >>> from pandas import Series;  steps = range(3,250)
+        >>> O = Series([o.calc_px(method='FD', nsteps=s).px_spec.px for s in steps], steps)
+        >>> O.plot(grid=1, title='Price vs Steps')       # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at ...>
 
         :Authors:
             Scott Morgan
@@ -173,9 +181,9 @@ class Compound(OptionValuation):
 
         EXTREMELY SENSITIVE TO S0
 
-        Formulae: http://www.wiley.com/legacy/wileychi/pwiqf2/supp/c28.pdf (SEE PROBLEM 4)
-        Also consulted: http://www.math.yorku.ca/~hmzhu/Math-6911/lectures/Lecture5/5_BlkSch_FDM.pdf
-                        http://www.cs.cornell.edu/info/courses/spring-98/cs522/content/lab4.pdf
+        Formulae: `<http://www.wiley.com/legacy/wileychi/pwiqf2/supp/c28.pdf>_` (SEE PROBLEM 4)
+        Also consulted: `<http://www.math.yorku.ca/~hmzhu/Math-6911/lectures/Lecture5/5_BlkSch_FDM.pdf>_`
+                        `<http://www.cs.cornell.edu/info/courses/spring-98/cs522/content/lab4.pdf>_`
 
 
         """
