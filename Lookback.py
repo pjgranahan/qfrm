@@ -119,8 +119,8 @@ class Lookback(OptionValuation):
         >>> plt.show()
 
         **FD**
-
-        Note: FD price is sensitive to nsteps.
+        Note: FD price is sensitive to nsteps. Since computation time is short for nsteps>10, an optimal nsteps=19
++        is given in examples.
 
         >>> s = Stock(S0=50, vol=.4, q=.0)
         >>> o = Lookback(ref=s, right='put', K=50, T=0.25, rf_r=.1, desc='Example from Hull Ch.26 Example 26.2 (p608)')
@@ -131,7 +131,7 @@ class Lookback(OptionValuation):
         >>> o.pxFD(Sfl = 50.0, nsteps=3, npaths=19)
         8.067753794
 
-        >>> o = Lookback(ref=s, right='call', K=50, T=0.25, rf_r=.1, desc='Example from Hull Ch.26 Example 26.2 (p608)')
+        >>> o = Lookback(ref=s, right='call', K=50, T=0.25, rf_r=.1)
         >>> from pandas import Series
         >>> expiries = range(1,11)
         >>> O = Series([o.update(T=t).pxFD(Sfl = 50.0, nsteps=3, npaths=19) for t in expiries], expiries)
@@ -274,6 +274,9 @@ class Lookback(OptionValuation):
         """ Internal function for option valuation.
 
         See ``calc_px()`` for complete documentation.
+
+        :Authors:
+            Yen-fei Chen <yensfly@gmail.com>
         """
         _ = self
         M = getattr(self.px_spec, 'npaths', 5) # no. intervals of stock price
@@ -281,7 +284,6 @@ class Lookback(OptionValuation):
         Smax = 2*_.ref.S0
         dS = Smax/M # stock price interval
         S = np.arange(0, Smax+0.00001, dS)
-        #print(S)
 
         N = getattr(self.px_spec, 'nsteps', 5) # no. intervals of time
         dt = _.T/N # time interval
@@ -304,17 +306,13 @@ class Lookback(OptionValuation):
             p[i-1,1:M] = np.dot(p[i,1:M],A)+y
             p[i-1,:] = np.maximum(_.signCP*(S-_.Sfl), p[i-1,:])
 
-        #from pandas import DataFrame, options
-        #options.display.float_format = '{:.3f}'.format
-        #out = DataFrame(p)
-        #print(out)
 
         if _.signCP==1:
             index = np.where(S>_.ref.S0)
-            self.px_spec.add(px=float(p[0, index[0][0]]), method='FD', sub_method='Explicit', FD_specs=_)
+            self.px_spec.add(px=float(p[0, index[0][0]]), method='FD', sub_method='Implicit')
         else:
             index = np.where(S<=_.ref.S0)
-            self.px_spec.add(px=float(p[0,index[0][-1]-1]), method='FD', sub_method='Explicit', FD_specs=_)
+            self.px_spec.add(px=float(p[0,index[0][-1]-1]), method='FD', sub_method='Implicit')
 
         return self
 
