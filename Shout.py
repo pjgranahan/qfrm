@@ -85,7 +85,8 @@ class Shout(OptionValuation):
         >>> plt.show()
 
         **MC Examples**
-        Note: Numpy Polyfit will give warnings: Polyfit may be poorly conditioned warnings.warn(msg, RankWarning)
+        Note: When deg is too large, Numpy Polyfit will give warnings: Polyfit may be poorly
+        conditioned warnings.warn(msg, RankWarning)
 
         >>> s = Stock(S0=110, vol=.2, q=0.04)
         >>> o = Shout(ref=s, right='call', K=100, T=0.5, rf_r=.05, desc='See example in Notes [3]')
