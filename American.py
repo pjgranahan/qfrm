@@ -1,4 +1,4 @@
-import numpy as np # import cumsum, maximum, sum, where, polyval, polyfit, exp, random, mean, copy
+import numpy as np
 # from pandas import DataFrame
 # import matplotlib.pyplot as plt
 
@@ -84,7 +84,7 @@ class American(OptionValuation):
 
         - Binomial Trees, Ch.13, OFOD, J.C.Hull, 9ed, 2014, p.274
 
-        **Monte Carlo simulation(MC)**.
+        **Monte Carlo simulation (MC)**.
         A naive approach is to simulate stock prices, according to Geometric Brownian motion (GBM) model.
         Then discount the the payouts along each path. Unfortunately, this will overstate the option price,
         since inn such way we discount deterministic (known-in-advance) future option prices.
@@ -230,14 +230,13 @@ class American(OptionValuation):
 
     def _calc_BS(self):
         """ Internal function for option valuation.
-
         See ``calc_px()`` for complete documentation.
 
-        The ``_calc_BS()`` function is called through ``calc_px()``.
-
         :Authors:
-            Andrew Weatherly
+            Student name <email...>
         """
+
+
         #Verify Input
         assert self.right in ['call', 'put'], 'right must be "call" or "put" '
         assert self.ref.vol > 0, 'vol must be >=0'
