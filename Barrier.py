@@ -88,35 +88,31 @@ class Barrier(OptionValuation):
         <matplotlib.axes._subplots.AxesSubplot object at ...>
 
         SEE NOTES for verification of examples
+        Run with nsteps = 1050 for accurate results
 
         >>> s = Stock(S0=95., vol=.25, q=.00)
         >>> o = Barrier(ref=s, right='put', K=100., T=1., rf_r=.1, desc='down and in put')
-        >>> o.pxLT(H=90., knock='down', dir='in', nsteps=1050, keep_hist=False)
-        7.104101925
+        >>> o.pxLT(H=90., knock='down', dir='in', nsteps=10, keep_hist=False)
+        6.962523054
 
         >>> o.px_spec     # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PriceSpec...px: 7.104101925...
+        PriceSpec...px: 6.962523054...
+
 
         >>> s = Stock(S0=95., vol=.25, q=.00)
         >>> o = Barrier(ref=s, right='call', K=100., T=2., rf_r=.1, desc='down and out call')
-        >>> o.pxLT(H=87.,knock='down',dir='out',nsteps=1050, keep_hist=False)
-        11.549805549
+        >>> o.pxLT(H=87.,knock='down',dir='out',nsteps=10, keep_hist=False)
+        13.645434569
 
         >>> s = Stock(S0=95., vol=.25, q=.00)
         >>> o = Barrier(ref=s, right='put', K=100., T=2., rf_r=.1, desc='up and out put')
-        >>> o.pxLT(nsteps=1050, H=105., knock='up', dir='out', keep_hist=False)
-        3.260759376
-
-        >>> s = Stock(S0=95., vol=.25, q=.00)
-        >>> o = Barrier(ref=s, right='call', K=100., T=2., rf_r=.1, desc='up and in call')
-        >>> o.pxLT(H=105., knock='up', dir='in', nsteps=1050, keep_hist=False)
-        20.037733658
+        >>> o.pxLT(nsteps=10, H=105., knock='up', dir='out', keep_hist=False)
+        3.513294523
 
         >>> s = Stock(S0=95., vol=.25, q=.00)
         >>> o = Barrier(ref=s, right='call', K=100., T=2., rf_r=.1, desc='up and in call')
         >>> o.pxLT(H=105., knock='up', dir='in', nsteps=10, keep_hist=False)
         20.040606034
-
 
         Example of option price convergence (LT method)
 
