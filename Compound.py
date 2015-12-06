@@ -45,7 +45,8 @@ class Compound(OptionValuation):
         Returns
         -------
         self : Spread
-            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
+
 
         Examples
         --------

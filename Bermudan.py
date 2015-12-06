@@ -29,44 +29,46 @@ class Bermudan(OptionValuation):
         Parameters
         ----------
         method : str
-                Required. Indicates a valuation method to be used:
-                ``BS``: Black-Scholes Merton calculation
-                ``LT``: Lattice tree (such as binary tree)
-                ``MC``: Monte Carlo simulation methods
-                ``FD``: finite differencing methods
+            Required. Indicates a valuation method to be used:
+            ``BS``: Black-Scholes Merton calculation
+            ``LT``: Lattice tree (such as binary tree)
+            ``MC``: Monte Carlo simulation methods
+            ``FD``: finite differencing methods
         tex : list
-                Required. Must be a vector (tuple; list; array, ...) of times to exercisability. 
-                For Bermudan, assume that exercisability is for discrete tex times only.
-                This also needs to be sorted ascending and the final value is the corresponding vanilla maturity.
-                If T is not equal the the final value of tex, then
-                    the T will take precedence: if T < max(tex) then tex will be truncated to tex[tex < T] and will be 
-                    appended to tex.
-                    If T > max(tex) then the largest value of tex will be replaced with T.
+            Required. Must be a vector (tuple; list; array, ...) of times to exercisability.
+            For Bermudan, assume that exercisability is for discrete tex times only.
+            This also needs to be sorted ascending and the final value is the corresponding vanilla maturity.
+            If T is not equal the the final value of tex, then
+            the T will take precedence: if T < max(tex) then tex will be truncated to tex[tex < T] and will be
+            appended to tex.
+            If T > max(tex) then the largest value of tex will be replaced with T.
         nsteps : int
-                FD methods require number of times steps.
-                Optional if using LT: n_steps = <integer> * <length of tex>. Will fill in the spaces between steps 
-                implied by tex.
-                Useful if tex is regular or sparse to improve accuracy. Otherwise leave as None.
-                Currently unused in MC. MC simply uses tex intervals as steps.
+            FD methods require number of times steps.
+            Optional if using LT: n_steps = <integer> * <length of tex>. Will fill in the spaces between steps
+            implied by tex.
+            Useful if tex is regular or sparse to improve accuracy. Otherwise leave as None.
+            Currently unused in MC. MC simply uses tex intervals as steps.
         npaths : int
-                MC, FD methods require number of simulation paths
+            MC, FD methods require number of simulation paths
         keep_hist : bool
-                If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
+            If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
         R : int
-                Number of basis functions. Used to generate weighted Laguerre polynomial values.
-                Used in MC method. Must be between 0 and 6.
+            Number of basis functions. Used to generate weighted Laguerre polynomial values.
+            Used in MC method. Must be between 0 and 6.
         seed : int
-                The seed for the RNG.
+            The seed for the RNG.
+
 
         Returns
         -------
         self : Bermudan
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
 
 
         Notes
         -----
 
-        **LT Notes**
+        **LT**
 
         Referenced example is from p.9 of
         `Bermudan Option Pricing using Binomial Models Seminar in Analytical Finance I
@@ -74,13 +76,14 @@ class Bermudan(OptionValuation):
 
         References
         ----------
-        [1] http://eprints.maths.ox.ac.uk/789/1/Thom.pdf
-        [2] http://eprints.maths.ox.ac.uk/934/1/longyun_chen.pdf
+
+        - [1] http://eprints.maths.ox.ac.uk/789/1/Thom.pdf
+        - [2] http://eprints.maths.ox.ac.uk/934/1/longyun_chen.pdf
 
         Examples
         --------
 
-       **LT Examples**
+       **LT**
 
         LT pricing of Bermudan options
 
@@ -136,7 +139,7 @@ class Bermudan(OptionValuation):
         >>> plt.show()
 
 
-        **MC Examples**
+        **MC**
 
         Example #1
 
@@ -180,8 +183,7 @@ class Bermudan(OptionValuation):
         >>> o.plot_MC()
 
         :Authors:
-            Oleg Melkinov
-            Andy Liao <Andy.Liao@rice.edu>
+            Andy Liao <Andy.Liao@rice.edu>,
             Patrick Granahan
         """
 
@@ -402,15 +404,6 @@ class Bermudan(OptionValuation):
 
     def _calc_FD(self):
         """ Internal function for option valuation.
-
-        Returns
-        -------
-        self: Bermudan
-
-        .. sectionauthor:: 
-
-        Note
-        ----
 
         """
 

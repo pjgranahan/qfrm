@@ -29,17 +29,21 @@ class American(OptionValuation):
         Parameters
         -------------
         method : str
-                Required. Indicates a valuation method to be used:
-                ``BS``: Black-Scholes Merton calculation
-                ``LT``: Lattice tree (such as binary tree)
-                ``MC``: Monte Carlo simulation methods
-                ``FD``: finite differencing methods
+            Required. Indicates a valuation method to be used:
+
+            ``BS`` -- Black-Scholes Merton calculation
+
+            ``LT`` -- Lattice tree (such as binary tree or binomial tree)
+
+            ``MC`` -- Monte Carlo simulation methods
+
+            ``FD`` -- finite differencing methods
         nsteps : int
-                LT, MC, FD methods require number of times steps
+            LT, MC, FD methods require number of times steps
         npaths : int
-                MC, FD methods require number of simulation paths
+            MC, FD methods require number of simulation paths
         keep_hist : bool
-                If ``True``, historical information (trees, simulations, grid) are saved in ``self.px_spec`` object.
+            If ``True``, historical information (trees, simulations, grid) are saved in ``self.px_spec`` object.
         rng_seed : int, None
             (non-negative) integer used to seed random number generator (RNG) for MC pricing.
 
@@ -51,12 +55,11 @@ class American(OptionValuation):
         Returns
         -------
         self : American
-            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
 
 
         Notes
         -----
-
         **Black-Scholes Merton (BS)**, i.e. exact solution pricing.
         This pricing method uses Black Scholes Merton differential equation to price the American option.
         Due to the optimal stopping problem, this is technically impossible,
@@ -65,12 +68,12 @@ class American(OptionValuation):
 
         *References:*
 
+        - Black's Approximation, OFOD, J.C.Hull, 9ed, 2014, p.346
+        - Control Variate Techniques, OFOD, J.C.Hull, 9ed, 2014, pp.463-465
         - `The Use of Control Variate Technique in Option-Pricing, J.C.Hull & A.D.White, 2001 <http://1drv.ms/1XR2rQw>`_
         - `The Closed-form Solution for Pricing American Options, Wang Xiaodong, 2006 <http://1drv.ms/1NaB3rI>`_
         - `Closed-Form American Call Option Pricing (Teaching notes), Roll-Geske-Whaley, 2008 <http://1drv.ms/1NaB3rI>`_
         - `Black's approximation (Wikipedia) <https://en.wikipedia.org/wiki/Black%27s_approximation>`_ (dividend call)
-        - Black's Approximation, OFOD, J.C.Hull, 9ed, 2014, p.346
-        - Control Variate Techniques, OFOD, J.C.Hull, 9ed, 2014, pp.463-465
 
 
         **Lattice Tree (LT)**, i.e. binomial or binary (recombining) tree pricing.
@@ -78,7 +81,6 @@ class American(OptionValuation):
         Then backward induction is used to compute option payoff
         at each time step and (discretely) discount it to the present time.
         OFOD textbook by John C. Hull has an excellent overview of this method with many examples and exercises.
-
 
         *References:*
 
@@ -99,8 +101,10 @@ class American(OptionValuation):
 
         where a_i are unknown coefficients.
 
-        *References*
+        *References:*
 
+        - Monte Carlo Simulation and American Options (Ch.27), OFOD, J.C.Hull, 9ed, 2014, pp.646-649
+        - `Valuing American Options by Simulation. A Simple Least-Squares Approach, F.A.Longstaff & E.S.Schwartz, 2001 <http://1drv.ms/1IMLUX0>`_
         - `Pricing American Options. A Comparison of Monte Carlo Simulation Approaches, M.C.Fu, et al, 1999 <http://1drv.ms/1Q7kItH>`_
         - `Derivatives Analytics with Python & Numpy, Y.J.Hilpisch, 2011  <http://1drv.ms/21Fuoj6>`_
         - `Pricing American Options using Monte Carlo Methods, Quiya Jia, 2009. <http://1drv.ms/21FuvLr>`_
@@ -181,20 +185,8 @@ class American(OptionValuation):
         8.3915333010000008
 
         :Authors:
-            Oleg Melnikov <xisreal@gmail.com>, Andrew Weatherly
+            Oleg Melnikov <xisreal@gmail.com>, Andrew Weatherly <andrewweatherly1@gmail.com>
         """
-        # self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
-
-        # if method == 'MC':
-        #     if not(isinstance(deg, int) and deg > 1 and deg < 11):
-        #         deg = 5
-        #         self.px_spec.add(deg__warning='Assert: 1 < deg (int) < 11. Using default: 5.')
-        #     # self.px_spec.add(deg=deg)
-        #
-        #     if not(isinstance(rng_seed, int) and rng_seed > 0):
-        #         rng_seed = 0
-        #         self.px_spec.add(rng_seed__warning='Assert: 0 <= rng_seed (int). Using default: 0.')
-        #     # self.px_spec.add()
 
         return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, rng_seed=rng_seed, deg=deg)
 
@@ -294,9 +286,7 @@ class American(OptionValuation):
         return self
 
     def _calc_MC(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
+        """ Internal function for option valuation. See ``calc_px()`` for complete documentation.
 
         :Authors:
             Oleg Melnikov <xisreal@gmail.com>
@@ -305,9 +295,7 @@ class American(OptionValuation):
         n = getattr(self.px_spec, 'nsteps', 3)
         m = getattr(self.px_spec, 'npaths', 3)
         Seed, deg = self.px_spec.rng_seed, self.px_spec.deg
-        _ = self.LT_specs(n)
-        # dt = T / n_steps; df = exp(-r * dt)
-        # signCP = 1 if right.lower()[0] == 'c' else -1
+
         dt, df = self.LT_specs(n)['dt'], self.LT_specs(n)['df_dt']
         S0, vol = self.ref.S0, self.ref.vol
         K, r, signCP = self.K, self.rf_r, self._signCP
@@ -329,20 +317,10 @@ class American(OptionValuation):
         v0 = np.mean(v[0])
         self.px_spec.add(px=v0, submethod='Least Squares Monte Carlo (LSM)')
 
-        # if plot:
-        #     # fig, ax = plt.subplots(nrows=3, ncols=1);
-        #     fig = plt.figure(); ax1 = plt.subplot(221); ax2 = plt.subplot(223); ax3 = plt.subplot(122)
-        #     DataFrame(S).plot(ax=ax1, grid=1, title='stock price realizations (vs time steps)', legend=0)
-        #     DataFrame(payout).plot(ax=ax2, grid=1, title='payouts (vs time steps)', legend=0)
-        #     DataFrame(v).plot(ax=ax3, grid=1, title=out, legend=0)
-        #     plt.tight_layout(); plt.show()
-
         return self
 
     def _calc_FD(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
+        """ Internal function for option valuation. See ``calc_px()`` for complete documentation.
 
         :Authors:
             Oleg Melnikov <xisreal@gmail.com>

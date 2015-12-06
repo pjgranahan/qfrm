@@ -46,7 +46,7 @@ class Spread(OptionValuation):
         Returns
         -------
         self : Spread
-            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
 
 
         Notes
@@ -55,7 +55,7 @@ class Spread(OptionValuation):
 
 
         Examples
-        ---------------
+        --------
 
         >>> s1 = Stock(S0=30.,q=0.,vol=.2)
         >>> s2 = Stock(S0=31.,q=0.,vol=.3)

@@ -23,36 +23,39 @@ class Lookback(OptionValuation):
         Parameters
         ----------
         method : str
-                Required. Indicates a valuation method to be used:
-                ``BS``: Black-Scholes Merton calculation
-                ``LT``: Lattice tree (such as binary tree)
-                ``MC``: Monte Carlo simulation methods
-                ``FD``: finite differencing methods
+            Required. Indicates a valuation method to be used:
+            ``BS``: Black-Scholes Merton calculation
+            ``LT``: Lattice tree (such as binary tree)
+            ``MC``: Monte Carlo simulation methods
+            ``FD``: finite differencing methods
         nsteps : int
-                LT, MC, FD methods require number of times steps
+            LT, MC, FD methods require number of times steps
         npaths : int
-                MC, FD methods require number of simulation paths
+            MC, FD methods require number of simulation paths
         keep_hist : bool
-                If ``True``, historical information (trees, simulations, grid) are saved in ``self.px_spec`` object.
+            If ``True``, historical information (trees, simulations, grid) are saved in ``self.px_spec`` object.
         Sfl : float
-                Asset floating price.
-                If call option, ``Sfl`` is minimum asset price achieved to date.(If the look back has
-                just been originated, ``Smin = S0``.)
-                If put option, Sfl is maximum asset price achieved to date. (If the look back has just been originated,
-                ``Smax = S0``.)
+            Asset floating price.
+            If call option, ``Sfl`` is minimum asset price achieved to date.(If the look back has
+            just been originated, ``Smin = S0``.)
+            If put option, Sfl is maximum asset price achieved to date. (If the look back has just been originated,
+            ``Smax = S0``.)
 
 
         Returns
         -------
         self : Lookback
-            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
+
 
         Notes
         -----
+
         Verification of Example:
-        Asian options tutorial and Excel spreadsheet `<http://investexcel.net/asian-options-excel>`_
-        John C. Hull, 9ed, 2015, ISBN 0133456315 `<http://amzn.com/0133456315>`_  p.608
-        DerivaGem software that accompanies the textbook
+
+        - `Asian options tutorial and Excel spreadsheet <http://investexcel.net/asian-options-excel>`_
+        - John C. Hull, 9ed, 2015, ISBN `0133456315 <http://amzn.com/0133456315>`_  p.608
+        - DerivaGem software that accompanies the textbook
 
         The LT method might not generate the same result with BS
         To improve the accuracy, the number of steps can be added
@@ -60,7 +63,7 @@ class Lookback(OptionValuation):
         Examples
         --------
 
-        **BS Examples**
+        **BS**
 
         >>> s = Stock(S0=50, vol=.4, q=.0)
         >>> o = Lookback(ref=s, right='call', K=50, T=0.25, rf_r=.1, desc='Example from Hull Ch.26 Example 26.2 (p608)')
@@ -86,7 +89,7 @@ class Lookback(OptionValuation):
         >>> plt.show()
 
 
-        **LT Examples**
+        **LT**
 
         >>> s = Stock(S0=35., vol=.05, q=.00)
         >>> o = Lookback(ref=s, right='call', K=30, T=0.25, rf_r=.1, desc='Hull p607')
@@ -115,9 +118,9 @@ class Lookback(OptionValuation):
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
-        **FD Examples**
-        Note: FD price is sensitive to nsteps. Since computation time is short for nsteps>10, an optimal nsteps=19
-        is given in examples.
+        **FD**
+
+        Note: FD price is sensitive to nsteps.
 
         >>> s = Stock(S0=50, vol=.4, q=.0)
         >>> o = Lookback(ref=s, right='put', K=50, T=0.25, rf_r=.1, desc='Example from Hull Ch.26 Example 26.2 (p608)')
@@ -128,7 +131,7 @@ class Lookback(OptionValuation):
         >>> o.pxFD(Sfl = 50.0, nsteps=3, npaths=19)
         8.067753794
 
-        >>> o = Lookback(ref=s, right='call', K=50, T=0.25, rf_r=.1)
+        >>> o = Lookback(ref=s, right='call', K=50, T=0.25, rf_r=.1, desc='Example from Hull Ch.26 Example 26.2 (p608)')
         >>> from pandas import Series
         >>> expiries = range(1,11)
         >>> O = Series([o.update(T=t).pxFD(Sfl = 50.0, nsteps=3, npaths=19) for t in expiries], expiries)
@@ -264,9 +267,6 @@ class Lookback(OptionValuation):
         """ Internal function for option valuation.
 
         See ``calc_px()`` for complete documentation.
-
-        :Authors:
-
         """
         return self
 
@@ -274,16 +274,14 @@ class Lookback(OptionValuation):
         """ Internal function for option valuation.
 
         See ``calc_px()`` for complete documentation.
-
-        :Authors:
-            Yen-fei Chen <yensfly@gmail.com>
         """
         _ = self
         M = getattr(self.px_spec, 'npaths', 5) # no. intervals of stock price
         J = np.arange(1,M) # indices of stock prices
         Smax = 2*_.ref.S0
-        #dS = Smax/M # stock price interval
-        S = np.linspace(0, Smax, M+1)
+        dS = Smax/M # stock price interval
+        S = np.arange(0, Smax+0.00001, dS)
+        #print(S)
 
         N = getattr(self.px_spec, 'nsteps', 5) # no. intervals of time
         dt = _.T/N # time interval
@@ -306,11 +304,17 @@ class Lookback(OptionValuation):
             p[i-1,1:M] = np.dot(p[i,1:M],A)+y
             p[i-1,:] = np.maximum(_.signCP*(S-_.Sfl), p[i-1,:])
 
+        #from pandas import DataFrame, options
+        #options.display.float_format = '{:.3f}'.format
+        #out = DataFrame(p)
+        #print(out)
+
         if _.signCP==1:
             index = np.where(S>_.ref.S0)
-            self.px_spec.add(px=float(p[0, index[0][0]]), method='FD', sub_method='Implicit')
+            self.px_spec.add(px=float(p[0, index[0][0]]), method='FD', sub_method='Explicit', FD_specs=_)
         else:
             index = np.where(S<=_.ref.S0)
-            self.px_spec.add(px=float(p[0,index[0][-1]-1]), method='FD', sub_method='Implicit')
+            self.px_spec.add(px=float(p[0,index[0][-1]-1]), method='FD', sub_method='Explicit', FD_specs=_)
 
         return self
+

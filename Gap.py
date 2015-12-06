@@ -13,10 +13,6 @@ class Gap(OptionValuation):
     """ Gap option class.
 
     Inherits all methods and properties of OptionValuation class.
-    A gap option has a strike price, ``K1``, and a trigger price, ``K2``. The trigger price
-    determines whether or not the gap option will have a nonzero payoff. The strike price
-    determines the amount of the nonzero payoff. The strike price may be greater than or
-    less than the trigger price.
     """
 
     def calc_px(self, K2=None, method='BS', nsteps=None, npaths=None, keep_hist=False, seed=None, on = None):
@@ -48,19 +44,22 @@ class Gap(OptionValuation):
                 Random seed in MC methods.
 
         Returns
-        -----------------------------------------------------
-        Gap
-            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
+        -------
+        self : Gap
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
+
 
         Notes
-        ---------------------------------------------------------
-        [1] `Chapter 14 Review Note Sample Excerpt Exotic Options: I, 2012, <http://goo.gl/s0zdjk>`_
-        [2] `<https://www.ma.utexas.edu/users/mcudina/Lecture14_3_4_5.pdf>`_
+        -----
+        A gap option has a strike price, ``K1``, and a trigger price, ``K2``. The trigger price
+        determines whether or not the gap option will have a nonzero payoff. The strike price
+        determines the amount of the nonzero payoff. The strike price may be greater than or
+        less than the trigger price.
 
         Examples
-        --------------------------------------------------------
+        --------
 
-        **BS Examples**
+        **BS**
 
         >>> s = Stock(S0=500000, vol=.2)
         >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='Hull p.601 Example 26.1')
@@ -83,7 +82,7 @@ class Gap(OptionValuation):
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
-        **LT Examples**
+        **LT**
         The price depends on the number of tree paths. ``n=22`` can give an answer in Hull's example
 
         >>> s = Stock(S0=500000, vol=.2,  q = 0)
@@ -108,7 +107,7 @@ class Gap(OptionValuation):
         <matplotlib.axes._subplots.AxesSubplot object at ...>
 
 
-        **MC Examples**
+        **MC**
         Because different number of seed, ``npaths`` and ``nsteps`` will influence the option price.
         The result of MC method may not as accurate as ``BS`` and ``LT`` methods.
 
@@ -148,7 +147,7 @@ class Gap(OptionValuation):
         PriceSpec...px: 6.803865574...
 
 
-        **FD Examples**
+        **FD**
         FD methods require sufficient fine grids.  ``npath=100``, ``nsteps=100``
         can give the right answer in the verified example.
 
@@ -172,6 +171,10 @@ class Gap(OptionValuation):
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
+        See Also
+        ---------------------------------------------------------
+        `Review Note Sample Excerpt. Exotic Options. (Ch.14) <http://1drv.ms/1ONq7D1>`_
+        `More Exotic Options (lecture slides), Milica Cudina <http://1drv.ms/1ONpYiT>`_
 
         :Authors:
             Yen-fei Chen <yensfly@gmail.com>,
@@ -204,8 +207,8 @@ class Gap(OptionValuation):
         # Price.px should always point to the price of interest to the user
         # Save values as basic data types (int, floats, str), instead of numpy.array
         N = Util.norm_cdf
-        px_call = float(_.ref.S0*math.exp(-_.ref.q* _.T)*N(d1)-_.K*math.exp(-_.rf_r*_.T)*N(d2))
-        px_put = float(-_.ref.S0*math.exp(-_.ref.q*_.T)*N(-d1)+_.K*math.exp(-_.rf_r*_.T)*N(-d2))
+        px_call = float(_.ref.S0*np.exp(-_.ref.q* _.T)*N(d1)-_.K*np.exp(-_.rf_r*_.T)*N(d2))
+        px_put = float(-_.ref.S0*np.exp(-_.ref.q*_.T)*N(-d1)+_.K*np.exp(-_.rf_r*_.T)*N(-d2))
         px = px_call if _.signCP == 1 else px_put if _.signCP == -1 else None
 
         self.px_spec.add(px=px, sub_method='standard; Hull p.335', px_call=px_call, px_put=px_put, d1=d1, d2=d2)
@@ -393,4 +396,3 @@ class Gap(OptionValuation):
 
         self.px_spec.add(px=float(np.interp(S0,S_vec,f_px[:,0])), sub_method='Implicit Method')
         return self
-
