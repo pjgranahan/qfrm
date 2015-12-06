@@ -11,7 +11,7 @@ class ForwardStart(OptionValuation):
     Inherits all methods and properties of ``Optionvalueation`` class.
     """
 
-    def calc_px(self, T_s=1, method='BS', nsteps=None, npaths=None, keep_hist=False):
+    def calc_px(self, T_s, method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
 
         All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
@@ -232,15 +232,6 @@ class ForwardStart(OptionValuation):
         except:
             print('Input error. K is None.')
 
-
-        assert right in ['c','p'], 'right should be either "call" or "put" '
-        assert vol >= 0, 'vol >=0'
-        assert T > 0, 'T > 0'
-        assert T_s >=0, 'T_s >= 0'
-        assert S0 >= 0, 'S >= 0'
-        assert r >= 0, 'r >= 0'
-        assert q >= 0, 'q >= 0'
-
         # Import external functions
 
 
@@ -251,9 +242,9 @@ class ForwardStart(OptionValuation):
 
         # Calculate the option price
         N = Util.norm_cdf
-        if right=='c':
+        if _.signCP==1:
             px = S0*math.exp(-q*T_s)*( math.exp(-q*T)*N(d1) -math.exp(-r*T)*N(d2) )
-        elif right=='p':
+        elif _.signCP==-1:
             px = S0*math.exp(-q*T_s)*( -math.exp(-q*T)*N(-d1) +math.exp(-r*T)*N(-d2) )
 
         self.px_spec.add(px=float(px), method='BS', sub_method=None)

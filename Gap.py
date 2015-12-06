@@ -325,15 +325,6 @@ class Gap(OptionValuation):
         time_steps = getattr(self.px_spec, 'nsteps', 5)
         px_paths = getattr(self.px_spec, 'npaths', 5)
 
-        # Verify all the inputs are meaning full
-        assert self.right in ['call', 'put'], 'right must be "call" or "put" '
-        assert self.ref.vol > 0, 'vol must be >=0'
-        assert self.K > 0, 'K must be > 0'
-        assert self.K2 > 0, 'K2 must be > 0'
-        assert self.T > 0, 'T must be > 0'
-        assert self.ref.S0 >= 0, 'S must be >= 0'
-        assert self.rf_r >= 0, 'r must be >= 0'
-
         S0 = self.ref.S0
         vol = self.ref.vol
         ttm = self.T
