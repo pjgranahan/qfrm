@@ -63,9 +63,7 @@ class Chooser(OptionValuation):
         --------
 
         **BS Examples**
-
-        EXOTIC OPTIONS: A CHOOSER OPTION AND ITS PRICING by Raimonda Martinkkute-Kauliene (Dec 2012)
-        https://www.dropbox.com/s/r9lvi0uzdehwlm4/101-330-1-PB%20%284%29.pdf?dl=0
+        Verify resource: `EXOTIC OPTIONS: A CHOOSER OPTION AND ITS PRICING, Raimonda, 2012, <https://goo.gl/2KR3QX>`_
 
         >>> s = Stock(S0=50, vol=0.2, q=0.05)
         >>> o = Chooser(ref=s, right='put', K=50, T=1, rf_r=.1, desc= 'Exotic options paper page 297 Table 2 time 0.5')
@@ -83,13 +81,16 @@ class Chooser(OptionValuation):
         5.777578344
 
         **LT Examples**
+        Verify resource: `EXOTIC OPTIONS: A CHOOSER OPTION AND ITS PRICING, Raimonda, 2012, <https://goo.gl/2KR3QX>`_
 
         >>> s = Stock(S0=50, vol=0.2, q=0.05)
-        >>> o = Chooser(ref=s, right='put', K=50, T=1, rf_r=.1, desc= 'Exotic options paper page 297 Table 2 time 0.5')
-        >>> o.pxLT(tau=3/12, nsteps=2)
-        6.755605275
+        >>> o = Chooser(ref=s, right='put', K=50, T=1, rf_r=.1, desc= 'Exotic options paper page 297 Table 2 T=1')
+        >>> o.pxLT(tau=12/12, nsteps=10)
+        7.433744062
 
-        >>> o.calc_px(tau=3/12, method='LT', nsteps=2, keep_hist=True).px_spec.ref_tree
+        >>> s = Stock(S0=50, vol=0.2, q=0.05)
+        >>> o = Chooser(ref=s, right='put', K=50, T=1, rf_r=.1, desc= 'Exotic options paper page 297 Table 2 T=0.5')
+        >>> o.calc_px(tau=6/12, method='LT', nsteps=2, keep_hist=True).px_spec.ref_tree
         ((50.0,), (43.40617226972924, 57.595495508445445), (37.68191582218824, 49.99999999999999, 66.3448220572672))
 
         >>> o.px_spec
@@ -157,20 +158,12 @@ class Chooser(OptionValuation):
 
         See Also
         ---------
+        `Options, Futures and Other Derivatives, Hull, 2014, <http://www-2.rotman.utoronto.ca/~hull/ofod/index.html>`_
 
-        Hull, John C.,Options, Futures and Other Derivatives, 9ed, 2014. Prentice Hall. ISBN 978-0-13-345631-8.
-        http://www-2.rotman.utoronto.ca/~hull/ofod/index.html
+        `Option Pricing Formulas, Huang Espen, <http://down.cenet.org.cn/upfile/10/20083212958160.pdf>`_
 
-        Huang Espen G., Option Pricing Formulas, 2ed.
-        http://down.cenet.org.cn/upfile/10/20083212958160.pdf
-
-        Wee, Lim Tiong, MFE5010 Exotic Options,Notes for Lecture 4 Chooser option.
-        http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L4chooser.pdf
-
-        Humphreys, Natalia A., ACTS 4302 Principles of Actuarial Models: Financial Economics.
-        Lesson 14: All-or-nothing, Gap, Exchange and Chooser Options.
-
-        Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
+        `MFE5010 Exotic Options,Notes for Lecture 4 Chooser option, Wee, Lim Tiong,
+        <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L4chooser.pdf>`_
 
         :Authors:
             Thawda Aung,
@@ -196,7 +189,7 @@ class Chooser(OptionValuation):
         d2 = (math.log(_.ref.S0/_.K) + ((_.rf_r - _.ref.q  - _.ref.vol**2/2)*_.T) ) / ( _.ref.vol * math.sqrt(_.T))
         d1 =  d2 + _.ref.vol * math.sqrt(_.T)
 
-        d2n = (math.log(_.ref.S0/_.K) + (_.rf_r - _.ref.q) * _.T - _.ref.vol**2 * _.tau /2) / ( _.ref.vol * math.sqrt(_.tau))
+        d2n = (math.log(_.ref.S0/_.K)+(_.rf_r - _.ref.q)*_.T-_.ref.vol**2*_.tau /2) / ( _.ref.vol * math.sqrt(_.tau))
         d1n = d2n + _.ref.vol * math.sqrt(_.tau)
 
         px = _.ref.S0 * math.exp(-_.ref.q * _.T) * N(d1) - _.K* math.exp(-_.rf_r * _.T ) * N(d2) +\
@@ -213,7 +206,6 @@ class Chooser(OptionValuation):
         :Authors:
             Yen-fei Chen <yensfly@gmail.com>
         """
-
         n = getattr(self.px_spec, 'nsteps', 3)
         _ = self.LT_specs(n)
 
@@ -235,7 +227,7 @@ class Chooser(OptionValuation):
             out = O_tree[0][0]
         else:
             csl = np.insert(np.cumsum(np.log(np.arange(n) + 1)), 0, 0)  # logs avoid overflow & truncation
-            tmp = csl[n] - csl - csl[::-1] + np.log(_['p']) * np.arange(n + 1) + np.log(1 - _['p']) * np.arange(n + 1)[::-1]
+            tmp = csl[n]-csl-csl[::-1]+np.log(_['p'])*np.arange(n + 1)+np.log(1 - _['p'])*np.arange(n + 1)[::-1]
             out = (_['df_T'] * sum(np.exp(tmp) * tuple(O)))
 
         self.px_spec.add(px=float(out), sub_method='binomial tree; Hull Ch.135',
@@ -336,3 +328,4 @@ class Chooser(OptionValuation):
         _.px_spec.add(px=cpx+ppx)
 
         return self
+

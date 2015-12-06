@@ -13,6 +13,10 @@ class Gap(OptionValuation):
     """ Gap option class.
 
     Inherits all methods and properties of OptionValuation class.
+    A gap option has a strike price, ``K1``, and a trigger price, ``K2``. The trigger price
+    determines whether or not the gap option will have a nonzero payoff. The strike price
+    determines the amount of the nonzero payoff. The strike price may be greater than or
+    less than the trigger price.
     """
 
     def calc_px(self, K2=None, method='BS', nsteps=None, npaths=None, keep_hist=False, seed=None, on = None):
@@ -49,11 +53,9 @@ class Gap(OptionValuation):
             Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
 
         Notes
-        -----------------------------------------------------
-        A gap option has a strike price, ``K1``, and a trigger price, ``K2``. The trigger price
-        determines whether or not the gap option will have a nonzero payoff. The strike price
-        determines the amount of the nonzero payoff. The strike price may be greater than or
-        less than the trigger price.
+        ---------------------------------------------------------
+        [1] `Chapter 14 Review Note Sample Excerpt Exotic Options: I, 2012, <http://goo.gl/s0zdjk>`_
+        [2] `<https://www.ma.utexas.edu/users/mcudina/Lecture14_3_4_5.pdf>`_
 
         Examples
         --------------------------------------------------------
@@ -170,10 +172,6 @@ class Gap(OptionValuation):
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
-        See Also
-        ---------------------------------------------------------
-        `<http://www.actuarialbookstore.com/samples/3MFE-BRE-12FSM%20Sample%20_4-12-12.pdf>`_
-        `<https://www.ma.utexas.edu/users/mcudina/Lecture14_3_4_5.pdf>`_
 
         :Authors:
             Yen-fei Chen <yensfly@gmail.com>,
@@ -206,8 +204,8 @@ class Gap(OptionValuation):
         # Price.px should always point to the price of interest to the user
         # Save values as basic data types (int, floats, str), instead of numpy.array
         N = Util.norm_cdf
-        px_call = float(_.ref.S0*np.exp(-_.ref.q* _.T)*N(d1)-_.K*np.exp(-_.rf_r*_.T)*N(d2))
-        px_put = float(-_.ref.S0*np.exp(-_.ref.q*_.T)*N(-d1)+_.K*np.exp(-_.rf_r*_.T)*N(-d2))
+        px_call = float(_.ref.S0*math.exp(-_.ref.q* _.T)*N(d1)-_.K*math.exp(-_.rf_r*_.T)*N(d2))
+        px_put = float(-_.ref.S0*math.exp(-_.ref.q*_.T)*N(-d1)+_.K*math.exp(-_.rf_r*_.T)*N(-d2))
         px = px_call if _.signCP == 1 else px_put if _.signCP == -1 else None
 
         self.px_spec.add(px=px, sub_method='standard; Hull p.335', px_call=px_call, px_put=px_put, d1=d1, d2=d2)
@@ -395,3 +393,4 @@ class Gap(OptionValuation):
 
         self.px_spec.add(px=float(np.interp(S0,S_vec,f_px[:,0])), sub_method='Implicit Method')
         return self
+
