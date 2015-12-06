@@ -282,10 +282,8 @@ class Barrier(OptionValuation):
         S2 = np.minimum(S2,1)  # 0 when across the barrier, 1 otherwise
         O = np.maximum(self.signCP * (S - self.K), 0)
         O = O * S2        # terminal option payouts
-        # tree = ((S, O),)
         S_tree = (tuple([float(s) for s in S]),)  # use tuples of floats (instead of np.float)
         O_tree = (tuple([float(o) for o in O]),)
-        # tree = ([float(s) for s in S], [float(o) for o in O],)
 
         for i in range(n, 0, -1):
             O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices (@time step=i-1)
@@ -298,9 +296,6 @@ class Barrier(OptionValuation):
 
         out_px = float(Util.demote(O))
 
-
-        # self.px_spec = PriceSpec(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
-        #              LT_specs=_, ref_tree = S_tree if save_tree else None, opt_tree = O_tree if save_tree else None)
 
         if self.dir == 'out':
 
