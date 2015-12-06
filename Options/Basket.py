@@ -1,14 +1,14 @@
 import numpy.random
 import numpy as np
 
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+try: from qfrm.Options.OptLib import *  # production:  if qfrm package is installed
+except:   from Options.OptLib import *  # development: if not installed and running from source
 
 
-class Basket(OptionValuation):
+class Basket(OptValSpec):
     """ European option class.
 
-    Inherits all methods and properties of OptionValuation class.
+    Inherits all methods and properties of OptValSpec class.
     """
 
     def calc_px(self, method='BS', mu = (0.1,0.2,0.5), weight = (0.5,0.3,0.2),

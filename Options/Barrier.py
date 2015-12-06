@@ -3,17 +3,17 @@ import numpy as np
 import scipy.special
 import math
 
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+try: from qfrm.Options.OptLib import *  # production:  if qfrm package is installed
+except:   from Options.OptLib import *  # development: if not installed and running from source
 
-try: from qfrm.European import *  # production:  if qfrm package is installed
-except:   from European import *  # development: if not installed and running from source
+try: from qfrm.Options.European import *  # production:  if qfrm package is installed
+except:   from Options.European import *  # development: if not installed and running from source
 
 
-class Barrier(OptionValuation):
+class Barrier(OptValSpec):
     """ European option class.
 
-    Inherits all methods and properties of OptionValuation class.
+    Inherits all methods and properties of OptValSpec class.
     """
 
     def calc_px(self, H = 10., knock = 'down', dir = 'out',rng_seed = 1, method='BS', nsteps=None, npaths=None, keep_hist=False):

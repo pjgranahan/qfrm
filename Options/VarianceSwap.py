@@ -1,14 +1,14 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+try: from qfrm.Options.OptLib import *  # production:  if qfrm package is installed
+except:   from Options.OptLib import *  # development: if not installed and running from source
 
 
-class VarianceSwap(OptionValuation):
+class VarianceSwap(OptValSpec):
     """ VarianceSwap option class.
 
-    Inherits all methods and properties of OptionValuation class.
+    Inherits all methods and properties of OptValSpec class.
     The Variance Swap's conceptual cousins have little to do with what is thought of as "options," they include the
     forward-rate agreement. Like a forward-rate agreement on interest rates, variance swaps exchange, at the
     contracted maturity date, the realized (volatility rate)**2 with a fixed (volatility rate)**2. The dollar value 
@@ -126,7 +126,7 @@ class VarianceSwap(OptionValuation):
             Andy Liao <Andy.Liao@rice.edu>
         """
         
-        #should override OptionValuation K; Stock vol with vector values
+        #should override OptValSpec K; Stock vol with vector values
         self.K, self.ref.vol, self.L_Var, self.Var_K = K, vol, L_Var, Var_K
 
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)

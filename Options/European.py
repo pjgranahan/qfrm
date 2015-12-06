@@ -1,16 +1,18 @@
 import math
 
+try: from qfrm.Options.OptLib import *  # production:  if qfrm package is installed
+except:   from Options.OptLib import *  # development: if not installed and running from source
 
 
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
-
-
-class European(OptionValuation):
+class European(Opt):
     """ European option class.
 
-    Inherits all methods and properties of ``OptionValuation`` class.
+    Inherits all methods and properties of ``OptValSpec`` class.
     """
+
+    def __init__(self , *args, **kwargs):
+        super().__init__(*args, **kwargs)  # pass remaining arguments to base (parent) class
+
 
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, rng_seed=None):
         """ Wrapper function that calls appropriate valuation method.

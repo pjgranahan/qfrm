@@ -3,14 +3,14 @@ import numpy as np
 import scipy.linalg as la
 import matplotlib.pyplot as plt
 
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+try: from qfrm.Options.OptLib import *  # production:  if qfrm package is installed
+except:   from Options.OptLib import *  # development: if not installed and running from source
 
 
-class Chooser(OptionValuation):
+class Chooser(OptValSpec):
     """ Chooser option class.
 
-    Inherits all methods and properties of OptionValuation class.
+    Inherits all methods and properties of OptValSpec class.
     An option contract that allows the holder to decide whether it is a call or put prior to
     the expiration date. Chooser options usually have the same exercise price and expiration
     date regardless of what decision the holder ultimately makes.

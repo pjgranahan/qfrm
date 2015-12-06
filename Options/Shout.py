@@ -3,14 +3,14 @@ import numpy as np
 import scipy.stats
 import matplotlib.pyplot as plt
 
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+try: from qfrm.Options.OptLib import *  # production:  if qfrm package is installed
+except:   from Options.OptLib import *  # development: if not installed and running from source
 
 
-class Shout(OptionValuation):
+class Shout(OptValSpec):
     """ Shout option class.
 
-    Inherits all methods and properties of OptionValuation class.
+    Inherits all methods and properties of OptValSpec class.
     The shout option is usually a call option, but with a difference: at any time t before maturity, the holder may
     "shout". The effect of this is that he is guaranteed a minimum payoff of St - K, although he will get the payoff
     of the call option if this is greater than the minimum. In spirit this is the same as the binomial method for

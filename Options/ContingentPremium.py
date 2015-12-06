@@ -3,17 +3,17 @@ import math
 import scipy.optimize
 import matplotlib.pyplot as plt
 
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+try: from qfrm.Options.OptLib import *  # production:  if qfrm package is installed
+except:   from Options.OptLib import *  # development: if not installed and running from source
 
-try: from qfrm.European import *  # production:  if qfrm package is installed
-except:   from European import *  # development: if not installed and running from source
+try: from qfrm.Options.European import *  # production:  if qfrm package is installed
+except:   from Options.European import *  # development: if not installed and running from source
 
 
-class ContingentPremium(OptionValuation):
+class ContingentPremium(OptValSpec):
     """ Contingent Premium Option Valuation Class
 
-    Inherits all methods and properties of OptionValuation class.
+    Inherits all methods and properties of OptValSpec class.
     """
 
     def calc_px(self, Seed=0, method='BS', nsteps=None, npaths=None, keep_hist=False):

@@ -3,16 +3,16 @@ import numpy as np
 from scipy import sparse
 
 
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+try: from qfrm.Options.OptLib import *  # production:  if qfrm package is installed
+except:   from Options.OptLib import *  # development: if not installed and running from source
 
-try: from qfrm.European import *  # production:  if qfrm package is installed
-except:   from European import *  # development: if not installed and running from source
+try: from qfrm.Options.European import *  # production:  if qfrm package is installed
+except:   from Options.European import *  # development: if not installed and running from source
 
-class Gap(OptionValuation):
+class Gap(OptValSpec):
     """ Gap option class.
 
-    Inherits all methods and properties of OptionValuation class.
+    Inherits all methods and properties of OptValSpec class.
     A gap option has a strike price, ``K1``, and a trigger price, ``K2``. The trigger price
     determines whether or not the gap option will have a nonzero payoff. The strike price
     determines the amount of the nonzero payoff. The strike price may be greater than or

@@ -1,17 +1,18 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+try: from qfrm.Options.OptLib import *  # production:  if qfrm package is installed
+except:   from Options.OptLib import *  # development: if not installed and running from source
 
 
-class Asian(OptionValuation):
+class Asian(OptValSpec):
     """ Asian option class.
 
-    Inherits all methods and properties of OptionValuation class.
+    Inherits all methods and properties of OptValSpec class.
     Asian options pay by the averaged historical value up to maturity of an underlying as the strike, against the maturity
     value of the underlying, or they compare the averaged value of the underlying up to maturity against a fixed strike.
     """
+
 
     def calc_px(self, method='MC', nsteps=3, npaths=10000, keep_hist=False, rng_seed=1, sub_method='Arithmetic',
                 strike='K'):
@@ -48,7 +49,7 @@ class Asian(OptionValuation):
             If `'K'`, then the average asset price is compared against a fixed strike variable K to determine payoff.
             If `'S'`, then the asset price at maturity is compared against the average asset price
             over [0,T], i.e. the average underlying becomes the strike and what is assigned to variable ``K`` in
-            ``OptionValuation`` is ignored.
+            ``OptValSpec`` is ignored.
 
         Returns
         -------

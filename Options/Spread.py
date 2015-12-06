@@ -2,15 +2,15 @@ import math
 import numpy.random
 import numpy as np
 
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+try: from qfrm.Options.OptLib import *  # production:  if qfrm package is installed
+except:   from Options.OptLib import *  # development: if not installed and running from source
 
 
 
-class Spread(OptionValuation):
+class Spread(OptValSpec):
     """ Spread option class.
 
-    Inherits all methods and properties of OptionValuation class.
+    Inherits all methods and properties of OptValSpec class.
     """
 
 

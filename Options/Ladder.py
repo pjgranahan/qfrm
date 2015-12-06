@@ -1,10 +1,8 @@
-try:
-    from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:
-    from OptionValuation import *  # development: if not installed and running from source
+try: from qfrm.Options.OptLib import *  # production:  if qfrm package is installed
+except:   from Options.OptLib import *  # development: if not installed and running from source
 
 
-class Ladder(OptionValuation):
+class Ladder(OptValSpec):
     """
     Ladder option class.
     """

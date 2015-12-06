@@ -2,15 +2,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 try:
-    from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+    from qfrm.Options.OptLib import *  # production:  if qfrm package is installed
 except:
-    from OptionValuation import *  # development: if not installed and running from source
+    from Options.OptLib import *  # development: if not installed and running from source
 
 
-class Bermudan(OptionValuation):
+class Bermudan(OptValSpec):
     """ Bermudan option class.
 
-    Inherits all methods and properties of OptionValuation class.
+    Inherits all methods and properties of OptValSpec class.
     The Bermudan option is a modified American with restricted early-exercise dates. Due to this restriction,
     Bermudans are named as such as they are "between" American and European options in exercisability, and as
     this module demonstrates, in price.

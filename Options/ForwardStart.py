@@ -1,11 +1,11 @@
 import math
 import numpy as np
 
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+try: from qfrm.Options.OptLib import *  # production:  if qfrm package is installed
+except:   from Options.OptLib import *  # development: if not installed and running from source
 
 
-class ForwardStart(OptionValuation):
+class ForwardStart(OptValSpec):
     """ ForwardStart option class
 
     Inherits all methods and properties of ``Optionvalueation`` class.

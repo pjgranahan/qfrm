@@ -3,16 +3,16 @@ import math
 import numpy as np
 
 try:
-    from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+    from qfrm.Options.OptLib import *  # production:  if qfrm package is installed
 except:
-    from OptionValuation import *  # development: if not installed and running from source
+    from Options.OptLib import *  # development: if not installed and running from source
 
 
-class Binary(OptionValuation):
+class Binary(OptValSpec):
     """
     Binary option class.
 
-    Inherits all methods and properties of OptionValuation class.
+    Inherits all methods and properties of OptValSpec class.
     """
 
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, payout_type="asset-or-nothing", Q=0.0):

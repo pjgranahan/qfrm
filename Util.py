@@ -763,7 +763,7 @@ class SpecPrinter:
 
         s = s.replace('!!python/object:', '').replace('!!python/tuple', '')
         s = s.replace('__main__.', '').replace(type(self).__name__ + '.', '').replace('SpecPrinter.', '')
-        s = s.replace('OptionValuation.', '').replace('OptionSeries.', '')
+        s = s.replace('OptValSpec.', '').replace('Opt.', '').replace('Options.','').replace('OptLib.','')
         s = s.replace('qfrm.', '').replace('Util.', '').replace('!ndarray: ', '')
 
         s = s.replace(' {', '{')
@@ -782,7 +782,7 @@ class SpecPrinter:
 
         # s = yaml.dump(self, default_flow_style=not new_line).replace('!!python/object:','').replace('!!python/tuple','')
         # s = s.replace('__main__.','').replace(type(self).__name__ + '.','').replace('null','-')
-        # s = s.replace('__main__.','').replace('OptionValuation.','').replace('OptionSeries.','').replace('null','-')
+        # s = s.replace('__main__.','').replace('OptValSpec.','').replace('Opt.','').replace('null','-')
         # s = s.replace('Util.', '').replace(', ,',', ').replace('{,  ','{').replace('{, ','{')
         # if not new_line:
             # s = s.replace(',', ', ').replace('\n', ',').replace(': ', ':').replace('  ', ' ')

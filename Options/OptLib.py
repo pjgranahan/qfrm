@@ -144,7 +144,7 @@ class Stock(SpecPrinter):
         SpecPrinter.print_precision = print_precision
 
 
-class OptionSeries(SpecPrinter):
+class Opt(SpecPrinter):
     """ Object representing an option series.
 
     This class describes the option specs outside of valuation.
@@ -173,7 +173,7 @@ class OptionSeries(SpecPrinter):
             strike price, positive number. required, if ``clone = None``.
         T : float
             time to maturity, in years, positive number. required, if ``clone = None``.
-        clone : OptionValuation, European, American, any child of OptionValuation, optional
+        clone : OptValSpec, European, American, any child of OptValSpec, optional
             another option object from which this object will inherit specifications.
             this is useful if you want to price European option as (for example) American.
             then European option's specs will be used to create a new American option. just makes things simple.
@@ -192,8 +192,8 @@ class OptionSeries(SpecPrinter):
         The default (floating point number) precision of printed values (9 decimals) is used.
         Note precision of ``vol`` variable:
 
-        >>> OptionSeries(ref=Stock(S0=50, vol=1/7, tkr='IBM', curr='USD'), K=51, right='call')
-        OptionSeries
+        >>> Opt(ref=Stock(S0=50, vol=1/7, tkr='IBM', curr='USD'), K=51, right='call')
+        Opt
         K: 51
         _right: call
         _signCP: 1
@@ -208,20 +208,20 @@ class OptionSeries(SpecPrinter):
         The following uses built-in ``repr()`` function,
         which calls object's ``__repr__()`` method.
 
-        >>> repr(OptionSeries(ref=Stock(S0=50,vol=1/7)))
-        'OptionSeries\npx_spec: PriceSpec{}\nref: Stock\n  S0: 50\n  q: 0\n  vol: 0.142857143'
+        >>> repr(Opt(ref=Stock(S0=50,vol=1/7)))
+        'Opt\npx_spec: PriceSpec{}\nref: Stock\n  S0: 50\n  q: 0\n  vol: 0.142857143'
 
         The following shows how to control precision temporarily.
         If needed, default precision can be changed in ``SpecPrinter.full_spec()`` definition.
 
-        >>> OptionSeries(ref=Stock(S0=50, vol=1/7), K=51, print_precision=2).full_spec(print_as_line=True)
-        'OptionSeries{K:51, px_spec:PriceSpec{}, ref:Stock{S0:50, q:0, vol:0.14}}'
+        >>> Opt(ref=Stock(S0=50, vol=1/7), K=51, print_precision=2).full_spec(print_as_line=True)
+        'Opt{K:51, px_spec:PriceSpec{}, ref:Stock{S0:50, q:0, vol:0.14}}'
 
         The following is a bit more cumbersome way to print object's structure
         with a custom precision.
 
-        >>> print(OptionSeries(ref=Stock(S0=50, vol=1/7), K=51).full_spec(print_as_line=0))
-        OptionSeries
+        >>> print(Opt(ref=Stock(S0=50, vol=1/7), K=51).full_spec(print_as_line=0))
+        Opt
         K: 51
         px_spec: PriceSpec{}
         ref: Stock
@@ -249,9 +249,9 @@ class OptionSeries(SpecPrinter):
 
         Examples
         --------
-        >>> o = OptionSeries(ref=Stock(S0=50, vol=.3), right='put', K=52, T=2).update(K=53) # sets new strike
+        >>> o = Opt(ref=Stock(S0=50, vol=.3), right='put', K=52, T=2).update(K=53) # sets new strike
         >>> o      # print out object's variables.
-        OptionSeries
+        Opt
         K: 53
         T: 2
         _right: put
@@ -262,8 +262,8 @@ class OptionSeries(SpecPrinter):
           q: 0
           vol: 0.3
 
-        >>> OptionSeries(clone=o, K=54).update(right='call')  # copy parameters from o
-        OptionSeries
+        >>> Opt(clone=o, K=54).update(right='call')  # copy parameters from o
+        Opt
         K: 54
         T: 2
         _right: call
@@ -351,14 +351,14 @@ class OptionSeries(SpecPrinter):
     def style(self):
         """ Returns option style (European, American, bermudan, Asian, Binary,...) as a string.
 
-        It first checks whether this object inherits 'OptionValuation' class,
+        It first checks whether this object inherits 'OptValSpec' class,
         i.e. whether this is an exotic option object.
         Option style can be drawn from the class name. see example.
 
         Returns
         -------
         str, None
-            Option style for objects inheriting OptionValuation
+            Option style for objects inheriting OptValSpec
 
         Examples
         --------
@@ -369,9 +369,9 @@ class OptionSeries(SpecPrinter):
         >>> from qfrm import *; European().style
         'European'
 
-        >>> OptionSeries().style  # returns None
+        >>> Opt().style  # returns None
         """
-        if any('OptionValuation' == i.__name__ for i in self.__class__.__bases__):
+        if any('OptValSpec' == i.__name__ for i in self.__class__.__bases__):
             return type(self).__name__
         else:
             return None
@@ -390,13 +390,13 @@ class OptionSeries(SpecPrinter):
         Examples
         --------
         >>> from qfrm import *
-        >>> OptionSeries(ref=Stock(S0=50, vol=0.3), K=51, right='call').series
+        >>> Opt(ref=Stock(S0=50, vol=0.3), K=51, right='call').series
         '51 call'
 
-        >>> OptionSeries(ref=Stock(S0=50, vol=0.3, tkr='IBM'), K=51, right='call').series
+        >>> Opt(ref=Stock(S0=50, vol=0.3, tkr='IBM'), K=51, right='call').series
         'IBM 51 call'
 
-        >>> OptionSeries(ref=Stock(S0=50, vol=0.3, tkr='IBM'), K=51, T=2, right='call').series
+        >>> Opt(ref=Stock(S0=50, vol=0.3, tkr='IBM'), K=51, T=2, right='call').series
         'IBM 51 2yr call'
 
         >>> American(ref=Stock(S0=50, vol=0.3), K=51, right='call').series
@@ -426,7 +426,7 @@ class OptionSeries(SpecPrinter):
         --------
         >>> from qfrm import *
         >>> s = Stock(S0=50, vol=0.3, tkr='IBM')
-        >>> OptionSeries(ref=s, K=51, right='call').specs
+        >>> Opt(ref=s, K=51, right='call').specs
         'IBM 51 call, Stock{S0:50, q:0, tkr:IBM, vol:0.3}'
 
         >>> American(ref=Stock(S0=50, vol=0.3), K=51, right='call').specs
@@ -452,15 +452,15 @@ class OptionSeries(SpecPrinter):
 
         Parameters
         ----------
-        clone : OptionSeries, OptionValuation, European, American, ...
+        clone : Opt, OptValSpec, European, American, ...
             Target option object that needs to be duplicated.
 
 
         Examples
         --------
 
-        >>> o = OptionSeries(right='call')
-        >>> OptionSeries(clone=o).right  # create new option similar to o
+        >>> o = Opt(right='call')
+        >>> Opt(clone=o).right  # create new option similar to o
         'call'
 
         >>> from qfrm import *
@@ -478,20 +478,16 @@ class OptionSeries(SpecPrinter):
 
         Returns
         -------
-        self : OptionValuation
+        self : OptValSpec
 
         """
         self.px_spec = PriceSpec(px=None)
         return self
 
 
-class OptionValuation(OptionSeries):
-    """ Adds interest rates and some methods shared by subclasses.
-
-    The class inherits from a simpler class that describes an option.
-    """
-    def __init__(self, rf_r=None, frf_r=0, seed0=None, *args, **kwargs):
-        """ Constructor saves all identified arguments and passes others to the base (parent) class, OptionSeries.
+class OptValSpec(SpecPrinter):
+    def __init__(self, rf_r=None, frf_r=0, keep_hist=False):
+        """ Constructor saves all identified arguments and passes others to the base (parent) class, Opt.
 
         It also calculates net_r, the rate used in computing growth factor a (p.452) for options
         with dividends and foreign risk free rates.
@@ -499,7 +495,7 @@ class OptionValuation(OptionSeries):
         Parameters
         ----------
         rf_r : float
-            risk free rate. required, unless clone object supplies it (see OptionSeries constructor).
+            risk free rate. required, unless clone object supplies it (see Opt constructor).
                 number in (0,1) interval
         frf_r : float, optional
             foreign risk free rate.
@@ -516,14 +512,14 @@ class OptionValuation(OptionSeries):
 
         Returns
         -------
-        __main__.OptionValuation
+        __main__.OptValSpec
             __init__() method always implicitly returns self, i.e. a reference to this object
 
         Examples
         --------
 
-        >>> OptionValuation(ref=Stock(S0=50), rf_r=.05, frf_r=.01)
-        OptionValuation
+        >>> OptValSpec(ref=Stock(S0=50), rf_r=.05, frf_r=.01)
+        OptValSpec
         frf_r: 0.01
         px_spec: PriceSpec{}
         ref: Stock
@@ -533,7 +529,176 @@ class OptionValuation(OptionSeries):
 
 
         """
-        # Todo: OptionValuation.__init__(print_precision=4) doesn't work.
+
+        # todo: assert input values
+        self.rf_r, self.frf_r = rf_r, frf_r
+
+        # todo: still need reset?
+        # self.reset()
+
+    @property
+    def net_r(self, q=None):
+        """ Computes net risk free rate.
+
+        Returns
+        -------
+        float
+            Net value of interest rate used to price this option
+
+        Examples
+        --------
+        >>> from pprint import pprint; from qfrm import *
+        >>> o = OptValSpec(rf_r=0.05); pprint(vars(o))
+        {'frf_r': 0, 'px_spec': PriceSpec{}, 'rf_r': 0.05, 'seed0': None}
+
+        >>> o.update(rf_r=0.04)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        OptValSpec...frf_r: 0...rf_r: 0.04...
+
+        >>> o.update(ref=Stock(q=0.01))  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        OptValSpec...frf_r: 0...q: 0.01...rf_r: 0.04...
+
+        >>> o.net_r   # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        0.03
+
+        """
+        # try: q = 0 if self.ref.q is None else self.ref.q
+        # except: q = 0
+
+        # todo: q belongs to underlying stock. reconsider it's input location
+
+        q = 0 if q is None else q
+        frf_r = 0 if self.frf_r is None else self.frf_r
+        rf_r = 0 if self.rf_r is None else self.rf_r
+
+        return rf_r - q - frf_r   # calculate RFR net of yield and foreign RFR
+
+
+class OptValSpecBS(OptValSpec):
+    def __init__(self, *args, **kwargs):
+        self.method = 'BS'
+        super().__init__(*args, **kwargs)  # pass remaining arguments to base (parent) class
+
+
+class OptValSpecLT(OptValSpec):
+    def __init__(self, nsteps=None, *args, **kwargs):
+        self.method = 'LT'
+        self.nsteps = nsteps
+        super().__init__(*args, **kwargs)  # pass remaining arguments to base (parent) class
+
+    def get(self):
+        """ Calculates a collection of specs/parameters needed for lattice tree pricing.
+
+        parameters returned:
+            dt: time interval between consequtive two time steps
+            u: Stock price up move factor
+            d: Stock price down move factor
+            a: growth factor, p.452
+            p: probability of up move over one time interval dt
+            df_T: discount factor over full time interval dt, i.e. per life of an option
+            df_dt: discount factor over one time interval dt, i.e. per step
+
+        Parameters
+        ----------
+        nsteps : int
+            number of steps in a tree, positive number. required.
+
+        Returns
+        -------
+        dict
+            A dictionary of parameters required for lattice tree pricing.
+
+        Examples
+        --------
+        >>> from pprint import pprint
+        >>> pprint(OptValSpec(ref=Stock(S0=42, vol=.2), right='call', K=40, T=.5, rf_r=.1).LT_specs(2))
+        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        {'a': 1.025315120...'d': 0.904837418...'df_T': 0.951229424...
+         'df_dt': 0.975309912...'dt': 0.25, 'p': 0.601385701...'u': 1.105170918...}
+
+        >>> s = Stock(S0=50, vol=.3)
+        >>> pprint(OptValSpec(ref=s,right='put', K=52, T=2, rf_r=.05, desc={'See Hull p.288'}).LT_specs(3))
+        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        {'a': 1.033895113...'d': 0.782744477...'df_T': 0.904837418...
+         'df_dt': 0.967216100...'dt': 0.666...'p': 0.507568158...'u': 1.277556123...}
+
+         """
+        sp = {'dt': self.T / self.nsteps}
+        sp['u'] = math.exp(self.ref.vol * math.sqrt(sp['dt']))
+        sp['d'] = 1 / sp['u']
+        sp['a'] = math.exp(self.net_r * sp['dt'])   # growth factor, p.452
+        sp['p'] = (sp['a'] - sp['d']) / (sp['u'] - sp['d'])
+        sp['df_T'] = math.exp(-self.rf_r * self.T)
+        sp['df_dt'] = math.exp(-self.rf_r * sp['dt'])
+        self.sp = sp
+        return sp
+
+class OptValSpecMC(OptValSpec):
+    def __init__(self, nsteps=None, npaths=None, rng_seed=None, *args, **kwargs):
+        self.method = 'MC'
+        self.nsteps = nsteps
+        self.npaths = npaths
+        self.rng_seed = rng_seed
+        super().__init__(*args, **kwargs)  # pass remaining arguments to base (parent) class
+
+
+class OptValSpecMC(OptValSpec):
+    def __init__(self, nsteps=None, npaths=None, *args, **kwargs):
+        self.method = 'FD'
+        self.nsteps = nsteps
+        self.npaths = npaths
+        super().__init__(*args, **kwargs)  # pass remaining arguments to base (parent) class
+
+
+
+class OptValSpec_Old(Opt):
+    """ Adds interest rates and some methods shared by subclasses.
+
+    The class inherits from a simpler class that describes an option.
+    """
+    def __init__(self, rf_r=None, frf_r=0, seed0=None, *args, **kwargs):
+        """ Constructor saves all identified arguments and passes others to the base (parent) class, Opt.
+
+        It also calculates net_r, the rate used in computing growth factor a (p.452) for options
+        with dividends and foreign risk free rates.
+
+        Parameters
+        ----------
+        rf_r : float
+            risk free rate. required, unless clone object supplies it (see Opt constructor).
+                number in (0,1) interval
+        frf_r : float, optional
+            foreign risk free rate.
+        seed0 : int, None, optional
+            None or positive integer to seed random number generator (rng).
+        precision : {None, int}, optional
+            indicates desired floating number precision of calculated prices.
+            Assists with doctesting due to rounding errors near digits in 10^-12 placements
+            If value is None, then precision is ignored and default machine precision is used
+        args : object, optional
+            arguments to be passed to base class constructor. see base class for types of its arguments
+        kwargs : object, optional
+            keyword arguments to be passed to base class constructor. see base class for types of its arguments
+
+        Returns
+        -------
+        __main__.OptValSpec
+            __init__() method always implicitly returns self, i.e. a reference to this object
+
+        Examples
+        --------
+
+        >>> OptValSpec(ref=Stock(S0=50), rf_r=.05, frf_r=.01)
+        OptValSpec
+        frf_r: 0.01
+        px_spec: PriceSpec{}
+        ref: Stock
+          S0: 50
+          q: 0
+        rf_r: 0.05
+
+
+        """
+        # Todo: OptValSpec.__init__(print_precision=4) doesn't work.
         self.rf_r, self.frf_r, self.seed0 = rf_r, frf_r, seed0
         super().__init__(*args, **kwargs)  # pass remaining arguments to base (parent) class
         self.reset()
@@ -563,13 +728,13 @@ class OptionValuation(OptionSeries):
         Examples
         --------
         >>> from pprint import pprint
-        >>> pprint(OptionValuation(ref=Stock(S0=42, vol=.2), right='call', K=40, T=.5, rf_r=.1).LT_specs(2))
+        >>> pprint(OptValSpec(ref=Stock(S0=42, vol=.2), right='call', K=40, T=.5, rf_r=.1).LT_specs(2))
         ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         {'a': 1.025315120...'d': 0.904837418...'df_T': 0.951229424...
          'df_dt': 0.975309912...'dt': 0.25, 'p': 0.601385701...'u': 1.105170918...}
 
         >>> s = Stock(S0=50, vol=.3)
-        >>> pprint(OptionValuation(ref=s,right='put', K=52, T=2, rf_r=.05, desc={'See Hull p.288'}).LT_specs(3))
+        >>> pprint(OptValSpec(ref=s,right='put', K=52, T=2, rf_r=.05, desc={'See Hull p.288'}).LT_specs(3))
         ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         {'a': 1.033895113...'d': 0.782744477...'df_T': 0.904837418...
          'df_dt': 0.967216100...'dt': 0.666...'p': 0.507568158...'u': 1.277556123...}
@@ -597,7 +762,7 @@ class OptionValuation(OptionSeries):
         ax : matplotlib.axes._subplots.axessubplot, optional
             Plot object on which to plot the data.
         vs : object, optional
-            another option object (i.e. subclass of OptionValuation such as European, American,...)
+            another option object (i.e. subclass of OptValSpec such as European, American,...)
 
         Examples
         --------
@@ -674,7 +839,7 @@ class OptionValuation(OptionSeries):
         ax : matplotlib.axes._subplots.axessubplot, optional
             Plot object on which to plot the data.
         vs : object, optional
-            another option object (i.e. subclass of OptionValuation such as European, American,...)
+            another option object (i.e. subclass of OptValSpec such as European, American,...)
 
         Examples
         --------
@@ -762,14 +927,14 @@ class OptionValuation(OptionSeries):
         Examples
         --------
         >>> from pprint import pprint; from qfrm import *
-        >>> o = OptionValuation(rf_r=0.05); pprint(vars(o))
+        >>> o = OptValSpec(rf_r=0.05); pprint(vars(o))
         {'frf_r': 0, 'px_spec': PriceSpec{}, 'rf_r': 0.05, 'seed0': None}
 
         >>> o.update(rf_r=0.04)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        OptionValuation...frf_r: 0...rf_r: 0.04...
+        OptValSpec...frf_r: 0...rf_r: 0.04...
 
         >>> o.update(ref=Stock(q=0.01))  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        OptionValuation...frf_r: 0...q: 0.01...rf_r: 0.04...
+        OptValSpec...frf_r: 0...q: 0.01...rf_r: 0.04...
 
         >>> o.net_r   # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         0.03
@@ -787,29 +952,31 @@ class OptionValuation(OptionSeries):
         """ Wrapper pricing function.
 
         Each exotic option overloads `calc_px()` to accept exotic-specific parameters from user.
-        Then child's `calc_px()` calls `OptionValuation.calc_px()` to check basic pricing parameters
+        Then child's `calc_px()` calls `OptValSpec.calc_px()` to check basic pricing parameters
         and to call the appropriate pricing method.
 
         Returns
         -------
         self, None
-            Returns None, if called on OptionValuation object.
-            Returns self (sub-class), if called on class that inherited OptionValuation (these are exotic classes)
+            Returns None, if called on OptValSpec object.
+            Returns self (sub-class), if called on class that inherited OptValSpec (these are exotic classes)
 
         Examples
         --------
 
-        >>> OptionValuation().calc_px()  # prints a UserWarning and returns None
+        >>> OptValSpec().calc_px()  # prints a UserWarning and returns None
         ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE, +IGNORE_EXCEPTION_DETAIL
 
-        >>> from qfrm import *; European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5).calc_px()
+        >>> from qfrm import *
+        >>> European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5).calc_px()
         ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         Traceback (most recent call last):
         ...
             assert getattr(self, '_signCP') is not None, 'Ooops. Please supply option right: call, put, ...'
         AttributeError: 'European' object has no attribute '_signCP'
 
-        >>> from qfrm import *; European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').calc_px()
+        >>> from qfrm import *
+        >>> European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').calc_px()
         ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         European ... px: 3.444364289 ...
 
@@ -834,7 +1001,7 @@ class OptionValuation(OptionSeries):
         """ Calls exotic pricing method `calc_px()`
 
         This property calls `calc_px()` method which should be overloaded
-        by each exotic option class (inheriting OptionValuation)
+        by each exotic option class (inheriting OptValSpec)
 
         Parameters
         ----------
@@ -859,7 +1026,7 @@ class OptionValuation(OptionSeries):
         """ Calls exotic pricing method `calc_px()`
 
         This property calls `calc_px()` method which should be overloaded
-        by each exotic option class (inheriting OptionValuation)
+        by each exotic option class (inheriting OptValSpec)
 
         Parameters
         ----------
@@ -884,7 +1051,7 @@ class OptionValuation(OptionSeries):
         """ Calls exotic pricing method `calc_px()`
 
         This property calls `calc_px()` method which should be overloaded
-        by each exotic option class (inheriting OptionValuation)
+        by each exotic option class (inheriting OptValSpec)
 
         Parameters
         ----------
@@ -899,7 +1066,8 @@ class OptionValuation(OptionSeries):
         Examples
         --------
         >>> from qfrm import *
-        >>> European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').pxMC()
+        >>> European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').pxMC(rng_seed=1)
+        5.0174775949999999
 
         """
         return self.print_value(self.calc_px(method='MC', **kwargs).px_spec.px)
@@ -908,7 +1076,7 @@ class OptionValuation(OptionSeries):
         """ Calls exotic pricing method `calc_px()`
 
         This property calls `calc_px()` method which should be overloaded
-        by each exotic option class (inheriting OptionValuation)
+        by each exotic option class (inheriting OptValSpec)
 
         Parameters
         ----------

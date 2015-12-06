@@ -1,20 +1,16 @@
 import numpy.random as rnd
 
-try:
-    from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:
-    from OptionValuation import *  # development: if not installed and running from source
+try: from qfrm.Options.OptLib import *  # production:  if qfrm package is installed
+except:   from Options.OptLib import *  # development: if not installed and running from source
 
-try:
-    from qfrm.American import *  # production:  if qfrm package is installed
-except:
-    from American import *  # development: if not installed and running from source
+try: from qfrm.Options.American import *  # production:  if qfrm package is installed
+except:   from Options.American import *  # development: if not installed and running from source
 
 
-class Quanto(OptionValuation):
+class Quanto(OptValSpec):
     """ Quanto option class.
 
-    Inherits all methods and properties of OptionValuation class.
+    Inherits all methods and properties of OptValSpec class.
     """
 
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, vol_ex=0.0, correlation=0.0, seed=1,
