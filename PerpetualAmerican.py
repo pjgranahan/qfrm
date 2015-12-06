@@ -36,8 +36,8 @@ class PerpetualAmerican(OptionValuation):
 
         Returns
         ----------
-        PerpetualAmerican
-            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
+        self : PerpetualAmerican
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
 
 
 

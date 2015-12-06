@@ -40,11 +40,12 @@ class Rainbow(OptionValuation):
         Returns
         -------
         self : Rainbow
-            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
 
         Notes
         -----
-        The examples can be verified with `<http://goo.gl/7H3U0N> p.23`_.
+        The examples can be verified with
+        `Monte Carlo Simulation in the Pricing of Derivatives, Cara M.Marshall, 2008 <http://1drv.ms/1m4HPsj>`_ p.23.
         The results might differ a little due to the simulations.
         Since it takes time to run more paths and steps, the number of simulations is not very large in examples.
         To improve accuracy, please improve the ``npaths`` and ``nsteps``.
@@ -52,7 +53,7 @@ class Rainbow(OptionValuation):
         Examples
         --------
 
-        **MC Examples**
+        **MC**
         Because different number of seed, ``npaths`` and ``nsteps`` will influence the option price.
         The result of MC method may not as accurate as ``BS`` and ``LT`` methods.
 
