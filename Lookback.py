@@ -282,8 +282,7 @@ class Lookback(OptionValuation):
         M = getattr(self.px_spec, 'npaths', 5) # no. intervals of stock price
         J = np.arange(1,M) # indices of stock prices
         Smax = 2*_.ref.S0
-        dS = Smax/M # stock price interval
-        S = np.arange(0, Smax+0.00001, dS)
+        S = np.linspace(0, Smax, M+1)
 
         N = getattr(self.px_spec, 'nsteps', 5) # no. intervals of time
         dt = _.T/N # time interval
@@ -315,4 +314,3 @@ class Lookback(OptionValuation):
             self.px_spec.add(px=float(p[0,index[0][-1]-1]), method='FD', sub_method='Implicit')
 
         return self
-
