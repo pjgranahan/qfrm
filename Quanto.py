@@ -1,10 +1,14 @@
 import numpy.random as rnd
 
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+try:
+    from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:
+    from OptionValuation import *  # development: if not installed and running from source
 
-try: from qfrm.American import *  # production:  if qfrm package is installed
-except:   from American import *  # development: if not installed and running from source
+try:
+    from qfrm.American import *  # production:  if qfrm package is installed
+except:
+    from American import *  # development: if not installed and running from source
 
 
 class Quanto(OptionValuation):
@@ -49,7 +53,8 @@ class Quanto(OptionValuation):
         Returns
         -------
         self : Quanto
-            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
+
 
         Notes
         -----
@@ -57,7 +62,7 @@ class Quanto(OptionValuation):
         Examples
         --------
 
-        **LT Examples**
+        **LT**
 
         Example #1: Calculate the price of a Quanto option.
 
@@ -77,7 +82,7 @@ class Quanto(OptionValuation):
         # >>> s = Stock(S0=1200, vol=.25, q=0.015)
         # >>> o = Quanto(ref=s, right='call', K=1200, T=2, rf_r=.03, frf_r=0.05)
         # >>> o.pxLT(nsteps=100, vol_ex=0.12, correlation=0.2, keep_hist=True)
-        179.82607364328157
+        # 179.826073643
 
         Example #4 (verifiable from Hull ch.30, problem.30.9.b (p.704)): Calculate the price of a Quanto option.
         Uncomment to run (number of paths required is too high for doctests)
@@ -85,7 +90,7 @@ class Quanto(OptionValuation):
         # >>> s = Stock(S0=400, vol=.2, q=0.03)
         # >>> o = Quanto(ref=s, right='call', K=400, T=2, rf_r=.06, frf_r=0.04)
         # >>> o.pxLT(nsteps=100, vol_ex=0.06, correlation=0.4)
-        57.50700503047851
+        # 57.50700503
 
         Example #5 (plot): Convergence
 
@@ -94,24 +99,27 @@ class Quanto(OptionValuation):
         >>> o.plot_px_convergence()
 
 
-        **MC Examples**
+        **MC**
 
         Calculate the price of a Quanto option using MC method. This example comes from Hull ch.30, ex.30.5 (p.701-702)
         For an accurate result, use nsteps=100, npaths=5000
+
         >>> s = Stock(S0=1200, vol=.25, q=0.015)
         >>> o = Quanto(ref=s, right='call', K=1200, T=2, rf_r=.03, frf_r=0.05)
-        >>> print(o.pxMC(nsteps=10, npaths=10,vol_ex=0.12, correlation=0.2))
+        >>> o.pxMC(nsteps=10, npaths=10,vol_ex=0.12, correlation=0.2)
         305.707863251
 
         Calculate the price of a Quanto option. This example comes from Hull ch.30, problem.30.9.b (p.704)
         For an accurate result, use nsteps=100, npaths=4000
+
         >>> s = Stock(S0=400, vol=.2, q=0.03)
         >>> o = Quanto(ref=s, right='call', K=400, T=2, rf_r=.06, frf_r=0.04)
         >>> o.pxMC(nsteps=10,npaths=10, vol_ex=0.06, correlation=0.4)
         91.901775513
 
         Example of option price (MC method) with increasing time
-        For an accurate result, use nsteps=100, npaths=5000
+        For an accurate result, use ``nsteps=100``, ``npaths=5000``
+
         >>> from pandas import Series
         >>> expiries = range(1,11)
         >>> O = Series([o.update(T=t).calc_px(method='MC', nsteps=10, npaths=10, vol_ex=0.12, correlation=0.2)\
@@ -147,7 +155,7 @@ class Quanto(OptionValuation):
         keep_hist = getattr(self.px_spec, 'keep_hist')
         n = getattr(self.px_spec, 'nsteps')
 
-        # Compute the foreign numeraire dividend yield
+        # Compute the foreign numeraire dividend yield  TODO: this calculation can be extracted to a class method
         growth_rate_of_underlying = (correlation * self.ref.vol * vol_ex)
         domestic_numeraire = self.rf_r - self.ref.q
         foreign_numeraire = domestic_numeraire + growth_rate_of_underlying
@@ -193,23 +201,24 @@ class Quanto(OptionValuation):
         try: deg = self.px_spec.deg
         except TypeError: deg = 5
 
-        vol_ex = getattr(self.px_spec, 'vol_ex')  # Volatility of the exchange rate
+        vol_ex      = getattr(self.px_spec, 'vol_ex')  # Volatility of the exchange rate
         correlation = getattr(self.px_spec, 'correlation')  # Correlation between asset and exchange rate
-        n_steps = getattr(self.px_spec, 'nsteps', 3) # # of steps
-        n_paths = getattr(self.px_spec, 'npaths', 5000) # of paths in MC simulation
+        n_steps     = getattr(self.px_spec, 'nsteps', 3) # # of steps
+        n_paths     = getattr(self.px_spec, 'npaths', 5000) # of paths in MC simulation
         _ = self
 
-
         # Compute the foreign numeraire dividend yield
-        growth_rate_of_underlying = (correlation * self.ref.vol * vol_ex)
-        domestic_numeraire = self.rf_r - self.ref.q
-        foreign_numeraire = domestic_numeraire + growth_rate_of_underlying
+        growth_rate_of_underlying   = (correlation * self.ref.vol * vol_ex)
+        domestic_numeraire          = self.rf_r - self.ref.q
+        foreign_numeraire           = domestic_numeraire + growth_rate_of_underlying
+
         foreign_numeraire_dividend_yield = self.frf_r - foreign_numeraire
 
         # Once we have the foreign numeraire dividend yield calculated,
         # Follow the LT method. We can price the Quanto option using an American option with specific parameters.
 
-        dt = _.T / n_steps; df = np.exp(-_.frf_r * dt)
+        dt = _.T / n_steps
+        df = np.exp(-_.frf_r * dt)
         signCP = 1 if _.right.lower()[0] == 'c' else -1
 
         rnd.seed(_.px_spec.seed)
@@ -219,12 +228,11 @@ class Quanto(OptionValuation):
         payout = np.maximum(signCP * (S - _.K), 0); v = np.copy(payout)  # terminal payouts
 
         for i in range(n_steps - 1, 0, -1):    # American Option Valuation by Backwards Induction
-            rg = np.polyfit(S[i], v[i + 1] * df, deg)      # fit 5th degree polynomial to PV of current inner values
-            C = np.polyval(rg, S[i])              # continuation values.
+            rg   = np.polyfit(S[i], v[i + 1] * df, deg)      # fit 5th degree polynomial to PV of current inner values
+            C    = np.polyval(rg, S[i])              # continuation values.
             v[i] = np.where(payout[i] > C, payout[i], v[i + 1] * df)  # exercise decision
         v[0] = v[1] * df
         self.px_spec.add(px=float(np.mean(v[0])))
-
         return self
 
     def _calc_FD(self):

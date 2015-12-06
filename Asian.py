@@ -9,8 +9,9 @@ class Asian(OptionValuation):
     """ Asian option class.
 
     Inherits all methods and properties of OptionValuation class.
-    Asian options pay by the averaged historical value up to maturity of an underlying as the strike, against the maturity
-    value of the underlying, or they compare the averaged value of the underlying up to maturity against a fixed strike.
+    Asian options pay by the averaged historical value up to maturity of an underlying as the strike,
+    against the maturity value of the underlying, or they compare the averaged value of the underlying
+    up to maturity against a fixed strike.
     """
 
     def calc_px(self, method='MC', nsteps=3, npaths=10000, keep_hist=False, rng_seed=1, sub_method='Arithmetic',
@@ -27,33 +28,35 @@ class Asian(OptionValuation):
         Parameters
         ----------
         method : str
-                Required. Indicates a valuation method to be used:
-                ``BS``: Black-Scholes Merton calculation
-                ``LT``: Lattice tree (such as binary tree)
-                ``MC``: Monte Carlo simulation methods
-                ``FD``: finite differencing methods
+            Required. Indicates a valuation method to be used:
+            ``BS``: Black-Scholes Merton calculation
+            ``LT``: Lattice tree (such as binary tree)
+            ``MC``: Monte Carlo simulation methods
+            ``FD``: finite differencing methods
         nsteps : int
-                LT, MC, FD methods require number of times steps
+            LT, MC, FD methods require number of times steps
         npaths : int
-                MC, FD methods require number of simulation paths
+            MC, FD methods require number of simulation paths
         keep_hist : bool
-                If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
+            If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
         rng_seed : int
-                MC method requires the seed for RNG to generate historical prices in (0,T).
+            MC method requires the seed for RNG to generate historical prices in (0,T).
         sub_method : str
-                Required. Calculation of price using 'Geometric' or 'Arithmetic' averages.
-                Case-insensitive and may use partial string w/first letter.
+            Required. Calculation of price using 'Geometric' or 'Arithmetic' averages.
+            Case-insensitive and may use partial string w/first letter.
         strike : str
-                Required.
-                If `'K'`, then the average asset price is compared against a fixed strike variable K to determine payoff.
-                If `'S'`, then the asset price at maturity is compared against the average asset price
-                over [0,T], i.e. the average underlying becomes the strike and what is assigned to variable ``K`` in
-                ``OptionValuation`` is ignored.
-
+            Required.
+            If `'K'`, then the average asset price is compared against a fixed strike variable K to determine payoff.
+            If `'S'`, then the asset price at maturity is compared against the average asset price
+            over [0,T], i.e. the average underlying becomes the strike and what is assigned to variable ``K`` in
+            ``OptionValuation`` is ignored.
 
         Returns
         -------
         self : Asian
+            Returned object contains specifications and calculated price in  ``px_spec``
+            variable (``PriceSpec`` object).
+
 
         Notes
         -----
@@ -322,7 +325,8 @@ class Asian(OptionValuation):
         #Step 3 : Do backward recursion of the tree
         #initialize option values at maturity
         #print(Fvec)
-        Fvec = FTree[nsteps, np.nonzero(FTree[nsteps])] #running average values to consider for calculating set of option
+        #running average values to consider for calculating set of option
+        Fvec = FTree[nsteps, np.nonzero(FTree[nsteps])]
         # prices
         Fvec = [Fvec[0][i] for i in range(0, len(Fvec[0]))]
         VTree = np.zeros((nsteps * 2, 2 * nsteps, len(Fvec)))#stores option values at all nodes of the tree
@@ -342,9 +346,10 @@ class Asian(OptionValuation):
             VTimeVecNext = VTree[i + 1]
             Fvec = FTree[i, np.nonzero(FTree[i])] #running average values to consider for calculating set of option
             # prices
-            Fvec = [Fvec[0][z] for z in range(0, len(Fvec[0]))] #running average values to consider for calculating set of
-
-            FVecNext = FTree[i + 1, np.nonzero(FTree[i + 1])] #running average values to consider for calculating set of
+            #running average values to consider for calculating set of
+            Fvec = [Fvec[0][z] for z in range(0, len(Fvec[0]))]
+            #running average values to consider for calculating set of
+            FVecNext = FTree[i + 1, np.nonzero(FTree[i + 1])]
             FVecNext = [FVecNext[0][z] for z in range(0, len(FVecNext[0]))]
             # option prices
             for j in range(0, i + 1):
@@ -422,8 +427,6 @@ class Asian(OptionValuation):
         assert S >= 0, 'S must be >= 0'
         assert r >= 0, 'r must be >= 0'
         assert q >= 0, 'q must be >= 0'
-
-        # Imports
 
 
         # Parameters for Value Calculation (see link in docstring)

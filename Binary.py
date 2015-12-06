@@ -1,8 +1,11 @@
 import math
+
 import numpy as np
 
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+try:
+    from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:
+    from OptionValuation import *  # development: if not installed and running from source
 
 
 class Binary(OptionValuation):
@@ -43,7 +46,7 @@ class Binary(OptionValuation):
         Returns
         ------------
         self : Binary
-            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
 
 
         Notes
@@ -64,40 +67,38 @@ class Binary(OptionValuation):
         Examples
         ------------
 
-        BS Examples
-        --------------
+        **BS Examples**
 
-        Example #1 (verifiable using DerivaGem):Use the Black-Scholes model to price an asset-or-nothing binary option
+        Example #1 (verifiable using DerivaGem): Use the Black-Scholes model to price an asset-or-nothing binary option
 
         >>> s = Stock(S0=42, vol=.20)
         >>> o = Binary(ref=s, right='put', K=40, T=.5, rf_r=.1)
-        >>> o.pxBS(payout_type="asset-or-nothing")  # doctest: +ELLIPSIS
+        >>> o.pxBS(payout_type="asset-or-nothing")
         9.27648578
 
         Example #2 (verifiable using DerivaGem): Change the option to be a call
 
-        >>> o.update(right='call').pxBS(payout_type="asset-or-nothing")  # doctest: +ELLIPSIS
+        >>> o.update(right='call').pxBS(payout_type="asset-or-nothing")
         32.72351422
 
         Example #3 (verifiable using DerivaGem): Use the Black-Scholes model to price a cash-or-nothing binary option
 
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05)
-        >>> o.pxBS(payout_type="cash-or-nothing", Q=1000)  # doctest: +ELLIPSIS
+        >>> o.pxBS(payout_type="cash-or-nothing", Q=1000)
         641.237705232
 
         Example #4 (verifiable using DerivaGem): Change the option to be a put
 
-        >>> o.update(right='put').pxBS(payout_type="cash-or-nothing", Q=1000)  #doctest: +ELLIPSIS
+        >>> o.update(right='put').pxBS(payout_type="cash-or-nothing", Q=1000)
         263.599712804
 
         Example #5 (plot): Example of option price development (BS method) with increasing maturities
 
         >>> from pandas import Series
         >>> O = Series([o.update(T=t).pxBS(payout_type="asset-or-nothing") for t in range(1,11)], range(1,11))
-        >>> O.plot(grid=1, title='Price vs expiry (in years)')  # doctest: +ELLIPSIS
+        >>> O.plot(grid=1, title='Price vs expiry (in years)'); plt.show()  # doctest: +ELLIPSIS
         <...>
-        >>> plt.show()
 
 
 
@@ -249,14 +250,51 @@ class Binary(OptionValuation):
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
+        FD Examples
+        --------------
+        Example #1 can verify this example with example 1 from pxBS above. It is fairly close
+
+        >>> s = Stock(S0=42, vol=.20)
+        >>> o = Binary(ref=s, right='put', K=40, T=.5, rf_r=.1)
+        >>> o.pxFD(payout_type="asset-or-nothing", nsteps=10, npaths=10)  # doctest: +ELLIPSIS
+        8.35783977
+
+        Example #2
+
+        >>> o.update(right='call').pxFD(payout_type="asset-or-nothing", nsteps=10, npaths=10)  # doctest: +ELLIPSIS
+        29.550733261
+
+        Example #3
+
+        >>> s = Stock(S0=50, vol=.3)
+        >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05)
+        >>> o.pxFD(payout_type="cash-or-nothing", Q=1000, nsteps=10, npaths=10)  # doctest: +ELLIPSIS
+        473.924342837
+
+        Example #4
+
+        >>> o.update(right='put').pxFD(payout_type="cash-or-nothing", Q=1000, nsteps=10, npaths=10)  #doctest: +ELLIPSIS
+        154.068135942
+
+        Example #5 (plot): Example of option price development (FD method) with increasing maturities
+
+        >>> from pandas import Series
+        >>> s = Stock(S0=50, vol=.3)
+        >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05)
+        >>> O = Series([o.update(T=t).pxFD(payout_type="asset-or-nothing",nsteps=t*5) for t in range(1,11)],range(1,11))
+        >>> O.plot(grid=1, title='Price vs expiry (in years)')  # doctest: +ELLIPSIS
+        <...>
+        >>> plt.show()
 
         :Authors:
             Patrick Granahan,
             Tianyi Yao <ty13@rice.edu>
+            Andrew Weatherly <amw13@rice.edu>
         """
 
         return super().calc_px(method=method, sub_method=payout_type, nsteps=nsteps, \
                                npaths=npaths, keep_hist=keep_hist, payout_type=payout_type, Q=Q)
+
     def _calc_BS(self):
         """ Internal function for option valuation.
 
@@ -372,10 +410,8 @@ class Binary(OptionValuation):
                   np.log(1 - _['p']) * np.arange(n + 1)[::-1]
             out = (_['df_T'] * sum(np.exp(tmp) * tuple(O)))
 
-
         self.px_spec.add(px=float(out), sub_method=None,
                          LT_specs=_, ref_tree=S_tree, opt_tree=O_tree)
-
 
         return self
 
@@ -395,14 +431,126 @@ class Binary(OptionValuation):
         """
         return self
 
-    def _calc_FD(self, nsteps=3, npaths=4, keep_hist=False):
+    def _calc_FD(self, nsteps=10, npaths=10, keep_hist=False):
         """ Internal function for option valuation.
 
         Returns
         -------
         self: Binary
 
-        .. sectionauthor::
+        .. sectionauthor:: Andrew Weatherly
+
+        Notes
+        -----
+
+        Formulas:
+        http://www.mathnet.or.kr/mathnet/thesis_file/BKMS-48-2-413-426.pdf
+        https://studentportalen.uu.se/uusp-filearea-tool/download.action%3FnodeId%3D1101907%26toolAttachmentId%3D205921%
+        26uusp.userId%3Dguest+&cd=2&hl=en&ct=clnk&gl=us
 
         """
+
+        _ = self.px_spec
+
+        # getting attributes
+        M = getattr(_, 'npaths', 3)
+        N = getattr(_, 'nsteps', 3)
+        payout_type = getattr(_, 'payout_type')
+        assert payout_type in ['asset-or-nothing', 'cash-or-nothing']
+        if payout_type == 'cash-or-nothing':
+            Q = getattr(_, 'Q', 5)
+
+        # value grid
+        C = np.zeros(shape=(N + 1, M + 1))
+        # helpful parameters
+        signCP = 1 if self.right.lower() == 'call' else -1
+        T = self.T
+        vol = self.ref.vol
+        S0 = self.ref.S0
+        S_Max = 2 * S0
+        S_Min = 0
+        S_vec = np.linspace(S_Min, S_Max, M + 1)
+        r = self.rf_r
+        q = self.ref.q
+        dt = T / (N + 0.0)
+        dS = S_Max / (M + 0.0)
+        N = int(T / dt)
+        M = int(S_Max / dS)
+        K = self.K
+        df = math.exp(-r * dt)
+
+        # equations defined by hull on pg. 481
+        def a(x):
+            return df * (.5 * dt * ((vol ** 2) * (x ** 2) - (r - q) * x))
+
+        def b(x):
+            return df * (1 - dt * ((vol ** 2) * (x ** 2)))
+
+        def c(x):
+            return df * (.5 * dt * ((vol ** 2) * (x ** 2) + (r - q) * x))
+
+        if payout_type == 'asset-or-nothing':
+            if signCP == 1:
+                # t = T boundary conditions
+                for k in range(M + 1):
+                    S = dS * k
+                    if S > K:
+                        C[N, k] = S
+                    else:
+                        C[N, k] = 0
+                # Top and Bottom boundary conditions
+                for i in range(N + 1):
+                    t = i * dt
+                    C[t, M] = S_Max
+                    C[t, 0] = 0
+            else:
+                # t = T boundary conditions
+                for k in range(M + 1):
+                    S = dS * k
+                    if S < K:
+                        C[N, k] = S
+                    else:
+                        C[N, k] = 0
+                # Top and Bottom boundary conditions
+                for i in range(N + 1):
+                    t = i * dt
+                    C[t, M] = 0
+                    C[t, 0] = S_Min
+        else:
+            if signCP == 1:
+                # t = T boundary conditions
+                for k in range(M + 1):
+                    S = dS * k
+                    if S > K:
+                        C[N, k] = Q * math.exp(-r * T)
+                    else:
+                        C[N, k] = 0
+                # Top and Bottom boundary conditions
+                for i in range(N + 1):
+                    t = i * dt
+                    C[t, M] = Q * math.exp(-r * (T - t))
+                    C[t, 0] = 0
+
+            else:
+                # t = T boundary conditions
+                for k in range(M + 1):
+                    S = dS * k
+                    if S < K:
+                        C[N, k] = Q * math.exp(-r * T)
+                    else:
+                        C[N, k] = 0
+                # Top and Bottom boundary conditions
+                for i in range(N + 1):
+                    t = i * dt
+                    C[t, M] = 0
+                    C[t, 0] = Q * math.exp(-r * (T - t))
+
+        for i in range(N - 1, -1, -1):
+            for k in range(1, M):
+                j = M - k
+                C[i, k] = a(j) * C[i + 1, k + 1] + b(j) * C[i + 1, k] + c(j) * C[i + 1, k - 1]
+
+        self.px_spec.add(px=np.interp(S0, S_vec, C[0, :]), method='FD', sub_method='Implicit')
         return self
+
+

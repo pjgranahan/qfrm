@@ -10,7 +10,7 @@ class VarianceSwap(OptionValuation):
 
     Inherits all methods and properties of OptionValuation class.
     The Variance Swap's conceptual cousins have little to do with what is thought of as "options," they include the
-    foward-rate agreement. Like a forward-rate agreement on interest rates, variance swaps exchange, at the 
+    forward-rate agreement. Like a forward-rate agreement on interest rates, variance swaps exchange, at the
     contracted maturity date, the realized (volatility rate)**2 with a fixed (volatility rate)**2. The dollar value 
     is proportional to the principle of the "rate" agreement.The bigger the principle, the bigger the magnitude of 
     the money exchanged for the "bet" at maturity. As a type of FRA more so than an "option", the price can be 
@@ -59,7 +59,7 @@ class VarianceSwap(OptionValuation):
         Returns
         -------
         self : VarianceSwap
-            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
 
 
 
@@ -73,15 +73,17 @@ class VarianceSwap(OptionValuation):
         Examples
         --------
         
-        **BS Examples**
+        **BS**
 
         Pricing by BSM
+
         >>> s = Stock(355)
         >>> o = VarianceSwap(ref=s, rf_r=0.03, T=1.)
         >>> o.pxBS() # doctest: +ELLIPSIS
         -489162.761...
         
-        >>> ##Changing the stock price
+        Changing the stock price
+
         >>> VarianceSwap(ref=Stock(310), rf_r=0.03, T=1.).pxBS() # doctest: +ELLIPSIS
         -504216.712...
         
@@ -89,11 +91,13 @@ class VarianceSwap(OptionValuation):
         -1404368.57...
         
         Explicit input parameters
+
         >>> VarianceSwap(ref=Stock(290), rf_r=0.03, T=1.).pxBS(K=(280.,300.,320.,340.,360.,380.,400.),
         ... vol=(0.2,0.2,0.2,0.3,0.3,0.3,0.3), L_Var=10000000., Var_K=0.01) # doctest: +ELLIPSIS
         312551.288...
         
         Referenced example
+
         >>> Karr = (800,850,900,950,1000,1050,1100,1150,1200)
         >>> varr = (.29,.28,.27,.26,.25,.24,.23,.22,.21)
         >>> VarianceSwap(ref=Stock(S0=1020,q=.01), rf_r=.04, T=.25).pxBS(K=Karr, vol=varr, L_Var=100.,
@@ -101,6 +105,7 @@ class VarianceSwap(OptionValuation):
         1.69073994...
         
         Price vs. the strike volatility curve - example of vectorization of price calculation
+
         >>> s2K = np.linspace(0.01,0.2,200)
         >>> o = VarianceSwap(ref=Stock(355),rf_r=0.03, T=1.)
         >>> px = tuple(map(lambda i: o.pxBS(Var_K=s2K[i]**2)/1000, range(s2K.shape[0])))

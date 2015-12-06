@@ -1,7 +1,15 @@
 import numpy as np
 
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+try:
+    from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+except:
+    from OptionValuation import *  # development: if not installed and running from source
+
+try:
+    from qfrm.European import *  # production:  if qfrm package is installed
+except:
+    from European import *  # development: if not installed and running from source
+
 
 from scipy import sparse
 
@@ -13,6 +21,7 @@ class LowExercisePrice(OptionValuation):
     """
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
+
 
         All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
         specific pricing method (``_calc_BS()``,...) is called.
@@ -38,37 +47,42 @@ class LowExercisePrice(OptionValuation):
         Returns
         -------
         self : LowExercisePrice
-            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
 
+        Notes
+        -----
+        LowExercisePrice is an European call option with a fixed strike price $0.01
+        [1] `Wikipedia: Low Exercise Price Option <https://en.wikipedia.org/wiki/Low_Exercise_Price_Option>`_
+        [2] `LEPOs. Low Exercise Price Options. Explanatory Booklet <http://1drv.ms/1TN3qRk>`_
 
         Examples
         --------
 
-        **LT Examples**
+        **LT:**
 
-        #From DeriGem. S0=5, K=0.01, vol=0.30, T=4, rf_r=0.1, Steps=4, BSM European Call
+        From DerivaGem software. S0=5, K=0.01, vol=0.30, T=4, rf_r=0.1, Steps=4, BSM European Call
+
         >>> s = Stock(S0=5, vol=.30)
         >>> o = LowExercisePrice(ref=s,T=4,rf_r=.10)
-        >>> print(o.calc_px(method='LT',nsteps=4,npaths=10).px_spec.px)
-        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        4.99329679...
+        >>> o.pxLT(nsteps=4,npaths=10)
+        4.9932968
 
         >>> s = Stock(S0=19.6, vol=.21)
         >>> o = LowExercisePrice(ref=s,T=5,rf_r=.05)
-        >>> o.calc_px(method='LT',nsteps=4,npaths=10) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.calc_px(method='LT',nsteps=4,npaths=10) # doctest: +ELLIPSIS
         LowExercisePrice...px: 19.592211992...
-        <BLANKLINE>
 
         >>> s = Stock(S0=19.6, vol=.30)
         >>> o = LowExercisePrice(ref=s,T=5,rf_r=.10)
         >>> print(o.calc_px(method='LT',nsteps=2,keep_hist=True).px_spec.ref_tree) # prints reference tree
         ((19.600000000000005,), (12.196974354006297, 31.496335800182806), (7.59011139756568, 19.6, 50.613222899891674))
 
-        # From DeriGem. S0=5, K=0.01, vol=0.30, T=2, rf_r=0.1, Steps=4, Binomial European Call
+        From DerivaGem. S0=5, K=0.01, vol=0.30, T=2, rf_r=0.1, Steps=4, Binomial European Call
+
         >>> s = Stock(S0=5, vol=.30)
         >>> o = LowExercisePrice(ref=s,T=2,rf_r=.10)
-        >>> print(o.calc_px(method='LT',nsteps=4,keep_hist=False).px_spec.px) # doctest: +ELLIPSIS
-        4.991812...
+        >>> o.pxLT(nsteps=4,keep_hist=False)
+        4.991812692
 
         >>> from pandas import Series
         >>> from numpy import arange
@@ -79,32 +93,24 @@ class LowExercisePrice(OptionValuation):
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> plt.show()
 
-        ===============
-        FD Examples
-        ===============
+        **FD:**
+
         >>> s = Stock(S0=5, vol=.30)
         >>> o = LowExercisePrice(ref=s,T=4,rf_r=.10)
         >>> o.pxFD(nsteps=4,npaths=10)
-        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         4.407303373
 
         >>> s = Stock(S0=19.6, vol=.21)
         >>> o = LowExercisePrice(ref=s,T=5,rf_r=.05)
-        >>> o.calc_px(method='FD',nsteps=4,npaths=10) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.calc_px(method='FD',nsteps=4,npaths=10) # doctest: +ELLIPSIS
         LowExercisePrice...px: 18.657861519...
-        <BLANKLINE>
 
-        # From DeriGem. S0=5, K=0.01, vol=0.30, T=2, rf_r=0.1, Steps=4, Binomial European Call
+        From DerivaGem. S0=5, K=0.01, vol=0.30, T=2, rf_r=0.1, Steps=4, Binomial European Call
+
         >>> s = Stock(S0=5, vol=.30)
         >>> o = LowExercisePrice(ref=s,T=2,rf_r=.10)
         >>> print(o.calc_px(method='FD',nsteps=4,npaths = 10,keep_hist=False).px_spec.px) # doctest: +ELLIPSIS
         4.841966227...
-
-
-        Notes
-        -----
-        [1] Wikipedia: Low Exercise Price Option - https://en.wikipedia.org/wiki/Low_Exercise_Price_Option
-        [2] LEPOs Explanatory Booklet http://www.asx.com.au/documents/resources/UnderstandingLEPOs.pdf
 
         :Authors:
             Runmin Zheng
@@ -133,18 +139,11 @@ class LowExercisePrice(OptionValuation):
 
     def _calc_LT(self):
         """ Internal function for option valuation.
-        Modified from European Call Option.
 
-        Returns
-        -------
-        self: LowExercisePrice.
+        See ``calc_px()`` for complete documentation.
 
-        .. sectionauthor:: Runmin Zhang
+        :Authors: Runmin Zhang <z.runmin@gmail.com>
 
-
-
-        Examples
-        -------
         """
 
 
@@ -185,16 +184,12 @@ class LowExercisePrice(OptionValuation):
     def _calc_MC(self, nsteps=3, npaths=4, keep_hist=False):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: Basket
-        .. sectionauthor::
+        See ``calc_px()`` for complete documentation.
 
-        Notes
-        -----
-
+        :Authors:
 
         """
+
         return self
 
     def _calc_FD(self):

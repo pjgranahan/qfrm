@@ -46,16 +46,16 @@ class Spread(OptionValuation):
         Returns
         -------
         self : Spread
-            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
 
 
         Notes
         ---------
-        Verify Examples: http://www.fintools.com/resources/online-calculators/exotics-calculators/spread/
+        `Verify Examples: <http://www.fintools.com/resources/online-calculators/exotics-calculators/spread/>_`
 
 
         Examples
-        ---------------
+        ------------
 
         >>> s1 = Stock(S0=30.,q=0.,vol=.2)
         >>> s2 = Stock(S0=31.,q=0.,vol=.3)
@@ -74,28 +74,32 @@ class Spread(OptionValuation):
         >>> # import matplotlib.pyplot as plt
         >>> # plt.show() # run last two lines to show plot
 
+
+        **MC EXAMPLES**
+        RUN MC EXAMPLES WITH NSTEPS = 1000 and NPATHS = 1000 for accurate results (these are way off, but quick)
+        LINK TO VERIFY EXAMPLES IS IN THE NOTES
         >>> s1 = Stock(S0=30.,q=0.,vol=.2)
         >>> s2 = Stock(S0=31.,q=0.,vol=.3)
         >>> o = Spread(ref = s1, rf_r = .05, right='call', K=0., T=2., seed0 = 0)
-        >>> o.calc_px(method='MC',S2 = s2,rho=.4,nsteps=1000,npaths=1000).px_spec.px
-        5.644473359622987
+        >>> o.calc_px(method='MC',S2 = s2,rho=.4,nsteps=10,npaths=10).px_spec.px # doctest: +ELLIPSIS
+        9.006641533...
 
         >>> s1 = Stock(S0=30.,q=0.,vol=.2)
         >>> s2 = Stock(S0=31.,q=0.,vol=.3)
         >>> o = Spread(ref = s1, rf_r = .05, right='put', K=2., T=2., seed0 = 0)
-        >>> o.calc_px(method='MC',S2 = s2,rho=.4,nsteps=1000,npaths=1000).px_spec.px
-        5.262902444782136
+        >>> o.calc_px(method='MC',S2 = s2,rho=.4,nsteps=10,npaths=10).px_spec.px # doctest: +ELLIPSIS
+        3.476538946...
 
         >>> s1 = Stock(S0=30.,q=0.,vol=.2)
         >>> s2 = Stock(S0=30.,q=0.,vol=.2)
         >>> o = Spread(ref = s1, rf_r = .05, right='put', K=1., T=2., seed0 = 2, \
         desc = 'Perfectly correlated -- present value of 1')
-        >>> o.calc_px(method='MC',S2 = s2,rho=1.,nsteps=1000,npaths=1000).px_spec
+        >>> o.calc_px(method='MC',S2 = s2,rho=1.,nsteps=10,npaths=10).px_spec
         PriceSpec
         keep_hist: false
         method: MC
-        npaths: 1000
-        nsteps: 1000
+        npaths: 10
+        nsteps: 10
         px: 0.904837418
 
 

@@ -11,9 +11,13 @@ class Shout(OptionValuation):
     """ Shout option class.
 
     Inherits all methods and properties of OptionValuation class.
+    The shout option is usually a call option, but with a difference: at any time t before maturity, the holder may
+    "shout". The effect of this is that he is guaranteed a minimum payoff of St - K, although he will get the payoff
+    of the call option if this is greater than the minimum. In spirit this is the same as the binomial method for
+    pricing American options.
     """
 
-    def calc_px(self, method='LT', nsteps=None, npaths=None, keep_hist=False, seed=None):
+    def calc_px(self, method='LT', nsteps=None, npaths=None, keep_hist=False, seed=None, deg=0):
         """ Wrapper function that calls appropriate valuation method.
 
         All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
@@ -38,27 +42,28 @@ class Shout(OptionValuation):
                 If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
         seed : int
                 Seed number for Monte Carlo simulation
+        deg : int
+                degree of polynomial fit in MC
 
         Returns
         -------
         self : Shout
-            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
 
 
         Notes
         -----
-        Verification of Shout option: http://goo.gl/02jISW
-        Hull Ch26.12 P609
-
+        Verification of Shout option:
+        [1] Options, Futures and Other Derivatives, Hull, 2014, p.609
+        [2] `<http://goo.gl/02jISW>`_
+        This two excel spreadsheet price shout option.
+        [3] `<http://goo.gl/1rrTCG>`_
+        [4] `<http://goo.gl/AdgcqY>`_
 
         Examples
         --------
-        This two excel spreadsheet price shout option.
-        http://goo.gl/1rrTCG
-        http://goo.gl/AdgcqY
+        **LT**
 
-        LT Examples
-        -----------
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Shout(ref=s, right='call', K=52, T=2, rf_r=.05, desc='Example from internet excel spread sheet')
         >>> o.pxLT(nsteps=2)
@@ -78,21 +83,26 @@ class Shout(OptionValuation):
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
-        MC Examples
-        -----------
-        See example on p.26, p.28 in http://core.ac.uk/download/pdf/1568393.pdf
+        **MC**
+        Note: When deg is too large, Numpy Polyfit will give warnings: Polyfit may be poorly
+        conditioned warnings.warn(msg, RankWarning)
+
+        >>> s = Stock(S0=110, vol=.2, q=0.04)
+        >>> o = Shout(ref=s, right='call', K=100, T=0.5, rf_r=.05, desc='See example in Notes [3]')
+        >>> o.pxMC(nsteps=10, npaths=10, keep_hist=True, seed=314)
+        15.848463442
 
         >>> s = Stock(S0=36, vol=.2)
         >>> o = Shout(ref=s, right='put', K=40, T=1, rf_r=.2, desc='http://core.ac.uk/download/pdf/1568393.pdf')
-        >>> o.pxMC(nsteps=252, npaths=10000, keep_hist=True, seed=1212)
-        4.131257046
+        >>> o.pxMC(nsteps=10, npaths=10, keep_hist=True, seed=0)
+        4.349069451
 
-        >>> o.calc_px(method='MC', nsteps=252, npaths=10000, keep_hist=True, seed=1212).px_spec
+        >>> o.calc_px(method='MC', nsteps=10, npaths=10, keep_hist=True, seed=0).px_spec
         ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PriceSpec...px: 4.131257046...
+        PriceSpec...px: 4.349069451...
 
-        >>> from pandas import Series;  steps = [10,50,100,150,200,250]
-        >>> O = Series([o.pxMC(nsteps=s, npaths=10000, keep_hist=True, seed=1212) for s in steps], steps)
+        >>> from pandas import Series;  steps = [1,2,3,4,5]
+        >>> O = Series([o.pxMC(nsteps=s, npaths=10, keep_hist=True, seed=0) for s in steps], steps)
         >>> O.plot(grid=1, title='MC Price vs nsteps')# doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
@@ -104,6 +114,7 @@ class Shout(OptionValuation):
             Yen-fei Chen <yensfly@gmail.com>
 
        """
+        self.deg = deg
         self.seed = seed
         return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
 
@@ -115,9 +126,6 @@ class Shout(OptionValuation):
         -------
         self: Shout
 
-        :Authors:
-            Mengyan Xie <xiemengy@gmail.com>
-
         Notes
         -----
 
@@ -126,10 +134,10 @@ class Shout(OptionValuation):
         of the call option if this is greater than the minimum. In spirit this is the same as the binomial method for
         pricing American options.
 
-
+        :Authors:
+            Mengyan Xie <xiemengy@gmail.com>
 
         """
-
 
         keep_hist = getattr(self.px_spec, 'keep_hist', False)
         n = getattr(self.px_spec, 'nsteps', 3)
@@ -158,13 +166,13 @@ class Shout(OptionValuation):
             S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
 
             # payoff of shout
-            Shout = self.signCP * S / np.exp(self.ref.q * tleft) * Util.norm_cdf(self.signCP * d1) - \
+            shout = self.signCP * S / np.exp(self.ref.q * tleft) * Util.norm_cdf(self.signCP * d1) - \
                     self.signCP * S / np.exp(self.rf_r * tleft) * Util.norm_cdf(self.signCP * d2) + \
                     self.signCP * (S - self.K) / np.exp(self.rf_r * tleft)
 
             # final payoff is the maximum of shout or not shout
-            Payout = np.maximum(Shout, 0)
-            O = np.maximum(O, Payout)
+            payout = np.maximum(shout, 0)
+            O = np.maximum(O, payout)
 
             S_tree = (tuple([float(s) for s in S]),) + S_tree
             O_tree = (tuple([float(o) for o in O]),) + O_tree
@@ -205,7 +213,7 @@ class Shout(OptionValuation):
 
         Note
         ----
-        [1] http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L4shout.pdf
+        [1] `<http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L4shout.pdf>`_
         [2] Hull, J.C., Options, Futures and Other Derivatives, 9ed, 2014. Prentice Hall, p609.
 
         """
@@ -218,25 +226,26 @@ class Shout(OptionValuation):
         df = np.exp(-_.rf_r * dt)
         np.random.seed(_.seed)
 
-        h = np.zeros((n_steps+1, n_paths) ,'d') # option value matrix
+        option_px = np.zeros((n_steps+1, n_paths) ,'d')
         S = np.zeros((n_steps+1, n_paths) ,'d') # stock price matrix
         S[0,:] = _.ref.S0 # initial value
 
         # stock price paths
         for t in range(1,n_steps+1):
-            ran = scipy.stats.norm.rvs(loc=0, scale=1, size=n_paths) # pseudo - random numbers
-            S[t,:] = S[t-1,:] * np.exp((_.rf_r-_.ref.vol**2/2)*dt + _.ref.vol*ran*np.sqrt(dt))
+            random = scipy.stats.norm.rvs(loc=0, scale=1, size=n_paths)
+            S[t,:] = S[t-1,:] * np.exp((_.rf_r-_.ref.vol**2/2)*dt + _.ref.vol*random*np.sqrt(dt))
 
-        h = np.maximum(_.signCP*(S-_.K), 0) # payoff when not shout
+        option_px = np.maximum(_.signCP*(S-_.K), 0) # payoff when not shout
         final_payoff = np.repeat(S[-1,:], n_steps+1, axis=0).reshape(n_paths,n_steps+1)
-        V = np.maximum(_.signCP*(final_payoff.transpose()-_.K), _.signCP*(S-_.K))# payoff when shout
+        shout_px = np.maximum(_.signCP*(final_payoff.transpose()-_.K), _.signCP*(S-_.K))
 
-        for t in range (n_steps-1,-1,-1): # valuation process ia similar to American option
-            rg = np.polyfit(S[t,:], df*np.array(h[t+1,:]), 3) # regression at time t
+        for t in range (n_steps-1,-1,-1): # valuation process is similar to American option
+            rg = np.polyfit(S[t,:], df*np.array(option_px[t+1,:]), _.deg) # regression at time t
             C= np.polyval(rg, S[t,:]) # continuation values
-            h[t,:]= np.where(V[t,:]>C, V[t,:], h[t+1,:]*df) # exercise decision: shout or not shout
+            # exercise decision: shout or not shout
+            option_px[t,:]= np.where(shout_px[t,:]>C, shout_px[t,:], option_px[t+1,:]*df)
 
-        self.px_spec.add(px=float(np.mean(h[0,:])), sub_method='Hull p.609')
+        self.px_spec.add(px=float(np.mean(option_px[0,:])), sub_method='Hull p.609')
         return self
 
     def _calc_FD(self):

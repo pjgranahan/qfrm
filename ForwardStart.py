@@ -11,7 +11,7 @@ class ForwardStart(OptionValuation):
     Inherits all methods and properties of ``Optionvalueation`` class.
     """
 
-    def calc_px(self, T_s=1, method='BS', nsteps=None, npaths=None, keep_hist=False):
+    def calc_px(self, T_s, method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
 
         All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
@@ -39,26 +39,29 @@ class ForwardStart(OptionValuation):
 
         Returns
         -------
-        ForwardStart
-            Returned object contains specifications and calculated price in embedded ``PriceSpec`` object.
+        self : ForwardStart
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
+
 
         Notes
         -----
-        [1] `Wikipedia: Forward start option <https://en.wikipedia.org/wiki/Forward_start_option>`_
-        [2] Verify example 1 with
-        `How to pricing forward start options <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf>`_
-        [3] Verify example 4 with
-        `How to pricing forward start options <http://www.globalriskguard.com/resources/deriv/fwd_4.pdf>`_
+
+        - [1] `Wikipedia: Forward start option <https://en.wikipedia.org/wiki/Forward_start_option>`_
+        - [2] Verify example 1 with `Forward start options, from edu.sg <http://1drv.ms/1XS4R1e>`_
+        - [3] Verify example 4 with `Forward Start Options, from GlobalRiskGuard.com. <http://1drv.ms/1R2gFiw>`_
 
         Please note that in this implementation, we assume that at time ``T_s``, the strike is automatically set\
         to be equal to the underlying price at ``T_s``, meaning we have at-the-money option. \
         Hence, the user-supplied strike price ``K`` is ignored.
 
+
+        **MC**
+
+
         Examples
         --------
-        **BS Examples**
-
-        `Forward Start Options, p.2 <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf>`_
+        **BS**
+        See `Forward start options, from edu.sg <http://1drv.ms/1XS4R1e>`_ p.2
 
         >>> s = Stock(S0=50, vol=.15,q=0.05)
         >>> ForwardStart(ref=s, K=50,right='call', T=0.5, rf_r=.1).pxBS(T_s=0.5)
@@ -84,12 +87,8 @@ class ForwardStart(OptionValuation):
 
 
 
-        Examples using _calc_MC()
-        -------------------------------------
-
-        Notes
-        -----
-        Verification of examples:
+        **MC**
+        *Verification of examples*:
         `Forward Start Options, p.2 <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf>`_
 
         Please note that the following MC examples will only generate results that matches the output of online source
@@ -153,12 +152,8 @@ class ForwardStart(OptionValuation):
 
 
 
-        Examples using _calc_FD()
-        -------------------------------------
-
-        Notes
-        -----
-        Verification of examples:
+        **FD**
+        *Verification of examples*:
         `Forward Start Options, p.2 <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf>`_
 
         The result of this method is influenced by many parameters.
@@ -237,15 +232,6 @@ class ForwardStart(OptionValuation):
         except:
             print('Input error. K is None.')
 
-
-        assert right in ['c','p'], 'right should be either "call" or "put" '
-        assert vol >= 0, 'vol >=0'
-        assert T > 0, 'T > 0'
-        assert T_s >=0, 'T_s >= 0'
-        assert S0 >= 0, 'S >= 0'
-        assert r >= 0, 'r >= 0'
-        assert q >= 0, 'q >= 0'
-
         # Import external functions
 
 
@@ -256,9 +242,9 @@ class ForwardStart(OptionValuation):
 
         # Calculate the option price
         N = Util.norm_cdf
-        if right=='c':
+        if _.signCP==1:
             px = S0*math.exp(-q*T_s)*( math.exp(-q*T)*N(d1) -math.exp(-r*T)*N(d2) )
-        elif right=='p':
+        elif _.signCP==-1:
             px = S0*math.exp(-q*T_s)*( -math.exp(-q*T)*N(-d1) +math.exp(-r*T)*N(-d2) )
 
         self.px_spec.add(px=float(px), method='BS', sub_method=None)
@@ -334,7 +320,7 @@ class ForwardStart(OptionValuation):
 
         Note
         ----
-        [1] http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
+        [1] `<http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf>`_
 
         :Authors:
             Mengyan Xie <xiemengy@gmail.com>
