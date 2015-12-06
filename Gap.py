@@ -13,6 +13,10 @@ class Gap(OptionValuation):
     """ Gap option class.
 
     Inherits all methods and properties of OptionValuation class.
+    A gap option has a strike price, ``K1``, and a trigger price, ``K2``. The trigger price
+    determines whether or not the gap option will have a nonzero payoff. The strike price
+    determines the amount of the nonzero payoff. The strike price may be greater than or
+    less than the trigger price.
     """
 
     def calc_px(self, K2=None, method='BS', nsteps=None, npaths=None, keep_hist=False, seed=None, on = None):
@@ -51,10 +55,7 @@ class Gap(OptionValuation):
 
         Notes
         -----
-        A gap option has a strike price, ``K1``, and a trigger price, ``K2``. The trigger price
-        determines whether or not the gap option will have a nonzero payoff. The strike price
-        determines the amount of the nonzero payoff. The strike price may be greater than or
-        less than the trigger price.
+
 
         Examples
         --------
@@ -207,8 +208,8 @@ class Gap(OptionValuation):
         # Price.px should always point to the price of interest to the user
         # Save values as basic data types (int, floats, str), instead of numpy.array
         N = Util.norm_cdf
-        px_call = float(_.ref.S0*np.exp(-_.ref.q* _.T)*N(d1)-_.K*np.exp(-_.rf_r*_.T)*N(d2))
-        px_put = float(-_.ref.S0*np.exp(-_.ref.q*_.T)*N(-d1)+_.K*np.exp(-_.rf_r*_.T)*N(-d2))
+        px_call = float(_.ref.S0*math.exp(-_.ref.q* _.T)*N(d1)-_.K*math.exp(-_.rf_r*_.T)*N(d2))
+        px_put = float(-_.ref.S0*math.exp(-_.ref.q*_.T)*N(-d1)+_.K*math.exp(-_.rf_r*_.T)*N(-d2))
         px = px_call if _.signCP == 1 else px_put if _.signCP == -1 else None
 
         self.px_spec.add(px=px, sub_method='standard; Hull p.335', px_call=px_call, px_put=px_put, d1=d1, d2=d2)
