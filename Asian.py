@@ -26,12 +26,17 @@ class Asian(OptionValuation):
 
         Parameters
         ----------
-        method : str
-            Required. Indicates a valuation method to be used:
+        method : {'BS', 'LT', 'MC', 'FD'}
+            Specifies option valuation method:
+
             ``BS``: Black-Scholes Merton calculation
+
             ``LT``: Lattice tree (such as binary tree)
+
             ``MC``: Monte Carlo simulation methods
+
             ``FD``: finite differencing methods
+
         nsteps : int
             LT, MC, FD methods require number of times steps
         npaths : int
@@ -43,10 +48,11 @@ class Asian(OptionValuation):
         sub_method : str
             Required. Calculation of price using 'Geometric' or 'Arithmetic' averages.
             Case-insensitive and may use partial string w/first letter.
-        strike : str
-            Required.
-            If `'K'`, then the average asset price is compared against a fixed strike variable K to determine payoff.
-            If `'S'`, then the asset price at maturity is compared against the average asset price
+        strike : {'K', 'S'}
+
+            ``K``: the average asset price is compared against a fixed strike variable K to determine payoff.
+
+            ``S``: the asset price at maturity is compared against the average asset price
             over [0,T], i.e. the average underlying becomes the strike and what is assigned to variable ``K`` in
             ``OptionValuation`` is ignored.
 
@@ -511,7 +517,7 @@ class Asian(OptionValuation):
 
         #compute the average of the distribution as the price of the option.
         v0 = sum(pay)/n_paths*df
-        self.px_spec.add(px=v0)
+        self.px_spec.add(px=float(v0))
         return self
 
     def _calc_FD(self):
@@ -581,3 +587,8 @@ class Asian(OptionValuation):
         self.px_spec.add(px=float(np.maximum(PriceM[0,(S0-Smin)/dS],0)), method='FD')
 
         return self
+
+
+s = Stock(S0=50, vol=.4, q = 0.0)
+o = Asian(ref=s, right='put', K=50, T=1., rf_r=.1, desc='Hull p. 610 Example 26.3')
+o.pxMC(nsteps=12, npaths=50000, rng_seed=12, sub_method='G', strike='S')
