@@ -282,13 +282,22 @@ class Binary(OptionValuation):
         >>> o.update(right='put').pxFD(payout_type="cash-or-nothing", Q=1000, nsteps=10, npaths=10)  #doctest: +ELLIPSIS
         154.068135942
 
-        Example #5 (plot): Example of option price development (FD method) with increasing maturities
+        Example #5 (plot): Example of option price development (FD method) with number of paths and steps
 
         >>> from pandas import Series
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05)
-        >>> O = Series([o.update(T=t).pxFD(payout_type="asset-or-nothing",nsteps=t*5) for t in range(1,11)],range(1,11))
-        >>> O.plot(grid=1, title='Price vs expiry (in years)')  # doctest: +ELLIPSIS
+        >>> O = Series([o.update().pxFD(payout_type="asset-or-nothing", nsteps=t*5) for t in range(1,11)],range(1,11))
+        >>> fig = plt.figure()
+        >>> ax = fig.add_subplot(111)
+        >>> ax.plot(O)  # doctest: +ELLIPSIS
+        [...]
+        >>> ax.grid(True)
+        >>> ax.set_xticklabels([]) # doctest: +ELLIPSIS
+        []
+        >>> plt.title("Decreasing Coarseness of FD")  # doctest: +ELLIPSIS
+        <...>
+        >>> plt.ylabel("Option Price")  # doctest: +ELLIPSIS
         <...>
         >>> plt.show()
 
