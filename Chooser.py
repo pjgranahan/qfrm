@@ -16,7 +16,7 @@ class Chooser(OptionValuation):
     date regardless of what decision the holder ultimately makes.
     """
 
-    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, tau=None, rng_seed=None):
+    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, tau=None, rng_seed=0):
         """ Wrapper function that calls appropriate valuation method.
 
         All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
@@ -48,7 +48,7 @@ class Chooser(OptionValuation):
         Returns
         -------
         self : Chooser
-            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object)
 
 
         Notes
@@ -107,7 +107,58 @@ class Chooser(OptionValuation):
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
-        
+
+        **MC Examples**
+
+        First example: see referenced result for comparison (increase steps to verify for sure)
+
+        >>> s = Stock(S0=50, vol=0.2, q=0.05)
+        >>> o = Chooser(ref=s, right='put', K=60, T=6/12, rf_r=.1)
+        >>> o.pxMC(tau=3/12,nsteps=10,npaths=10) # doctest: +ELLIPSIS
+        7.206105283...
+
+        Second example: coarsen the grid to increase deviation from the BSM price
+
+        >>> s = Stock(S0=50, vol=0.2, q=0.05)
+        >>> o = Chooser(ref=s, right='put', K=60, T=6/12, rf_r=.1)
+        >>> o.pxMC(tau=3/12,nsteps=5,npaths=5) # doctest: +ELLIPSIS
+        17.53478451...
+
+        Third example: Change the maturity
+
+        >>> s = Stock(S0=50, vol=0.2, q=0.05)
+        >>> o = Chooser(ref=s, right='put', K=60, T=12/12, rf_r=.1)
+        >>> o.pxMC(tau=3/12,nsteps=10,npaths=10) # doctest: +ELLIPSIS
+        6.17297465...
+
+        Fourth example: make choice at t=0: price collapses to a European call.
+
+        >>> s = Stock(S0=50, vol=0.2, q=0.05)
+        >>> o = Chooser(ref=s, right='put', K=60, T=12/12, rf_r=.1)
+        >>> o.pxMC(tau=0/12,nsteps=10,npaths=10) # doctest: +ELLIPSIS
+        5.16064813...
+
+        Vectorization example with plot: exploration of tau-space.
+
+        >>> tarr = np.linspace(0,12/12,11)
+        >>> px = tuple(map(lambda i: Chooser(ref=s, right='put', K=60, T=12/12, rf_r=.1).pxMC(tau=tarr[i],nsteps=10,
+        ... npaths=10), range(tarr.shape[0])))
+        >>> fig = plt.figure()
+        >>> ax = fig.add_subplot(111)
+        >>> ax.plot(tarr,px,label='Chooser') # doctest: +ELLIPSIS
+        [<...>]
+        >>> ax.set_title('Price of Chooser vs tau') # doctest: +ELLIPSIS
+        <...>
+        >>> ax.set_ylabel('Px') # doctest: +ELLIPSIS
+        <...>
+        >>> ax.set_xlabel('tau') # doctest: +ELLIPSIS
+        <...>
+        >>> ax.grid()
+        >>> ax.legend() # doctest: +ELLIPSIS
+        <...>
+        >>> plt.show()
+
+
         **FD Examples**
 
         First example: see referenced result for comparison
@@ -175,7 +226,7 @@ class Chooser(OptionValuation):
 
         """
         self.tau = float(tau)
-        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
+        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, rng_seed=rng_seed)
 
     def _calc_BS(self):
         """ Internal function for option valuation.
@@ -243,6 +294,10 @@ class Chooser(OptionValuation):
 
         See ``calc_px()`` for complete documentation.
 
+        Basically, we calculate the price of a European call option using standard methods, and then calculate a
+        European put option with augmented exercise date and strike price. Adding these together prices the chooser
+        option.
+
         :Authors:
             Andrew Weatherly <amw13@rice.edu>
         """
@@ -265,20 +320,37 @@ class Chooser(OptionValuation):
 
         for i in range(n - 1, -1, -1): v[i] = v[i + 1] * df  # discount to present, step by step (can also do at once)
         v0 = np.mean(v[0]) #call option
+        if T - tau != 0:
+            Kau = K * np.exp(-r * (T - tau))
+            S1 = S0 * np.exp(-q * (T - tau))
+            dt = (self.T - tau) / n
+            df = math.exp(-(r - q) * dt)
+            norm_mtx = np.random.normal((r - 0.5 * vol ** 2) * dt, vol * math.sqrt(dt), (n + 1, m))
+            S = S1 * np.exp(np.cumsum(norm_mtx, axis=0))
+            S[0] = S1
+            payout = np.maximum((Kau - S), 0)
+            V = np.copy(payout)  # terminal payouts
 
-        Kau = K * np.exp(-r * (T - tau))
-        S1 = S0 * np.exp(-q * (T - tau))
-        dt = (self.T - tau) / n
-        df = math.exp(-(r - q) * dt)
-        norm_mtx = np.random.normal((r - 0.5 * vol ** 2) * dt, vol * math.sqrt(dt), (n + 1, m))
-        S = S1 * np.exp(np.cumsum(norm_mtx, axis=0))
-        S[0] = S1
-        payout = np.maximum((S - Kau), 0)
-        V = np.copy(payout)  # terminal payouts
+            for i in range(n - 1, -1, -1): V[i] = V[i + 1] * df  # discount to present, step by step (can also do at once)
+            V0 = np.mean(V[0]) #put option
 
-        for i in range(n - 1, -1, -1): V[i] = V[i + 1] * df  # discount to present, step by step (can also do at once)
-        V0 = np.mean(V[0]) #put option
-        self.px_spec.add(px=V0 + v0, method='MC', sub_method='Monte Carlo Simulation')
+            self.px_spec.add(px=round(V0 + v0, 9), method='MC', sub_method='Monte Carlo Simulation')
+        else:
+            tau = T * .999999999 #if T = tau, then the method breaks(divide by zero), so I generate a tau that is very
+            #close to it
+            Kau = K * np.exp(-r * (T - tau))
+            S1 = S0 * np.exp(-q * (T - tau))
+            dt = (self.T - tau) / n
+            df = math.exp(-(r - q) * dt)
+            norm_mtx = np.random.normal((r - 0.5 * vol ** 2) * dt, vol * math.sqrt(dt), (n + 1, m))
+            S = S1 * np.exp(np.cumsum(norm_mtx, axis=0))
+            S[0] = S1
+            payout = np.maximum((Kau - S), 0)
+            V = np.copy(payout)  # terminal payouts
+
+            for i in range(n - 1, -1, -1): V[i] = V[i + 1] * df  # discount to present, step by step (can also do at once)
+            V0 = np.mean(V[0]) #put option
+            self.px_spec.add(px=v0 + V0, method='MC', sub_method='Monte Carlo Simulation')
         return self
 
     def _calc_FD(self, nsteps=3, npaths=4, keep_hist=False):
@@ -362,4 +434,3 @@ class Chooser(OptionValuation):
         _.px_spec.add(px=cpx+ppx)
 
         return self
-
