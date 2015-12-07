@@ -46,7 +46,10 @@ class Exchange(OptionValuation):
         Notes
         -----
 
-        [1] In my implementation of all the pricers of exhange option, I assume that this is an option to exchange
+        *Important:*
+
+
+        - In my implementation of all the pricers of exhange option, I assume that this is an option to exchange
         the first asset for the second. The payoff profile is ``max{S0_2(T)-S0_1(T),0}`` where ``S0_2(T)`` \
         is the price of asset 2 at maturity and ``S0_1(T)`` is the price of asset 1 at maturity. \
         This is equivalent to restating this exchange option as a call (resp. put) option on asset 2 (resp. asset 1)\
@@ -54,7 +57,7 @@ class Exchange(OptionValuation):
         When you use this function, please use the following input format: ``S0=(asset1,asset2)``
         Due to the aforementioned reasons, the parameter ``right`` is ignored.
 
-        [2]I used implicit finite difference method in my FD implementation. In order for the option value to\
+        - I used implicit finite difference method in my FD implementation. In order for the option value to\
         converge, when you set ``npaths`` which determines the delta_s, \
         please make sure ``S0_1``, namely ``S0[0]`` is a multiple of delta_s, namely the interval between\
         consecutive prices.
@@ -64,8 +67,10 @@ class Exchange(OptionValuation):
 
         **BS**
 
-        Verification:
-        `Exchange Options, p.4 <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L3exchange.pdf>`_
+        *Verification:*
+
+
+        - `Exchange Options, Lim Tiong Wee, p.4 <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L3exchange.pdf>`_
 
         >>> s = Stock(S0=(100,100), vol=(0.15,0.20), q=(0.04,0.05))
         >>> o = Exchange(ref=s, right='call', K=40, T=1, rf_r=.1, \
@@ -96,7 +101,8 @@ class Exchange(OptionValuation):
 
         **FD**
         *Verification of examples*:
-        `Exchange Options, p.4 <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L3exchange.pdf>`_
+
+        - `Exchange Options, Lim Tiong Wee, p.4 <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L3exchange.pdf>`_
 
         Please note that the following FD examples will only generate results that matches the output of online\
         source if we use ``nsteps=10`` and ``npaths = 101``. \
