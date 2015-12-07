@@ -12,7 +12,18 @@ class Binary(OptionValuation):
     """
     Binary option class.
 
-    Inherits all methods and properties of OptionValuation class.
+    In finance, a binary option is a type of option in which the payoff can take only two possible outcomes,
+    either some fixed monetary amount (or a precise predefined quantity or units of some asset) or nothing at all
+    (in contrast to ordinary financial options that typically have a continuous spectrum of payoff)...
+
+    For example, a purchase is made of a binary cash-or-nothing call option on XYZ Corp's stock struck at $100
+    with a binary payoff of $1,000. Then, if at the future maturity date, often referred to as an expiry date, the
+    stock is trading at above $100, $1,000 is received. If the stock is trading below $100, no money is received.
+    And if the stock is trading at $100, the money is returned to the purchaser. [1]
+
+    References
+    ----------
+    [1] `Binary Option on Wikipedia <https://en.wikipedia.org/wiki/Binary_option>`_
     """
 
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, payout_type="asset-or-nothing", Q=0.0):
@@ -51,21 +62,6 @@ class Binary(OptionValuation):
 
         Notes
         ----------
-        In finance, a binary option is a type of option in which the payoff can take only two possible outcomes,
-        either some fixed monetary amount (or a precise predefined quantity or units of some asset) or nothing at all
-        (in contrast to ordinary financial options that typically have a continuous spectrum of payoff)...
-
-        For example, a purchase is made of a binary cash-or-nothing call option on XYZ Corp's stock struck at $100
-        with a binary payoff of $1,000. Then, if at the future maturity date, often referred to as an expiry date, the
-        stock is trading at above $100, $1,000 is received. If the stock is trading below $100, no money is received.
-        And if the stock is trading at $100, the money is returned to the purchaser. [1]
-
-        *References*
-
-        [1] `Binary Option on Wikipedia <https://en.wikipedia.org/wiki/Binary_option>`_
-
-
-
         **Lattice Tree (LT)**, i.e. binomial or binary (recombining) tree pricing.
         Binomial tree is used to (discretely) grow the underlying stock price.
         Then backward induction is used to compute option payoff
@@ -562,5 +558,3 @@ class Binary(OptionValuation):
 
         self.px_spec.add(px=np.interp(S0, S_vec, C[0, :]), method='FD', sub_method='Implicit')
         return self
-
-
