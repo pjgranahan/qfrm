@@ -16,7 +16,7 @@ class Chooser(OptionValuation):
     date regardless of what decision the holder ultimately makes.
     """
 
-    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, tau=None):
+    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, tau=None, rng_seed=None):
         """ Wrapper function that calls appropriate valuation method.
 
         All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
@@ -41,6 +41,9 @@ class Chooser(OptionValuation):
                 If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
         tau : float
                 Time to choose whether this option is a call or put.
+        rng_seed : int, None
+                Required for the MC method in which random paths are generated (choose a single seed to reproduce
+                results). Must be non-negative.
 
         Returns
         -------
@@ -243,8 +246,39 @@ class Chooser(OptionValuation):
         :Authors:
             Andrew Weatherly <amw13@rice.edu>
         """
+        np.random.seed(getattr(self.px_spec, 'rng_seed', None))
         n = getattr(self.px_spec, 'nsteps', 3)
+        m = getattr(self.px_spec, 'npaths', 3)
 
+        dt, df = self.LT_specs(n)['dt'], self.LT_specs(n)['df_dt']
+        S0, vol = self.ref.S0, self.ref.vol
+        K, r = self.K, self.rf_r
+        tau = self.tau
+        T = self.T
+        q = self.ref.q
+
+        norm_mtx = np.random.normal((r - 0.5 * vol ** 2) * dt, vol * math.sqrt(dt), (n + 1, m))
+        S = S0 * np.exp(np.cumsum(norm_mtx, axis=0))
+        S[0] = S0
+        payout = np.maximum((S - K), 0)
+        v = np.copy(payout)  # terminal payouts
+
+        for i in range(n - 1, -1, -1): v[i] = v[i + 1] * df  # discount to present, step by step (can also do at once)
+        v0 = np.mean(v[0]) #call option
+
+        Kau = K * np.exp(-r * (T - tau))
+        S1 = S0 * np.exp(-q * (T - tau))
+        dt = (self.T - tau) / n
+        df = math.exp(-(r - q) * dt)
+        norm_mtx = np.random.normal((r - 0.5 * vol ** 2) * dt, vol * math.sqrt(dt), (n + 1, m))
+        S = S1 * np.exp(np.cumsum(norm_mtx, axis=0))
+        S[0] = S1
+        payout = np.maximum((S - Kau), 0)
+        V = np.copy(payout)  # terminal payouts
+
+        for i in range(n - 1, -1, -1): V[i] = V[i + 1] * df  # discount to present, step by step (can also do at once)
+        V0 = np.mean(V[0]) #put option
+        self.px_spec.add(px=V0 + v0, method='MC', sub_method='Monte Carlo Simulation')
         return self
 
     def _calc_FD(self, nsteps=3, npaths=4, keep_hist=False):

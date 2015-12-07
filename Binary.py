@@ -368,7 +368,6 @@ class Binary(OptionValuation):
             Tianyi Yao <ty13@rice.edu>
         """
 
-
         #Retrieve parameters specific to binary option class
         payout_type = getattr(self.px_spec, 'payout_type')
         Q = getattr(self.px_spec, 'Q')
