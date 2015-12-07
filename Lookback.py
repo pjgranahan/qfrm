@@ -91,24 +91,24 @@ class Lookback(OptionValuation):
 
         **LT**
 
-        >>> s = Stock(S0=35., vol=.05, q=.00)
-        >>> o = Lookback(ref=s, right='call', K=30, T=0.25, rf_r=.1, desc='Hull p607')
-        >>> o.pxLT(nsteps=100,keep_hist=False, Sfl = 50.0)
-        1.829899147
+        >>> s = Stock(S0=25., vol=.2, q=.00)
+        >>> o = Lookback(ref=s, right='call', K=30, T=0.25, rf_r=.01)
+        >>> o.pxLT(nsteps=100,keep_hist=False)
+        1.929364513
 
         >>> o.px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PriceSpec...px: 1.829899147...
+        PriceSpec...px: 1.929364513...
 
-        >>> s = Stock(S0=50., vol=.4, q=.0)
-        >>> o = Lookback(ref=s, right='call', T=3/12, K=30, rf_r=.1, desc='Hull p607')
-        >>> o.pxLT(nsteps=1000,keep_hist=False, Sfl = 50.0)
-        8.135758904
+        >>> s = Stock(S0=30., vol=.25, q=.0)
+        >>> o = Lookback(ref=s, right='call', T=0.5, K=30, rf_r=.01)
+        >>> o.pxLT(nsteps=100,keep_hist=False)
+        3.929525986
 
 
-        >>> s = Stock(S0=100., vol=.02, q=.0)
-        >>> o = Lookback(ref=s, right='call', T=3, K=30, rf_r=.01, desc='Hull p607')
-        >>> o.pxLT(nsteps=50,keep_hist=False, Sfl = 50.0)
-        6.436996103
+        >>> s = Stock(S0=5., vol=.1, q=.0)
+        >>> o = Lookback(ref=s, right='put', T=0.5, K=30, rf_r=.02)
+        >>> o.pxLT(nsteps=100,keep_hist=False, Sfl = 50.0)
+        0.243407268
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
