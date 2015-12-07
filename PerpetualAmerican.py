@@ -46,17 +46,24 @@ class PerpetualAmerican(OptionValuation):
         In finance, a perpetual American option is a special type of American option which does not have a
         maturity date.
 
-        Please note that this perpetual American option has no expiry data. Hence, the parameter ``T`` is not used.
+        **Black-Scholes Merton (BS)**, i.e. exact solution pricing.
+        This pricing method uses Black Scholes Merton differential equation to price the perpetual American option.
+        *Important*:
 
-        [1] Formula reference: Hull P.599 Perpetual American
+        - This perpetual American option has no expiry data. Hence, the parameter ``T`` is not used.
+        - For computation to be possible, please use non-zero annualized dividend yield, ``q``.
+
+        *References:*
+
+        - Perpetual American, OFOD, J.C.Hull, 9ed, 2014, P.599
 
         Examples
         ------------
 
-        Use the Black-Scholes model to price a perpetual American option
+        **BS:**
+        *Verifiable example:*
 
-        Verification of examples:
-        `All the examples below can be verified by this online tools: <http://www.coggit.com/freetools>`_
+        - `All the examples below can be verified by this online tools: <http://www.coggit.com/freetools>`_
 
 
 

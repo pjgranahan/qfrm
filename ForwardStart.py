@@ -46,16 +46,28 @@ class ForwardStart(OptionValuation):
         Notes
         -----
 
+        *Reference:*
+
+
         - [1] `Wikipedia: Forward start option <https://en.wikipedia.org/wiki/Forward_start_option>`_
         - [2] Verify example 1 with `Forward start options, from edu.sg <http://1drv.ms/1XS4R1e>`_
         - [3] Verify example 4 with `Forward Start Options, from GlobalRiskGuard.com. <http://1drv.ms/1R2gFiw>`_
+
+        *Important:*
+
 
         Please note that in this implementation, we assume that at time ``T_s``, the strike is automatically set\
         to be equal to the underlying price at ``T_s``, meaning we have at-the-money option. \
         Hence, the user-supplied strike price ``K`` is ignored.
 
 
-        **MC**
+        **Monte Carlo simulation (MC)**.
+        A naive approach is to simulate stock prices, according to Geometric Brownian motion (GBM) model.
+        Then discount the the payouts along each path.
+
+        *Reference:*
+
+        - `Forward Start Options,Lim Tiong Wee, p.2 <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf>`_
 
 
         Examples
@@ -89,7 +101,7 @@ class ForwardStart(OptionValuation):
 
         **MC**
         *Verification of examples*:
-        `Forward Start Options, p.2 <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf>`_
+        `Forward Start Options,Lim Tiong Wee, p.2 <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf>`_
 
         Please note that the following MC examples will only generate results that matches the output of online source
         if we use ``nsteps=365`` and ``npaths = 10000``.
@@ -269,7 +281,10 @@ class ForwardStart(OptionValuation):
 
         Note
         ----
-        [1] `<http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf>`_
+        *Reference:*
+
+
+        - `Forward Start Options,Lim Tiong Wee, p.2 <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf>`_
 
         :Authors:
             Tianyi Yao <ty13@rice.edu>

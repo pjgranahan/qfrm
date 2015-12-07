@@ -60,9 +60,21 @@ class Binary(OptionValuation):
         stock is trading at above $100, $1,000 is received. If the stock is trading below $100, no money is received.
         And if the stock is trading at $100, the money is returned to the purchaser. [1]
 
-        References
-        -------------
+        *References*
+
         [1] `Binary Option on Wikipedia <https://en.wikipedia.org/wiki/Binary_option>`_
+
+
+
+        **Lattice Tree (LT)**, i.e. binomial or binary (recombining) tree pricing.
+        Binomial tree is used to (discretely) grow the underlying stock price.
+        Then backward induction is used to compute option payoff
+        at each time step and (discretely) discount it to the present time.
+        OFOD textbook by John C. Hull has an excellent overview of this method with many examples and exercises.
+
+        *References:*
+
+        - Binomial Trees, Ch.13, OFOD, J.C.Hull, 9ed, 2014, p.274
 
         Examples
         ------------
@@ -105,16 +117,14 @@ class Binary(OptionValuation):
 
 
 
+        **LT:**
+        *Verifiable example:*
+        See DerivaGem software, Binary option (both cash_or_nothing and asset_or_nothing).
 
-        Examples using _calc_LT()
-        ----------------------------------------------
 
-        Notes
-        -------
-        Verification of examples: DerivaGem software, Binary option (both cash_or_nothing and asset_or_nothing)
-
-        Please note that the following LT examples will only generate results that matches the output of DerivaGem\
-        if we use ``nsteps=365``. For fast runtime purpose, I use ``nsteps=10`` in the following examples, which may\
+        *Important*: Please note that the following LT examples will only generate results \
+        that matches the output of DerivaGem if we use ``nsteps=365``. \
+        For fast runtime purpose, I use ``nsteps=10`` in the following examples, which may\
         not generate results that match the output of DerivaGem
 
 
@@ -354,7 +364,7 @@ class Binary(OptionValuation):
         See ``calc_px()`` for complete documentation.
 
         Notes
-        ----------------
+        -----------
         [1] `Implementing Binomial Trees, Manfred Gilli & Enrico Schumann, 2009
             <http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181>`_
 
