@@ -22,8 +22,8 @@ class European(OptionValuation):
 
         Parameters
         -------------
-        method : str
-            Required. Indicates a valuation method to be used:
+        method : {'BS', 'LT', 'MC', 'FD'}
+            Specifies option valuation method:
 
             ``BS`` -- Black-Scholes Merton calculation
 

@@ -56,11 +56,11 @@ class Bermudan(OptionValuation):
         seed : int
             The seed for the RNG.
 
-
         Returns
         -------
         self : Bermudan
             Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object)
+
 
 
         Notes
@@ -68,15 +68,13 @@ class Bermudan(OptionValuation):
 
         **LT**
 
-        Referenced example is from p.9 of
-        `Bermudan Option Pricing using Binomial Models Seminar in Analytical Finance I
-        <http://janroman.dhis.org/stud/I2012/Bermuda/reportFinal.pdf>`_
+        *References:*
 
-        References
-        ----------
-
-        - [1] http://eprints.maths.ox.ac.uk/789/1/Thom.pdf
-        - [2] http://eprints.maths.ox.ac.uk/934/1/longyun_chen.pdf
+        - [1] `Longstaff Schwartz Pricing of Bermudan Options and their Greeks, Howard Thom, 2009 <http://1drv.ms/1XO4NoL>`_
+        - [2] `Multilevel Monte Carlo Adapted to Bermudan Options Using Randomized Stopping Rule, Longyun Chen, 2010 <http://1drv.ms/1XO50YS>`_
+        - Referenced example is from p.9 of
+          `Bermudan Option Pricing using Binomial Models. Seminar in Analytical Finance I, Jessica Radeschnig, et al, 2012
+          <http://1drv.ms/1lHY5Pn>`_
 
         Examples
         --------
@@ -87,7 +85,7 @@ class Bermudan(OptionValuation):
 
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Bermudan(ref=s, right='put', K=52, T=2, rf_r=.05)
-        >>> o.pxLT(keep_hist=True)
+        >>> o.pxLT(keep_hist=True, nsteps=3)
         7.251410364
 
         Changing the maturity
@@ -457,3 +455,8 @@ class Bermudan(OptionValuation):
         plt.show(block=True)
 
         return None
+
+
+# s = Stock(S0=50, vol=.3)
+# o = Bermudan(ref=s, right='put', K=52, T=2, rf_r=.05)
+# o.pxLT(keep_hist=False)
