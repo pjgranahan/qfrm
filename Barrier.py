@@ -345,7 +345,6 @@ class Barrier(OptionValuation):
 
         return self
 
-
     def _calc_MC(self, nsteps=3, npaths=4, keep_hist=False):
         """ Internal function for option valuation.
 
