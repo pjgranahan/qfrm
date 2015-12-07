@@ -12,9 +12,19 @@ except:
 
 
 class Quanto(OptionValuation):
-    """ Quanto option class.
+    """
+    Quanto option class.
 
-    Inherits all methods and properties of OptionValuation class.
+    A quanto is a type of derivative in which the underlying is denominated in one currency, but the instrument itself
+    is settled in another currency at some rate.
+
+    Quanto options have both the strike price and underlier denominated in the foreign currency. At exercise, the value
+    of the option is calculated as the option's intrinsic value in the foreign currency, which is then converted to the
+    domestic currency at the fixed exchange rate.
+
+    References
+    ----------
+    [1] `Quanto Option on Wikipedia <https://en.wikipedia.org/wiki/Quanto>`_
     """
 
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, vol_ex=0.0, correlation=0.0, seed=1,
@@ -53,11 +63,11 @@ class Quanto(OptionValuation):
         Returns
         -------
         self : Quanto
-            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object)
 
-
-        Notes
-        -----
+        References
+        ----------
+        [1] Options, Futures, and Other Derivatives, J.C.Hull, 9ed, 2014
 
         Examples
         --------
@@ -76,7 +86,7 @@ class Quanto(OptionValuation):
         >>> o.px_spec.ref_tree  # doctest: +ELLIPSIS
         ((1199.9999999999995,), ... 3670.601501648697))
 
-        Example #3 (verifiable from Hull ch.30, ex.30.5 (p.701-702)): Calculate the price of a Quanto option.
+        Example #3 (verifiable from Hull [1] ch.30, ex.30.5 (p.701-702)): Calculate the price of a Quanto option.
         Uncomment to run (number of paths required is too high for doctests)
 
         # >>> s = Stock(S0=1200, vol=.25, q=0.015)
@@ -84,7 +94,7 @@ class Quanto(OptionValuation):
         # >>> o.pxLT(nsteps=100, vol_ex=0.12, correlation=0.2, keep_hist=True)
         # 179.826073643
 
-        Example #4 (verifiable from Hull ch.30, problem.30.9.b (p.704)): Calculate the price of a Quanto option.
+        Example #4 (verifiable from Hull [1] ch.30, problem.30.9.b (p.704)): Calculate the price of a Quanto option.
         Uncomment to run (number of paths required is too high for doctests)
 
         # >>> s = Stock(S0=400, vol=.2, q=0.03)

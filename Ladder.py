@@ -7,6 +7,14 @@ except:
 class Ladder(OptionValuation):
     """
     Ladder option class.
+
+    An option that locks-in gains once the underlying reaches predetermined price levels or "rungs," guaranteeing
+    some profit even if the underlying security falls back below these levels before the option expires. [1]
+
+    References
+    -------------
+    [1] `Ladder Option on Investopedia <http://www.investopedia.com/terms/l/ladderoption.asp>`_
+
     """
 
     def __init__(self, rungs, *args, **kwargs):
@@ -15,9 +23,10 @@ class Ladder(OptionValuation):
         ----------
         rungs : tuple
                 Required. The predetermined profit lock-in price levels.
+                Example: (51, 52, 53, 54, 55)
         """
         super().__init__(*args, **kwargs)
-        self.rungs = sorted(rungs, reverse=self.signCP == -1)
+        self.rungs = sorted(rungs, reverse=self.signCP == -1)  # ascending if option right is call, descending if put
 
     def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
@@ -46,18 +55,7 @@ class Ladder(OptionValuation):
         Returns
         ------------
         self : Ladder
-            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
-
-
-        Notes
-        ----------
-        An option that locks-in gains once the underlying reaches predetermined price levels or "rungs," guaranteeing
-        some profit even if the underlying security falls back below these levels before the option expires. [1]
-
-
-        References
-        -------------
-        [1] `Ladder Option on Investopedia <http://www.investopedia.com/terms/l/ladderoption.asp>`_
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object)
 
         Examples
         ------------
@@ -87,8 +85,6 @@ class Ladder(OptionValuation):
         >>> actual = o.pxFD(npaths = 6, nsteps=10); expected = 8.067753794
         >>> (abs(actual - expected) / expected) < 0.10  # Verify within 10% of expected
         True
-
-        Example 3
 
         :Authors:
             Patrick Granahan
@@ -129,10 +125,14 @@ class Ladder(OptionValuation):
         See ``calc_px()`` for full documentation.
 
         WARNING: Varying npaths or nsteps can produce dramatically different results.
+        Therefore, results are unstable and probably unsuitable without further code refinements.
 
         Returns
         -------
         self: Ladder
+
+        :Authors:
+            Patrick Granahan
         """
 
         # The number of intervals to divide T into. N + 1 times/steps will be considered
