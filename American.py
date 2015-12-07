@@ -1,6 +1,5 @@
 import numpy as np
-# from pandas import DataFrame
-# import matplotlib.pyplot as plt
+import math
 
 try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
 except:   from OptionValuation import *  # development: if not installed and running from source
@@ -24,6 +23,11 @@ class American(OptionValuation):
         An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
         is calculating price via a shorter method wrapper ``.pxBS(...)``.
         The same works for all methods (BS, LT, MC, FD).
+
+        Additionally, the American option is a vanilla option traded on most stock exchanges. It is the same as the
+        European option in every way except that it can be exercised early at any time. This caveat changes the
+        "optimal" decision structure quite a bit and makes true closed form analytic solutions significantly more
+        difficult or impossible.
 
 
         Parameters
@@ -55,7 +59,7 @@ class American(OptionValuation):
         Returns
         -------
         self : American
-            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object)
 
 
         Notes
@@ -104,8 +108,10 @@ class American(OptionValuation):
         *References:*
 
         - Monte Carlo Simulation and American Options (Ch.27), OFOD, J.C.Hull, 9ed, 2014, pp.646-649
-        - `Valuing American Options by Simulation. A Simple Least-Squares Approach, F.A.Longstaff & E.S.Schwartz, 2001 <http://1drv.ms/1IMLUX0>`_
-        - `Pricing American Options. A Comparison of Monte Carlo Simulation Approaches, M.C.Fu, et al, 1999 <http://1drv.ms/1Q7kItH>`_
+        - `Valuing American Options by Simulation. A Simple Least-Squares Approach, F.A.Longstaff & E.S.Schwartz, 2001
+         <http://1drv.ms/1IMLUX0>`_
+        - `Pricing American Options. A Comparison of Monte Carlo Simulation Approaches, M.C.Fu, et al, 1999
+         <http://1drv.ms/1Q7kItH>`_
         - `Derivatives Analytics with Python & Numpy, Y.J.Hilpisch, 2011  <http://1drv.ms/21Fuoj6>`_
         - `Pricing American Options using Monte Carlo Methods, Quiya Jia, 2009. <http://1drv.ms/21FuvLr>`_
         - `Monte Carlo Simulations for American Options, Russel E. Caflisch, 2005. <http://1drv.ms/1lF24fF>`_
@@ -148,6 +154,20 @@ class American(OptionValuation):
         >>> American(ref=s, right='call', K=30, T=1., rf_r=.08).pxBS()
         4.713393764
 
+        >>> s = Stock(S0=50, vol=.2)
+        >>> strike = range(40, 61)
+        >>> o = [American(ref=s, right='put', K=strike[i], T=1, rf_r=.05).pxBS() for i in range(0, 21)]
+        >>> plt.plot(strike, o, label='Changing Strike') # doctest: +ELLIPSIS
+        [<matplotlib.lines.Line2D object at...
+        >>> plt.xlabel('Strike Price') # doctest: +ELLIPSIS
+        <matplotlib.text.Text object at...
+        >>> plt.ylabel("Option Price") # doctest: +ELLIPSIS
+        <matplotlib.text.Text object at...
+        >>> plt.legend(loc='best') # doctest: +ELLIPSIS
+        <matplotlib.legend.Legend object at...
+        >>> plt.title("Changing Strike Price") # doctest: +ELLIPSIS
+        <matplotlib.text.Text object at...
+        >>> plt.show()
 
 
         **LT:**
@@ -188,7 +208,8 @@ class American(OptionValuation):
             Oleg Melnikov <xisreal@gmail.com>, Andrew Weatherly <andrewweatherly1@gmail.com>
         """
 
-        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, rng_seed=rng_seed, deg=deg)
+        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, rng_seed=rng_seed,
+                               deg=deg)
 
     def _calc_LT(self):
         """ Internal function for option valuation.
@@ -204,7 +225,8 @@ class American(OptionValuation):
         n = getattr(self.px_spec, 'nsteps', 3)
         _ = self.LT_specs(n)
 
-        S = Vec(_['d']) ** Util.arange(n, -1, -1) * Vec(_['u']) ** Util.arange(0, n + 1) * self.ref.S0  # terminal stock prices
+        S = Vec(_['d']) ** Util.arange(n, -1, -1) * Vec(_['u']) ** Util.arange(0, n + 1) * self.ref.S0
+          # terminal stock prices
         O = Vec(Util.maximum((S - self.K) * self.signCP, 0))          # terminal option payouts
         S_tree, O_tree  = (tuple(S),), (tuple(O),)      # use tuples of floats (instead of numpy.float)
 
@@ -225,9 +247,8 @@ class American(OptionValuation):
         See ``calc_px()`` for complete documentation.
 
         :Authors:
-            Student name <email...>
+            Andrew Weatherly <amw13@rice.edu>
         """
-
 
         #Verify Input
         assert self.right in ['call', 'put'], 'right must be "call" or "put" '
@@ -237,16 +258,14 @@ class American(OptionValuation):
         assert self.ref.S0 >= 0, 'S must be >= 0'
         assert self.rf_r >= 0, 'r must be >= 0'
 
-        #Imports
-
         if self.right == 'call' and self.ref.q != 0:
             # Black's approximations outlined on pg. 346
             # Dividend paying stocks assume semi-annual payments
             if self.T > .5:
-                dividend_val1 = sum([self.ref.q * self.ref.S0 * math.exp(-self.rf_r * i) for i in np.linspace(.5, self.T - .5,
-                                    self.T * 2 - .5)])
-                dividend_val2 = sum([self.ref.q * self.ref.S0 * math.exp(-self.rf_r * i) for i in np.linspace(.5, self.T - 1,
-                                    self.T * 2 - 1)])
+                dividend_val1 = sum([self.ref.q * self.ref.S0 * math.exp(-self.rf_r * i) for i in np.linspace(.5,
+                                    self.T - .5, self.T * 2 - .5)])
+                dividend_val2 = sum([self.ref.q * self.ref.S0 * math.exp(-self.rf_r * i) for i in np.linspace(.5,
+                                    self.T - 1, self.T * 2 - 1)])
             else:
                 dividend_val1 = 0
                 dividend_val2 = 0
