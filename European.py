@@ -183,13 +183,13 @@ class European(OptionValuation):
         assert getattr(self, '_signCP') is not None, 'Ooops. Please supply option right: call, put, ...'
 
         if method in ('LT', 'MC', 'FD'):
-            self.px_spec.add_verify(dtype=int, min=2, max=float("inf"), dflt=10, nsteps=nsteps)
+            self.px_spec.add_verify(nsteps=nsteps, dtype=int, min=1, max=float("inf"), dflt=3)
 
         if method in ('MC', 'FD'):
-            self.px_spec.add_verify(dtype=int, min=2, max=float("inf"), dflt=10, npaths=npaths)
+            self.px_spec.add_verify(npaths=npaths, dtype=int, min=1, max=float("inf"), dflt=3)
 
         if method in ('MC'):
-            self.px_spec.add_verify(dtype=int, min=0, max=float("inf"), dflt=None, rng_seed=rng_seed)
+            self.px_spec.add_verify(rng_seed=rng_seed, dtype=int, min=0, max=float("inf"), dflt=None)
 
     def _calc_BS(self):
         """ Internal function for option valuation.

@@ -31,8 +31,8 @@ class Bermudan(European):
             ``LT``: Lattice tree (such as binary tree)
             ``MC``: Monte Carlo simulation methods
             ``FD``: finite differencing methods
-        tex : list
-            Required. Must be a vector (tuple; list; array, ...) of times to exercisability.
+        tex : iterable
+            Must be a vector (tuple; list; array, ...) of times to exercisability.
             For Bermudan, assume that exercisability is for discrete tex times only.
             This also needs to be sorted ascending and the final value is the corresponding vanilla maturity.
             If T is not equal the the final value of tex, then
@@ -65,17 +65,14 @@ class Bermudan(European):
         Notes
         -----
 
-        **LT**
+        *References:*
 
-        Referenced example is from p.9 of
-        `Bermudan Option Pricing using Binomial Models Seminar in Analytical Finance I
-        <http://janroman.dhis.org/stud/I2012/Bermuda/reportFinal.pdf>`_
+        - [1] `Longstaff Schwartz Pricing of Bermudan Options and their Greeks, Howard Thom, 2009 <http://1drv.ms/1XO4NoL>`_
+        - [2] `Multilevel Monte Carlo Adapted to Bermudan Options Using Randomized Stopping Rule, Longyun Chen, 2010 <http://1drv.ms/1XO50YS>`_
+        - Referenced example is from p.9 of
+          `Bermudan Option Pricing using Binomial Models. Seminar in Analytical Finance I, Jessica Radeschnig, et al, 2012
+          <http://1drv.ms/1lHY5Pn>`_
 
-        References
-        ----------
-
-        - [1] http://eprints.maths.ox.ac.uk/789/1/Thom.pdf
-        - [2] http://eprints.maths.ox.ac.uk/934/1/longyun_chen.pdf
 
         Examples
         --------
@@ -85,15 +82,15 @@ class Bermudan(European):
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Bermudan(ref=s, right='put', K=52, T=2, rf_r=.05)
         >>> o.pxLT(nsteps=3)
-        7.251410364
+        7.209876665
 
         Changing the maturity
 
         >>> Bermudan(ref=s, right='put', K=52, T=1, rf_r=.05).pxLT(nsteps=3)
-        5.916826966
+        5.882435156
 
         >>> Bermudan(ref=s, right='put', K=52, T=.5, rf_r=.05).pxLT(nsteps=3)
-        4.705110749
+        4.674222192
 
         Explicit input of exercise schedule
 
@@ -101,7 +98,7 @@ class Bermudan(European):
         >>> rlist = np.random.normal(1,1,20)
         >>> times = tuple(map(lambda i: float(str(round(abs(rlist[i]),2))), range(20)))
         >>> o = Bermudan(ref=s, right='put', K=52, T=1., rf_r=.05)
-        >>> o.pxLT(tex=times)
+        >>> o.pxLT(tex=times, nsteps=1)
         5.824649677
 
         Example from outside reference
@@ -209,27 +206,13 @@ class Bermudan(European):
     def _calc_BS(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: Bermudan
-
-        .. sectionauthor::
-
-        Note
-        ----
-
         """
         return self
 
     def _calc_LT(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: Bermudan
-
         :Authors:
-            Oleg Melnikov
             Andy Liao <Andy.Liao@rice.edu>
 
         """
@@ -261,13 +244,7 @@ class Bermudan(European):
         return self
 
     def _calc_MC(self):
-        """ Internal function for option valuation.
-
-        See calc_px() for full documentation.
-
-        Returns
-        -------
-        self: Bermudan
+        """ Internal function for option valuation.    See calc_px() for full documentation.
 
         :Authors:
             Patrick Granahan
@@ -452,9 +429,3 @@ class Bermudan(European):
         plt.show(block=True)
 
         return None
-
-
-# s = Stock(S0=50, vol=.3)
-# o = Bermudan(ref=s, right='put', K=52, T=2, rf_r=.05)
-# o.pxLT(nsteps=3)
-# o
