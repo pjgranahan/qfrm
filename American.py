@@ -1,9 +1,4 @@
 import numpy as np
-# from pandas import DataFrame
-# import matplotlib.pyplot as plt
-
-# try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-# except:   from OptionValuation import *  # development: if not installed and running from source
 
 try: from qfrm.European import *  # production:  if qfrm package is installed
 except:   from European import *  # development: if not installed and running from source
@@ -209,7 +204,7 @@ class American(European):
             Oleg Melnikov <xisreal@gmail.com>, Andrew Weatherly <andrewweatherly1@gmail.com>
         """
 
-        self.save_specs(deg=5, **kwargs)
+        self.save_specs(deg=deg, **kwargs)
         return getattr(self, '_calc_' + self.px_spec.method.upper())()
 
     def _calc_BS(self):
@@ -282,10 +277,7 @@ class American(European):
         :Authors:
             Oleg Melnikov <xisreal@gmail.com>
         """
-        # from numpy import arange, maximum, log, exp, sqrt
-
-        keep_hist = getattr(self.px_spec, 'keep_hist', False)
-        n = getattr(self.px_spec, 'nsteps', 3)
+        n, keep_hist = self.px_spec.nsteps, self.px_spec.keep_hist
         _ = self._LT_specs()
 
         S = Vec(_['d']) ** Util.arange(n, -1, -1) * Vec(_['u']) ** Util.arange(0, n + 1) * self.ref.S0  # terminal stock prices
@@ -296,11 +288,11 @@ class American(European):
             O = (O[:i] * (1 - _['p']) + O[1:] * _['p']) * _['df_dt']  #prior option prices (@time step=i-1)
             S = S[1:i+1] * _['d']                   # prior stock prices (@time step=i-1)
             Payout = ((S - self.K) * self.signCP).max(0)   # payout at time step i-1 (moving backward in time)
-            O = O.max(Payout)  #Util.maximum(O, Payout)
+            O = O.max(Payout)
             S_tree, O_tree = (tuple(S),) + S_tree, (tuple(O),) + O_tree
 
-        self.px_spec.add(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
-                        LT_specs=_, ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
+        self.px_spec.add(px=float(Util.demote(O)), sub_method='binomial tree; Hull Ch.13',
+                         ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
         return self
 
     def _calc_MC(self):

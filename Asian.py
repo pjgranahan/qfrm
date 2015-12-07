@@ -43,7 +43,7 @@ class Asian(European):
             If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
         rng_seed : int
             MC method requires the seed for RNG to generate historical prices in (0,T).
-        sub_method : str
+        sub_method : {'Arithmetic', 'Geometric'}
             Required. Calculation of price using 'Geometric' or 'Arithmetic' averages.
             Case-insensitive and may use partial string w/first letter.
         strike : str
@@ -78,7 +78,7 @@ class Asian(European):
         Examples
         --------
         The examples can be verified with
-        `Asian Options - Tutorial and Excel Spreadsheet by Samir Khan <http://investexcel.net/asian-options-excel>`_
+        `Asian Options - Tutorial and Excel Spreadsheet, Samir Khan <http://investexcel.net/asian-options-excel>`_
 
         SEE NOTES to verify first two examples
 
@@ -157,7 +157,7 @@ class Asian(European):
         >>> o = Asian(ref=s, right='put', K=50, T=1., rf_r=.1, desc='Hull p. 610 Example 26.3')
         >>> o.pxMC(nsteps=12, npaths=50000, rng_seed=12, sub_method='G', strike='S')
         ... # doctest: +ELLIPSIS
-        0.217125522...
+        0.217125523...
 
         In the following example, a vector of fixed strikes generates a vector of Asian prices and is plotted.
 
@@ -227,7 +227,7 @@ class Asian(European):
 
         """
 
-        self.save_specs(sub_method='Arithmetic', strike='K', **kwargs)
+        self.save_specs(sub_method=sub_method, strike=strike, **kwargs)
         return getattr(self, '_calc_' + self.px_spec.method.upper())()
 
         # self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, \
@@ -472,7 +472,7 @@ class Asian(European):
             n_steps =   int(self.px_spec.nsteps)
             n_paths =   int(self.px_spec.npaths)
             rng_seed =  int(self.px_spec.rng_seed)
-            sub_method =    self.px_spec.sub_method
+            sub_method =    self.px_spec.sub_method.upper()[0]  # 'A' for 'G'
             strike =    self.px_spec.strike
 
         except:
@@ -490,11 +490,11 @@ class Asian(European):
 
         #Calculate an average stock price over (0,T] for each path by the selected sub-method.
         S_avg = np.zeros(S.shape[1])
-        if sub_method[0] == 'g' or sub_method[0] == 'G':
-            self.px_spec.add(sub_method='Geometric')
+        if sub_method == 'G':
+            # self.px_spec.add(sub_method='Geometric')
             S_avg = np.exp(np.sum(np.log(S),axis=1)/(n_steps+1))
-        if sub_method[0] == 'A' or sub_method[0] == 'A':
-            self.px_spec.add(sub_method='Arithmethic')
+        if sub_method == 'A':
+            # self.px_spec.add(sub_method='Arithmethic')
             S_avg = np.mean(S,axis=1)
 
         #The price at maturity is needed if the user wants a Average-Strike Asian option.
@@ -518,7 +518,7 @@ class Asian(European):
 
         #compute the average of the distribution as the price of the option.
         v0 = sum(pay)/n_paths*df
-        self.px_spec.add(px=v0)
+        self.px_spec.add(px=float(v0))
         return self
 
     def _calc_FD(self):
@@ -588,3 +588,8 @@ class Asian(European):
         self.px_spec.add(px=float(np.maximum(PriceM[0,(S0-Smin)/dS],0)), method='FD')
 
         return self
+
+
+# s = Stock(S0=50, vol=.4, q = 0.0)
+# o = Asian(ref=s, right='put', K=50, T=1., rf_r=.1, desc='Hull p. 610 Example 26.3')
+# o.pxMC(nsteps=12, npaths=50000, rng_seed=12, sub_method='Arithmetic', strike='S')

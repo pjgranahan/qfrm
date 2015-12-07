@@ -1,18 +1,17 @@
 import numpy.random
 import numpy as np
 
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+try: from qfrm.European import *  # production:  if qfrm package is installed
+except:   from European import *  # development: if not installed and running from source
 
 
-class Basket(OptionValuation):
+class Basket(European):
     """ European option class.
 
     Inherits all methods and properties of OptionValuation class.
     """
 
-    def calc_px(self, method='BS', mu = (0.1,0.2,0.5), weight = (0.5,0.3,0.2),
-                corr = [[1,0,0],[0,1,0],[0,0,1]], nsteps=None, npaths=None, keep_hist=False):
+    def calc_px(self, mu = (0.1,0.2,0.5), weight = (0.5,0.3,0.2), corr = [[1,0,0],[0,1,0],[0,0,1]], **kwargs):
         """ Wrapper function that calls appropriate valuation method.
 
         All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
@@ -93,19 +92,21 @@ class Basket(OptionValuation):
           Hanting Li <hl45@rice.edu>
 
         """
-        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
-        self.mu = mu
-        self.weight = weight
-        self.corr = corr
-        self.npaths = npaths
-        self.nsteps = nsteps
-        return super().calc_px(method=method, mu = mu, weight = weight,
-                corr = corr, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
+
+        self.save_specs(mu=mu, weight=weight, corr=corr, **kwargs)
+        return getattr(self, '_calc_' + self.px_spec.method.upper())()
+
+        # self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
+        # self.mu = mu
+        # self.weight = weight
+        # self.corr = corr
+        # self.npaths = npaths
+        # self.nsteps = nsteps
+        # return super().calc_px(method=method, mu = mu, weight = weight,
+        #         corr = corr, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
 
     def _calc_BS(self):
-        """ Internal function for option valuation.
-
-        """
+        """ Internal function for option valuation.   """
 
         return self
 
@@ -122,20 +123,14 @@ class Basket(OptionValuation):
         :Authors:
           Hanting Li <hl45@rice.edu>
         """
-
-
         _ = self
 
         # Define the parameters
-        S0 = _.ref.S0
-        vol = _.ref.vol
-        mu = _.mu
-        corrM = _.corr
-        nsteps = _.nsteps
-        npaths = _.npaths
+        S0, vol = _.ref.S0, _.ref.vol
+        mu, corr, n, m = _.px_spec.mu, _.px_spec.corr, _.px_spec.nsteps, _.px_spec.npaths
 
         # Compute Deltat and number of assets
-        deltat = _.T/nsteps
+        deltat = _.T/n
         Nasset = len(vol)
 
         # Compute the stock price at t
@@ -147,7 +142,7 @@ class Basket(OptionValuation):
         # Generate one path
         def one_path(S0,mu,vol,param):
             S0 = (S0,)
-            for i in range(nsteps):
+            for i in range(n):
                 parami = param[i]
                 S0 = S0 + (calS(S0[len(S0)-1],mu,vol,parami),)
             return(S0)
@@ -156,37 +151,28 @@ class Basket(OptionValuation):
         priceNpath = ()
 
         # Compute covariance matrix from correlation matrix
-        covM = np.dot(np.dot(np.diag(vol),(corrM)),np.diag(vol))
+        covM = np.dot(np.dot(np.diag(vol),(corr)),np.diag(vol))
 
         # Set seed
         numpy.random.seed(10987)
         # Generate random numbers
-        param = numpy.random.multivariate_normal(np.repeat(0,Nasset),covM,nsteps)
+        param = numpy.random.multivariate_normal(np.repeat(0,Nasset),covM,n)
         param = tuple(zip(*param))
 
         # Generate N paths
-        for i in range(npaths):
+        for i in range(m):
             price = list(map(one_path,S0,mu,vol,param))
-            wprice = np.transpose(np.matrix(price))*np.transpose(np.matrix(_.weight))
+            wprice = np.transpose(np.matrix(price))*np.transpose(np.matrix(_.px_spec.weight))
             wprice = tuple(wprice.ravel().tolist()[0])
             priceNpath = priceNpath + (wprice,)
 
         # Terminal Payoff
-        payoff = max(0,_.signCP*(np.mean(tuple(zip(*priceNpath))[nsteps])-_.K))
+        payoff = max(0,_.signCP*(np.mean(tuple(zip(*priceNpath))[n])-_.K))
 
         self.px_spec.add(px=float(payoff*np.exp(-_.rf_r*_.T)), sub_method='standard; Hull p.612')
 
         return self
 
-
     def _calc_FD(self, nsteps=3, npaths=4, keep_hist=False):
-        """ Internal function for option valuation.
-
-        Returns
-        -------
-        self: European
-
-        .. sectionauthor::
-
-        """
+        """ Internal function for option valuation.       """
         return self

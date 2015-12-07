@@ -1,13 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-try:
-    from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:
-    from OptionValuation import *  # development: if not installed and running from source
+try:  from qfrm.European import *  # production:  if qfrm package is installed
+except:    from European import *  # development: if not installed and running from source
 
 
-class Bermudan(OptionValuation):
+class Bermudan(European):
     """ Bermudan option class.
 
     Inherits all methods and properties of OptionValuation class.
@@ -16,8 +14,7 @@ class Bermudan(OptionValuation):
     this module demonstrates, in price.
     """
 
-    def calc_px(self, method='LT', tex=(.12, .24, .46, .9, .91, .92, .93, .94, .95, .96, .97, .98, .99, 1.),
-                nsteps=None, npaths=None, keep_hist=False, R=3, seed=4294967295):
+    def calc_px(self, tex=(.12, .24, .46, .9, .91, .92, .93, .94, .95, .96, .97, .98, .99, 1.), R=3, **kwargs):
         """ Wrapper function that calls appropriate valuation method.
 
         All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
@@ -85,21 +82,16 @@ class Bermudan(OptionValuation):
 
        **LT**
 
-        LT pricing of Bermudan options
-
         >>> s = Stock(S0=50, vol=.3)
-        >>> o = Bermudan(ref=s, right='put', K=52, T=2, rf_r=.05)
-        >>> o.pxLT(keep_hist=True)
+        >>> Bermudan(ref=s, right='put', K=52, T=2, rf_r=.05).pxLT(nsteps=3)
         7.251410364
 
         Changing the maturity
 
-        >>> o = Bermudan(ref=s, right='put', K=52, T=1, rf_r=.05)
-        >>> o.pxLT(keep_hist=True)
+        >>> Bermudan(ref=s, right='put', K=52, T=1, rf_r=.05).pxLT(nsteps=3)
         5.916826966
 
-        >>> o = Bermudan(ref=s, right='put', K=52, T=.5, rf_r=.05)
-        >>> o.pxLT(keep_hist=True)
+        >>> Bermudan(ref=s, right='put', K=52, T=.5, rf_r=.05).pxLT(nsteps=3)
         4.705110749
 
         Explicit input of exercise schedule
@@ -108,14 +100,14 @@ class Bermudan(OptionValuation):
         >>> rlist = np.random.normal(1,1,20)
         >>> times = tuple(map(lambda i: float(str(round(abs(rlist[i]),2))), range(20)))
         >>> o = Bermudan(ref=s, right='put', K=52, T=1., rf_r=.05)
-        >>> o.pxLT(tex=times, keep_hist=True)
+        >>> o.pxLT(tex=times)
         5.824649677
 
         Example from outside reference
 
         >>> times = (3/12,6/12,9/12,12/12,15/12,18/12,21/12,24/12)
         >>> o = Bermudan(ref=Stock(50, vol=.6), right='put', K=52, T=2, rf_r=0.1)
-        >>> o.pxLT(tex=times, nsteps=40, keep_hist=False)
+        >>> o.pxLT(tex=times, nsteps=40)
         13.206509996
 
         Price vs. strike curve - example of vectorization of price calculation
@@ -146,7 +138,7 @@ class Bermudan(OptionValuation):
         >>> s = Stock(S0=1200, vol=.25, q=0.015)
         >>> T = 1; tex = np.arange(0.1, T + 0.1, 0.1)
         >>> o = Bermudan(ref=s, right='call', K=1200, T=T, rf_r=.03, frf_r=0.05)
-        >>> o.pxMC(R=2, npaths=5, tex=tex)
+        >>> o.pxMC(R=2, npaths=5, tex=tex, rng_seed=4294967295)
         31.682017621
 
         Example #2 (verifiable): See reference [1], section 5.1 and table 5.1 with arguments N=10^2, R=3
@@ -178,7 +170,7 @@ class Bermudan(OptionValuation):
         >>> s = Stock(S0=11, vol=.4)
         >>> T = 1; tex = np.arange(0.1, T + 0.1, 0.1)
         >>> o = Bermudan(ref=s, right='put', K=15, T=T, rf_r=.01)
-        >>> o.pxMC(R=3, npaths=10, tex=tex, keep_hist=True)
+        >>> o.pxMC(R=3, npaths=10, tex=tex, rng_seed=4294967295, keep_hist=True)
         4.016206951
         >>> o.plot_MC()
 
@@ -186,9 +178,6 @@ class Bermudan(OptionValuation):
             Andy Liao <Andy.Liao@rice.edu>,
             Patrick Granahan
         """
-
-        # Seed the RNG
-        np.random.seed(seed)
 
         T = max(tex)
         deltaT = self.T - T
@@ -199,13 +188,36 @@ class Bermudan(OptionValuation):
         elif deltaT > epsilon:
             tex = tex[:-1] + (self.T,)
 
-        self.tex = tex
+        # self.tex = tex
+        self.save_specs(tex=tex, R=R, **kwargs)   # verifies and saves nsteps variable
         knsteps = max(tuple(map(lambda i: int(T / (tex[i + 1] - tex[i])), range(len(tex) - 1))))
-        if nsteps != None:
-            knsteps = knsteps * nsteps
-        nsteps = knsteps
-        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, R=R, seed=seed)
-        return getattr(self, '_calc_' + method.upper())()
+        self.px_spec.add(knsteps=knsteps * self.px_spec.nsteps)
+        # if nsteps != None:
+        #     knsteps = knsteps * nsteps
+        # nsteps = knsteps
+
+        # todo: delete default seed after ugprade
+        # if self.px_spec.rng_seed is None:  self.px_spec.rng_seed = 4294967295
+
+        return getattr(self, '_calc_' + self.px_spec.method.upper())()
+
+        # self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, R=R, seed=seed)
+        # return getattr(self, '_calc_' + method.upper())()
+
+    def _calc_BS(self):
+        """ Internal function for option valuation.
+
+        Returns
+        -------
+        self: Bermudan
+
+        .. sectionauthor::
+
+        Note
+        ----
+
+        """
+        return self
 
     def _calc_LT(self):
         """ Internal function for option valuation.
@@ -220,52 +232,30 @@ class Bermudan(OptionValuation):
 
         """
 
-        keep_hist = getattr(self.px_spec, 'keep_hist', False)
-        n = getattr(self.px_spec, 'nsteps', 3)
-        _ = self.LT_specs(n)
+        n, keep_hist = self.px_spec.knsteps, self.px_spec.keep_hist
+        _ = self._LT_specs()
 
-        #Redo tree steps
+        #Re-do tree steps
 
         S = self.ref.S0 * _['d'] ** np.arange(n, -1, -1) * _['u'] ** np.arange(0, n + 1)  # terminal stock prices
         O = np.maximum(self.signCP * (S - self.K), 0)          # terminal option payouts
-        # tree = ((S, O),)
+
         S_tree = (tuple([float(s) for s in S]),)  # use tuples of floats (instead of numpy.float)
         O_tree = (tuple([float(o) for o in O]),)
-        # tree = ([float(s) for s in S], [float(o) for o in O],)
 
         for i in range(n, 0, -1):
             O = _['df_dt'] * ((1 - _['p']) * O[:i] + ( _['p']) * O[1:])  #prior option prices
-            #(@time step=i-1)
             S = _['d'] * S[1:i+1]                   # prior stock prices (@time step=i-1)
             Payout = np.maximum(self.signCP * (S - self.K), 0)   # payout at time step i-1 (moving backward in time)
-            if i*_['dt'] in self.tex:   #The Bermudan condition: exercise only at scheduled times
+            if i*_['dt'] in self.px_spec.tex:   #The Bermudan condition: exercise only at scheduled times
                 O = np.maximum(O, Payout)
-            # tree = tree + ((S, O),)
+
             S_tree = (tuple([float(s) for s in S]),) + S_tree
             O_tree = (tuple([float(o) for o in O]),) + O_tree
-            # tree = tree + ([float(s) for s in S], [float(o) for o in O],)
 
-        self.px_spec.add(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
-                        LT_specs=_, ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
+        self.px_spec.add(px=float(Util.demote(O)), sub_method='binomial tree; Hull Ch.13',
+                        ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
 
-        # self.px_spec = PriceSpec(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
-        #                 LT_specs=_, ref_tree = S_tree if save_tree else None, opt_tree = O_tree if save_tree 
-        #else None)
-        return self
-
-    def _calc_BS(self):
-        """ Internal function for option valuation.
-
-        Returns
-        -------
-        self: Bermudan
-
-        .. sectionauthor:: 
-
-        Note
-        ----
-
-        """
         return self
 
     def _calc_MC(self):
@@ -312,12 +302,12 @@ class Bermudan(OptionValuation):
                 The array of time differences.
             """
             # Create an array of time differences
-            delta_Ts = np.zeros((len(self.tex)))
+            delta_Ts = np.zeros((len(self.px_spec.tex)))
 
             # Calculate the time difference between the next exercise date and the current exercise date
-            for tex_index in range(len(self.tex)):
-                previous_tex = 0 if tex_index == 0 else self.tex[tex_index - 1]
-                delta_Ts[tex_index] = self.tex[tex_index] - previous_tex
+            for tex_index in range(len(self.px_spec.tex)):
+                previous_tex = 0 if tex_index == 0 else self.px_spec.tex[tex_index - 1]
+                delta_Ts[tex_index] = self.px_spec.tex[tex_index] - previous_tex
 
             return delta_Ts
 
@@ -345,14 +335,16 @@ class Bermudan(OptionValuation):
                     Matrix of stock_price_paths generated.
             """
             # Create the zero matrix of stock_price_paths
-            paths = np.zeros((npaths, len(self.tex) + 1))
+            paths = np.zeros((npaths, len(self.px_spec.tex) + 1))
 
             # Seed the first column with the start prices
             paths[:, 0] = self.ref.S0
 
             # Fill the matrix, looping over time only
-            for tex_index in range(len(self.tex)):
+            for tex_index in range(len(self.px_spec.tex)):
                 # Generate an array of uniform random samples, npaths in length
+                np.random.seed(self.px_spec.rng_seed)
+
                 random_samples = np.random.normal(loc=0.0, scale=1.0, size=npaths)
 
                 # Calculate the stock prices, using the standard propagation equation
@@ -373,12 +365,11 @@ class Bermudan(OptionValuation):
         terminal_payouts = np.copy(payouts)
 
         # Step backwards through the exercise dates, halting before we get to the current date
-        for tex_index in range(len(self.tex) - 1, 1, -1):
+        for tex_index in range(len(self.px_spec.tex) - 1, 1, -1):
             # Fit a polynomial of degree R to the stock prices at the tex against the terminal payouts at the tex + 1.
             # Used to generate a vector of coefficients that minimises the squared error.
             MSE_coefficients = np.polyfit(stock_price_paths[:, tex_index].A1,  # A1 reshapes (npaths, 1) to (npaths,)
-                                          terminal_payouts[:, tex_index + 1],
-                                          R)
+                                          terminal_payouts[:, tex_index + 1], R)
 
             # Calculate the continuation price by evaluating the stock prices at tex_index using the MSE_coefficients
             continuation_price = np.polyval(MSE_coefficients, stock_price_paths[:, tex_index])
@@ -427,7 +418,7 @@ class Bermudan(OptionValuation):
         f, (ax1, ax2, ax3) = plt.subplots(3, sharex=True, sharey=False)
 
         # The x axis will always be self.tex, with the current date prepended
-        x = (0,) + self.tex
+        x = (0,) + self.px_spec.tex
 
         # Plot the price paths graph
         ax1.plot(x, stock_price_paths.T, alpha=0.5, color='0.5')
@@ -459,3 +450,9 @@ class Bermudan(OptionValuation):
         plt.show(block=True)
 
         return None
+
+
+# s = Stock(S0=50, vol=.3)
+# o = Bermudan(ref=s, right='put', K=52, T=2, rf_r=.05)
+# o.pxLT(nsteps=3)
+# o

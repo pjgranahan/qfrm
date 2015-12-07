@@ -1,21 +1,18 @@
 import math
-
 import numpy as np
 
-try:
-    from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:
-    from OptionValuation import *  # development: if not installed and running from source
+try:  from qfrm.European import *  # production:  if qfrm package is installed
+except:    from European import *  # development: if not installed and running from source
 
 
-class Binary(OptionValuation):
+class Binary(European):
     """
     Binary option class.
 
     Inherits all methods and properties of OptionValuation class.
     """
 
-    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, payout_type="asset-or-nothing", Q=0.0):
+    def calc_px(self, payout_type="asset-or-nothing", Q=0.0, **kwargs):
         """ Wrapper function that calls appropriate valuation method.
 
         All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
@@ -38,7 +35,7 @@ class Binary(OptionValuation):
                 MC, FD methods require number of simulation paths
         keep_hist : bool
                 If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
-        payout_type : str
+        payout_type : {'asset-or-nothing', 'cash-or-nothing'}
                 Required. Indicates whether the binary option is: "asset-or-nothing", "cash-or-nothing"
         Q : float
                 Required if payout_type is "cash-or-nothing". Used in pricing a cash or nothing binary option.
@@ -64,10 +61,11 @@ class Binary(OptionValuation):
         -------------
         [1] `Binary Option on Wikipedia <https://en.wikipedia.org/wiki/Binary_option>`_
 
+
         Examples
         ------------
 
-        **BS Examples**
+        **BS**
 
         Example #1 (verifiable using DerivaGem): Use the Black-Scholes model to price an asset-or-nothing binary option
 
@@ -106,8 +104,7 @@ class Binary(OptionValuation):
 
 
 
-        Examples using _calc_LT()
-        ----------------------------------------------
+        **LT**
 
         Notes
         -------
@@ -122,7 +119,7 @@ class Binary(OptionValuation):
         Use a binomial tree model to price a cash-or-nothing binary option
 
         The following example will generate px = 640.435924845...with ``nsteps = 365``, \
-        which can be verified by GerivaGem However, for the purpose if fast runtime, I use ``nstep = 10`` \
+        which can be verified by DerivaGem However, for the purpose if fast runtime, I use ``nstep = 10`` \
         in all following examples, whose result does not match verification. \
         If you want to verify my code, please use ``nsteps = 365``.
 
@@ -161,7 +158,7 @@ class Binary(OptionValuation):
 
         Another way to display option price
         The following example will generate px = 640.435924845...with ``nsteps = 365``, \
-        which can be verified by GerivaGem.
+        which can be verified by DerivaGem.
         However, for the purpose if fast runtime, I use ``nstep = 10`` in all following examples, \
         whose result does not match verification. If you want to verify my code, please use ``nsteps = 365``.
 
@@ -173,7 +170,7 @@ class Binary(OptionValuation):
         (572.299478496..., 'LT')
 
         The following example will generate px = 264.401493191...with ``nsteps = 365``, \
-        which can be verified by GerivaGem.
+        which can be verified by DerivaGem.
         However, for the purpose if fast runtime, I use ``nstep = 10`` in all following examples, \
         whose result does not match verification. If you want to verify my code, please use ``nsteps = 365``.
 
@@ -185,7 +182,7 @@ class Binary(OptionValuation):
         Use a binomial tree model to price an asset-or-nothing binary option
 
         The following example will generate px = 41.717204143...with ``nsteps = 365``, \
-        which can be verified by GerivaGem.
+        which can be verified by DerivaGem.
         However, for the purpose if fast runtime, I use ``nstep = 10`` in all following examples, \
         whose result does not match verification. If you want to verify my code, please use ``nsteps = 365``.
 
@@ -219,7 +216,7 @@ class Binary(OptionValuation):
 
         Another way to display option price
         The following example will generate px = 41.717204143...with ``nsteps = 365``, \
-        which can be verified by GerivaGem.
+        which can be verified by DerivaGem.
         However, for the purpose if fast runtime, I use ``nstep = 10`` in all following examples, \
         whose result does not match verification. If you want to verify my code, please use ``nsteps = 365``.
 
@@ -230,7 +227,7 @@ class Binary(OptionValuation):
         (39.009817494..., 'LT')
 
         The following example will generate px = 8.282795856...with ``nsteps = 365``, \
-        which can be verified by GerivaGem.
+        which can be verified by DerivaGem.
         However, for the purpose if fast runtime, I use ``nstep = 10`` in all following examples, \
         whose result does not match verification. If you want to verify my code, please use ``nsteps = 365``.
 
@@ -250,8 +247,8 @@ class Binary(OptionValuation):
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
-        FD Examples
-        --------------
+        **FD**
+
         Example #1 can verify this example with example 1 from pxBS above. It is fairly close
 
         >>> s = Stock(S0=42, vol=.20)
@@ -288,12 +285,15 @@ class Binary(OptionValuation):
 
         :Authors:
             Patrick Granahan,
-            Tianyi Yao <ty13@rice.edu>
+            Tianyi Yao <ty13@rice.edu>,
             Andrew Weatherly <amw13@rice.edu>
         """
 
-        return super().calc_px(method=method, sub_method=payout_type, nsteps=nsteps, \
-                               npaths=npaths, keep_hist=keep_hist, payout_type=payout_type, Q=Q)
+        self.save_specs(payout_type=payout_type, Q=Q, **kwargs)
+        return getattr(self, '_calc_' + self.px_spec.method.upper())()
+
+        # return super().calc_px(method=method, sub_method=payout_type, nsteps=nsteps, \
+        #                        npaths=npaths, keep_hist=keep_hist, payout_type=payout_type, Q=Q)
 
     def _calc_BS(self):
         """ Internal function for option valuation.
@@ -371,8 +371,8 @@ class Binary(OptionValuation):
         payout_type = payout_type.lower()
 
         #Extract LT parameters
-        n = getattr(self.px_spec, 'nsteps', 3)
-        _ = self.LT_specs(n)
+        n = self.px_spec.nsteps
+        _ = self._LT_specs()
 
         #Compute final nodes for asset_or_nothing payout type
         if payout_type == 'asset-or-nothing':
