@@ -83,7 +83,8 @@ class Bermudan(European):
        **LT**
 
         >>> s = Stock(S0=50, vol=.3)
-        >>> Bermudan(ref=s, right='put', K=52, T=2, rf_r=.05).pxLT(nsteps=3)
+        >>> o = Bermudan(ref=s, right='put', K=52, T=2, rf_r=.05)
+        >>> o.pxLT(nsteps=3)
         7.251410364
 
         Changing the maturity
@@ -191,7 +192,8 @@ class Bermudan(European):
         # self.tex = tex
         self.save_specs(tex=tex, R=R, **kwargs)   # verifies and saves nsteps variable
         knsteps = max(tuple(map(lambda i: int(T / (tex[i + 1] - tex[i])), range(len(tex) - 1))))
-        self.px_spec.add(knsteps=knsteps * self.px_spec.nsteps)
+        self.px_spec.add(nsteps_user_input=self.px_spec.nsteps)
+        self.px_spec.add(nsteps=knsteps * self.px_spec.nsteps)
         # if nsteps != None:
         #     knsteps = knsteps * nsteps
         # nsteps = knsteps
@@ -232,7 +234,7 @@ class Bermudan(European):
 
         """
 
-        n, keep_hist = self.px_spec.knsteps, self.px_spec.keep_hist
+        n, keep_hist = self.px_spec.nsteps, self.px_spec.keep_hist
         _ = self._LT_specs()
 
         #Re-do tree steps
