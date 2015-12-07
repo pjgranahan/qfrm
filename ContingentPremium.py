@@ -150,6 +150,9 @@ class ContingentPremium(OptionValuation):
         This has verifiable example. Note that they actually calculated the example incorrectly. They had a d_1 value of
         .4771 when it was actually supposed to be .422092. You can check this on your own and recalculate the option
         price that they give. It should be roughly .00095 instead of .01146
+
+        Additionally, because of the limit to 10 steps for doctest, the answer isn't quite as close as it should be.
+        If you need to verify, you can increase the step size to 100 and you'll get a very close answer.
         """
 
         #Verify Input
