@@ -10,7 +10,6 @@ except:
 class Bermudan(OptionValuation):
     """ Bermudan option class.
 
-    Inherits all methods and properties of OptionValuation class.
     The Bermudan option is a modified American with restricted early-exercise dates. Due to this restriction,
     Bermudans are named as such as they are "between" American and European options in exercisability, and as
     this module demonstrates, in price.
@@ -53,8 +52,7 @@ class Bermudan(OptionValuation):
         keep_hist : bool
             If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
         R : int
-            Number of basis functions. Used to generate weighted Laguerre polynomial values.
-            Used in MC method. Must be between 0 and 6.
+            Required for MC. Degree of the polynomial used to fit the least squares.
         seed : int
             The seed for the RNG.
 
@@ -62,7 +60,7 @@ class Bermudan(OptionValuation):
         Returns
         -------
         self : Bermudan
-            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object)
 
 
         Notes
