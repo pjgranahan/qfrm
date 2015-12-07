@@ -444,7 +444,8 @@ class Binary(OptionValuation):
         -------
         self: Binary
 
-        .. sectionauthor:: Andrew Weatherly
+        :Authors:
+            Andrew Weatherly <amw13@rice.edu>
 
         Notes
         -----

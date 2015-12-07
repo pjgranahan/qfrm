@@ -27,6 +27,9 @@ class ContingentPremium(OptionValuation):
 
         Parameters
         ----------
+        Seed : int
+                Required for the MC method in which random paths are generated (choose a single seed to reproduce
+                results)
         method : str
                 Required. Indicates a valuation method to be used:
                 ``BS``: Black-Scholes Merton calculation
@@ -191,7 +194,8 @@ class ContingentPremium(OptionValuation):
         -------
         self: ContingentPremium
 
-        .. sectionauthor:: Andrew Weatherly
+        :Authors:
+            Andrew Weatherly <amw13@rice.edu>
 
         References
         ----------
