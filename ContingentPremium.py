@@ -60,7 +60,6 @@ class ContingentPremium(OptionValuation):
 
         Examples
         -------
-        >>> from qfrm import *
         >>> s = Stock(S0=1/97, vol=.2, q=.032)
         >>> o = ContingentPremium(ref=s, right='call', K=1/100, T=.25, rf_r=.059)
         >>> o.pxLT(nsteps=10)
@@ -80,7 +79,7 @@ class ContingentPremium(OptionValuation):
 
         >>> s = Stock(S0=50, vol=.2, q=.01)
         >>> strike = range(40, 61)
-        >>> o = [ContingentPremium(ref=s, right='call', K=strike[i], T=1, rf_r=.05).pxLT(nsteps=10) for i in range(0, 21)]
+        >>> o = [ContingentPremium(ref=s, right='call', K=strike[i], T=1, rf_r=.05).pxLT() for i in range(0, 21)]
         >>> plt.plot(strike, o, label='Changing Strike') # doctest: +ELLIPSIS
         [<matplotlib.lines.Line2D object at...
         >>> plt.xlabel('Strike Price') # doctest: +ELLIPSIS
@@ -95,17 +94,17 @@ class ContingentPremium(OptionValuation):
 
         >>> s = Stock(S0=1/97, vol=.2, q=.032)
         >>> o = ContingentPremium(ref=s, right='call', K=1/100, T=.25, rf_r=.059)
-        >>> o.pxMC(nsteps=100, npaths=100, Seed=0)
-        0.000682276
-        >>> o.calc_px(method='MC', nsteps=100, npaths=100, Seed=0)  # doctest: +ELLIPSIS
-        ContingentPremium...px: 0.000682276...
+        >>> o.pxMC(nsteps=100, npaths=100, rng_seed=0)
+        0.000912143
+        >>> o.calc_px(method='MC', nsteps=100, npaths=100, rng_seed=0)  # doctest: +ELLIPSIS
+        ContingentPremium...px: 0.000912143...
 
         >>> s = Stock(S0=100, vol=.4)
         >>> o = ContingentPremium(ref=s, right='put', K=100, T=1, rf_r=.08)
         >>> o.pxMC(nsteps=100, npaths=100)
-        33.079676917
-        >>> o.calc_px(method='MC', nsteps=100, npaths=100)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        ContingentPremium...px: 33.079676917...
+        32.492084333
+        >>> o.calc_px(method='MC', nsteps=100, npaths=100, rng_seed=0)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        ContingentPremium...px: 32.492084333...
 
 
 
