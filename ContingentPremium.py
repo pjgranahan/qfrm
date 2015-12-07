@@ -16,7 +16,7 @@ class ContingentPremium(OptionValuation):
     Inherits all methods and properties of OptionValuation class.
     """
 
-    def calc_px(self, Seed=0, method='BS', nsteps=None, npaths=None, keep_hist=False):
+    def calc_px(self, rng_seed=0, method='BS', nsteps=None, npaths=None, keep_hist=False):
         """ Wrapper function that calls appropriate valuation method.
 
         All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
@@ -27,9 +27,9 @@ class ContingentPremium(OptionValuation):
 
         Parameters
         ----------
-        Seed : int
+        rng_seed : int, None
                 Required for the MC method in which random paths are generated (choose a single seed to reproduce
-                results)
+                results). Must be non-negative.
         method : str
                 Required. Indicates a valuation method to be used:
                 ``BS``: Black-Scholes Merton calculation
@@ -112,8 +112,8 @@ class ContingentPremium(OptionValuation):
         :Authors:
             Andrew Weatherly
         """
-        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
-        return getattr(self, '_calc_' + method.upper())()
+
+        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, rng_seed=rng_seed)
 
     def _calc_BS(self):
         """Internal function for option valuation.  Black Scholes Closed Form Solution
@@ -211,7 +211,7 @@ class ContingentPremium(OptionValuation):
         price that they give. It should be roughly .00095 instead of .01146
 
         """
-        np.random.seed(getattr(self.px_spec, 'Seed', 3))
+        np.random.seed(getattr(self.px_spec, 'rng_seed', None))
         n = getattr(self.px_spec, 'nsteps', 3)
         npaths = getattr(self.px_spec, 'npaths', 3)
 
