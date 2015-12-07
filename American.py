@@ -2,21 +2,18 @@ import numpy as np
 # from pandas import DataFrame
 # import matplotlib.pyplot as plt
 
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+# try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+# except:   from OptionValuation import *  # development: if not installed and running from source
 
 try: from qfrm.European import *  # production:  if qfrm package is installed
 except:   from European import *  # development: if not installed and running from source
 
 
 
-class American(OptionValuation):
-    """ American option class.
+class American(European):
+    """ Financial option derivative of `American <https://en.wikipedia.org/wiki/Option_style>`_ style."""
 
-    Inherits all methods and properties of ``OptionValuation`` class.
-    """
-
-    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, rng_seed=0, deg=5):
+    def calc_px(self, deg=5, **kwargs):
         """ Wrapper function that calls appropriate valuation method.
 
         All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
@@ -181,48 +178,42 @@ class American(OptionValuation):
         **MC:**
 
         >>> s = Stock(S0=50, vol=.3)
-        >>> American(ref=s, right='put', K=52, T=2, rf_r=.05, desc='').pxMC(nsteps=10, npaths=10)
+        >>> American(ref=s, right='put', K=52, T=2, rf_r=.05, desc='').pxMC(nsteps=10, npaths=10, rng_seed=0)
         8.3915333010000008
+
+
+        **Compare:**
+
+        The following compares all available pricing methods for an American option.
+        MC method appears off, but try larger simulations, ``nsteps=10000`` and ``npaths=10000``.
+        Calculation may take a 1-3 minutes.
+
+        >>> s = Stock(S0=40, vol=.2)
+        >>> o = American(ref=s, right='put', K=35, T=.5833, rf_r=.0488, desc='Example From Hull and White 2001')
+        >>> (o.pxBS(), o.pxLT(nsteps=100), o.pxMC(nsteps=100, npaths=1000, rng_seed=0))
+        (0.432627059, 0.434706028, 0.41384716900000001)
+
+        Next, we visually compare the convergence performance of 3 methods.
+        Notice the scale on counters ``nsteps`` and ``npaths``.
+
+        >>> dBS = [o.pxBS() for i in range(10)]
+        >>> dLT = [o.pxLT(nsteps=i) for i in range(10)]
+        >>> dMC = [o.pxMC(nsteps=100, npaths=100*i, rng_seed=0) for i in range(10)]
+        >>> from pandas import DataFrame
+        >>> d = DataFrame({'BS': dBS, 'LT': dLT, 'MC': dMC})
+        >>> d.plot(grid=1, title='Compare price convergence (versus scaled iterations)')  # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot...>
+
 
         :Authors:
             Oleg Melnikov <xisreal@gmail.com>, Andrew Weatherly <andrewweatherly1@gmail.com>
         """
 
-        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, rng_seed=rng_seed, deg=deg)
-
-    def _calc_LT(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
-
-        :Authors:
-            Oleg Melnikov <xisreal@gmail.com>
-        """
-        # from numpy import arange, maximum, log, exp, sqrt
-
-        keep_hist = getattr(self.px_spec, 'keep_hist', False)
-        n = getattr(self.px_spec, 'nsteps', 3)
-        _ = self.LT_specs(n)
-
-        S = Vec(_['d']) ** Util.arange(n, -1, -1) * Vec(_['u']) ** Util.arange(0, n + 1) * self.ref.S0  # terminal stock prices
-        O = Vec(Util.maximum((S - self.K) * self.signCP, 0))          # terminal option payouts
-        S_tree, O_tree  = (tuple(S),), (tuple(O),)      # use tuples of floats (instead of numpy.float)
-
-        for i in range(n, 0, -1):
-            O = (O[:i] * (1 - _['p']) + O[1:] * _['p']) * _['df_dt']  #prior option prices (@time step=i-1)
-            S = S[1:i+1] * _['d']                   # prior stock prices (@time step=i-1)
-            Payout = ((S - self.K) * self.signCP).max(0)   # payout at time step i-1 (moving backward in time)
-            O = O.max(Payout)  #Util.maximum(O, Payout)
-            S_tree, O_tree = (tuple(S),) + S_tree, (tuple(O),) + O_tree
-
-        self.px_spec.add(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
-                        LT_specs=_, ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
-
-        return self
+        self.save_specs(deg=5, **kwargs)
+        return getattr(self, '_calc_' + self.px_spec.method.upper())()
 
     def _calc_BS(self):
-        """ Internal function for option valuation.
-        See ``calc_px()`` for complete documentation.
+        """ Internal function for option valuation.  See ``calc_px()`` for complete documentation.
 
         :Authors:
             Student name <email...>
@@ -285,22 +276,47 @@ class American(OptionValuation):
             self.px_spec.add(px=float(f_a + (f_bsm - f_e)), method='BSM', sub_method='Control Variate')
         return self
 
+    def _calc_LT(self):
+        """ Internal function for option valuation. See ``calc_px()`` for complete documentation.
+
+        :Authors:
+            Oleg Melnikov <xisreal@gmail.com>
+        """
+        # from numpy import arange, maximum, log, exp, sqrt
+
+        keep_hist = getattr(self.px_spec, 'keep_hist', False)
+        n = getattr(self.px_spec, 'nsteps', 3)
+        _ = self._LT_specs()
+
+        S = Vec(_['d']) ** Util.arange(n, -1, -1) * Vec(_['u']) ** Util.arange(0, n + 1) * self.ref.S0  # terminal stock prices
+        O = Vec(Util.maximum((S - self.K) * self.signCP, 0))          # terminal option payouts
+        S_tree, O_tree  = (tuple(S),), (tuple(O),)      # use tuples of floats (instead of numpy.float)
+
+        for i in range(n, 0, -1):
+            O = (O[:i] * (1 - _['p']) + O[1:] * _['p']) * _['df_dt']  #prior option prices (@time step=i-1)
+            S = S[1:i+1] * _['d']                   # prior stock prices (@time step=i-1)
+            Payout = ((S - self.K) * self.signCP).max(0)   # payout at time step i-1 (moving backward in time)
+            O = O.max(Payout)  #Util.maximum(O, Payout)
+            S_tree, O_tree = (tuple(S),) + S_tree, (tuple(O),) + O_tree
+
+        self.px_spec.add(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
+                        LT_specs=_, ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
+        return self
+
     def _calc_MC(self):
         """ Internal function for option valuation. See ``calc_px()`` for complete documentation.
 
         :Authors:
             Oleg Melnikov <xisreal@gmail.com>
         """
+        rng_seed, deg, n, m = self.px_spec.rng_seed, self.px_spec.deg, self.px_spec.nsteps, self.px_spec.npaths
+        sp = self._LT_specs()
+        dt, df = sp['dt'], sp['df_dt']
 
-        n = getattr(self.px_spec, 'nsteps', 3)
-        m = getattr(self.px_spec, 'npaths', 3)
-        Seed, deg = self.px_spec.rng_seed, self.px_spec.deg
-
-        dt, df = self.LT_specs(n)['dt'], self.LT_specs(n)['df_dt']
         S0, vol = self.ref.S0, self.ref.vol
         K, r, signCP = self.K, self.rf_r, self._signCP
 
-        np.random.seed(Seed)
+        np.random.seed(rng_seed)
         norm_mtx = np.random.normal((r - 0.5 * vol ** 2) * dt, vol * math.sqrt(dt), (n + 1, m))
         S = S0 * np.exp(np.cumsum(norm_mtx, axis=0))
         S[0] = S0
@@ -321,9 +337,6 @@ class American(OptionValuation):
 
     def _calc_FD(self):
         """ Internal function for option valuation. See ``calc_px()`` for complete documentation.
-
-        :Authors:
-            Oleg Melnikov <xisreal@gmail.com>
         """
 
         return self

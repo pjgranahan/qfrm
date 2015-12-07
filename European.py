@@ -5,12 +5,9 @@ except:   from OptionValuation import *  # development: if not installed and run
 
 
 class European(OptionValuation):
-    """ European option class.
+    """ Financial option derivative of `American <https://en.wikipedia.org/wiki/Option_style>`_ style."""
 
-    Inherits all methods and properties of ``OptionValuation`` class.
-    """
-
-    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, rng_seed=None):
+    def calc_px(self, **kwargs):
         """ Wrapper function that calls appropriate valuation method.
 
         All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
@@ -147,13 +144,52 @@ class European(OptionValuation):
         >>> o.pxMC(nsteps=10, npaths=10, rng_seed=1)
         74.747081425000005
 
+        **Compare:**
 
+        The following compares all available pricing methods for an American option.
+        MC method appears off, but try larger simulations, ``nsteps=10000`` and ``npaths=10000``.
+        Calculation may take a 1-3 minutes.
+
+        >>> s = Stock(S0=42, vol=.20)
+        >>> o = European(ref=s, right='put', K=40, T=.5, rf_r=.1, desc='call @0.81, put @4.76, Hull p.339')
+        >>> (o.pxBS(), o.pxLT(nsteps=100), o.pxMC(nsteps=100, npaths=1000, rng_seed=0))
+        (0.808599373, 0.810995338, 0.73588733399999995)
+
+        Next, we visually compare the convergence performance of 3 methods.
+        Notice the scale on counters ``nsteps`` and ``npaths``.
+
+        >>> dBS = [o.pxBS() for i in range(20)]
+        >>> dLT = [o.pxLT(nsteps=i) for i in range(20)]
+        >>> dMC = [o.pxMC(nsteps=100, npaths=500*i, rng_seed=0) for i in range(20)]
+        >>> from pandas import DataFrame
+        >>> d = DataFrame({'BS': dBS, 'LT': dLT, 'MC': dMC})
+        >>> d.plot(grid=1, title='Price convergence (vs. scaled iterations) for ' + o.specs)  # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot...>
 
         :Authors:
             Oleg Melnikov <xisreal@gmail.com>
         """
 
-        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, rng_seed=rng_seed)
+        self.save_specs(**kwargs)
+        return getattr(self, '_calc_' + self.px_spec.method.upper())()
+
+    def save_specs(self, method='BS', nsteps=None, npaths=None, keep_hist=False, rng_seed=None, **kwargs):
+
+        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, rng_seed=rng_seed, **kwargs)
+        assert getattr(self, 'ref') is not None, 'Ooops. Please supply referenced (underlying) asset, `ref`'
+        assert getattr(self, 'rf_r') is not None, 'Ooops. Please supply risk free rate `rf_r`'
+        assert getattr(self, 'K') is not None, 'Ooops. Please supply strike `K`'
+        assert getattr(self, 'T') is not None, 'Ooops. Please supply time to expiry (in years) `T`'
+        assert getattr(self, '_signCP') is not None, 'Ooops. Please supply option right: call, put, ...'
+
+        if method in ('LT', 'MC', 'FD'):
+            self.px_spec.add_verify(dtype=int, min=2, max=float("inf"), dflt=10, nsteps=nsteps)
+
+        if method in ('MC', 'FD'):
+            self.px_spec.add_verify(dtype=int, min=2, max=float("inf"), dflt=10, npaths=npaths)
+
+        if method in ('MC'):
+            self.px_spec.add_verify(dtype=int, min=0, max=float("inf"), dflt=None, rng_seed=rng_seed)
 
     def _calc_BS(self):
         """ Internal function for option valuation.
@@ -164,9 +200,10 @@ class European(OptionValuation):
             Oleg Melnikov <xisreal@gmail.com>
         """
 
+        if not self.style == 'European': return self   # if (exotic) sub-class inherits this method, don't calculate
+
         _ = self
-        d1 = (math.log(_.ref.S0 / _.K) + (_.rf_r + _.ref.vol ** 2 / 2.) * _.T)/(_.ref.vol * math.sqrt(_.T))
-        d2 = d1 - _.ref.vol * math.sqrt(_.T)
+        sp = self._BS_specs();         d1, d2 = sp['d1'], sp['d2']
         N = Util.norm_cdf
 
         # if calc of both prices is cheap, do both and include them into Price object.
@@ -177,7 +214,6 @@ class European(OptionValuation):
         px = px_call if _.signCP == 1 else px_put if _.signCP == -1 else None
 
         self.px_spec.add(px=px, sub_method='standard; Hull p.335', px_call=px_call, px_put=px_put, d1=d1, d2=d2)
-
         return self
 
     def _calc_LT(self):
@@ -189,8 +225,10 @@ class European(OptionValuation):
             Oleg Melnikov <xisreal@gmail.com>
         """
 
-        n = getattr(self.px_spec, 'nsteps', 3)
-        _ = self.LT_specs(n)
+        if not self.style == 'European': return self   # if (exotic) sub-class inherits this method, don't calculate
+
+        _ = self._LT_specs()
+        n = self.px_spec.nsteps
         incr_n, decr_n = Vec(Util.arange(0, n + 1)), Vec(Util.arange(n, -1)) #Vectorized tuple. See Util.py. 0..n; n..0.
 
         S = Vec(_['d'])**decr_n * Vec(_['u'])**incr_n * self.ref.S0
@@ -220,11 +258,14 @@ class European(OptionValuation):
             Oleg Melnikov <xisreal@gmail.com>
         """
 
+        if not self.style == 'European': return self   # if (exotic) sub-class inherits this method, don't calculate
+
         n = getattr(self.px_spec, 'nsteps', 3)
         m = getattr(self.px_spec, 'npaths', 3)
         Seed = getattr(self.px_spec, 'rng_seed', None)
 
-        dt, df = self.LT_specs(n)['dt'], self.LT_specs(n)['df_dt']
+        ltsp = self._LT_specs()
+        dt, df = ltsp['dt'], ltsp['df_dt']
         S0, vol = self.ref.S0, self.ref.vol
         K, r, signCP = self.K, self.rf_r, self._signCP
 
@@ -248,5 +289,206 @@ class European(OptionValuation):
         :Authors:
             Oleg Melnikov <xisreal@gmail.com>
         """
+        if not self.style == 'European': return self   # if (exotic) sub-class inherits this method, don't calculate
+
         return self
+
+
+    def _BS_specs(self):
+        """ Calculates a collection of specs/parameters needed for lattice tree pricing.
+
+        parameters returned:
+            dt: time interval between consequtive two time steps
+            u: Stock price up move factor
+            d: Stock price down move factor
+            a: growth factor, p.452
+            p: probability of up move over one time interval dt
+            df_T: discount factor over full time interval dt, i.e. per life of an option
+            df_dt: discount factor over one time interval dt, i.e. per step
+
+        Parameters
+        ----------
+        nsteps : int
+            number of steps in a tree, positive number. required.
+
+        Returns
+        -------
+        dict
+            A dictionary of parameters required for lattice tree pricing.
+
+        Examples
+        --------
+        >>> from pprint import pprint
+        >>> pprint(OptionValuation(ref=Stock(S0=42, vol=.2), right='call', K=40, T=.5, rf_r=.1).LT_specs(2))
+        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        {'a': 1.025315120...'d': 0.904837418...'df_T': 0.951229424...
+         'df_dt': 0.975309912...'dt': 0.25, 'p': 0.601385701...'u': 1.105170918...}
+
+        >>> s = Stock(S0=50, vol=.3)
+        >>> pprint(OptionValuation(ref=s,right='put', K=52, T=2, rf_r=.05, desc={'See Hull p.288'}).LT_specs(3))
+        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        {'a': 1.033895113...'d': 0.782744477...'df_T': 0.904837418...
+         'df_dt': 0.967216100...'dt': 0.666...'p': 0.507568158...'u': 1.277556123...}
+
+         """
+
+        _ = self
+        d1 = (math.log(_.ref.S0 / _.K) + (_.rf_r + _.ref.vol ** 2 / 2.) * _.T)/(_.ref.vol * math.sqrt(_.T))
+        d2 = d1 - _.ref.vol * math.sqrt(_.T)
+        sp = {'d1': d1, 'd2': d2}
+
+        self.px_spec.add(BS_specs=sp)
+        return sp
+
+
+    def _LT_specs(self):
+        """ Calculates a collection of specs/parameters needed for lattice tree pricing.
+
+        parameters returned:
+            dt: time interval between consequtive two time steps
+            u: Stock price up move factor
+            d: Stock price down move factor
+            a: growth factor, p.452
+            p: probability of up move over one time interval dt
+            df_T: discount factor over full time interval dt, i.e. per life of an option
+            df_dt: discount factor over one time interval dt, i.e. per step
+
+        Parameters
+        ----------
+        nsteps : int
+            number of steps in a tree, positive number. required.
+
+        Returns
+        -------
+        dict
+            A dictionary of parameters required for lattice tree pricing.
+
+        Examples
+        --------
+        >>> from pprint import pprint
+        >>> pprint(OptionValuation(ref=Stock(S0=42, vol=.2), right='call', K=40, T=.5, rf_r=.1).LT_specs(2))
+        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        {'a': 1.025315120...'d': 0.904837418...'df_T': 0.951229424...
+         'df_dt': 0.975309912...'dt': 0.25, 'p': 0.601385701...'u': 1.105170918...}
+
+        >>> s = Stock(S0=50, vol=.3)
+        >>> pprint(OptionValuation(ref=s,right='put', K=52, T=2, rf_r=.05, desc={'See Hull p.288'}).LT_specs(3))
+        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        {'a': 1.033895113...'d': 0.782744477...'df_T': 0.904837418...
+         'df_dt': 0.967216100...'dt': 0.666...'p': 0.507568158...'u': 1.277556123...}
+
+         """
+
+        T, n, r, vol = self.T, self.px_spec.nsteps, self.rf_r, self.ref.vol
+
+        sp = {'dt': T / n}
+        sp['u'] = math.exp(vol * math.sqrt(sp['dt']))
+        sp['d'] = 1 / sp['u']
+        sp['a'] = math.exp(self.net_r * sp['dt'])      # growth factor, p.452
+        sp['p'] = (sp['a'] - sp['d']) / (sp['u'] - sp['d'])
+        sp['df_T'] = math.exp(-r * T)
+        sp['df_dt'] = math.exp(-r * sp['dt'])
+
+        self.px_spec.add(LT_specs=sp)
+        return sp
+
+
+    def pxBS(self, **kwargs):
+        """ Calls exotic pricing method `calc_px()`
+
+        This property calls `calc_px()` method which should be overloaded
+        by each exotic option class (inheriting OptionValuation)
+
+        Parameters
+        ----------
+        kwargs
+            Pricing parameters required to price this exotic option. See `calc_px()` for specifics and examples.
+
+        Returns
+        -------
+        float
+            price of the exotic option
+
+        Examples
+        --------
+        >>> from qfrm import *
+        >>> European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').pxBS()
+        3.444364289
+
+        """
+        return self.print_value(self.calc_px(method='BS', **kwargs).px_spec.px)
+
+    def pxLT(self, **kwargs):
+        """ Calls exotic pricing method `calc_px()`
+
+        This property calls `calc_px()` method which should be overloaded
+        by each exotic option class (inheriting OptionValuation)
+
+        Parameters
+        ----------
+        kwargs
+            Pricing parameters required to price this exotic option. See `calc_px()` for specifics and examples.
+
+        Returns
+        -------
+        float
+            price of the exotic option
+
+        Examples
+        --------
+        >>> from qfrm import *
+        >>> European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').pxLT()
+        3.669370702
+
+        """
+        return self.print_value(self.calc_px(method='LT', **kwargs).px_spec.px)
+
+    def pxMC(self, **kwargs):
+        """ Calls exotic pricing method `calc_px()`
+
+        This property calls `calc_px()` method which should be overloaded
+        by each exotic option class (inheriting OptionValuation)
+
+        Parameters
+        ----------
+        kwargs
+            Pricing parameters required to price this exotic option. See `calc_px()` for specifics and examples.
+
+        Returns
+        -------
+        float
+            price of the exotic option
+
+        Examples
+        --------
+        >>> from qfrm import *
+        >>> European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').pxMC()
+
+        """
+        return self.print_value(self.calc_px(method='MC', **kwargs).px_spec.px)
+
+    def pxFD(self, **kwargs):
+        """ Calls exotic pricing method `calc_px()`
+
+        This property calls `calc_px()` method which should be overloaded
+        by each exotic option class (inheriting OptionValuation)
+
+        Parameters
+        ----------
+        kwargs
+            Pricing parameters required to price this exotic option. See `calc_px()` for specifics and examples.
+
+        Returns
+        -------
+        float
+            price of the exotic option
+
+
+        Examples
+        --------
+        >>> from qfrm import *
+        >>> European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').pxFD()
+
+        """
+        return self.print_value(self.calc_px(method='FD', **kwargs).px_spec.px)
 

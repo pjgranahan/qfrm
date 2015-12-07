@@ -1,11 +1,14 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+# try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
+# except:   from OptionValuation import *  # development: if not installed and running from source
+
+try: from qfrm.European import *  # production:  if qfrm package is installed
+except:   from European import *  # development: if not installed and running from source
 
 
-class Asian(OptionValuation):
+class Asian(European):
     """ Asian option class.
 
     Inherits all methods and properties of OptionValuation class.
@@ -14,8 +17,7 @@ class Asian(OptionValuation):
     up to maturity against a fixed strike.
     """
 
-    def calc_px(self, method='MC', nsteps=3, npaths=10000, keep_hist=False, rng_seed=1, sub_method='Arithmetic',
-                strike='K'):
+    def calc_px(self, sub_method='Arithmetic', strike='K', **kwargs):
         """ Wrapper function that calls appropriate valuation method.
 
         All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
@@ -78,7 +80,8 @@ class Asian(OptionValuation):
         The examples can be verified with
         `Asian Options - Tutorial and Excel Spreadsheet by Samir Khan <http://investexcel.net/asian-options-excel>`_
 
-        >>> # SEE NOTES to verify first two examples
+        SEE NOTES to verify first two examples
+
         >>> s = Stock(S0=30, vol=.3, q = .02)
         >>> o = Asian(ref=s, right='call', K=29, T=1., rf_r=.08, desc='See investexcel.net - GEO Call')
         >>> o.calc_px(method='BS').px_spec     # doctest: +ELLIPSIS
@@ -113,10 +116,10 @@ class Asian(OptionValuation):
         >>> # import matplotlib.pyplot as plt
         >>> # plt.show() # run last two lines to show plot
 
-        **MC Examples**
+        **MC**
 
-        In the following 3 examples, show the effect of changing volatility on price.
-        First run with ``vol`` = 5%
+        Examples below show option price sensitivity to volatility of the underlying stock.
+        ``vol`` = 5%
 
         >>> s = Stock(S0=100, vol=.05, q = 0.0)
         >>> o = Asian(ref=s, right='call', K=100, T=1., rf_r=.05, desc='Nielsen, Lars. 2001. Pricing Asian Options.')
@@ -124,7 +127,7 @@ class Asian(OptionValuation):
         ... # doctest: +ELLIPSIS
         2.94037098...
 
-        Second run with ``vol`` = 15%
+        ``vol`` = 15%
 
         >>> s = Stock(S0=100, vol=.15, q = 0.0)
         >>> o = Asian(ref=s, right='call', K=100, T=1., rf_r=.05, desc='Nielsen, Lars. 2001. Pricing Asian Options.')
@@ -132,7 +135,7 @@ class Asian(OptionValuation):
         ... # doctest: +ELLIPSIS
         5.04298420...
 
-        Third run with ``vol`` = 45%
+        ``vol`` = 45%
 
         >>> s = Stock(S0=100, vol=.45, q = 0.0)
         >>> o = Asian(ref=s, right='call', K=100, T=1., rf_r=.05, desc='Nielsen, Lars. 2001. Pricing Asian Options.')
@@ -180,10 +183,9 @@ class Asian(OptionValuation):
         >>> plt.show()
 
 
-        -------------------------------------
-        **FD Examples**
+        **FD**
 
-        Example Verify:
+        *Verifiable Example*:
         `Online option pricer <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=asiat_trapeze.html>`_
 
         Note that for FD method, the result can be quite volatile
@@ -225,10 +227,66 @@ class Asian(OptionValuation):
 
         """
 
+        self.save_specs(sub_method='Arithmetic', strike='K', **kwargs)
+        return getattr(self, '_calc_' + self.px_spec.method.upper())()
 
-        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, \
-            rng_seed=rng_seed, sub_method=sub_method, strike=strike)
-        return getattr(self, '_calc_' + method.upper())()
+        # self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, \
+        #     rng_seed=rng_seed, sub_method=sub_method, strike=strike)
+        # return getattr(self, '_calc_' + method.upper())()
+
+    def _calc_BS(self):
+        """ Internal function for option valuation.
+
+        See ``calc_px()`` for complete documentation.
+
+        :Formulae:
+        - `Arithmetic Average Options and Asian Options <goo.gl/Kw4zQ2>`_
+
+        :Authors:
+            Scott Morgan
+        """
+
+        # Verify input
+        try:
+            right   =   self.right.lower()
+            S       =   float(self.ref.S0)
+            K       =   float(self.K)
+            T       =   float(self.T)
+            vol     =   float(self.ref.vol)
+            r       =   float(self.rf_r)
+            q       =   float(self.ref.q)
+
+
+        except:
+            print('right must be String. S, K, T, vol, r, q must be floats or be able to be coerced to float')
+            return False
+
+        assert right in ['call', 'put'], 'right must be "call" or "put" '
+        assert vol > 0, 'vol must be >=0'
+        assert K > 0, 'K must be > 0'
+        assert T > 0, 'T must be > 0'
+        assert S >= 0, 'S must be >= 0'
+        assert r >= 0, 'r must be >= 0'
+        assert q >= 0, 'q must be >= 0'
+
+
+        # Parameters for Value Calculation (see link in docstring)
+        a = .5 * (r - q - (vol ** 2) / 6.)
+        vola = vol / np.sqrt(3.)
+        d1 = (np.log(S * np.exp(a * T) / K) + (vola ** 2) * .5 * T) / (vola * np.sqrt(T))
+        d2 = d1 - vola * np.sqrt(T)
+        # sp = self._BS_specs();         d1, d2 = sp['d1'], sp['d2']
+
+        # Calculate the value of the option using the BS Equation
+        N = Util.norm_cdf
+        if right == 'call':
+            px = S * np.exp((a - r) * T) * N(d1) - K * np.exp(-r * T) * N(d2)
+            self.px_spec.add(px=float(px), method='BSM', sub_method='Geometric')
+
+        else:
+            px = K * np.exp(-r * T) * N(-d2) - S * np.exp((a - r) * T) * N(-d1)
+            self.px_spec.add(px=float(px), method='BSM', sub_method='Geometric')
+        return self
 
     def _calc_LT(self):
         """ Internal function for option valuation.
@@ -391,59 +449,6 @@ class Asian(OptionValuation):
                     VTree[z][r][i] = VTimevec[z][r]
         CRR_Price = VTree[0][0][0]
         self.px_spec.add(px=float(CRR_Price), method='LT', sub_method='Hull and White Interpolation')
-        return self
-
-    def _calc_BS(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
-
-        :Formulae:
-        - `Arithmetic Average Options and Asian Options <goo.gl/Kw4zQ2>`_
-
-        :Authors:
-            Scott Morgan
-        """
-
-        # Verify input
-        try:
-            right   =   self.right.lower()
-            S       =   float(self.ref.S0)
-            K       =   float(self.K)
-            T       =   float(self.T)
-            vol     =   float(self.ref.vol)
-            r       =   float(self.rf_r)
-            q       =   float(self.ref.q)
-
-
-        except:
-            print('right must be String. S, K, T, vol, r, q must be floats or be able to be coerced to float')
-            return False
-
-        assert right in ['call', 'put'], 'right must be "call" or "put" '
-        assert vol > 0, 'vol must be >=0'
-        assert K > 0, 'K must be > 0'
-        assert T > 0, 'T must be > 0'
-        assert S >= 0, 'S must be >= 0'
-        assert r >= 0, 'r must be >= 0'
-        assert q >= 0, 'q must be >= 0'
-
-
-        # Parameters for Value Calculation (see link in docstring)
-        a = .5 * (r - q - (vol ** 2) / 6.)
-        vola = vol / np.sqrt(3.)
-        d1 = (np.log(S * np.exp(a * T) / K) + (vola ** 2) * .5 * T) / (vola * np.sqrt(T))
-        d2 = d1 - vola * np.sqrt(T)
-
-        # Calculate the value of the option using the BS Equation
-        N = Util.norm_cdf
-        if right == 'call':
-            px = S * np.exp((a - r) * T) * N(d1) - K * np.exp(-r * T) * N(d2)
-            self.px_spec.add(px=float(px), method='BSM', sub_method='Geometric')
-
-        else:
-            px = K * np.exp(-r * T) * N(-d2) - S * np.exp((a - r) * T) * N(-d1)
-            self.px_spec.add(px=float(px), method='BSM', sub_method='Geometric')
         return self
 
     def _calc_MC(self):
