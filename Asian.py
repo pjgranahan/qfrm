@@ -588,7 +588,3 @@ class Asian(OptionValuation):
 
         return self
 
-
-s = Stock(S0=50, vol=.4, q = 0.0)
-o = Asian(ref=s, right='put', K=50, T=1., rf_r=.1, desc='Hull p. 610 Example 26.3')
-o.pxMC(nsteps=12, npaths=50000, rng_seed=12, sub_method='G', strike='S')
