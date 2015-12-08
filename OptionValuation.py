@@ -447,7 +447,7 @@ class OptionSeries(SpecPrinter):
 
         Returns
         -------
-        str, None
+        str, ''
             Option style for objects inheriting OptionValuation
 
         Examples
