@@ -17,20 +17,8 @@ class Bermudan(European):
     def calc_px(self, tex=(.12, .24, .46, .9, .91, .92, .93, .94, .95, .96, .97, .98, .99, 1.), R=3, **kwargs):
         """ Wrapper function that calls appropriate valuation method.
 
-        All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
-        specific pricing method (``_calc_BS()``,...) is called.
-        An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
-        is calculating price via a shorter method wrapper ``.pxBS(...)``.
-        The same works for all methods (BS, LT, MC, FD).
-
         Parameters
         ----------
-        method : str
-            Required. Indicates a valuation method to be used:
-            ``BS``: Black-Scholes Merton calculation
-            ``LT``: Lattice tree (such as binary tree)
-            ``MC``: Monte Carlo simulation methods
-            ``FD``: finite differencing methods
         tex : iterable
             Must be a vector (tuple; list; array, ...) of times to exercisability.
             For Bermudan, assume that exercisability is for discrete tex times only.
@@ -39,21 +27,17 @@ class Bermudan(European):
             the T will take precedence: if T < max(tex) then tex will be truncated to tex[tex < T] and will be
             appended to tex.
             If T > max(tex) then the largest value of tex will be replaced with T.
-        nsteps : int
-            FD methods require number of times steps.
-            Optional if using LT: n_steps = <integer> * <length of tex>. Will fill in the spaces between steps
-            implied by tex.
-            Useful if tex is regular or sparse to improve accuracy. Otherwise leave as None.
-            Currently unused in MC. MC simply uses tex intervals as steps.
-        npaths : int
-            MC, FD methods require number of simulation paths
-        keep_hist : bool
-            If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
         R : int
             Number of basis functions. Used to generate weighted Laguerre polynomial values.
             Used in MC method. Must be between 0 and 6.
-        seed : int
-            The seed for the RNG.
+        kwargs : dict
+            Keyword arguments (``method``, ``nsteps``, ``npaths``, ``keep_hist``, ``rng_seed``, ...)
+            are passed to the parent. See ``European.calc_px()`` for details.
+
+            ``LT`` method: ``n_steps`` = <integer> * <length of tex>.
+            Will fill in the spaces between steps implied by tex.
+            Useful if tex is regular or sparse to improve accuracy. Otherwise leave as None.
+            Currently unused in MC, FD. MC simply uses tex intervals as steps.
 
 
         Returns

@@ -11,38 +11,14 @@ class American(European):
     def calc_px(self, deg=5, **kwargs):
         """ Wrapper function that calls appropriate valuation method.
 
-        All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
-        specific pricing method (``_calc_BS()``,...) is called.
-        An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
-        is calculating price via a shorter method wrapper ``.pxBS(...)``.
-        The same works for all methods (BS, LT, MC, FD).
-
-
         Parameters
-        -------------
-        method : str
-            Required. Indicates a valuation method to be used:
-
-            ``BS`` -- Black-Scholes Merton calculation
-
-            ``LT`` -- Lattice tree (such as binary tree or binomial tree)
-
-            ``MC`` -- Monte Carlo simulation methods
-
-            ``FD`` -- finite differencing methods
-        nsteps : int
-            LT, MC, FD methods require number of times steps
-        npaths : int
-            MC, FD methods require number of simulation paths
-        keep_hist : bool
-            If ``True``, historical information (trees, simulations, grid) are saved in ``self.px_spec`` object.
-        rng_seed : int, None
-            (non-negative) integer used to seed random number generator (RNG) for MC pricing.
-
-            ``None`` -- no seeding; generates random sequence for MC
+        ----------
         deg : int
             Degree of polynomial used for least Squares Monte Carlo (LSM) method (in MC pricing).
             Normally, ``deg=5`` is used to fit 5th degree polynomial to payouts at each step in backward induction.
+        kwargs : dict
+            Keyword arguments (``method``, ``nsteps``, ``npaths``, ``keep_hist``, ``rng_seed``, ...)
+            are passed to the parent. See ``European.calc_px()`` for details.
 
         Returns
         -------

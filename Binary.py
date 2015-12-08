@@ -6,39 +6,21 @@ except:    from European import *  # development: if not installed and running f
 
 
 class Binary(European):
-    """
-    Binary option class.
-
-    Inherits all methods and properties of OptionValuation class.
+    """ Binary option class.
     """
 
-    def calc_px(self, payout_type="asset-or-nothing", Q=0.0, **kwargs):
+    def calc_px(self, payout_type="asset-or-nothing", Q=0, **kwargs):
         """ Wrapper function that calls appropriate valuation method.
-
-        All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
-        specific pricing method (``_calc_BS()``,...) is called.
-        An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
-        is calculating price via a shorter method wrapper ``.pxBS(...)``.
-        The same works for all methods (BS, LT, MC, FD).
 
         Parameters
         ----------
-        method : str
-                Required. Indicates a valuation method to be used:
-                ``BS``: Black-Scholes Merton calculation
-                ``LT``: Lattice tree (such as binary tree)
-                ``MC``: Monte Carlo simulation methods
-                ``FD``: finite differencing methods
-        nsteps : int
-                LT, MC, FD methods require number of times steps
-        npaths : int
-                MC, FD methods require number of simulation paths
-        keep_hist : bool
-                If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
         payout_type : {'asset-or-nothing', 'cash-or-nothing'}
                 Required. Indicates whether the binary option is: "asset-or-nothing", "cash-or-nothing"
         Q : float
                 Required if payout_type is "cash-or-nothing". Used in pricing a cash or nothing binary option.
+        kwargs : dict
+            Keyword arguments (``method``, ``nsteps``, ``npaths``, ``keep_hist``, ``rng_seed``, ...)
+            are passed to the parent. See ``European.calc_px()`` for details.
 
         Returns
         ------------
