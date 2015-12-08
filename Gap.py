@@ -94,8 +94,8 @@ class Gap(European):
         **MC**
 
         Due to slow convergence, iterations must be very high.
-        For example, ``o.pxMC(K2=350000, nsteps=10000, npaths=100000, rng_seed=0)``
-        yields (in 1-2 minutes) a Gap option price of 1892.121093689,
+        For example, ``o.pxMC(K2=350000, nsteps=1000, npaths=100000, rng_seed=0)``
+        yields (in 1-2 minutes) a Gap option price of 1839.844162184,
         which is similar to Gap's BS price of 1895.688944397. See J.C. Hull, Example 26.1 on p.601.
 
         >>> s = Stock(S0=500000, vol=.2)
@@ -105,7 +105,7 @@ class Gap(European):
 
         >>> s = Stock(S0=500000, vol=.2)
         >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='Hull p.601 Example 26.1')
-        >>> o.pxMC(K2=350000, nsteps=1000, npaths=10000, rng_seed=0)  # better precision
+        >>> o.pxMC(K2=350000, nsteps=1000, npaths=1000, rng_seed=0)  # better precision
         1362.367515835
 
         >>> from pandas import Series
@@ -115,21 +115,17 @@ class Gap(European):
         <matplotlib.axes._subplots.AxesSubplot object at ...>
 
 
-        Next example generates px = 2.258897568 with nsteps = 90 and npaths = 101, \
-        which is similar to BS example.
-
         >>> s = Stock(S0=50, vol=.2)
         >>> o = Gap(ref=s, right='call', K=57, T=1, rf_r=.09)
-        >>> o.pxMC(K2=50, nsteps=10, npaths=5, rng_seed=2)
-        3.700735328
+        >>> o.pxMC(K2=50, nsteps=1000, npaths=1000, rng_seed=2)
+        2.774272339
 
-        The following example will generate px = 4.35362028... with nsteps = 100 and npaths = 250, \
-        which is similar to BS example.
+        The following example will generate px = 4.35362028... with nsteps = 100 and npaths = 250,
+        which is similar to BS example above.
 
         >>> s = Stock(S0=50, vol=.2)
         >>> o = Gap(ref=s, right='put', K=57, T=1, rf_r=.09)
-        >>> o.calc_px(K2=50, method='MC', npaths=5, nsteps=10, rng_seed=2).px_spec
-        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.calc_px(K2=50, method='MC', nsteps=10, npaths=5, rng_seed=2).px_spec   # doctest: +ELLIPSIS
         PriceSpec...px: 6.803865574...
 
 
@@ -251,7 +247,7 @@ class Gap(European):
         :Authors:
             Mengyan Xie <xiemengy@gmail.com>
         """
-        _ = self.px_spec;   n, K2, rng_seed = _.nsteps, _.K2, _.rng_seed
+        _ = self.px_spec;   n, m, K2, rng_seed = _.nsteps, _.npaths, _.K2, _.rng_seed
         _ = self.ref;       S0, vol, q = _.S0, _.vol, _.q
         _ = self;           T, K, rf_r, net_r, sCP = _.T, _.K, _.rf_r, _.net_r, _.signCP
 
@@ -260,7 +256,7 @@ class Gap(European):
         np.random.seed(rng_seed)
 
         # Stock price paths
-        S = S0 * np.exp(np.cumsum(np.random.normal((rf_r - 0.5 * vol ** 2) * dt, vol * np.sqrt(dt), (n + 1, n)), axis=0))
+        S = S0 * np.exp(np.cumsum(np.random.normal((rf_r - 0.5 * vol ** 2) * dt, vol * np.sqrt(dt), (n + 1, m)), axis=0))
         S[0] = S0
         s2 = S
 
@@ -338,6 +334,3 @@ class Gap(European):
         self.px_spec.add(px=float(np.interp(S0,S_vec,f_px[:,0])), sub_method='Implicit Method')
         return self
 
-s = Stock(S0=50, vol=.2)
-o = Gap(ref=s, right='call', K=57, T=1, rf_r=.09)
-o.pxMC(K2=50, nsteps=10, npaths=5, rng_seed=2)
