@@ -36,6 +36,10 @@ class Gap(European):
         Notes
         -----
 
+        *References:*
+
+        - `Review Note Sample Excerpt. Exotic Options. (Ch.14) <http://1drv.ms/1ONq7D1>`_
+        - `More Exotic Options (lecture slides), Milica Cudina <http://1drv.ms/1ONpYiT>`_
 
         Examples
         --------
@@ -88,37 +92,35 @@ class Gap(European):
 
 
         **MC**
-        Because different number of seed, ``npaths`` and ``nsteps`` will influence the option price.
-        The result of MC method may not as accurate as ``BS`` and ``LT`` methods.
 
-        The following example will generate ``px = 1895.64429636`` with ``nsteps = 998`` and ``npaths = 1000``,
-        which can be verified by Hull p.601 Example 26.1
-        However, for the purpose if fast runtime, I use ``nstep = 10`` and ``npaths = 10`` in all following examples,
-        whose result does not match verification.
+        Due to slow convergence, iterations must be very high.
+        For example, ``o.pxMC(K2=350000, nsteps=10000, npaths=100000, rng_seed=0)``
+        yields (in 1-2 minutes) a Gap option price of 1892.121093689,
+        which is similar to Gap's BS price of 1895.688944397. See J.C. Hull, Example 26.1 on p.601.
 
         >>> s = Stock(S0=500000, vol=.2)
         >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='Hull p.601 Example 26.1')
-        >>> o.pxMC(K2=350000, npaths=10, nsteps=10, rng_seed=10)
+        >>> o.pxMC(K2=350000, nsteps=10, npaths=10, rng_seed=10)
         7534.017075587
 
         >>> s = Stock(S0=500000, vol=.2)
         >>> o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='Hull p.601 Example 26.1')
-        >>> o.pxMC(K2=350000, npaths=998, nsteps=1000, rng_seed=10)
-        7534.017075587
+        >>> o.pxMC(K2=350000, nsteps=1000, npaths=10000, rng_seed=0)  # better precision
+        1362.367515835
 
         >>> from pandas import Series
-        >>> expiries = range(1,11)
-        >>> O = Series([o.update(T=t).pxMC(K2=350000, npaths=2, nsteps=3, rng_seed=1) for t in expiries], expiries)
-        >>> O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
+        >>> Ts = range(1,101)
+        >>> O = Series([o.update(T=T).pxMC(K2=350000, nsteps=3, npaths=2, rng_seed=1) for T in Ts], Ts)
+        >>> O.plot(grid=1, title='Gap MC price vs expiry (in years)' + o.specs) # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
 
 
-        The following example will generate px = 2.258897568 with nsteps = 90 and npaths = 101, \
+        Next example generates px = 2.258897568 with nsteps = 90 and npaths = 101, \
         which is similar to BS example.
 
         >>> s = Stock(S0=50, vol=.2)
         >>> o = Gap(ref=s, right='call', K=57, T=1, rf_r=.09)
-        >>> o.pxMC(K2=50, npaths=5, nsteps=10, rng_seed=2)
+        >>> o.pxMC(K2=50, nsteps=10, npaths=5, rng_seed=2)
         3.700735328
 
         The following example will generate px = 4.35362028... with nsteps = 100 and npaths = 250, \
@@ -153,11 +155,6 @@ class Gap(European):
         >>> O.plot(grid=1, title='Price vs expiry (in years)-FD') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
 
-
-        See Also
-        ---------------------------------------------------------
-        `Review Note Sample Excerpt. Exotic Options. (Ch.14) <http://1drv.ms/1ONq7D1>`_
-        `More Exotic Options (lecture slides), Milica Cudina <http://1drv.ms/1ONpYiT>`_
 
         :Authors:
             Yen-fei Chen <yensfly@gmail.com>,
@@ -384,6 +381,3 @@ class Gap(European):
         self.px_spec.add(px=float(np.interp(S0,S_vec,f_px[:,0])), sub_method='Implicit Method')
         return self
 
-s = Stock(S0=500000, vol=.2)
-o = Gap(ref=s, right='put', K=400000, T=1, rf_r=.05, desc='Hull p.601 Example 26.1')
-o.pxMC(K2=350000, npaths=10, nsteps=10, rng_seed=10)
