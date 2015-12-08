@@ -90,8 +90,8 @@ class European(OptionValuation):
 
         Here are just some variables computed interim:
 
-        >>> (o.px_spec.px, o.px_spec.d1, o.px_spec.d2, o.px_spec.method)  # doctest: +ELLIPSIS
-        (0.808599372..., 0.769262628..., 0.627841271..., 'BS')
+        >>> (o.px_spec.method, o.px_spec.px, o.px_spec.BS_specs['d1'], o.px_spec.BS_specs['d2'])  # doctest: +ELLIPSIS
+        ('BS', 0.8085993729000904, 0.7692626281060315, 0.627841271868722)
 
         You can update option specifications and recalculate the price.
         Here we change the right to a put. ``pxBS()`` is a wrapper method for ``calc_px()``.
@@ -203,17 +203,17 @@ class European(OptionValuation):
         if not self.style == 'European': return self   # if (exotic) sub-class inherits this method, don't calculate
 
         _ = self
-        sp = self._BS_specs();         d1, d2 = sp['d1'], sp['d2']
-        N = Util.norm_cdf
+        sp = self._BS_specs();
+        d1, d2, Nd1, Nd2, N_d1, N_d2 = sp['d1'], sp['d2'], sp['Nd1'], sp['Nd2'], sp['N_d1'], sp['N_d2']
 
         # if calc of both prices is cheap, do both and include them into Price object.
         # Price.px should always point to the price of interest to the user
         # Save values as basic data types (int, floats, str), instead of np.array
-        px_call = float(_.ref.S0 * math.exp(-_.ref.q * _.T) * N(d1) - _.K * math.exp(-_.rf_r * _.T) * N(d2))
-        px_put = float(- _.ref.S0 * math.exp(-_.ref.q * _.T) * N(-d1) + _.K * math.exp(-_.rf_r * _.T) * N(-d2))
+        px_call = float(_.ref.S0 * math.exp(-_.ref.q * _.T) * Nd1 - _.K * math.exp(-_.rf_r * _.T) * Nd2)
+        px_put = float(- _.ref.S0 * math.exp(-_.ref.q * _.T) * N_d1 + _.K * math.exp(-_.rf_r * _.T) * N_d2)
         px = px_call if _.signCP == 1 else px_put if _.signCP == -1 else None
 
-        self.px_spec.add(px=px, sub_method='standard; Hull p.335', px_call=px_call, px_put=px_put, d1=d1, d2=d2)
+        self.px_spec.add(px=px, sub_method='standard; Hull p.335', px_call=px_call, px_put=px_put)
         return self
 
     def _calc_LT(self):
@@ -295,47 +295,38 @@ class European(OptionValuation):
 
 
     def _BS_specs(self):
-        """ Calculates a collection of specs/parameters needed for lattice tree pricing.
+        """ Calculates a collection of specs/parameters needed for Black-Scholes pricing.
 
-        parameters returned:
-            dt: time interval between consequtive two time steps
-            u: Stock price up move factor
-            d: Stock price down move factor
-            a: growth factor, p.452
-            p: probability of up move over one time interval dt
-            df_T: discount factor over full time interval dt, i.e. per life of an option
-            df_dt: discount factor over one time interval dt, i.e. per step
-
-        Parameters
-        ----------
-        nsteps : int
-            number of steps in a tree, positive number. required.
+        _BS_specs is a private method.
+        It is used by other methods after the following are gathered:
+        d1, d2, N(d1), N(d2), N(-d1), N(-d2), where N is standard normal distribution
 
         Returns
         -------
         dict
-            A dictionary of parameters required for lattice tree pricing.
+            A dictionary of calculated parameters.
+
 
         Examples
         --------
-        >>> from pprint import pprint
-        >>> pprint(OptionValuation(ref=Stock(S0=42, vol=.2), right='call', K=40, T=.5, rf_r=.1).LT_specs(2))
-        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        {'a': 1.025315120...'d': 0.904837418...'df_T': 0.951229424...
-         'df_dt': 0.975309912...'dt': 0.25, 'p': 0.601385701...'u': 1.105170918...}
 
-        >>> s = Stock(S0=50, vol=.3)
-        >>> pprint(OptionValuation(ref=s,right='put', K=52, T=2, rf_r=.05, desc={'See Hull p.288'}).LT_specs(3))
-        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        {'a': 1.033895113...'d': 0.782744477...'df_T': 0.904837418...
-         'df_dt': 0.967216100...'dt': 0.666...'p': 0.507568158...'u': 1.277556123...}
+        Normally, user will not access these parameters directly.
+
+        >>> from pprint import pprint   # helps printing ordered dictionaries (for doctesting)
+        >>> s = Stock(S0=42, vol=.2)
+        >>> o = European(ref=s, right='call', K=40, T=.5, rf_r=.1, desc={'See':'OFOD, J.C.Hull, 2014, p.338'})
+        >>> pprint(o._BS_specs())      # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        {'N_d1': 0.22086870905733108, 'N_d2': 0.26505396315409147, 'Nd1': 0.7791312909426689,
+         'Nd2': 0.7349460368459085, 'd1': 0.7692626281060315, 'd2': 0.627841271868722}
 
          """
 
         _ = self
         d1 = (math.log(_.ref.S0 / _.K) + (_.rf_r + _.ref.vol ** 2 / 2.) * _.T)/(_.ref.vol * math.sqrt(_.T))
         d2 = d1 - _.ref.vol * math.sqrt(_.T)
-        sp = {'d1': d1, 'd2': d2}
+        N = Util.norm_cdf
+
+        sp = {'d1': d1, 'd2': d2, 'Nd1':N(d1), 'Nd2':N(d2), 'N_d1':N(-d1), 'N_d2':N(-d2)}
 
         self.px_spec.add(BS_specs=sp)
         return sp
@@ -344,52 +335,60 @@ class European(OptionValuation):
     def _LT_specs(self):
         """ Calculates a collection of specs/parameters needed for lattice tree pricing.
 
-        parameters returned:
+        _LT_specs is a private method.
+        It is used by other methods after the following are gathered:
+        nsteps, T, vol, risk free rate and net risk free rate.
+
+        Calculated parameters:
             dt: time interval between consequtive two time steps
             u: Stock price up move factor
             d: Stock price down move factor
-            a: growth factor, p.452
+            a: growth factor. See OFOD, J.C.Hull, 9ed, 2014, p.452
             p: probability of up move over one time interval dt
             df_T: discount factor over full time interval dt, i.e. per life of an option
             df_dt: discount factor over one time interval dt, i.e. per step
 
-        Parameters
-        ----------
-        nsteps : int
-            number of steps in a tree, positive number. required.
 
         Returns
         -------
         dict
-            A dictionary of parameters required for lattice tree pricing.
+            A dictionary of calculated parameters.
 
         Examples
         --------
-        >>> from pprint import pprint
-        >>> pprint(OptionValuation(ref=Stock(S0=42, vol=.2), right='call', K=40, T=.5, rf_r=.1).LT_specs(2))
-        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        {'a': 1.025315120...'d': 0.904837418...'df_T': 0.951229424...
-         'df_dt': 0.975309912...'dt': 0.25, 'p': 0.601385701...'u': 1.105170918...}
 
-        >>> s = Stock(S0=50, vol=.3)
-        >>> pprint(OptionValuation(ref=s,right='put', K=52, T=2, rf_r=.05, desc={'See Hull p.288'}).LT_specs(3))
-        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        {'a': 1.033895113...'d': 0.782744477...'df_T': 0.904837418...
-         'df_dt': 0.967216100...'dt': 0.666...'p': 0.507568158...'u': 1.277556123...}
+        Normally, user will not access these parameters directly.
+
+        # >>> o = European(ref=Stock(S0=42, vol=.2), right='call', K=40, T=.5, rf_r=.1)
+        # >>> o.px_spec.add(nsteps=2)   # required for calculation of LT specs                #    doctest: +SKIP
+        # >>> o.px_spec.LT_specs
+        # {'a': 1.025315120...'d': 0.904837418...'df_T': 0.951229424...
+        #  'df_dt': 0.975309912...'dt': 0.25, 'p': 0.601385701...'u': 1.105170918...}
+
+        # >>> s = Stock(S0=50, vol=.3)
+        # >>> o = European(ref=s,right='put', K=52, T=2, rf_r=.05, desc={'See':'See OFOD, J.C.Hull, 2014, p.288'})
+        # >>> o.px_spec.add(nsteps=3)   # required for calculation of LT specs    #    doctest: +SKIP
+        # >>> o._LT_specs()      # doctest: +ELLIPSIS
+        # {'a': 1.033895113...'d': 0.782744477...'df_T': 0.904837418...
+        #  'df_dt': 0.967216100...'dt': 0.666...'p': 0.507568158...'u': 1.277556123...}
 
          """
 
-        T, n, r, vol = self.T, self.px_spec.nsteps, self.rf_r, self.ref.vol
+        n = self.px_spec.nsteps     # number of steps in a tree
+        T = self.T                  # time to maturity (in years)
+        r = self.rf_r               # risk free rate
+        nr = self.net_r     # net risk free rate (after dividend rate and foreign risk free rate are deducted)
+        vol = self.ref.vol  # volatility of underlying
 
         sp = {'dt': T / n}
         sp['u'] = math.exp(vol * math.sqrt(sp['dt']))
         sp['d'] = 1 / sp['u']
-        sp['a'] = math.exp(self.net_r * sp['dt'])      # growth factor, p.452
+        sp['a'] = math.exp(nr * sp['dt'])      # growth factor, p.452
         sp['p'] = (sp['a'] - sp['d']) / (sp['u'] - sp['d'])
         sp['df_T'] = math.exp(-r * T)
         sp['df_dt'] = math.exp(-r * sp['dt'])
 
-        self.px_spec.add(LT_specs=sp)
+        self.px_spec.add(LT_specs=sp)  # save calculated parameters for later access and display
         return sp
 
 
@@ -462,33 +461,17 @@ class European(OptionValuation):
         Examples
         --------
         >>> from qfrm import *
-        >>> European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').pxMC()
-
+        >>> s = Stock(S0=50, vol=.2)
+        >>> European(ref=s, rf_r=.05, K=50, T=0.5, right='call').pxMC(rng_seed=0, nsteps=10, npaths=10)
+        4.1467906460000004
         """
         return self.print_value(self.calc_px(method='MC', **kwargs).px_spec.px)
 
     def pxFD(self, **kwargs):
-        """ Calls exotic pricing method `calc_px()`
+        """ Calls exotic pricing method ``calc_px()``
 
-        This property calls `calc_px()` method which should be overloaded
+        This property calls ``calc_px()`` method which should be overloaded
         by each exotic option class (inheriting OptionValuation)
-
-        Parameters
-        ----------
-        kwargs
-            Pricing parameters required to price this exotic option. See `calc_px()` for specifics and examples.
-
-        Returns
-        -------
-        float
-            price of the exotic option
-
-
-        Examples
-        --------
-        >>> from qfrm import *
-        >>> European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').pxFD()
-
         """
         return self.print_value(self.calc_px(method='FD', **kwargs).px_spec.px)
 
