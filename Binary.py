@@ -6,7 +6,7 @@ except:    from European import *  # development: if not installed and running f
 
 
 class Binary(European):
-    """ Binary option class.
+    """ `Binary <https://en.wikipedia.org/wiki/Binary_option>`_ exotic option class.
     """
 
     def calc_px(self, payout_type="asset-or-nothing", Q=0, **kwargs):
@@ -39,9 +39,11 @@ class Binary(European):
         stock is trading at above $100, $1,000 is received. If the stock is trading below $100, no money is received.
         And if the stock is trading at $100, the money is returned to the purchaser. [1]
 
-        References
-        -------------
-        [1] `Binary Option on Wikipedia <https://en.wikipedia.org/wiki/Binary_option>`_
+        **FD**
+
+        *References:*
+
+        - `Variable Time-Stepping Hybrid Finite Differences Methods for Pricing Binary Options, Hongjoong Kim and Kyoung-Sook Moon, 2011 <http://1drv.ms/1ORS1xF>`_
 
 
         Examples
@@ -49,42 +51,73 @@ class Binary(European):
 
         **BS**
 
-        Example #1 (verifiable using DerivaGem): Use the Black-Scholes model to price an asset-or-nothing binary option
+        User DerivaGem software (accompanying J.C.Hull's OFOD (2014) textbook) to verify examples below.
 
         >>> s = Stock(S0=42, vol=.20)
         >>> o = Binary(ref=s, right='put', K=40, T=.5, rf_r=.1)
-        >>> o.pxBS(payout_type="asset-or-nothing")
+        >>> o.pxBS(payout_type="asset-or-nothing", desc='DervaGem price is 9.276482815')
         9.27648578
 
-        Example #2 (verifiable using DerivaGem): Change the option to be a call
+        We can update the right from put to call and recompute.
 
-        >>> o.update(right='call').pxBS(payout_type="asset-or-nothing")
-        32.72351422
-
-        Example #3 (verifiable using DerivaGem): Use the Black-Scholes model to price a cash-or-nothing binary option
+        >>> o.update(right='call').pxBS(payout_type="asset-or-nothing", desc='DerivaGem price is 32.72351719'); o # doctest: +ELLIPSIS
+        32.72351422...
 
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05)
-        >>> o.pxBS(payout_type="cash-or-nothing", Q=1000)
-        641.237705232
+        >>> o.pxBS(payout_type="cash-or-nothing", Q=1000, desc='DerivaGem price is 641.2377341'); o  # doctest: +ELLIPSIS
+        641.237705232...
 
-        Example #4 (verifiable using DerivaGem): Change the option to be a put
+        Change the option to be a put
 
-        >>> o.update(right='put').pxBS(payout_type="cash-or-nothing", Q=1000)
+        >>> o.update(right='put').pxBS(payout_type="cash-or-nothing", Q=1000, desc='DervaGem price is 263.5996839')
         263.599712804
 
-        Example #5 (plot): Example of option price development (BS method) with increasing maturities
+        Next example shows option (BS) price development with increasing maturities (1 year increments).
 
-        >>> from pandas import Series
-        >>> O = Series([o.update(T=t).pxBS(payout_type="asset-or-nothing") for t in range(1,11)], range(1,11))
-        >>> O.plot(grid=1, title='Price vs expiry (in years)'); plt.show()  # doctest: +ELLIPSIS
-        <...>
+        >>> from pandas import Series, DataFrame
+        >>> Ts = tuple(range(1, 101)) # a range of expiries
+        >>> px_vec = Series([o.update(T=T).pxBS(payout_type="asset-or-nothing") for T in Ts], Ts)
+        >>> px_vec.plot(grid=1, title='BS Price vs expiry (yrs) for ' + o.specs)  # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at 0x...>
 
+        Next example shows sensitivity of Binary (asset-or-nothing) option's price to changes in expiry and strike.
+        The visualization produces a contour plot at different strike levels.
+        As expected for a call option, lower strike implies higher price (higher probability of in-the-money ITM).
+        Note the more complex relationship between price and expiry dates.
+        With distant expiries (over 5 years), the relationship is direct (higher expiry implies higher price).
+        However, near maturity (1-5 years), the relationship depends on strike level (all else fixed).
 
+        >>> from pandas import DataFrame
+        >>> Ks = [30 + 4 * i for i in range(11)];   # a range of strikes
+        >>> def px(K, T): return o.update(K=K, T=T).pxBS(payout_type="asset-or-nothing")
+        >>> px_grid = [[px(K=K, T=T) for K in Ks] for T in Ts]
+        >>> DataFrame(px_grid, columns=Ks).plot(grid=1, title='BS Price vs expiry at varying strikes, for ' + o.specs)  # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at 0x...>
 
+        Next example shows option price sensitivity to expiry and current prices of the underlying asset.
 
+        >>> from pandas import DataFrame
+        >>> Ts = tuple(range(1, 101)) # a range of expiries
+        >>> S0s = [30 + 4 * i for i in range(11)];   # a range of strikes
+        >>> def px(S0, T):
+        ...     s = Stock(S0=S0, vol=.3)
+        ...     return Binary(ref=s, right='call', K=50, T=T, rf_r=.05).pxBS(payout_type="asset-or-nothing")
+        >>> px_grid = [[px(S0=S0, T=T) for S0 in S0s] for T in Ts]
+        >>> DataFrame(px_grid, columns=S0s).plot(grid=1, title='BS Price vs expiry at varying S0, for ' + o.specs)  # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at 0x...>
 
+        Next example shows option price sensitivity to expiry and volatility.
 
+        >>> from pandas import DataFrame
+        >>> Ts = range(1, 101) # a range of expiries
+        >>> vols = [.05 + .025 * i for i in range(11)];   # a range of strikes
+        >>> def px(vol, T):
+        ...     s = Stock(S0=50, vol=vol)
+        ...     return Binary(ref=s, right='call', K=50, T=T, rf_r=.05).pxBS(payout_type="asset-or-nothing")
+        >>> px_grid = [[px(vol=vol, T=T) for vol in vols] for T in Ts]
+        >>> DataFrame(px_grid, columns=vols).plot(grid=1, title='BS Price vs expiry at varying vol, for ' + o.specs)  # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at 0x...>
 
         **LT**
 
@@ -92,151 +125,92 @@ class Binary(European):
         -------
         Verification of examples: DerivaGem software, Binary option (both cash_or_nothing and asset_or_nothing)
 
-        Please note that the following LT examples will only generate results that matches the output of DerivaGem\
-        if we use ``nsteps=365``. For fast runtime purpose, I use ``nsteps=10`` in the following examples, which may\
-        not generate results that match the output of DerivaGem
-
-
-
-        Use a binomial tree model to price a cash-or-nothing binary option
-
-        The following example will generate px = 640.435924845...with ``nsteps = 365``, \
-        which can be verified by DerivaGem However, for the purpose if fast runtime, I use ``nstep = 10`` \
-        in all following examples, whose result does not match verification. \
-        If you want to verify my code, please use ``nsteps = 365``.
+        *Cash or Nothing:*
 
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05, desc='call @641.237 put @263.6  DerivaGem')
-        >>> o.calc_px(method='LT', nsteps=10, \
-        payout_type="cash-or-nothing", Q=1000).px_spec.px #doctest: +ELLIPSIS
-        572.299478496...
+        >>> o.calc_px(method='LT', nsteps=365, payout_type="cash-or-nothing", Q=1000).px_spec.px # doctest: +ELLIPSIS
+        640.4359248459538
 
-        >>> o.calc_px(method='LT', nsteps=10, \
-        payout_type="cash-or-nothing", Q=1000).px_spec  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PriceSpec...px: 572.299478497...
-
+        >>> o.calc_px(method='LT', nsteps=365, payout_type="cash-or-nothing", Q=1000).px_spec  # doctest: +ELLIPSIS
+        PriceSpec...px: 640.43592484...
 
         Another way to view the specification of the binomial tree
 
-        >>> o.calc_px(method='LT', nsteps=10, \
-        payout_type="cash-or-nothing", Q=1000)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        Binary...px: 572.299478497...
+        >>> o.calc_px(method='LT', nsteps=365, payout_type="cash-or-nothing", Q=1000)  # doctest: +ELLIPSIS
+        Binary...px: 640.43592484...
 
+        Next example prints a 2 step (recombining) binomial tree of price progression of the underlying equity stock.
 
-        For the purpose of illustration, I only use a 2-step tree to display, \
-        where the option price here is not accurate. This is just for viewing purpose.
-        #the reference tree
-
-        >>> o.calc_px(method='LT', nsteps=2, payout_type="cash-or-nothing", Q=1000, \
-        keep_hist=True).px_spec.ref_tree #doctest: +ELLIPSIS
+        >>> o.calc_px(method='LT', nsteps=2, payout_type="cash-or-nothing", Q=1000, keep_hist=True).px_spec.ref_tree #doctest: +ELLIPSIS
         ((50.000000000...,), (37.040911034..., 67.492940378...), (27.440581804..., 50.000000000..., 91.105940019...))
 
-        #display the option value tree
+        Next example prints a 2 step (recombining) binomial tree of price progression of the binary option.
 
-        >>> o.calc_px(method='LT', nsteps=2, payout_type="cash-or-nothing", Q=1000, \
-        keep_hist=True).px_spec.opt_tree # doctest: +ELLIPSIS
+        >>> o.calc_px(method='LT', nsteps=2, payout_type="cash-or-nothing", Q=1000, keep_hist=True).px_spec.opt_tree # doctest: +ELLIPSIS
         ((687.356107822...,), (484.880509831..., 951.229424500...), (0.0, 1000.0, 1000.0))
 
 
-        Another way to display option price
-        The following example will generate px = 640.435924845...with ``nsteps = 365``, \
-        which can be verified by DerivaGem.
-        However, for the purpose if fast runtime, I use ``nstep = 10`` in all following examples, \
-        whose result does not match verification. If you want to verify my code, please use ``nsteps = 365``.
+        >>> o.pxLT(nsteps=365, payout_type='asset-or-nothing'); o    # doctest: +ELLIPSIS
+        41.717204143...
 
-        >>> (o.pxLT(nsteps=10, keep_hist=True, \
-        payout_type='cash-or-nothing',Q=1000))
-        572.299478497
-
-        >>> (o.px_spec.px, o.px_spec.method)  # doctest: +ELLIPSIS
-        (572.299478496..., 'LT')
-
-        The following example will generate px = 264.401493191...with ``nsteps = 365``, \
-        which can be verified by DerivaGem.
-        However, for the purpose if fast runtime, I use ``nstep = 10`` in all following examples, \
-        whose result does not match verification. If you want to verify my code, please use ``nsteps = 365``.
-
-        >>> Binary(clone=o, right='put', desc='call @641.237 put @263.6  DerivaGem').calc_px(method='LT',\
-        nsteps=10, payout_type='cash-or-nothing',Q=1000).px_spec.px #doctest: +ELLIPSIS
-        332.537939539...
-
+        >>> o = Binary(clone=o, right='put', desc='DerivaGem: call @641.237, put @263.6')
+        >>> o.calc_px(method='LT', nsteps=365, payout_type='cash-or-nothing', Q=1000) #doctest: +ELLIPSIS
+        Binary...264.401493191...
 
         Use a binomial tree model to price an asset-or-nothing binary option
 
-        The following example will generate px = 41.717204143...with ``nsteps = 365``, \
-        which can be verified by DerivaGem.
-        However, for the purpose if fast runtime, I use ``nstep = 10`` in all following examples, \
-        whose result does not match verification. If you want to verify my code, please use ``nsteps = 365``.
-
         >>> s = Stock(S0=50, vol=.3)
-        >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05, desc='call @41.74 put @8.254 DerivaGem')
-        >>> o.calc_px(method='LT', nsteps=10, payout_type="asset-or-nothing").px_spec.px #doctest: +ELLIPSIS
-        39.009817494...
+        >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05, desc='DerivaGem: call @41.74, put @8.254')
+        >>> o.calc_px(method='LT', nsteps=365, payout_type="asset-or-nothing")  # doctest: +ELLIPSIS
+        Binary...41.717204143...
 
-        >>> o.calc_px(method='LT', nsteps=10, \
-        payout_type="asset-or-nothing").px_spec# doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PriceSpec...px: 39.009817494...
-
+        >>> o.calc_px(method='LT', nsteps=500, payout_type="asset-or-nothing").px_spec# doctest: +ELLIPSIS
+        PriceSpec...px: 41.318664006...
 
         Another way to view the specification of the binomial tree
 
-        >>> o.calc_px(method='LT', nsteps=10, \
-        payout_type="asset-or-nothing")# doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        Binary...px: 39.009817494...
+        >>> o.calc_px(method='LT', nsteps=500, payout_type="asset-or-nothing")  # doctest: +ELLIPSIS
+        Binary...px: 41.318664006...
 
 
-        For the purpose of illustration, I only use a 2-step tree to display, \
-        where the option price here is not accurate
+        Below is a 2-step binomial tree (for underlying stock prices and for option prices):
 
-        >>> o.calc_px(method='LT', nsteps=2, payout_type="asset-or-nothing", \
-        keep_hist=True).px_spec.ref_tree #doctest: +ELLIPSIS
+        >>> o.calc_px(method='LT', nsteps=2, payout_type="asset-or-nothing", keep_hist=True).px_spec.ref_tree #doctest: +ELLIPSIS
         ((50.000000000...,), (37.040911034..., 67.492940378...), (27.440581804..., 50.000000000..., 91.105940019...))
 
-        >>> o.calc_px(method='LT', nsteps=2, payout_type="asset-or-nothing", \
-        keep_hist=True).px_spec.opt_tree #doctest: +ELLIPSIS
+        >>> o.calc_px(method='LT', nsteps=2, payout_type="asset-or-nothing", keep_hist=True).px_spec.opt_tree #doctest: +ELLIPSIS
         ((44.032186316...,), (24.244025491..., 67.492940378...), (0.0, 50.000000000..., 91.105940019...))
 
-        Another way to display option price
-        The following example will generate px = 41.717204143...with ``nsteps = 365``, \
-        which can be verified by DerivaGem.
-        However, for the purpose if fast runtime, I use ``nstep = 10`` in all following examples, \
-        whose result does not match verification. If you want to verify my code, please use ``nsteps = 365``.
-
-        >>> (o.pxLT(nsteps=10, keep_hist=True, payout_type='asset-or-nothing'))
-        39.009817494
-
-        >>> (o.px_spec.px, o.px_spec.method)  #doctest: +ELLIPSIS
-        (39.009817494..., 'LT')
 
         The following example will generate px = 8.282795856...with ``nsteps = 365``, \
         which can be verified by DerivaGem.
         However, for the purpose if fast runtime, I use ``nstep = 10`` in all following examples, \
         whose result does not match verification. If you want to verify my code, please use ``nsteps = 365``.
 
-        >>> Binary(clone=o, right='put', desc='call @41.74 put @8.254 DerivaGem').calc_px(method='LT',\
-        nsteps=10, payout_type='asset-or-nothing').px_spec.px #doctest: +ELLIPSIS
-        10.990182505...
+        >>> o = Binary(clone=o, right='put', desc='DerivaGem: call @41.74, put @8.254')
+        >>> o.pxLT(nsteps=365, payout_type='asset-or-nothing'); o #doctest: +ELLIPSIS
+        8.282795857...
 
 
         Example of option price development (LT method) with increasing maturities
 
         >>> from pandas import Series
-        >>> expiries = range(1,11)
-        >>> O = Series([o.update(T=t).calc_px(method='LT', nsteps=10, payout_type="cash-or-nothing", \
-        Q=1000).px_spec.px for t in expiries], expiries)
-        >>> O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
+        >>> s = Stock(S0=50, vol=.3)
+        >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05, desc='DerivaGem: call @41.74, put @8.254')
+        >>> Ts = range(1,11)   # range of expiries (in years)
+        >>> O = Series([o.update(T=t).pxLT(nsteps=500, payout_type="cash-or-nothing", Q=1000) for t in Ts], Ts)
+        >>> O.plot(grid=1, title='LT Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
-        >>> import matplotlib.pyplot as plt
-        >>> plt.show()
 
         **FD**
 
-        Example #1 can verify this example with example 1 from pxBS above. It is fairly close
+        Example #1 can verify this example with example 1 from pxBS above.
 
         >>> s = Stock(S0=42, vol=.20)
         >>> o = Binary(ref=s, right='put', K=40, T=.5, rf_r=.1)
-        >>> o.pxFD(payout_type="asset-or-nothing", nsteps=10, npaths=10)  # doctest: +ELLIPSIS
-        8.35783977
+        >>> (o.pxFD(payout_type="asset-or-nothing", nsteps=10, npaths=10), o.pxBS())  # doctest: +ELLIPSIS
+        (8.35783977, 9.27648578)
 
         Example #2
 
@@ -260,10 +234,9 @@ class Binary(European):
         >>> from pandas import Series
         >>> s = Stock(S0=50, vol=.3)
         >>> o = Binary(ref=s, right='call', K=40, T=2, rf_r=.05)
-        >>> O = Series([o.update(T=t).pxFD(payout_type="asset-or-nothing",nsteps=t*5) for t in range(1,11)],range(1,11))
-        >>> O.plot(grid=1, title='Price vs expiry (in years)')  # doctest: +ELLIPSIS
-        <...>
-        >>> plt.show()
+        >>> O = Series([o.update(T=t).pxFD(payout_type="asset-or-nothing", nsteps=t*5) for t in range(1,101)],range(1,101))
+        >>> O.plot(grid=1, title='FD Price vs expiry (in years)' + o.specs)  # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at 0x...>
 
         :Authors:
             Patrick Granahan,
@@ -271,18 +244,12 @@ class Binary(European):
             Andrew Weatherly <amw13@rice.edu>
         """
 
-        self.save_specs(payout_type=payout_type, Q=Q, **kwargs)
+        assert payout_type in ['asset-or-nothing', 'cash-or-nothing']
+        self.save2px_spec(payout_type=payout_type, Q=Q, **kwargs)
         return getattr(self, '_calc_' + self.px_spec.method.upper())()
-
-        # return super().calc_px(method=method, sub_method=payout_type, nsteps=nsteps, \
-        #                        npaths=npaths, keep_hist=keep_hist, payout_type=payout_type, Q=Q)
 
     def _calc_BS(self):
         """ Internal function for option valuation.
-
-        Returns
-        ----------
-        self: Binary
 
         :Authors:
             Patrick Granahan
@@ -331,12 +298,10 @@ class Binary(European):
         return self
 
     def _calc_LT(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
+        """ Internal function for option valuation.        See ``calc_px()`` for complete documentation.
 
         Notes
-        ----------------
+        ------
         [1] `Implementing Binomial Trees, Manfred Gilli & Enrico Schumann, 2009
             <http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181>`_
 
@@ -398,141 +363,86 @@ class Binary(European):
         return self
 
     def _calc_MC(self, nsteps=3, npaths=4, keep_hist=False):
-        """ Internal function for option valuation.
-
-        Returns
-        -------
-        self: Binary
-
-        .. sectionauthor::
-
-        Notes
-        -----
-        Implementing Binomial Trees:   http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181
-
-        """
+        """ Internal function for option valuation.       """
         return self
 
     def _calc_FD(self, nsteps=10, npaths=10, keep_hist=False):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: Binary
-
-        .. sectionauthor:: Andrew Weatherly
-
-        Notes
-        -----
-
-        Formulas:
-        http://www.mathnet.or.kr/mathnet/thesis_file/BKMS-48-2-413-426.pdf
-        https://studentportalen.uu.se/uusp-filearea-tool/download.action%3FnodeId%3D1101907%26toolAttachmentId%3D205921%
-        26uusp.userId%3Dguest+&cd=2&hl=en&ct=clnk&gl=us
-
+        :Authors:
+            Andrew Weatherly
         """
+        _ = self;       signCP, T, rf_r, K = _.signCP, _.T, _.rf_r, _.K
+        _ = self.ref;   S0, vol, q = _.S0, _.vol, _.q
+        _ = self.px_spec;    n, m, payout_type = _.nsteps, _.npaths, _.payout_type
+        S_Max, S_Min = 2 * S0, 0
+        if payout_type == 'cash-or-nothing':        Q = getattr(_, 'Q', 5)
 
-        _ = self.px_spec
-
-        # getting attributes
-        M = getattr(_, 'npaths', 3)
-        N = getattr(_, 'nsteps', 3)
-        payout_type = getattr(_, 'payout_type')
-        assert payout_type in ['asset-or-nothing', 'cash-or-nothing']
-        if payout_type == 'cash-or-nothing':
-            Q = getattr(_, 'Q', 5)
-
-        # value grid
-        C = np.zeros(shape=(N + 1, M + 1))
-        # helpful parameters
-        signCP = 1 if self.right.lower() == 'call' else -1
-        T = self.T
-        vol = self.ref.vol
-        S0 = self.ref.S0
-        S_Max = 2 * S0
-        S_Min = 0
-        S_vec = np.linspace(S_Min, S_Max, M + 1)
-        r = self.rf_r
-        q = self.ref.q
-        dt = T / (N + 0.0)
-        dS = S_Max / (M + 0.0)
-        N = int(T / dt)
-        M = int(S_Max / dS)
-        K = self.K
-        df = math.exp(-r * dt)
+        C = np.zeros(shape=(n + 1, m + 1))  # value grid
+        S_vec = np.linspace(S_Min, S_Max, m + 1)
+        dt = T / (n + 0.0)
+        dS = S_Max / (m + 0.0)
+        n = int(T / dt)
+        m = int(S_Max / dS)
+        df = math.exp(-rf_r * dt)
 
         # equations defined by hull on pg. 481
-        def a(x):
-            return df * (.5 * dt * ((vol ** 2) * (x ** 2) - (r - q) * x))
-
-        def b(x):
-            return df * (1 - dt * ((vol ** 2) * (x ** 2)))
-
-        def c(x):
-            return df * (.5 * dt * ((vol ** 2) * (x ** 2) + (r - q) * x))
+        def a(x):     return df * (.5 * dt * ((vol ** 2) * (x ** 2) - (rf_r - q) * x))
+        def b(x):     return df * (1 - dt * ((vol ** 2) * (x ** 2)))
+        def c(x):     return df * (.5 * dt * ((vol ** 2) * (x ** 2) + (rf_r - q) * x))
 
         if payout_type == 'asset-or-nothing':
             if signCP == 1:
                 # t = T boundary conditions
-                for k in range(M + 1):
+                for k in range(m + 1):
                     S = dS * k
-                    if S > K:
-                        C[N, k] = S
-                    else:
-                        C[N, k] = 0
+                    if S > K: C[n, k] = S
+                    else:     C[n, k] = 0
                 # Top and Bottom boundary conditions
-                for i in range(N + 1):
+                for i in range(n + 1):
                     t = i * dt
-                    C[t, M] = S_Max
+                    C[t, m] = S_Max
                     C[t, 0] = 0
             else:
                 # t = T boundary conditions
-                for k in range(M + 1):
+                for k in range(m + 1):
                     S = dS * k
-                    if S < K:
-                        C[N, k] = S
-                    else:
-                        C[N, k] = 0
+                    if S < K: C[n, k] = S
+                    else: C[n, k] = 0
                 # Top and Bottom boundary conditions
-                for i in range(N + 1):
+                for i in range(n + 1):
                     t = i * dt
-                    C[t, M] = 0
+                    C[t, m] = 0
                     C[t, 0] = S_Min
         else:
             if signCP == 1:
                 # t = T boundary conditions
-                for k in range(M + 1):
+                for k in range(m + 1):
                     S = dS * k
-                    if S > K:
-                        C[N, k] = Q * math.exp(-r * T)
-                    else:
-                        C[N, k] = 0
+                    if S > K: C[n, k] = Q * math.exp(-rf_r * T)
+                    else: C[n, k] = 0
                 # Top and Bottom boundary conditions
-                for i in range(N + 1):
+                for i in range(n + 1):
                     t = i * dt
-                    C[t, M] = Q * math.exp(-r * (T - t))
+                    C[t, m] = Q * math.exp(-rf_r * (T - t))
                     C[t, 0] = 0
 
             else:
                 # t = T boundary conditions
-                for k in range(M + 1):
+                for k in range(m + 1):
                     S = dS * k
-                    if S < K:
-                        C[N, k] = Q * math.exp(-r * T)
-                    else:
-                        C[N, k] = 0
+                    if S < K: C[n, k] = Q * math.exp(-rf_r * T)
+                    else: C[n, k] = 0
                 # Top and Bottom boundary conditions
-                for i in range(N + 1):
+                for i in range(n + 1):
                     t = i * dt
-                    C[t, M] = 0
-                    C[t, 0] = Q * math.exp(-r * (T - t))
+                    C[t, m] = 0
+                    C[t, 0] = Q * math.exp(-rf_r * (T - t))
 
-        for i in range(N - 1, -1, -1):
-            for k in range(1, M):
-                j = M - k
+        for i in range(n - 1, -1, -1):
+            for k in range(1, m):
+                j = m - k
                 C[i, k] = a(j) * C[i + 1, k + 1] + b(j) * C[i + 1, k] + c(j) * C[i + 1, k - 1]
 
-        self.px_spec.add(px=np.interp(S0, S_vec, C[0, :]), method='FD', sub_method='Implicit')
+        self.px_spec.add(px=np.interp(S0, S_vec, C[0, :]), sub_method='Implicit FDM')
         return self
-
-

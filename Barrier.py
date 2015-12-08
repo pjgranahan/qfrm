@@ -168,7 +168,7 @@ class Barrier(European):
             dir = getattr(self.px_spec, 'dir', None)
             assert dir is not None, 'Assert failed: required input dir'
 
-        self.save_specs(knock=knock, dir=dir, H=H, **kwargs)
+        self.save2px_spec(knock=knock, dir=dir, H=H, **kwargs)
         return getattr(self, '_calc_' + self.px_spec.method.upper())()
 
     def _calc_BS(self):

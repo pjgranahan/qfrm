@@ -186,7 +186,7 @@ class American(European):
             Oleg Melnikov <xisreal@gmail.com>, Andrew Weatherly <andrewweatherly1@gmail.com>
         """
 
-        self.save_specs(deg=deg, **kwargs)
+        self.save2px_spec(deg=deg, **kwargs)
         return getattr(self, '_calc_' + self.px_spec.method.upper())()
 
     def _calc_BS(self):

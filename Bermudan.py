@@ -170,27 +170,16 @@ class Bermudan(European):
         elif deltaT > epsilon:
             tex = tex[:-1] + (self.T,)
 
-        # self.tex = tex
-        self.save_specs(tex=tex, R=R, **kwargs)   # verifies and saves nsteps variable
+        self.save2px_spec(tex=tex, R=R, **kwargs)   # verifies and saves nsteps variable
         knsteps = max(tuple(map(lambda i: int(T / (tex[i + 1] - tex[i])), range(len(tex) - 1))))
         self.px_spec.add(nsteps_user_input=self.px_spec.nsteps)
         self.px_spec.add(nsteps=knsteps * self.px_spec.nsteps)
-        # if nsteps != None:
-        #     knsteps = knsteps * nsteps
-        # nsteps = knsteps
-
-        # todo: delete default seed after ugprade
-        # if self.px_spec.rng_seed is None:  self.px_spec.rng_seed = 4294967295
 
         return getattr(self, '_calc_' + self.px_spec.method.upper())()
 
-        # self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, R=R, seed=seed)
-        # return getattr(self, '_calc_' + method.upper())()
 
     def _calc_BS(self):
-        """ Internal function for option valuation.
-
-        """
+        """ Internal function for option valuation.        """
         return self
 
     def _calc_LT(self):
@@ -198,7 +187,6 @@ class Bermudan(European):
 
         :Authors:
             Andy Liao <Andy.Liao@rice.edu>
-
         """
 
         n, keep_hist = self.px_spec.nsteps, self.px_spec.keep_hist
@@ -228,7 +216,7 @@ class Bermudan(European):
         return self
 
     def _calc_MC(self):
-        """ Internal function for option valuation.    See calc_px() for full documentation.
+        """ Internal function for option valuation.    See ``calc_px()`` for full documentation.
 
         :Authors:
             Patrick Granahan
@@ -256,8 +244,7 @@ class Bermudan(European):
             return payout
 
         def delta_T_array():
-            """
-            Creates an array of time differences.
+            """ Creates an array of time differences.
 
             Returns
             -------

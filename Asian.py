@@ -209,12 +209,8 @@ class Asian(European):
 
         """
 
-        self.save_specs(sub_method=sub_method, strike=strike, **kwargs)
+        self.save2px_spec(sub_method=sub_method, strike=strike, **kwargs)
         return getattr(self, '_calc_' + self.px_spec.method.upper())()
-
-        # self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, \
-        #     rng_seed=rng_seed, sub_method=sub_method, strike=strike)
-        # return getattr(self, '_calc_' + method.upper())()
 
     def _calc_BS(self):
         """ Internal function for option valuation.
