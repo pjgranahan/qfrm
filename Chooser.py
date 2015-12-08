@@ -225,8 +225,17 @@ class Chooser(OptionValuation):
             Andy Liao <Andy.Liao@rice.edu>
 
         """
+<<<<<<< HEAD
         self.tau = float(tau)
         return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, rng_seed=rng_seed)
+=======
+        self.save2px_spec(tau=tau, **kwargs)
+
+        return getattr(self, '_calc_' + self.px_spec.method.upper())()
+
+        # self.tau = float(tau)
+        # return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
+>>>>>>> Oleg_European_parent
 
     def _calc_BS(self):
         """ Internal function for option valuation.

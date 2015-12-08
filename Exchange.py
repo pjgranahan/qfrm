@@ -145,7 +145,7 @@ class Exchange(European):
             Tianyi Yao <ty13@rice.edu>
         """
 
-        self.save_specs(cor=cor, **kwargs)
+        self.save2px_spec(cor=cor, **kwargs)
         return getattr(self, '_calc_' + self.px_spec.method.upper())()
 
     def _calc_BS(self):

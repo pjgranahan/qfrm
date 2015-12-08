@@ -170,10 +170,10 @@ class European(OptionValuation):
             Oleg Melnikov <xisreal@gmail.com>
         """
 
-        self.save_specs(**kwargs)
+        self.save2px_spec(**kwargs)
         return getattr(self, '_calc_' + self.px_spec.method.upper())()
 
-    def save_specs(self, method='BS', nsteps=None, npaths=None, keep_hist=False, rng_seed=None, **kwargs):
+    def save2px_spec(self, method='BS', nsteps=None, npaths=None, keep_hist=False, rng_seed=None, **kwargs):
 
         self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, rng_seed=rng_seed, **kwargs)
         assert getattr(self, 'ref') is not None, 'Ooops. Please supply referenced (underlying) asset, `ref`'
