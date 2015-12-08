@@ -690,25 +690,7 @@ class SpecPrinter:
             used with whole object print out and with print out of some calculated values (``px``, ...)
             Default 9 digits. If set to ``None``, machine precision is used.
         """
-        # if 'print_precision' in kwargs:
-        #     if kwargs['print_precision'] != 9:
-        #         self._print_precision = kwargs['print_precision']
-        #     else:
-        #         try: del self.print_precision  # do not store default value
-        #         except: pass
         SpecPrinter.print_precision = print_precision
-
-    # @property
-    # def print_precision(self):
-    #     """ Returns user-saved printing precision or default (9 digits)
-    #
-    #     Returns
-    #     -------
-    #     int :
-    #         printing precision
-    #     """
-    #     try: return self._print_precision
-    #     except: return 9
 
     def full_spec(self, print_as_line=True):
         r""" Returns a formatted string containing all variables of this class (recursively)
@@ -753,12 +735,10 @@ class SpecPrinter:
         yaml.add_representer(np.ndarray, numpy_representer_str)
         yaml.add_representer(np.ndarray, numpy_representer_seq)
 
-        # each yaml dump has trailing '\n', which we identify and remove
+        # '\n' is inserted after each "width" number of characters, and at the end. So, we set to large width.
         s = yaml.dump(self, default_flow_style=print_as_line, width=1000)  # , explicit_end=True
 
         s = re.sub(r'\w+: null', '', s)  # RegEx removes null keys. Demo: https://regex101.com/r/dZ9iI8/1
-        # s = re.sub(r'\b\w+:\s+null(|$)', '', s).strip() # RegEx removes null keys.
-        # s = s.replace('\n...\n','')   # trim trailing new line (explicit end)
         s = re.sub(u'(?imu)^\s*\n', u'', s)  # removes lines of spaces
 
         s = s.replace('!!python/object:', '').replace('!!python/tuple', '')
@@ -768,24 +748,10 @@ class SpecPrinter:
 
         s = s.replace(' {', '{')
         s = re.sub(re.compile(r'(,\s){2,}'), ', ', s)  # ", , , , , ... "   |->  ", "
-        # s = s.replace('{,  ','{').replace('{, ','{')
 
         if print_as_line:
-            s = s.replace(',', ', ').replace(': ', ':')  #.replace('  ', ' ')
+            s = s.replace(',', ', ').replace(': ', ':')
             s = re.sub(r'(\s){2,}', ' ', s)    # replace successive spaces with one instance
-
-        # s = re.sub(r'(,\s){2,}', ', ', s)  # replace successive instances of ', ' with one instance
-        # s = re.sub(r'(\n\s){2,}', '\n ', s)    # replace successive spaces with one instance
-        # s = re.sub(r'(\n\s\s){2,}', '\n\s\s', s)    # replace successive spaces with one instance
-        # s = functools.reduce( (lambda x, y: x + '\n ' + y if y else x), s.split('\n '))
-        # s = functools.reduce( (lambda x, y: x + '\n  ' + y if y else x), s.split('\n  '))
-
-        # s = yaml.dump(self, default_flow_style=not new_line).replace('!!python/object:','').replace('!!python/tuple','')
-        # s = s.replace('__main__.','').replace(type(self).__name__ + '.','').replace('null','-')
-        # s = s.replace('__main__.','').replace('OptionValuation.','').replace('OptionSeries.','').replace('null','-')
-        # s = s.replace('Util.', '').replace(', ,',', ').replace('{,  ','{').replace('{, ','{')
-        # if not new_line:
-            # s = s.replace(',', ', ').replace('\n', ',').replace(': ', ':').replace('  ', ' ')
 
         return s.strip()
 

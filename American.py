@@ -185,17 +185,23 @@ class American(European):
 
         >>> s = Stock(S0=40, vol=.2)
         >>> o = American(ref=s, right='put', K=35, T=.5833, rf_r=.0488, desc='Example From Hull and White 2001')
-        >>> (o.pxBS(), o.pxLT(nsteps=100), o.pxMC(nsteps=100, npaths=1000, rng_seed=0))
+        >>> (o.pxBS(), o.pxLT(nsteps=100), o.pxMC(nsteps=100, npaths=1000, rng_seed=0, deg=5))
         (0.432627059, 0.434706028, 0.41384716900000001)
 
         Next, we visually compare the convergence performance of 3 methods.
-        Notice the scale on counters ``nsteps`` and ``npaths``.
+        Notice the scale on counters ``nsteps`` and ``npaths``.,
+        i.e. plotted horizontal axis has different units for LT and MC methods.
 
-        >>> dBS = [o.pxBS() for i in range(10)]
-        >>> dLT = [o.pxLT(nsteps=i) for i in range(10)]
-        >>> dMC = [o.pxMC(nsteps=100, npaths=100*i, rng_seed=0) for i in range(10)]
+        >>> I = range(1, 11)
+        >>> dBS = [o.pxBS() for i in I]
+        >>> dLT = [o.pxLT(nsteps=2*i) for i in I]
+        >>> dMC = [o.pxMC(nsteps=100, npaths=100*i, rng_seed=0, deg=5) for i in I]
         >>> from pandas import DataFrame
-        >>> d = DataFrame({'BS': dBS, 'LT': dLT, 'MC': dMC})
+        >>> d = DataFrame({'BS': dBS, 'LT': dLT, 'MC': dMC});  d   # doctest: +ELLIPSIS
+                 BS        LT        MC
+        0  0.432627  0.571782  0.804060
+        1  0.432627  0.437243  0.556852
+        ...
         >>> d.plot(grid=1, title='Compare price convergence (versus scaled iterations)')  # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot...>
 
@@ -332,3 +338,4 @@ class American(European):
         """
 
         return self
+

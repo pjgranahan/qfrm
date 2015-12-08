@@ -1,4 +1,5 @@
 import math
+import re
 import warnings
 import itertools
 import pandas as pd
@@ -9,9 +10,45 @@ except:   from Util import *  # development: if not installed and running from s
 
 
 class PriceSpec(SpecPrinter):
-    """ Object for storing calculated price and related intermediate parameters.
+    """ PriceSpec verifies and saves calculated price and intermediate calculations.
 
     Use this object to store the price, sub/method and any intermediate results in your option object.
+
+    A typical structure for option with price computed by **LT** method:
+
+    .. code::
+
+          LT_specs:
+            a: 1.025315121
+            d: 0.904837418
+            df_T: 0.951229425
+            df_dt: 0.975309912
+            dt: 0.25
+            p: 0.601385702
+            u: 1.105170918
+          keep_hist: false
+          method: LT
+          nsteps: 2
+          px: 4.799241115
+          sub_method: binary tree; Hull p.135
+
+    A typical structure for option with price computed by **BS** method:
+
+    .. code::
+
+          BS_specs:
+            N_d1: 0.220868709
+            N_d2: 0.265053963
+            Nd1: 0.779131291
+            Nd2: 0.734946037
+            d1: 0.769262628
+            d2: 0.627841272
+          keep_hist: false
+          method: BS
+          px: 4.759422393
+          px_call: 4.759422393
+          px_put: 0.808599373
+          sub_method: standard; Hull p.335
 
     :Authors:
         Oleg Melnikov <xisreal@gmail.com>
@@ -39,29 +76,36 @@ class PriceSpec(SpecPrinter):
         --------
 
         Default ``print_precision = 9`` is used
-
-
-
         """
-
-        # super().__init__(kwargs)
-        # if 'print_precision' in kwargs:
-        #     super().__init__(print_precision=kwargs['print_precision'])
-        #     del kwargs['print_precision']
-        # super().__init__(print_precision=print_precision)
         SpecPrinter.print_precision = print_precision
         self.add(**kwargs)
 
     def add_verify(self, dtype=None, min=None, max=None, dflt=None, **kwargs):
-        """
+        """ Asserts the type and range of passed ``kwargs`` parameter *key*=*value*.
+
+        Use this function to validate and save user's input.
+        If assertion fails, default value is used and message is saved into PriceSpec variable as ``[key]_warning``.
+        Only the first kwargs argument will be saved.
+        Use this method once for each *key*=*value* pair.
 
         Parameters
         ----------
-        dtype :
-        min :
-        max :
-        dflt :
+        dtype : {None, int, long, ...}
+            Specifies the type of the input variable
+
+            ``None`` results in no constraint on type of *value*
+        min : {None, number}
+            Specifies the minimum of the range for the *value*. min must work with operator >=
+
+            ``None`` results in no constraint on minimum of *value*
+        max : {None, number}
+            Specifies the maximum of the range for the *value*. min must work with operator >=
+
+            ``None`` results in no constraint on maximum of *value*
+        dflt : object
+            If range/type assertions failed, this (default) value will be used.
         kwargs :
+            A single *key*=*value* pair that needs to be validated and stored.
 
         Returns
         -------
@@ -69,6 +113,10 @@ class PriceSpec(SpecPrinter):
 
         Examples
         --------
+
+        Here we add ``nsteps=5`` assuring that 1 < 5 and 5 is of type ``int``.
+        Conditions are satisfied and value is added to ``PriceSpec`` object.
+
         >>> ps = PriceSpec()
         >>> ps.add_verify(dtype=int, min=1, max=None, dflt=3, nsteps=5); ps
         PriceSpec
@@ -77,22 +125,22 @@ class PriceSpec(SpecPrinter):
         >>> ps.add_verify(dtype=int, min=1, max=10, dflt=3, nsteps=11); ps
         PriceSpec
         nsteps: 3
-        nsteps_msg: bad spec nsteps=11. Must be 1 <= <class 'int'> <= 10. Using default 3
+        nsteps_warning: bad spec nsteps=11. Must be 1 <= int <= 10. Using default 3
 
         >>> ps.add_verify(dtype=float, min=1, max=float("inf"), dflt=3, nsteps=11); ps
         PriceSpec
         nsteps: 3
-        nsteps_msg: bad spec nsteps=11. Must be 1 <= <class 'float'> <= inf. Using default 3
+        nsteps_warning: bad spec nsteps=11. Must be 1 <= float <= inf. Using default 3
 
         >>> ps.add_verify(dtype=float, min=float("-inf"), max=float("inf"), dflt=5, nsteps='bla'); ps
         PriceSpec
         nsteps: 5
-        nsteps_msg: bad spec nsteps=bla. Must be -inf <= <class 'float'> <= inf. Using default 5
+        nsteps_warning: bad spec nsteps=bla. Must be -inf <= float <= inf. Using default 5
 
         >>> ps.add_verify(dtype=float, min=float("-inf"), max=float("inf"), dflt=5, nsteps=None); ps
         PriceSpec
         nsteps: 5
-        nsteps_msg: bad spec nsteps=None. Must be -inf <= <class 'float'> <= inf. Using default 5
+        nsteps_warning: bad spec nsteps=None. Must be -inf <= float <= inf. Using default 5
         """
         k, v = tuple(kwargs.keys())[0], tuple(kwargs.values())[0]
 
@@ -106,34 +154,16 @@ class PriceSpec(SpecPrinter):
 
         if use_default:
             msg = 'bad spec ' + k + '=' + str(v) \
-                + '. Must be ' + str(min) + ' <= ' + str(dtype) + ' <= ' + str(max)\
+                + '. Must be ' + str(min) + ' <= ' + dtype().__class__.__name__ + ' <= ' + str(max)\
                 + '. Using default ' + str(dflt)
             # msg = '\nOooops! PriceSpec.add_verify() says: \n\tinput ' + k + '=' + str(v) + ' must be of type ' + str(dtype) \
             #     + ' with min=' + str(min) + ', max=' + str(max) + ', default=' + str(dflt) \
             #     + '. Using default.'
             # warnings.warn(msg, UserWarning)
             v = dflt
-            setattr(self, k + '_msg', msg)
+            setattr(self, k + '_warning', msg)
 
         setattr(self, k, v)
-
-    # @property
-    # def px(self):
-    #     """Getter method for price variable.
-    #
-    #     Getter and setter allow access to price and use of user-defined rounding of price value.
-    #
-    #     Returns
-    #     -------
-    #     None or float
-    #         Properly rounded price value (if exists)
-    #
-    #     """
-    #     try: return self.print_value(self._px)
-    #     except: return None
-    #
-    # @px.setter
-    # def px(self, px): self._px = px
 
     def add(self, **kwargs):
         """ Adds all key/value input arguments as class variables
@@ -429,12 +459,15 @@ class OptionSeries(SpecPrinter):
         >>> from qfrm import *; European().style
         'European'
 
-        >>> OptionSeries().style  # returns None
+        >>> OptionSeries().style
+        ''
         """
-        if any('OptionValuation' == i.__name__ for i in self.__class__.__bases__):
-            return type(self).__name__
-        else:
-            return None
+
+        return type(self).__name__.replace('OptionValuation', '').replace('OptionSeries', '')
+        # if any('European' == i.__name__ for i in self.__class__.__bases__):
+        #     return type(self).__name__
+        # else:
+        #     return None
 
     @property
     def series(self):
@@ -464,14 +497,22 @@ class OptionSeries(SpecPrinter):
 
         """
         try: tkr = self.ref.tkr + ' '
-        except: tkr=''
+        except: tkr = ''
 
-        K = '' if getattr(self, 'K', None) is None else str(self.K) + ' '
+        K = str(getattr(self, 'K', '')) + ' '
         T = '' if getattr(self, 'T', None) is None else str(self.T) + 'yr '
-        style = '' if self.style is None else self.style + ' '
-        right = '' if getattr(self, 'right', None) is None else str(self.right) + ' '
+        style = self.style + ' '
+        right = str(getattr(self, 'right', '')) + ' '
 
-        return (tkr + K + T + style + str(right)).rstrip()  # strip trailing spaces
+
+        # K = '' if getattr(self, 'K', None) is None else str(self.K) + ' '
+        # T = '' if getattr(self, 'T', None) is None else str(self.T) + 'yr '
+        # style = '' if self.style is None else self.style + ' '
+        # right = '' if getattr(self, 'right', None) is None else str(self.right) + ' '
+        # s = re.sub(r'(\s){2,}', repl=' ', string=s)  # replace multiple blanks with one
+
+
+        return re.sub(r'(\s){2,}', ' ', (tkr + K + T + style + str(right)).strip()) # remove extra spaces
 
     @property
     def specs(self):
@@ -842,4 +883,6 @@ class OptionValuation(OptionSeries):
     #         return getattr(self, '_calc_' + self.px_spec.method.upper())()
     #
     #     return None
+
+
 
