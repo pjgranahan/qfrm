@@ -152,7 +152,7 @@ class Chooser(European):
             Andy Liao <Andy.Liao@rice.edu>
 
         """
-        self.save_specs(tau=tau, **kwargs)
+        self.save2px_spec(tau=tau, **kwargs)
 
         return getattr(self, '_calc_' + self.px_spec.method.upper())()
 

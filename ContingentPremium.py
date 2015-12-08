@@ -94,7 +94,7 @@ class ContingentPremium(European):
         :Authors:
             Andrew Weatherly
         """
-        self.save_specs(**kwargs)
+        self.save2px_spec(**kwargs)
         return getattr(self, '_calc_' + self.px_spec.method.upper())()
         # self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
         # return getattr(self, '_calc_' + method.upper())()

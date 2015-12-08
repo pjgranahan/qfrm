@@ -67,7 +67,6 @@ class ForwardStart(European):
         >>> O = Series([ForwardStart(ref=s, K=66, right='call', T=0.75, rf_r=.08).update(T=t).pxBS(T_s=0.25) for t in expiries], expiries)
         >>> O.plot(grid=1, title='ForwardStart option Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
-        >>> plt.show()
 
 
 
@@ -89,8 +88,8 @@ class ForwardStart(European):
 
 
         >>> s = Stock(S0=50, vol=.15,q=0.05)
-        >>> o = ForwardStart(ref=s, K=100, right='call', T=0.5, rf_r=.1).pxMC(nsteps=10, npaths=10, T_s=0.5)
-        3.434189097...
+        >>> ForwardStart(ref=s, K=100, right='call', T=0.5, rf_r=.1).pxMC(nsteps=10, npaths=10, T_s=0.5)
+        3.434189097
 
         The following example uses the same parameter as the example above, but uses ``pxMC()``.
         example from page 2 http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2forward.pdf
@@ -121,8 +120,6 @@ class ForwardStart(European):
         >>> O = Series([ForwardStart(ref=s, K=66, right='call', T=0.5, rf_r=0.1).update(T=t).pxMC(T_s=0.5) for t in expiries], expiries)
         >>> O.plot(grid=1, title='ForwardStart option Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
-        >>> plt.show()
-
 
 
         **FD**
@@ -146,7 +143,7 @@ class ForwardStart(European):
         >>> O = Series([ForwardStart(ref=s, K=66,right='call', T=0.5, rf_r=.01).update(T=t).pxFD(T_s=0.5) for t in expiries], expiries)
         >>> O.plot(grid=1, title='ForwardStart option Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
-        >>> plt.show()
+
 
         :Authors:
             Runmin Zhang <Runmin.Zhang@rice.edu>,
@@ -230,11 +227,12 @@ class ForwardStart(European):
         """
 
         #extract MC parameters
-        _ = self.pxspec;  n, m = _.nsteps, _.npaths
-        _ = self
+        _ = self.px_spec;  n, m, T_s = _.nsteps, _.npaths, _.T_s
+        _ = self.ref;     S0, vol, q = _.S0, _.vol, _.q
+        _ = self;
 
         #Make sure strike price is set to the expected underlying price at T_S
-        _.K = _.ref.S0*np.exp((_.rf_r-_.ref.q)*_.px_spec.T_s)
+        _.K = S0*np.exp((_.rf_r-q) * T_s)
 
         #compute additional parameters such as time step and discount factor
         dt = _.T / n
@@ -243,23 +241,23 @@ class ForwardStart(European):
         np.random.seed(1) #set seed
 
         #initialize the price array
-        S=np.zeros((n+1,m),'d')
-        S[0,:]=_.ref.S0*np.exp((_.rf_r-_.ref.q)*_.px_spec.T_s) #set initial price
+        S=np.zeros((n+1,m), 'd')
+        S[0,:] = S0 * np.exp((_.rf_r - q) * T_s) # set initial price
 
         #generate stock price path
         for t in range(1, n+1):
             #generate random numbers
             rand=np.random.standard_normal(m)
 
-            S[t,:]=S[t-1,:]*np.exp(((_.rf_r-_.ref.q-((_.ref.vol**2)/2))*dt)+(_.ref.vol*rand*np.sqrt(dt)))
+            S[t,:]=S[t-1,:]*np.exp(((_.rf_r-q-((vol**2)/2))*dt)+(vol*rand*np.sqrt(dt)))
 
         #find the payout at maturity
         final=np.maximum(_.signCP*(S[-1]-_.K),0)
 
         #discount the expected payoff at maturity to present
-        v0 = (np.exp(-_.rf_r*(_.T+_.px_spec.T_s))*sum(final))/m
+        v0 = (np.exp(-_.rf_r*(_.T+T_s))*sum(final))/m
 
-        self.px_spec.add(px=float(v0), method='MC', sub_method=None)
+        self.px_spec.add(px=float(v0), sub_method=None)
 
         return self
 
@@ -269,7 +267,7 @@ class ForwardStart(European):
         :Authors:
             Mengyan Xie <xiemengy@gmail.com>
         """
-        _ = self.pxspec;  n, m = _.nsteps, _.npaths
+        _ = self.px_spec;  n, m = _.nsteps, _.npaths
         _ = self
         dt = _.T / n
 
@@ -312,9 +310,6 @@ class ForwardStart(European):
             O_grid = (tuple([float(o) for o in O]),) + O_grid
 
         out = O_grid[0][idx]
-        self.px_spec.add(px=float(out), method='FDM', sub_method='Explicit')
+        self.px_spec.add(px=float(out), sub_method='Explicit')
         return self
 
-
-# s = Stock(S0=50, vol=.15,q=0.05)
-# o = ForwardStart(ref=s, K=100, right='call', T=0.5, rf_r=.1).pxMC(nsteps=10, npaths=10, T_s=0.5)
