@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 
 try: from qfrm.European import *  # production:  if qfrm package is installed
 except:   from European import *  # development: if not installed and running from source
@@ -15,33 +16,13 @@ class Compound(European):
     """
 
     def calc_px(self, **kwargs):
-    # def calc_px(self, option, on='put', **kwargs):
         """ Wrapper function that calls appropriate valuation method.
-
-        All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
-        specific pricing method (``_calc_BS()``,...) is called.
-        An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
-        is calculating price via a shorter method wrapper ``.pxBS(...)``.
-        The same works for all methods (BS, LT, MC, FD).
 
         Parameters
         ----------
-        method : str
-                Required. Indicates a valuation method to be used:
-                ``BS``: Black-Scholes Merton calculation
-                ``LT``: Lattice tree (such as binary tree)
-                ``MC``: Monte Carlo simulation methods
-                ``FD``: finite differencing methods
-        on : str
-                Either 'call' or 'put'. i.e. 'call' is for call on call or put on call (depends on right)
-        rho : float
-                The correlation between the reference stock and S2
-        nsteps : int
-                LT, MC, FD methods require number of times steps
-        npaths : int
-                MC, FD methods require number of simulation paths
-        keep_hist : bool
-                If ``True``, historical information (trees, simulations, grid) are saved in ``self.px_spec`` object.
+        kwargs : dict
+            Keyword arguments (``method``, ``nsteps``, ``npaths``, ``keep_hist``, ``rng_seed``, ...)
+            are passed to the parent. See European.calc_px() for details.
 
         Returns
         -------
@@ -57,9 +38,9 @@ class Compound(European):
 
         *References:*
 
-        - `<http://www.wiley.com/legacy/wileychi/pwiqf2/supp/c28.pdf>`_ (SEE PROBLEM 4)
-        - `<http://www.math.yorku.ca/~hmzhu/Math-6911/lectures/Lecture5/5_BlkSch_FDM.pdf>`_
-        - `<http://www.cs.cornell.edu/info/courses/spring-98/cs522/content/lab4.pdf>`_
+        - `Finite-Difference Methods for One-Factor Models (Ch.28) <http://www.wiley.com/legacy/wileychi/pwiqf2/supp/c28.pdf>`_ (SEE PROBLEM 4)
+        - `Finite Difference Methods (Ch.5 slides) <http://www.math.yorku.ca/~hmzhu/Math-6911/lectures/Lecture5/5_BlkSch_FDM.pdf>`_
+        - `Finite Difference Approach to Option Pricing (CS522 Lab Note), 1998 <http://www.cs.cornell.edu/info/courses/spring-98/cs522/content/lab4.pdf>`_
 
 
         Examples
@@ -72,66 +53,62 @@ class Compound(European):
 
         *Put on Put*
 
-        >>> s = Stock(S0=90., vol=.12, q=.04)
-        >>> o = American(ref=s, right='put', K=80., T=12./12., rf_r=.05, desc='http://investexcel.net/compound-options-excel/: POP')
-        >>> o2 = Compound(right='put', T=6./12., K = 20.)
-        >>> o2.calc_px(method='FD', ref=o, npaths=10, nsteps = 10).px_spec # doctest: +ELLIPSIS
-        19.505177573...
+        >>> s = Stock(S0=90, vol=.12)
+        >>> o = American(ref=s, right='put', K=80, T=1, rf_r=.05, desc='POP')
+        >>> c = Compound(ref=o, right='put', K=20, T=.5, rf_r=.05)
+        >>> c.pxFD(npaths=10, nsteps=10)  # doctest: +ELLIPSIS
+
+        >>> s = Stock(S0=90, vol=.12, q=.04)
+        >>> o = American(ref=s, right='put', K=80, T=1, rf_r=.05, desc='POP')
+        >>> c = Compound(ref=o, right='put', K=20, T=.5, rf_r=.05)
+        >>> c.calc_px(method='FD', npaths=10, nsteps=10)  # doctest: +ELLIPSIS
+        Compound...19.505177573...
 
         *Call on Put*
 
-        >>> s = Stock(S0=90., vol=.12, q=.04)
-        >>> o = American(ref=s, right='put', K=80., T=12./12., rf_r=.05, desc='http://investexcel.net/compound-options-excel/: COP')
-        >>> o2 = Compound(right='call', T=6./12., K = 20.)
-        >>> o2.calc_px(method='FD', ref=o,npaths=10, nsteps = 10).px_spec.px # doctest: +ELLIPSIS
-        0.000112479...
+        >>> s = Stock(S0=90, vol=.12, q=.04)
+        >>> o = American(ref=s, right='put', K=80, T=12./12, rf_r=.05, desc='COP')
+        >>> c = Compound(ref=o, right='call', K = 20, T=6./12, rf_r=.05)
+        >>> c.pxFD(npaths=10, nsteps=10)  # doctest: +ELLIPSIS
+        Compound...0.000112479...
 
         *Put on Call*
 
-        >>> s = Stock(S0=90., vol=.12, q=.04)
-        >>> o = American(ref=s, right='call', K=80., T=12./12., rf_r=.05, desc='http://investexcel.net/compound-options-excel/: POC')
-        >>> o2 = Compound(right='put',T=6./12., K = 20.)
-        >>> o2.calc_px(method='FD', ref=o, npaths=10,nsteps = 10).px_spec.px # doctest: +ELLIPSIS
+        >>> s = Stock(S0=90, vol=.12, q=.04)
+        >>> o = American(ref=s, right='call', K=80, T=1, rf_r=.05, desc='POC')
+        >>> c = Compound(ref=o, right='put', K = 20, T=.5, rf_r=.05)
+        >>> c.pxFD(npaths=10, nsteps=10)  # doctest: +ELLIPSIS
         10.465470970...
 
         *Call on Call*
 
-        >>> s = Stock(S0=90., vol=.12, q=.04)
-        >>> o = American(ref=s, right='call', K=80., T=12./12., rf_r=.05, desc='http://investexcel.net/compound-options-excel/: COC')
-        >>> o2 = Compound(right='call',T=6./12., K = 20.)
-        >>> o2.calc_px(method='FD', ref=o, npaths=10, nsteps = 10).px_spec.px # doctest: +ELLIPSIS
+        >>> s = Stock(S0=90, vol=.12, q=.04)
+        >>> o = American(ref=s, right='call', K=80, T=1, rf_r=.05, desc='COC')
+        >>> c = Compound(ref=o, right='call', K=20, T=.5, rf_r=.05)
+        >>> c.pxFD(npaths=10, nsteps=10)  # doctest: +ELLIPSIS
         0.190332192...
 
-        >>> s = Stock(S0=90., vol=.12, q=.04)
-        >>> o = American(ref=s, right='call', K=80., T=12./12., rf_r=.05, desc='http://investexcel.net/compound-options-excel/: COC')
-        >>> from pandas import Series;  steps = range(3,250)
-        >>> O = Series([o.calc_px(method='FD', nsteps=s).px_spec.px for s in steps], steps)
-        >>> O.plot(grid=1, title='Price vs Steps')       # doctest: +ELLIPSIS
+        # >>> s = Stock(S0=90, vol=.12, q=.04)
+        # >>> o = American(ref=s, right='call', K=80, T=1, rf_r=.05, desc='COC')
+        # >>> from pandas import Series;  steps = range(3, 250)
+        # >>> O = Series([o.pxFD(nsteps=s, npaths=10).px_spec.px for s in steps], steps)
+        # >>> O.plot(grid=1, title='Price vs Steps')       # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
 
 
         :Authors:
             Scott Morgan
        """
-
-        # self.save_specs(option=option, on=on, **kwargs)
-        self.save_specs(on=on, **kwargs)
+        self.save_specs(**kwargs)
         return getattr(self, '_calc_' + self.px_spec.method.upper())()
-
-        # self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
-        # self.on = on
-        # self.o = option
-        # return getattr(self, '_calc_' + method.upper())()
 
     def _calc_LT(self):
         """ Internal function for option valuation.        """
         return self
 
-
     def _calc_BS(self):
         """ Internal function for option valuation.       """
         return self
-
 
     def _calc_MC(self):
         """ Internal function for option valuation.        """
@@ -144,62 +121,51 @@ class Compound(European):
             Scott Morgan
         """
 
-        # Define grid
-        n, m = self.px_spec.steps, self.px_spec.npaths
-        x = np.matrix(np.zeros(shape=(n+1, m+1)))
+        # todo: computations are off after updating. verify.
+
+        o2 = copy.deepcopy(self.ref)  # safer way of messing with attributes of underlying options.
+        _ = self;           T1, K1, rf_r1, right1, ref1, sCP1 = _.T, _.K, _.rf_r, _.right, _.ref, _.signCP # option o1 on option o2
+        _ = o2;       T2, K2, rf_r2, right2, ref2 = _.T, _.K, _.rf_r, _.right, _.ref  # option o2 on stock ref
+        _ = self.ref.ref;   S0, vol, q = _.S0, _.vol, _.q
+        _ = self.px_spec;   n, m = _.nsteps, _.npaths
+
+        x = np.matrix(np.zeros(shape=(n+1, m+1)))  # Define grid
 
         # Cache parameters
-        _, ref = self, self.ref
-        T, T_left = _.T
-        T_left = ref.T - _.T
-        orig_T = ref.T
-        vol = ref.ref.vol
-        Smax = ref.ref.S0 * 2 if _.signCP else 3
-        r = ref.rf_r
-        q = .0
-        dt = T/(n+0.0)
-        dS = Smax/(m+0.0)
-        n = int(T/dt)
-        m = int(Smax/dS)
-        # K = _.K
-        S0 = ref.ref.S0
-        df = np.exp(-r*dt)
+        Smax = S0 * 2 if sCP1 else 3
+        dt = T1 / (n + 0.0)
+        dS = Smax / (m + 0.0)
+        n = int(T1 / dt)
+        m = int(Smax / dS)
+        df = np.exp(-rf_r1 * dt)
 
-        # EQUATIONS
-        def a(j):
-            return df*(.5*dt*((vol**2)*(j**2)-(r-q)*j))
-        def b(j):
-            return df*(1 - dt*((vol**2)*(j**2)))
-        def c(j):
-            return df*(.5*dt*((vol**2)*(j**2)+(r-q)*j))
-
-
-        ref.T = T_left
-        ref.ref.S0 = Smax
-        Smax_price = ref.pxLT(nsteps = 30)
-        ref.ref.S0 = 0
-        Smin_price = self.ref.pxLT(nsteps = 30)
+        o2.T = T2 - T1   # time remaining between two expiry dates. Underlying option's expiry (T2) is longer.
+        o2.ref.S0 = Smax;        Smax_price = o2.pxLT(nsteps=30)
+        o2.ref.S0 = 0;           Smin_price = o2.pxLT(nsteps=30)
 
         # FINAL CONDITIONS
-        for i in range(0,m+1):
-            ref.ref.S0 = dS*i
-            x[n,i] = np.maximum(_.signCP*(ref.pxLT(nsteps=30).px_spec.px - _.K),0)
+        for i in range(0, m + 1):
+            o2.ref.S0 = dS * i
+            x[n, i] = np.maximum(sCP1*(o2.pxLT(nsteps=30) - K1), 0)
 
         # BOUNDARY CONDITIONS
-        x[:,0] = np.matrix(list(map(lambda i: (np.maximum(_.signCP*(Smax_price - _.K),0)*np.exp(-r*(n-i)*dt)), range(0,n+1)))).transpose()
-        x[:,m] = np.matrix(list(map(lambda i: (np.maximum(_.signCP*(Smin_price - _.K),0)*np.exp(-r*(n-i)*dt)), range(0,n+1)))).transpose()
+        def bc(S):
+            it = map(lambda i: (np.maximum(sCP1 * (S - K1), 0) * np.exp(-rf_r1 * (n - i) * dt)), range(0, n + 1))
+            return np.matrix(list(it)).transpose()
+        x[:,0], x[:,m] = bc(Smax_price), bc(Smin_price)
 
+        # EQUATIONS
+        def a(j): return df*(.5*dt*((vol**2)*(j**2)-(rf_r1-q)*j))
+        def b(j): return df*(1 - dt*((vol**2)*(j**2)))
+        def c(j): return df*(.5*dt*((vol**2)*(j**2)+(rf_r1-q)*j))
 
         # CALCULATE THROUGH GRID
-        for i in np.arange(n-1,-1,-1):
-            for k in range(1,m):
+        for i in np.arange(n-1, -1, -1):
+            for k in range(1, m):
                 j = m-k
-                x[i,k] = a(j)*x[i+1,k+1] + b(j)*x[i+1,k] + c(j)*x[i+1,k-1]
+                x[i, k] = a(j) * x[i+1, k+1] + b(j) * x[i+1, k] + c(j) * x[i+1, k-1]
 
-        # RETURN BACK TO NORMAL
-        ref.ref.S0 = S0
-        ref.T = orig_T
-        self.px_spec.add(px=x[0,m-S0/dS], sub_method='Explicit FDM')
+        self.px_spec.add(px=float(x[0, m - S0 / dS]), sub_method='Explicit FDM')
 
         return self
 
