@@ -171,7 +171,6 @@ class Barrier(European):
         self.save_specs(knock=knock, dir=dir, H=H, **kwargs)
         return getattr(self, '_calc_' + self.px_spec.method.upper())()
 
-
     def _calc_BS(self):
         """ Internal function for option valuation. See ``calc_px()`` for complete documentation.
 
@@ -185,10 +184,6 @@ class Barrier(European):
         _ = self._BS_specs()
         T, K, rf_r, right, S0, net_r, vol, q = self.T, self.K, self.rf_r, self.right, self.ref.S0, self.net_r, self.ref.vol, self.ref.q
 
-        # _ = self
-        # H = self.px_spec.H
-        # S0 = self.ref.S0
-        # r = self.r
 
         # Compute Parameters
         N = Util.norm_cdf
@@ -274,9 +269,7 @@ class Barrier(European):
         return self
 
     def _calc_LT(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
+        """ Internal function for option valuation.  See ``calc_px()`` for complete documentation.
 
         Notes
         -----
@@ -364,42 +357,26 @@ class Barrier(European):
 
         return self
 
-    # def _calc_MC(self, nsteps=3, npaths=4, keep_hist=False):
     def _calc_MC(self):
-        """ Internal function for option valuation.
+        """ Internal function for option valuation.   See ``calc_px()`` for complete documentation.
 
-        See ``calc_px()`` for complete documentation.
-
+        :Authors:
+            Thawda Aung <thawda.aung1@gmail.com>
         """
+
         _ = self;           T, K, rf_r, net_r, right, ref = _.T, _.K, _.rf_r, _.net_r, _.right, _.ref
         _ = self.ref;       spot, sigma, q = _.S0, _.vol, _.q
-        _ = self.px_spec;   rng_seed, dir, knock, H = _.rng_seed, _.dir, _.knock, _.H
-        Sb = sb = H
-        # rfr  =
-        # q    = q
-        # r    = rfr - q
-        # sigma = vol
-        NSteps = num_steps = self.px_spec.nsteps # getattr(self.px_spec, 'nsteps', 10)
-        num_sims = NRepl = self.px_spec.npaths # getattr(self.px_spec, 'npaths',100)
-        # NSteps  = num_steps
-        # num_sims = NRepl
-        # seed = _.seed0
-        # sb = H
-        # Sb = sb
-        # K = K
-        # T = T
-        # rng_seed = self.px_spec.rng_seed  # int(self.px_spec.rng_seed)
+        _ = self.px_spec;   rng_seed, dir, knock, H, n, m = _.rng_seed, _.dir, _.knock, _.H, _.nsteps, _.npaths
+        Sb = H
+
         np.random.seed(rng_seed)
 
-
-        def AssetPaths(spot, r, sigma, T, num_steps, num_sims):
-        #np.np.random.seed(seed)
-
-            sim_paths = np.zeros((num_sims, num_steps + 1))
+        def AssetPaths(spot, r, sigma, T, n, m):
+            sim_paths = np.zeros((m, n + 1))
             sim_paths[:,0] = spot
-            dt = T / num_steps
-            for i in range(int(num_sims)):
-                for j in range(1,int(num_steps +1) ):
+            dt = T / n
+            for i in range(int(m)):
+                for j in range(1,int(n +1) ):
                     wt = np.random.randn()
                     sim_paths[i,j] = sim_paths[i, j -1] * np.exp((r - 0.5 * sigma **2) * dt + sigma * np.sqrt(dt) * wt)
 
@@ -408,129 +385,93 @@ class Barrier(European):
         def barrierCrossing2(spot, sb, path):
             if sb < spot:
                 temp = [1 if i <= sb else 0 for i in path[0,]]
-                if sum(temp) > 1:
-                    knocked = 1
-                else:
-                    knocked = 0
+                if sum(temp) > 1: knocked = 1
+                else: knocked = 0
             else:
                 temp = [ 1 if i >= sb else 0 for i in path[0,]]
-                if sum(temp) > 1:
-                    knocked = 1
-                else:
-                    knocked = 0
+                if sum(temp) > 1: knocked = 1
+                else: knocked = 0
             return(knocked)
 
-        def knockedout_put(spot, Sb, K, r, T, sigma, NSteps, NRepl):
-            payoff = np.zeros((NRepl, 1))
-            for i in range(NRepl):
-                path = AssetPaths( spot, r, sigma, T, NSteps, 1)
+        def knockedout_put(spot, Sb, K, r, T, sigma, n, m):
+            payoff = np.zeros((m, 1))
+            for i in range(m):
+                path = AssetPaths( spot, r, sigma, T, n, 1)
                 knocked = barrierCrossing(spot, Sb, path)
-                if knocked == 0:
-                    payoff[i] = max(0, K - path[0,NSteps ])
+                if knocked == 0: payoff[i] = max(0, K - path[0, n ])
             return(scipy.stats.norm.fit(np.exp(-r*T) * payoff)[0])
 
-        def knockedin_put(spot, Sb, K, r, T, sigma, NSteps, NRepl):
-            payoff = np.zeros((NRepl, 1))
-            for i in range(NRepl):
-                path = AssetPaths( spot, r, sigma, T, NSteps, 1)
+        def knockedin_put(spot, Sb, K, r, T, sigma, n, m):
+            payoff = np.zeros((m, 1))
+            for i in range(m):
+                path = AssetPaths( spot, r, sigma, T, n, 1)
                 knocked = barrierCrossing(spot, Sb, path)
-                if knocked == 1:
-                    payoff[i] = max(0, K - path[0,NSteps])
+                if knocked == 1: payoff[i] = max(0, K - path[0,n])
             return(scipy.stats.norm.fit(np.exp(-r*T) * payoff)[0])
 
         def barrierCrossing(spot, sb, path):
             if sb < spot:
                 temp = [1 if i <= sb else 0 for i in path[0,]]
-                if sum(temp) >= 1:
-                    knocked = 1
-                else:
-                    knocked = 0
+                if sum(temp) >= 1: knocked = 1
+                else: knocked = 0
             else:
                 temp = [ 1 if i >= sb else 0 for i in path[0,]]
-                if sum(temp) >= 1:
-                    knocked = 1
-                else:
-                    knocked = 0
+                if sum(temp) >= 1: knocked = 1
+                else: knocked = 0
             return(knocked)
 
 
-        def knockout_call(spot, Sb, K, r, T, sigma, NSteps, NRepl):
-            payoff = np.zeros((NRepl, 1))
+        def knockout_call(spot, Sb, K, r, T, sigma, n, m):
+            payoff = np.zeros((m, 1))
 
-            for i in range(NRepl):
-                path = AssetPaths(spot, r, sigma, T, NSteps, 1 )
+            for i in range(m):
+                path = AssetPaths(spot, r, sigma, T, n, 1 )
                 knocked = barrierCrossing(spot, Sb, path)
-                if knocked == 0:
-                    payoff[i] = max(0, path[0, NSteps] - K)
+                if knocked == 0: payoff[i] = max(0, path[0, n] - K)
             return(scipy.stats.norm.fit(np.exp(-r*T) * payoff)[0])
 
 
-        def knockin_call(spot, Sb, K, r, T, sigma, NSteps, NRepl):
-            payoff = np.zeros((NRepl, 1))
+        def knockin_call(spot, Sb, K, r, T, sigma, n, m):
+            payoff = np.zeros((m, 1))
 
-            for i in range(NRepl):
-                path = AssetPaths(spot, r, sigma, T, NSteps, 1 )
+            for i in range(m):
+                path = AssetPaths(spot, r, sigma, T, n, 1 )
                 knocked = barrierCrossing(spot, Sb, path)
-                if knocked == 1:
-                    payoff[i] = max(0, path[0, NSteps] - K)
+                if knocked == 1: payoff[i] = max(0, path[0, n] - K)
             return(scipy.stats.norm.fit(np.exp(-r*T) * payoff)[0])
 
         px = 0
         if dir == 'out' and right == 'call' and knock == 'down':
-            if spot > Sb:
-                px = knockout_call(spot, Sb, K, net_r, T, sigma, NSteps, NRepl)
-            else:
-                px = European(ref=ref, right='call', K=K, T=T, rf_r=rf_r, desc='reference').pxBS()
+            if spot > Sb: px = knockout_call(spot, Sb, K, net_r, T, sigma, n, m)
+            else: px = European(ref=ref, right='call', K=K, T=T, rf_r=rf_r, desc='reference').pxBS()
 
         elif dir == 'in' and right == 'call' and knock == 'down':
-            if spot > Sb:
-                px = knockin_call(spot, Sb, K, net_r, T, sigma, NSteps, NRepl)
-            else:
-                px = European(ref=ref, right='call', K=K, T=T, rf_r=rf_r, desc='reference').pxBS()
-                # px = o.calc_px(method='BS').px_spec.px
-                # px = o.European(ref=s,right='call', K=K, T=T, rf_r=r)
+            if spot > Sb: px = knockin_call(spot, Sb, K, net_r, T, sigma, n, m)
+            else: px = European(ref=ref, right='call', K=K, T=T, rf_r=rf_r, desc='reference').pxBS()
 
         elif dir == 'in' and right == 'put' and knock == 'down':
-            if spot > Sb:
-                px = knockedin_put(spot, Sb, K, net_r, T, sigma, NSteps, NRepl)
-            else:
-                px = European(ref=ref, right='put', K=K, T=T, rf_r=rf_r, desc='reference').pxBS()
-                # px = o.calc_px(method='BS').px_spec.px
+            if spot > Sb: px = knockedin_put(spot, Sb, K, net_r, T, sigma, n, m)
+            else: px = European(ref=ref, right='put', K=K, T=T, rf_r=rf_r, desc='reference').pxBS()
 
         elif dir == 'out' and right == 'put' and knock == 'down':
-            if spot > Sb:
-                px = knockedout_put(spot, Sb, K, net_r, T, sigma, NSteps, NRepl)
-            else:
-                px = European(ref=ref, right='put', K=K, T=T, rf_r=rf_r, desc='reference').pxBS()
-                # px = o.calc_px(method='BS').px_spec.px
+            if spot > Sb: px = knockedout_put(spot, Sb, K, net_r, T, sigma, n, m)
+            else: px = European(ref=ref, right='put', K=K, T=T, rf_r=rf_r, desc='reference').pxBS()
 
         elif dir == 'out' and right == 'call' and knock == 'up':
-            if spot < Sb:
-                px = knockout_call(spot, Sb, K, net_r, T, sigma, NSteps, NRepl)
-            else:
-                px = European(ref=ref, right='call', K=K, T=T, rf_r=rf_r, desc='reference').pxBS()
-                # px = o.calc_px(method='BS').px_spec.px
+            if spot < Sb: px = knockout_call(spot, Sb, K, net_r, T, sigma, n, m)
+            else: px = European(ref=ref, right='call', K=K, T=T, rf_r=rf_r, desc='reference').pxBS()
 
         elif dir == 'in' and right == 'call' and knock == 'up':
-            if spot < Sb:
-                px = knockin_call(spot, Sb, K, net_r, T, sigma, NSteps, NRepl)
-            else:
-                px = European(ref=ref, right='call', K=K, T=T, rf_r=rf_r, desc='reference').pxBS()
-                # px = o.calc_px(method='BS').px_spec.px
+            if spot < Sb: px = knockin_call(spot, Sb, K, net_r, T, sigma, n, m)
+            else: px = European(ref=ref, right='call', K=K, T=T, rf_r=rf_r, desc='reference').pxBS()
 
         elif dir == 'in' and right == 'put' and knock == 'up':
-            if spot < Sb:
-                px = knockedin_put(spot, Sb, K, net_r, T, sigma, NSteps, NRepl)
-            else:
-                px = European(ref=ref, right='put', K=K, T=T, rf_r=rf_r, desc='reference').pxBS()
-                # px = o.calc_px(method='BS').px_spec.px
+            if spot < Sb: px = knockedin_put(spot, Sb, K, net_r, T, sigma, n, m)
+            else: px = European(ref=ref, right='put', K=K, T=T, rf_r=rf_r, desc='reference').pxBS()
 
         elif dir == 'out' and right == 'put' and knock == 'up':
-            if spot < Sb:
-                px = knockedout_put(spot, Sb, K, net_r, T, sigma, NSteps, NRepl)
-            else:
-                px = European(ref=ref, right='put', K=K, T=T, rf_r=rf_r, desc='reference').pxBS()
-                # px = o.calc_px(method='BS').px_spec.px
+            if spot < Sb: px = knockedout_put(spot, Sb, K, net_r, T, sigma, n, m)
+            else: px = European(ref=ref, right='put', K=K, T=T, rf_r=rf_r, desc='reference').pxBS()
 
         self.px_spec.add(px=float(px), sub_method='Monte Carlo Simulation')
 
@@ -541,7 +482,3 @@ class Barrier(European):
         """ Internal function for option valuation.    See ``calc_px()`` for complete documentation.     """
         return self
 
-#
-# s = Stock(S0=50, vol=.3)
-# o = Barrier(ref=s, right='put', K=50, T=1, rf_r=.1, desc='DerviaGem Up and Out Barrier')
-# o.pxMC(H=60, knock='up', dir='out', nsteps=500, rng_seed=0, npaths = 10000)
