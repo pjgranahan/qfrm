@@ -170,25 +170,17 @@ class Gap(European):
         return getattr(self, '_calc_' + self.px_spec.method.upper())()
 
     def _calc_BS(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
+        """ Internal function for option valuation.        See ``calc_px()`` for complete documentation.
 
         :Authors:
             Yen-fei Chen <yensfly@gmail.com>
         """
-        # _ = self._BS_specs();   d1, d2,  = _['d1'], _['d2']
-        # _ = super().calc_px(method='BS').px_spec;    c, p = _.px_call, _.px_put
         _ = self.px_spec;       K2 = _.K2
         _ = self.ref;           S0, vol, q = _.S0, _.vol, _.q
         _ = self
 
-        o = European(clone=self, K=K2)._BS_specs()
-        d1, d2 = o['d1'], o['d2']
-
-        # o = European(ref=Stock(S0=S0, vol=vol, q=q), right=_.right, K=K2, rf_r=_.rf_r, T=_.T).calc_px(method='BS')
-        # d1 = o.px_spec.d1
-        # d2 = o.px_spec.d2
+        sp = European(clone=self, K=K2)._BS_specs()
+        d1, d2 = sp['d1'], sp['d2']
 
         # if calc of both prices is cheap, do both and include them into Price object.
         # Price.px should always point to the price of interest to the user
@@ -198,8 +190,7 @@ class Gap(European):
         px_put = float(-S0*math.exp(-q*_.T)*N(-d1)+_.K*math.exp(-_.rf_r*_.T)*N(-d2))
         px = px_call if _.signCP == 1 else px_put if _.signCP == -1 else None
 
-        self.px_spec.add(px=px, sub_method='standard; Hull p.335', px_call=px_call, px_put=px_put, d1=d1, d2=d2)
-
+        self.px_spec.add(px=px, sub_method='standard; Hull p.335', K2_BS_specs=sp, px_call=px_call, px_put=px_put)
         return self
 
     def _calc_LT(self):
@@ -228,17 +219,6 @@ class Gap(European):
 
         # n = getattr(self.px_spec ,'nsteps', 5)
         assert len(on) > n , 'nsteps must be less than the vector on'
-        # _ = self
-        # para = self._LT_specs()
-        # vol = _.ref.vol
-        # ttm = _.T
-        # on = self.on
-        # r = _.rf_r
-        # q = _.ref.q
-        # S0 = _.ref.S0
-        # sign = _.signCP
-        # K2 = _.K2
-        # K = _.K
 
         px = np.zeros(n)
         for i in range(n):
@@ -275,10 +255,6 @@ class Gap(European):
         _ = self.ref;       S0, vol, q = _.S0, _.vol, _.q
         _ = self;           T, K, rf_r, net_r, sCP = _.T, _.K, _.rf_r, _.net_r, _.signCP
 
-        # n_steps = getattr(self.px_spec, 'nsteps', 3)
-        # n_paths = getattr(self.px_spec, 'npaths', 3)
-        # _ = self
-
         dt = T / n
         df = np.exp(-rf_r * dt)
         np.random.seed(rng_seed)
@@ -288,24 +264,17 @@ class Gap(European):
         S[0] = S0
         s2 = S
 
-        # When the stock price is greater than K2
-        V = np.maximum(_.signCP * (S - K2), 0)
-
-        # The payout is signCP * (S - K1)
-        payout = np.maximum(_.signCP * (s2 - K), 0)  # payout
+        V = np.maximum(_.signCP * (S - K2), 0)  # When the stock price is greater than K2
+        payout = np.maximum(_.signCP * (s2 - K), 0)  # The payout is signCP * (S - K1)
         h = np.where(V > 0.0, payout, V)  # payout if V > 0.0, payout else 0.0
 
-        # Add the time value of each steps
-        for t in range(n-1, -1, -1):
-            h[t,:] = h[t+1,:] * df
+        for t in range(n-1, -1, -1): h[t,:] = h[t+1,:] * df   # Add the time value of each steps
 
         self.px_spec.add(px=float(np.mean(h[0, :])), sub_method='Hull p.601')
         return self
 
     def _calc_FD(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
+        """ Internal function for option valuation.        See ``calc_px()`` for complete documentation.
 
         :Authors:
             Runmin Zhang <z.runmin@gmail.com>
@@ -314,24 +283,12 @@ class Gap(European):
         _ = self.px_spec;   n, m, K2 = _.nsteps, _.npaths, _.K2
         _ = self.ref;       S0, vol, q = _.S0, _.vol, _.q
         _ = self;           T, K, rf_r, net_r, sCP = _.T, _.K, _.rf_r, _.net_r, _.signCP
-        # n = getattr(self.px_spec, 'nsteps', 5)
-        # m = getattr(self.px_spec, 'npaths', 5)
-
-        # S0 = self.ref.S0
-        # vol = self.ref.vol
-        # T = self.T
-        # K = self.K
-        # K2 = self.K2
-        # r = self.rf_r
-        # try: q = self.ref.q
-        # except: pass
 
         S_max   = S0*2                                # Maximum stock price
         S_min   = 0.0                                 # Minimum stock price
         d_t     = T/(n-1)                  # Time step
         S_vec   = np.linspace(S_min,S_max,m)   # Initialize the possible stock price vector
         t_vec   = np.linspace(0,T,n)       # Initialize the time vector
-
         f_px    = np.zeros((m,n))     # Initialize the matrix. Hull's P482
 
         M = m - 1
@@ -381,3 +338,6 @@ class Gap(European):
         self.px_spec.add(px=float(np.interp(S0,S_vec,f_px[:,0])), sub_method='Implicit Method')
         return self
 
+s = Stock(S0=50, vol=.2)
+o = Gap(ref=s, right='call', K=57, T=1, rf_r=.09)
+o.pxMC(K2=50, nsteps=10, npaths=5, rng_seed=2)
