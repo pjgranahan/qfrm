@@ -22,7 +22,7 @@ class Compound(European):
         ----------
         kwargs : dict
             Keyword arguments (``method``, ``nsteps``, ``npaths``, ``keep_hist``, ``rng_seed``, ...)
-            are passed to the parent. See European.calc_px() for details.
+            are passed to the parent. See ``European.calc_px()`` for details.
 
         Returns
         -------
@@ -123,9 +123,9 @@ class Compound(European):
 
         # todo: computations are off after updating. verify.
 
-        o2 = copy.deepcopy(self.ref)  # safer way of messing with attributes of underlying options.
-        _ = self;           T1, K1, rf_r1, right1, ref1, sCP1 = _.T, _.K, _.rf_r, _.right, _.ref, _.signCP # option o1 on option o2
-        _ = o2;       T2, K2, rf_r2, right2, ref2 = _.T, _.K, _.rf_r, _.right, _.ref  # option o2 on stock ref
+        o2 = copy.deepcopy(self.ref)  # safer way of messing with attributes of underlying option.
+        _ = self;   T1, K1, rf_r1, right1, ref1, sCP1 = _.T, _.K, _.rf_r, _.right, _.ref, _.signCP # option o1 on option o2
+        _ = o2;     T2, K2, rf_r2, right2, ref2 = _.T, _.K, _.rf_r, _.right, _.ref  # option o2 on stock ref
         _ = self.ref.ref;   S0, vol, q = _.S0, _.vol, _.q
         _ = self.px_spec;   n, m = _.nsteps, _.npaths
 

@@ -15,7 +15,7 @@ class Barrier(European):
     but also on how long the unnderlying's price stays above or below ``H``.
     See OFOD, J.C.Hull, 9ed, 2014, pp.604-606, pp.640-643.
     """
- # def calc_px(self, H=35, knock='down', dir='out', **kwargs):
+
     def calc_px(self, H=None, knock=None, dir=None, **kwargs):
         """ Wrapper function that calls specified option valuation method.
 
@@ -31,7 +31,7 @@ class Barrier(European):
             if the price of the underlying reaches a specified barrier price level ``H``.
         kwargs : dict
             Keyword arguments (``method``, ``nsteps``, ``npaths``, ``keep_hist``, ``rng_seed``, ...)
-            are passed to the parent. See European.calc_px() for details.
+            are passed to the parent. See ``European.calc_px()`` for details.
 
 
         Returns
