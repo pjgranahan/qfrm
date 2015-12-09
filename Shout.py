@@ -72,19 +72,19 @@ class Shout(European):
         >>> s = Stock(S0=110, vol=.2, q=0.04)
         >>> o = Shout(ref=s, right='call', K=100, T=0.5, rf_r=.05, desc='See example in Notes [3]')
         >>> o.pxMC(nsteps=100, npaths=1000, keep_hist=True, rng_seed=314, deg=5)
-        15.848463442
+        14.885085333
 
         >>> s = Stock(S0=36, vol=.2)
         >>> o = Shout(ref=s, right='put', K=40, T=1, rf_r=.2, desc="L. Yudaken\'s paper")
-        >>> o.pxMC(nsteps=10, npaths=10, keep_hist=True, rng_seed=0)
-        4.349069451
+        >>> o.pxMC(nsteps=100, npaths=1000, keep_hist=True, rng_seed=0)
+        4.1410886
 
-        >>> o.calc_px(method='MC', nsteps=10, npaths=10, keep_hist=True, rng_seed=0).px_spec  # doctest: +ELLIPSIS
-        PriceSpec...px: 4.349069451...
+        >>> o.calc_px(method='MC', nsteps=100, npaths=1000, keep_hist=True, rng_seed=0).px_spec  # doctest: +ELLIPSIS
+        PriceSpec...px: 4.1410886...
 
-        >>> from pandas import Series;  steps = [1,2,3,4,5]
-        >>> O = Series([o.pxMC(nsteps=s, npaths=10, keep_hist=True, rng_seed=0) for s in steps], steps)
-        >>> O.plot(grid=1, title='MC Price vs nsteps')# doctest: +ELLIPSIS
+        >>> from pandas import Series;  steps = [100 * i for i in range(1,21)]
+        >>> O = Series([o.pxMC(nsteps=s, npaths=100, keep_hist=True, rng_seed=0, deg=0) for s in steps], steps)
+        >>> O.plot(grid=1, title='Shout MC Price vs nsteps')# doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
 
         :Authors:
@@ -92,11 +92,12 @@ class Shout(European):
             Hanting Li <hl45@rice.edu>,
             Yen-fei Chen <yensfly@gmail.com>
        """
-        # self.deg = deg
-        # self.seed = seed
-        # return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
         self.save2px_spec(deg=deg, **kwargs)
         return getattr(self, '_calc_' + self.px_spec.method.upper())()
+
+    def _calc_BS(self):
+        """ Internal function for option valuation.        """
+        return self
 
     def _calc_LT(self):
         """ Internal function for option valuation.
@@ -108,7 +109,6 @@ class Shout(European):
         _ = self.ref;       S0, vol, q = _.S0, _.vol, _.q
         _ = self;           T, K, rf_r, net_r, sCP = _.T, _.K, _.rf_r, _.net_r, _.signCP
         _ = self._LT_specs(); u, d, p, df, dt = _['u'], _['d'], _['p'], _['df_dt'], _['dt']
-        _ = self._BS_specs(); d1, d2 = _['d1'], _['d2']
 
         # Get the Price based on Binomial Tree
         S = S0 * d ** np.arange(n, -1, -1) * u ** np.arange(0, n + 1)  # terminal stock prices
@@ -126,8 +126,7 @@ class Shout(European):
 
             # payoff of not shout
             O = df * ((1 - p) * O[:i] + p * O[1:])  # prior option prices (@time step=i-1)
-            # spot tree
-            S = d * S[1:i+1]                        # prior stock prices (@time step=i-1)
+            S = d * S[1:i+1]                        # spot tree: prior stock prices (@time step=i-1)
 
             # payoff of shout
             shout = sCP * S / np.exp(q * tleft) * Util.norm_cdf(sCP * d1) - \
@@ -148,10 +147,6 @@ class Shout(European):
 
         return self
 
-    def _calc_BS(self):
-        """ Internal function for option valuation.        """
-        return self
-
     def _calc_MC(self):
         """ Internal function for option valuation.
 
@@ -161,27 +156,26 @@ class Shout(European):
         _ = self.px_spec;   n, m, rng_seed, keep_hist, deg = _.nsteps, _.npaths, _.rng_seed, _.keep_hist, _.deg
         _ = self.ref;       S0, vol, q = _.S0, _.vol, _.q
         _ = self;           T, K, rf_r, net_r, sCP = _.T, _.K, _.rf_r, _.net_r, _.signCP
+        _ = self._LT_specs(); u, d, p, df, dt = _['u'], _['d'], _['p'], _['df_dt'], _['dt']
 
-        dt = T / n
-        df = np.exp(-rf_r * dt)
         np.random.seed(rng_seed)
 
-        option_px = np.zeros((n+1, m) ,'d')
-        S = np.zeros((n+1, m) ,'d') # stock price matrix
-        S[0,:] = S0 # initial value
+        # option_px = np.zeros((n + 1, m) ,'d')
+        S = np.zeros((n + 1, m), 'd')  # stock price matrix
+        S[0, :] = S0  # initial value
 
         # stock price paths
         for t in range(1, n+1):
-            random = scipy.stats.norm.rvs(loc=0, scale=1, size=n)
+            random = scipy.stats.norm.rvs(loc=0, scale=1, size=m)
             S[t, :] = S[t-1, :] * np.exp((rf_r - vol**2 / 2) * dt + vol * random * np.sqrt(dt))
 
-        option_px = np.maximum(sCP*(S - K), 0) # payoff when not shout
-        final_payoff = np.repeat(S[-1, :], n+1, axis=0).reshape(m,n+1)
+        option_px = np.maximum(sCP*(S - K), 0)  # payoff when not shout
+        final_payoff = np.repeat(S[-1, :], n+1, axis=0).reshape(m, n + 1)
         shout_px = np.maximum(sCP*(final_payoff.transpose() - K), sCP * (S - K))
 
-        for t in range (n - 1, -1, -1): # valuation process is similar to American option
+        for t in range (n - 1, -1, -1):  # valuation process is similar to American option
             rg = np.polyfit(S[t, :], df * np.array(option_px[t + 1, :]), deg) # regression at time t
-            C= np.polyval(rg, S[t, :]) # continuation values
+            C = np.polyval(rg, S[t, :])  # continuation values
             # exercise decision: shout or not shout
             option_px[t, :] = np.where(shout_px[t, :] > C, shout_px[t, :], option_px[t+1,:] * df)
 
