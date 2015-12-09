@@ -3,45 +3,24 @@ import math
 import scipy.optimize
 import matplotlib.pyplot as plt
 
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
-
 try: from qfrm.European import *  # production:  if qfrm package is installed
 except:   from European import *  # development: if not installed and running from source
 
 
-class ContingentPremium(OptionValuation):
+class ContingentPremium(European):
     """ Contingent Premium Option Valuation Class
 
     Inherits all methods and properties of OptionValuation class.
     """
 
-    def calc_px(self, rng_seed=0, method='BS', nsteps=None, npaths=None, keep_hist=False):
+    def calc_px(self, **kwargs):
         """ Wrapper function that calls appropriate valuation method.
-
-        All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
-        specific pricing method (``_calc_BS()``,...) is called.
-        An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
-        is calculating price via a shorter method wrapper ``.pxBS(...)``.
-        The same works for all methods (BS, LT, MC, FD).
 
         Parameters
         ----------
-        rng_seed : int, None
-                Required for the MC method in which random paths are generated (choose a single seed to reproduce
-                results). Must be non-negative.
-        method : str
-                Required. Indicates a valuation method to be used:
-                ``BS``: Black-Scholes Merton calculation
-                ``LT``: Lattice tree (such as binary tree)
-                ``MC``: Monte Carlo simulation methods
-                ``FD``: finite differencing methods
-        nsteps : int
-                LT, MC, FD methods require number of times steps
-        npaths : int
-                MC, FD methods require number of simulation paths
-        keep_hist : bool
-                If ``True``, historical information (trees, simulations, grid) are saved in ``self.px_spec`` object.
+        kwargs : dict
+            Keyword arguments (``method``, ``nsteps``, ``npaths``, ``keep_hist``, ``rng_seed``, ...)
+            are passed to the parent. See ``European.calc_px()`` for details.
 
         Returns
         -------
@@ -51,35 +30,55 @@ class ContingentPremium(OptionValuation):
 
         Notes
         -----
-        A Contingent Premium option is simply an European option except that the premium is paid at the end of the
-        contract instead of
-        the beginning as done in a normal European option. Additionally, the premium is only paid if the asset hits the
-        strike price at TTM (i.e. above for call, below for put).
+        A Contingent Premium option is simply a European option with a premium paid at expiry instead of at initiation.
+        The premium is only paid if the asset hits the strike price at TTM (i.e. above for call, below for put).
 
-        See page 598 and 599 in Hull for explanation.
+        *References:*
+
+        - See OFOD, J.C.Hull, 9ed, 2014, pp.598-599 for explanation.
+        - `Slide 4 <http://business.missouri.edu/stansfieldjj/457/PPT/Chpt019.ppt>`_
+        - `<http://www.risklatte.com/Articles/QuantitativeFinance/QF50.php>`_
+        - `Contingent Premium Options <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2contingent.pdf>`_
+        Last link has has an incorrectly computed example. They had a d_1 value of .4771
+        when it was actually supposed to be .422092. You can check this on your own and recalculate the option
+        price that they give. It should be roughly .00095 instead of .01146
 
         Examples
         -------
+        >>> from qfrm import *
         >>> s = Stock(S0=1/97, vol=.2, q=.032)
         >>> o = ContingentPremium(ref=s, right='call', K=1/100, T=.25, rf_r=.059)
-        >>> o.pxLT(nsteps=10)
-        0.001010616
+        >>> o.pxLT(nsteps=100)
+        0.000997259
 
-        >>> o.calc_px(method='LT', nsteps=10)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        ContingentPremium...px: 0.001010616...
+        >>> o.calc_px(method='LT', nsteps=100)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        ContingentPremium...px: 0.000997259...
 
-
+        >>> s = Stock(S0=1/97, vol=.2, q=.032)
+        >>> o = ContingentPremium(ref=s, right='call', K=1/100, T=.25, rf_r=.059)
+        >>> o.pxMC(nsteps=100, npaths=100, rng_seed=3)
+        0.000682276
+        >>> o.calc_px(method='MC', nsteps=100, npaths=100, rng_seed=3)  # doctest: +ELLIPSIS
+        ContingentPremium...px: 0.000682276...
 
         >>> s = Stock(S0=45, vol=.3, q=.02)
         >>> o = ContingentPremium(ref=s, right='call', K=52, T=3, rf_r=.05)
-        >>> o.pxLT(nsteps=10)
-        25.921951518
-        >>> o.calc_px(method='LT', nsteps=10)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        ContingentPremium...px: 25.921951518...
+        >>> o.pxLT(nsteps=100)
+        25.365713103
+        >>> o.calc_px(method='LT', nsteps=100)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        ContingentPremium...px: 25.365713103...
+
+
+        >>> s = Stock(S0=100, vol=.4)
+        >>> o = ContingentPremium(ref=s, right='put', K=100, T=1, rf_r=.08)
+        >>> o.pxMC(nsteps=100, npaths=100, rng_seed=3)
+        33.079676917
+        >>> o.calc_px(method='MC', nsteps=100, npaths=100, rng_seed=3)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        ContingentPremium...px: 33.079676917...
 
         >>> s = Stock(S0=50, vol=.2, q=.01)
         >>> strike = range(40, 61)
-        >>> o = [ContingentPremium(ref=s, right='call', K=strike[i], T=1, rf_r=.05).pxLT() for i in range(0, 21)]
+        >>> o = [ContingentPremium(ref=s, right='call', K=strike[i], T=1, rf_r=.05).pxLT(nsteps=100) for i in range(0, 21)]
         >>> plt.plot(strike, o, label='Changing Strike') # doctest: +ELLIPSIS
         [<matplotlib.lines.Line2D object at...
         >>> plt.xlabel('Strike Price') # doctest: +ELLIPSIS
@@ -92,34 +91,16 @@ class ContingentPremium(OptionValuation):
         <matplotlib.text.Text object at...
         >>> plt.show()
 
-        >>> s = Stock(S0=1/97, vol=.2, q=.032)
-        >>> o = ContingentPremium(ref=s, right='call', K=1/100, T=.25, rf_r=.059)
-        >>> o.pxMC(nsteps=100, npaths=100, rng_seed=0)
-        0.000912143
-        >>> o.calc_px(method='MC', nsteps=100, npaths=100, rng_seed=0)  # doctest: +ELLIPSIS
-        ContingentPremium...px: 0.000912143...
-
-        >>> s = Stock(S0=100, vol=.4)
-        >>> o = ContingentPremium(ref=s, right='put', K=100, T=1, rf_r=.08)
-        >>> o.pxMC(nsteps=100, npaths=100)
-        32.492084333
-        >>> o.calc_px(method='MC', nsteps=100, npaths=100, rng_seed=0)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        ContingentPremium...px: 32.492084333...
-
-
-
         :Authors:
             Andrew Weatherly
         """
-
-        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, rng_seed=rng_seed)
+        self.save2px_spec(**kwargs)
+        return getattr(self, '_calc_' + self.px_spec.method.upper())()
+        # self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
+        # return getattr(self, '_calc_' + method.upper())()
 
     def _calc_BS(self):
         """Internal function for option valuation.  Black Scholes Closed Form Solution
-
-        Returns
-        -------
-        self: ContingentPremium
 
         :Authors:
             Andrew Weatherly
@@ -133,25 +114,8 @@ class ContingentPremium(OptionValuation):
     def _calc_LT(self):
         """ Internal function for option valuation.
 
-        Returns
-        -------
-        self: ContingentPremium
-
         :Authors:
             Andrew Weatherly
-
-        References
-        -------
-        http://business.missouri.edu/stansfieldjj/457/PPT/Chpt019.ppt - Slide 4
-        http://www.risklatte.com/Articles/QuantitativeFinance/QF50.php
-
-        http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2contingent.pdf -
-        This has verifiable example. Note that they actually calculated the example incorrectly. They had a d_1 value of
-        .4771 when it was actually supposed to be .422092. You can check this on your own and recalculate the option
-        price that they give. It should be roughly .00095 instead of .01146
-
-        Additionally, because of the limit to 10 steps for doctest, the answer isn't quite as close as it should be.
-        If you need to verify, you can increase the step size to 100 and you'll get a very close answer.
         """
 
         #Verify Input
@@ -162,9 +126,10 @@ class ContingentPremium(OptionValuation):
         assert self.ref.S0 >= 0, 'S must be >= 0'
         assert self.rf_r >= 0, 'r must be >= 0'
 
-        keep_hist = getattr(self.px_spec, 'keep_hist', False)
-        n = getattr(self.px_spec, 'nsteps', 3)
-        _ = self.LT_specs(n)
+        keep_hist = self.px_spec.keep_hist # getattr(self.px_spec, 'keep_hist', False)
+        n = self.px_spec.nsteps # getattr(self.px_spec, 'nsteps', 3)
+        _ = self._LT_specs()
+
         if self.ref.q is not None:
             vanilla = European(ref=Stock(S0=self.ref.S0, vol=self.ref.vol, q=self.ref.q), right=self.right,
                            K=self.K, rf_r=self.rf_r, T=self.T).pxLT(nsteps=n, keep_hist=False)
@@ -186,7 +151,8 @@ class ContingentPremium(OptionValuation):
             return px - vanilla
 
         option_price = scipy.optimize.root(binary, vanilla, method='hybr') #finds the binary price that we need
-        self.px_spec.add(px=float(Util.demote(option_price.x)), method='LT', sub_method='Binomial Tree',
+        option_price = option_price.x
+        self.px_spec.add(px=float(Util.demote(option_price)), method='LT', sub_method='Binomial Tree',
                         LT_specs=_)
 
         return self
@@ -194,25 +160,12 @@ class ContingentPremium(OptionValuation):
     def _calc_MC(self):
         """Internal function for option valuation.  Monte Carlo Simulation Numerical Method
 
-        Returns
-        -------
-        self: ContingentPremium
-
         :Authors:
-            Andrew Weatherly <amw13@rice.edu>
-
-        References
-        ----------
-
-        http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2contingent.pdf -
-        This has verifiable example. Note that they actually calculated the example incorrectly. They had a d_1 value of
-        .4771 when it was actually supposed to be .422092. You can check this on your own and recalculate the option
-        price that they give. It should be roughly .00095 instead of .01146
-
+            Andrew Weatherly
         """
-        np.random.seed(getattr(self.px_spec, 'rng_seed', None))
-        n = getattr(self.px_spec, 'nsteps', 3)
-        npaths = getattr(self.px_spec, 'npaths', 3)
+        np.random.seed(self.px_spec.rng_seed)
+        n = self.px_spec.nsteps
+        npaths = self.px_spec.npaths
 
         dt = self.T / n
         df = math.exp(-(self.rf_r - self.ref.q) * dt)

@@ -1,38 +1,19 @@
-try:
-    from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:
-    from OptionValuation import *  # development: if not installed and running from source
+import numpy as np
+try:    from qfrm.European import *  # production:  if qfrm package is installed
+except: from European import *  # development: if not installed and running from source
 
 
-class Ladder(OptionValuation):
-    """
-    Ladder option class.
-
-    An option that locks-in gains once the underlying reaches predetermined price levels or "rungs," guaranteeing
-    some profit even if the underlying security falls back below these levels before the option expires. [1]
-
-    References
-    -------------
-    [1] `Ladder Option on Investopedia <http://www.investopedia.com/terms/l/ladderoption.asp>`_
-
+class Ladder(European):
+    """ `Ladder <http://www.investopedia.com/terms/l/ladderoption.asp>`_ exotic option class.
     """
 
-    def __init__(self, rungs, *args, **kwargs):
-        """
-        Parameters
-        ----------
-        rungs : tuple
-                Required. The predetermined profit lock-in price levels.
-                Example: (51, 52, 53, 54, 55)
-        """
-        super().__init__(*args, **kwargs)
-        self.rungs = sorted(rungs, reverse=self.signCP == -1)  # ascending if option right is call, descending if put
-
-    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
+    def calc_px(self, rungs, **kwargs):
         """ Wrapper function that calls appropriate valuation method.
 
         Parameters
         ----------
+        rungs : tuple
+                Required. The predetermined profit lock-in price levels.
         kwargs : dict
             Keyword arguments (``method``, ``nsteps``, ``npaths``, ``keep_hist``, ``rng_seed``, ...)
             are passed to the parent. See ``European.calc_px()`` for details.
@@ -41,24 +22,33 @@ class Ladder(OptionValuation):
         Returns
         ------------
         self : Ladder
-            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object)
+            Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
+
+
+        Notes
+        ----------
+        An option that locks-in gains once the underlying reaches predetermined price levels or "rungs," guaranteeing
+        some profit even if the underlying security falls back below these levels before the option expires. [1]
+
+        WARNING: Varying ``npaths`` or ``nsteps`` can produce dramatically different results.
+
 
         Examples
-        ------------
+        ---------
 
-        **FD Examples**
+        **FD**
 
         Example #1
 
         >>> s = Stock(S0=50, vol=0.20, q=0.03)
-        >>> o = Ladder(rungs=(51, 52, 53, 54, 55), ref=s, right='call', K=51, T=1, rf_r=0.05)
-        >>> o.pxFD(npaths = 25, nsteps=10, keep_hist=True)  # npaths > 10 so that the plot is pretty
-        3.6497147019999998
+        >>> o = Ladder(ref=s, right='call', K=51, T=1, rf_r=0.05)
+        >>> o.pxFD(rungs=(51, 52, 53, 54, 55), npaths = 25, nsteps=10, keep_hist=True)  # npaths > 10 so that the plot is pretty
+        3.649714702
 
         Example #2 (plot)
         Shows the finite difference grid that is produced in Example #1
 
-        >>> plt.matshow(o.px_spec.grid); plt.show()  # doctest: +ELLIPSIS
+        >>> plt.matshow(o.px_spec.grid);  # doctest: +ELLIPSIS
         <...>
 
         Example #3 (verifiable)
@@ -66,107 +56,79 @@ class Ladder(OptionValuation):
         So, we can use a Lookback to validate the price of a Ladder option with many rungs.
 
         >>> s = Stock(S0=50, vol=.4, q=.0)
-        >>> o = Ladder(rungs=([px for px in range(50, -1, -1)]), ref=s, right='put', K=50, T=0.25, rf_r=.1,
-        ... desc='Example from Hull Ch.26 Example 26.2 (p608)')
-        >>> actual = o.pxFD(npaths = 6, nsteps=10); expected = 8.067753794
+        >>> o = Ladder(ref=s, right='put', K=50, T=0.25, rf_r=.1, desc='Example from Hull Ch.26 Example 26.2 (p608)')
+        >>> actual = o.pxFD(rungs=([px for px in range(50, -1, -1)]), npaths = 6, nsteps=10); expected = 8.067753794
         >>> (abs(actual - expected) / expected) < 0.10  # Verify within 10% of expected
         True
 
+        Example 3
+
         :Authors:
             Patrick Granahan
         """
-
-        return super().calc_px(rungs=self.rungs, method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
+        self.save2px_spec(rungs=rungs, **kwargs)
+        return getattr(self, '_calc_' + self.px_spec.method.upper())()
 
     def _calc_BS(self):
-        """ Internal function for option valuation.
-
-        Returns
-        -------
-        self: Ladder
-        """
+        """ Internal function for option valuation.        """
         return self
 
     def _calc_LT(self):
-        """ Internal function for option valuation.
-
-        Returns
-        -------
-        self: Ladder
-        """
+        """ Internal function for option valuation.        """
         return self
 
     def _calc_MC(self):
-        """ Internal function for option valuation.
-
-        Returns
-        -------
-        self: Ladder
-        """
+        """ Internal function for option valuation.        """
         return self
 
     def _calc_FD(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for full documentation.
-
-        WARNING: Varying npaths or nsteps can produce dramatically different results.
-        Therefore, results are unstable and probably unsuitable without further code refinements.
-
-        Returns
-        -------
-        self: Ladder
+        """ Internal function for option valuation.        See ``calc_px()`` for full documentation.
 
         :Authors:
             Patrick Granahan
         """
+        _ = self.px_spec;   n, m, rungs, keep_hist = _.nsteps, _.npaths, _.rungs, _.keep_hist
+        _ = self.ref;       S0, vol, q = _.S0, _.vol, _.q
+        _ = self;           T, K, rf_r, net_r, sCP = _.T, _.K, _.rf_r, _.net_r, _.signCP
 
-        # The number of intervals to divide T into. N + 1 times/steps will be considered
-        N = getattr(self.px_spec, 'nsteps')
-
-        # Used to divide S_max into deltas. M + 1 stock prices/paths will be considered
-        M = getattr(self.px_spec, 'npaths')
-
-        # Create the grid/matrix
-        grid = np.zeros(shape=(N + 1, M + 1))
+        grid = np.zeros(shape=(n + 1, m + 1))   # Create the grid/matrix
 
         # Define stock price parameters
-        S_max, d_S = Ladder._choose_S_max(M, self.ref.S0)  # Maximum stock price, stock price change interval
+        S_max, d_S = Ladder._choose_S_max(m, S0)  # Maximum stock price, stock price change interval
         S_min = 0.0  # Minimum stock price
-        S_vec = np.arange(S_min, S_max + d_S,
-                          d_S)  # Possible stock price vector. (+d_S to S_max so that S_max is included)
+        S_vec = np.arange(S_min, S_max + d_S, d_S)  # Possible stock price vector. (+d_S to S_max so that S_max is included)
 
         # Define time parameters
-        d_T = self.T / N  # Time step
-        d_T_vec = np.arange(0, self.T + d_T, d_T)  # Delta time vector. (+d_T to T so that T is included)
-        discount_vec = np.exp(-self.rf_r * (self.T - d_T_vec))  # Discount vector
+        d_T = T / n  # Time step
+        d_T_vec = np.arange(0, T + d_T, d_T)  # Delta time vector. (+d_T to T so that T is included)
+        discount_vec = np.exp(-rf_r * (T - d_T_vec))  # Discount vector
 
         # Fill the matrix boundary at maturity
-        grid[N, :] = [self.payoff((stock_price,)) for stock_price in S_vec]
+        grid[n, :] = [self.payoff((stock_price,)) for stock_price in S_vec]
 
         # Fill the matrix boundary when the stock price is S_min
         grid[:, 0] = discount_vec * self.payoff((S_min,))
 
         # Fill the matrix boundary when the stock price is S_max
-        grid[:, M] = discount_vec * self.payoff((S_max,))
+        grid[:, m] = discount_vec * self.payoff((S_max,))
 
         # Explicit finite difference equations
         def a(j):
-            discount = (1 / (1 + (self.rf_r * d_T)))
-            return discount * (.5 * d_T * ((self.ref.vol ** 2 * j ** 2) - ((self.rf_r - self.ref.q) * j)))
+            discount = (1 / (1 + (rf_r * d_T)))
+            return discount * (.5 * d_T * ((vol ** 2 * j ** 2) - (net_r * j)))
 
         def b(j):
-            discount = (1 / (1 + (self.rf_r * d_T)))
-            return discount * (1 - (d_T * self.ref.vol ** 2 * j ** 2))
+            discount = (1 / (1 + (rf_r * d_T)))
+            return discount * (1 - (d_T * vol ** 2 * j ** 2))
 
         def c(j):
-            discount = (1 / (1 + (self.rf_r * d_T)))
-            return discount * (.5 * d_T * ((self.ref.vol ** 2 * j ** 2) + ((self.rf_r - self.ref.q) * j)))
+            discount = (1 / (1 + (rf_r * d_T)))
+            return discount * (.5 * d_T * ((vol ** 2 * j ** 2) + (net_r * j)))
 
         # Fill out the finite difference grid, by stepping backwards through the y axis and solving 1 row at a time
-        for i in range(N - 1, -1, -1):
-            for k in range(1, M):
-                j = M - k
+        for i in range(n - 1, -1, -1):
+            for k in range(1, m):
+                j = m - k
                 value = a(j) * grid[i + 1, k + 1] + b(j) * grid[i + 1, k] + c(j) * grid[i + 1, k - 1]
                 if value == float("inf") or value == float("-inf") or math.isnan(value):
                     raise Exception(
@@ -174,12 +136,9 @@ class Ladder(OptionValuation):
                         "Maybe your inputs were too small.")
                 grid[i, k] = value
 
-        # Record the history if requested
-        if getattr(self.px_spec, 'keep_hist'):
-            self.px_spec.add(grid=grid)
+        if keep_hist:    self.px_spec.add(grid=grid)  # Record the history if requested
 
-        # Record the price
-        self.px_spec.add(px=grid[0, M - (self.ref.S0 / d_S)], method='FDM', sub_method='Explicit')
+        self.px_spec.add(px=float(grid[0, m - (S0 / d_S)]), sub_method='Explicit FDM') # save price
 
         return self
 
@@ -247,25 +206,30 @@ class Ladder(OptionValuation):
         Examples
         --------
         >>> s = Stock(S0=50)
-        >>> o = Ladder(rungs=(51, 52, 53, 54, 55), ref=s, right='call', K=51)
+        >>> o = Ladder(ref=s, right='call', K=51)
+        >>> o.px_spec.rungs = rungs=(51, 52, 53, 54, 55)
         >>> o.payoff((50, 50.5, 52, 49, 37, 52.5, 0))
         1
 
         >>> s = Stock(S0=50)
-        >>> o = Ladder(rungs=(51, 52, 55, 54, 53), ref=s, right='call', K=53)
+        >>> o = Ladder(ref=s, right='call', K=53)
+        >>> o.px_spec.rungs = rungs=(51, 52, 55, 54, 53)
         >>> o.payoff((50, 50.5, 52, 49, 37, 52.5, 0))
         0
 
         >>> s = Stock(S0=50)
-        >>> o = Ladder(rungs=(50, 48, 47, 42, 40.5), ref=s, right='put', K=45)
+        >>> o = Ladder(ref=s, right='put', K=45)
+        >>> o.px_spec.rungs=(50, 48, 47, 42, 40.5)
         >>> o.payoff((50, 55, 45, 60))
         0
 
         >>> s = Stock(S0=50)
-        >>> o = Ladder(rungs=(50, 48, 47, 42, 40.5), ref=s, right='put', K=45)
+        >>> o = Ladder(ref=s, right='put', K=45)
+        >>> o.px_spec.rungs = rungs=(50, 48, 47, 42, 40.5)
         >>> o.payoff((50, 55, 45, 60, 41.9))
         3
         """
+        rungs = self.px_spec.rungs
 
         # Find the extreme price in time for this option. Max for a call, min for a put
         if self.signCP == 1:
@@ -279,11 +243,11 @@ class Ladder(OptionValuation):
         rung_reached = -1
         # Climb the ladder, rung by rung, until the extreme stock price can't reach the next rung
         # (Note that each rung step could represent an increase OR decrease in strike, depending on the option right)
-        for i in range(len(self.rungs)):
-            if self.signCP * extreme_historical_price >= self.signCP * self.rungs[rung_reached + 1]:
+        for i in range(len(rungs)):
+            if self.signCP * extreme_historical_price >= self.signCP * rungs[rung_reached + 1]:
                 rung_reached += 1
             else:
                 break
 
-        payoff = max(self.signCP * (self.rungs[rung_reached] - self.K), 0)
+        payoff = max(self.signCP * (rungs[rung_reached] - self.K), 0)
         return payoff
