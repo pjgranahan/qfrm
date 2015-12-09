@@ -1,25 +1,17 @@
 import numpy as np
 
-try:
-    from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:
-    from OptionValuation import *  # development: if not installed and running from source
-
-try:
-    from qfrm.European import *  # production:  if qfrm package is installed
-except:
-    from European import *  # development: if not installed and running from source
+try:    from qfrm.European import *  # production:  if qfrm package is installed
+except:    from European import *  # development: if not installed and running from source
 
 
 from scipy import sparse
 
-class LowExercisePrice(OptionValuation):
-    """ LowExercisePrice option class.
+class LowExercisePrice(European):
+    """ `Low Exercise Price (LEPO) <https://en.wikipedia.org/wiki/Low_Exercise_Price_Option>`_ exotic option class.
 
-
-    Inherits all methods and properties of OptionValuation class.
+    It's a European-style call option with a fixed (low) strike price $0.01
     """
-    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
+    def calc_px(self, **kwargs):
         """ Wrapper function that calls appropriate valuation method.
 
         Parameters
@@ -36,14 +28,14 @@ class LowExercisePrice(OptionValuation):
 
         Notes
         -----
-        LowExercisePrice is an European call option with a fixed strike price $0.01
-        [1] `Wikipedia: Low Exercise Price Option <https://en.wikipedia.org/wiki/Low_Exercise_Price_Option>`_
-        [2] `LEPOs. Low Exercise Price Options. Explanatory Booklet <http://1drv.ms/1TN3qRk>`_
+
+        - `Wikipedia: Low Exercise Price Option <https://en.wikipedia.org/wiki/Low_Exercise_Price_Option>`_
+        - `LEPOs. Low Exercise Price Options. Explanatory Booklet <http://1drv.ms/1TN3qRk>`_
 
         Examples
         --------
 
-        **LT:**
+        **LT**
 
         From DerivaGem software. S0=5, K=0.01, vol=0.30, T=4, rf_r=0.1, Steps=4, BSM European Call
 
@@ -76,9 +68,8 @@ class LowExercisePrice(OptionValuation):
         rf_r=.08).calc_px(method='LT').px_spec.px for p in price], price)
         >>> O.plot(grid=1, title='LowExercisePrice option Price vs Spot Price (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
-        >>> plt.show()
 
-        **FD:**
+        **FD**
 
         >>> s = Stock(S0=5, vol=.30)
         >>> o = LowExercisePrice(ref=s,T=4,rf_r=.10)
@@ -104,40 +95,30 @@ class LowExercisePrice(OptionValuation):
         # LowExercisePrice is an European call option with a fixed strike price $0.01
         self.K=0.01
         self.right='call'
-        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
+
+        self.save2px_spec(**kwargs)
+        return getattr(self, '_calc_' + self.px_spec.method.upper())()
 
     def _calc_BS(self):
-        """ Internal function for option valuation.
-
-        Returns
-        -------
-        self: LowExercisePrice
-
-        .. sectionauthor::
-
-        """
-
-
-
+        """ Internal function for option valuation.  """
         return self
 
 
     def _calc_LT(self):
-        """ Internal function for option valuation.
+        """ Internal function for option valuation.        See ``calc_px()`` for complete documentation.
 
-        See ``calc_px()`` for complete documentation.
-
-        :Authors: Runmin Zhang <z.runmin@gmail.com>
-
+        :Authors:
+            Runmin Zhang <z.runmin@gmail.com>
         """
 
 
         # Get the # of steps of binomial tree
-        n = getattr(self.px_spec, 'nsteps', 3)
-        _ = self.LT_specs(n)
+        _ = self.px_spec;   n = _.nsteps
+        _ = self.ref;       S0, vol, q = _.S0, _.vol, _.q
+        _ = self._LT_specs()
 
         # Generate the binomial tree from the parameters
-        S = self.ref.S0 * _['d'] ** np.arange(n, -1, -1) * _['u'] ** np.arange(0, n + 1)
+        S = S0 * _['d'] ** np.arange(n, -1, -1) * _['u'] ** np.arange(0, n + 1)
 
         O = np.maximum((S - 0.01), 0)          # terminal option payouts
         S_tree, O_tree = None, None
@@ -156,31 +137,20 @@ class LowExercisePrice(OptionValuation):
             out = O_tree[0][0]
         else:                                                      # If we do keep the trees
             csl = np.insert(np.cumsum(np.log(np.arange(n) + 1)), 0, 0)         # logs avoid overflow & truncation
-            tmp = csl[n] - csl - csl[::-1] + np.log(_['p']) * np.arange(n + 1)\
-                  + np.log(1 - _['p']) * np.arange(n + 1)[::-1]
+            tmp = csl[n] - csl - csl[::-1] + np.log(_['p']) * np.arange(n + 1) + np.log(1 - _['p']) * np.arange(n + 1)[::-1]
             out = (_['df_T'] * sum(np.exp(tmp) * tuple(O)))
 
-        self.px_spec.add(px=float(out), sub_method='Binomial tree with the strike price is $0.01; Hull Ch.135',
-                         LT_specs=_, ref_tree=S_tree, opt_tree=O_tree)
+        self.px_spec.add(px=float(out), sub_method='Binomial tree with K=$0.01; Hull Ch.135', ref_tree=S_tree, opt_tree=O_tree)
 
         return self
 
 
     def _calc_MC(self, nsteps=3, npaths=4, keep_hist=False):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
-
-        :Authors:
-
-        """
-
+        """ Internal function for option valuation.        """
         return self
 
     def _calc_FD(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
+        """ Internal function for option valuation.      See ``calc_px()`` for complete documentation.
 
         :Authors:
             Thawda Aung (thawda.aung1@gmail.com)
