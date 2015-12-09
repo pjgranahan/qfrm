@@ -837,52 +837,5 @@ class OptionValuation(OptionSeries):
 
 
 
-    # def calc_px(self, **kwargs):
-    #     """ Wrapper pricing function.
-    #
-    #     Each exotic option overloads `calc_px()` to accept exotic-specific parameters from user.
-    #     Then child's `calc_px()` calls `OptionValuation.calc_px()` to check basic pricing parameters
-    #     and to call the appropriate pricing method.
-    #
-    #     Returns
-    #     -------
-    #     self, None
-    #         Returns None, if called on OptionValuation object.
-    #         Returns self (sub-class), if called on class that inherited OptionValuation (these are exotic classes)
-    #
-    #     Examples
-    #     --------
-    #
-    #     >>> OptionValuation().calc_px()  # prints a UserWarning and returns None
-    #     ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE, +IGNORE_EXCEPTION_DETAIL
-    #
-    #     >>> from qfrm import *; European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5).calc_px()
-    #     ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-    #     Traceback (most recent call last):
-    #     ...
-    #         assert getattr(self, '_signCP') is not None, 'Ooops. Please supply option right: call, put, ...'
-    #     AttributeError: 'European' object has no attribute '_signCP'
-    #
-    #     >>> from qfrm import *; European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').calc_px()
-    #     ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-    #     European ... px: 3.444364289 ...
-    #
-    #     """
-    #     if self.style is None:
-    #         warnings.warn('Assure that calc_px() is overloaded by exotic option class.', UserWarning)
-    #         return None
-    #
-    #     else:
-    #         self.px_spec = PriceSpec(**kwargs)
-    #         assert getattr(self, 'ref') is not None, 'Ooops. Please supply referenced (underlying) asset, `ref`'
-    #         assert getattr(self, 'rf_r') is not None, 'Ooops. Please supply risk free rate `rf_r`'
-    #         assert getattr(self, 'K') is not None, 'Ooops. Please supply strike `K`'
-    #         assert getattr(self, 'T') is not None, 'Ooops. Please supply time to expiry (in years) `T`'
-    #         assert getattr(self, '_signCP') is not None, 'Ooops. Please supply option right: call, put, ...'
-    #
-    #         return getattr(self, '_calc_' + self.px_spec.method.upper())()
-    #
-    #     return None
-
 
 

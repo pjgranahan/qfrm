@@ -36,6 +36,7 @@ class American(European):
 
         *References:*
 
+        - Options, Futures and Other Derivatives (OFOD), John C. Hull, 9ed, 2014, ISBN `0133456315 <http://amzn.com/0133456315>`_
         - Black's Approximation, OFOD, J.C.Hull, 9ed, 2014, p.346
         - Control Variate Techniques, OFOD, J.C.Hull, 9ed, 2014, pp.463-465
         - `The Use of Control Variate Technique in Option-Pricing, J.C.Hull & A.D.White, 2001 <http://1drv.ms/1XR2rQw>`_
