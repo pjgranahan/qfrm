@@ -51,11 +51,9 @@ class Bermudan(European):
 
         *References:*
 
-        - [1] `Longstaff Schwartz Pricing of Bermudan Options and their Greeks, Howard Thom, 2009 <http://1drv.ms/1XO4NoL>`_
-        - [2] `Multilevel Monte Carlo Adapted to Bermudan Options Using Randomized Stopping Rule, Longyun Chen, 2010 <http://1drv.ms/1XO50YS>`_
-        - Referenced example is from p.9 of
-          `Bermudan Option Pricing using Binomial Models. Seminar in Analytical Finance I, Jessica Radeschnig, et al, 2012
-          <http://1drv.ms/1lHY5Pn>`_
+        - Longstaff Schwartz Pricing of Bermudan Options and their Greeks, `Howard Thom, 2009 <http://1drv.ms/1XO4NoL>`_
+        - Multilevel Monte Carlo Adapted to Bermudan Options Using Randomized Stopping Rule, `Longyun Chen, 2010 <http://1drv.ms/1XO50YS>`_
+        - Bermudan Option Pricing using Binomial Models. Seminar in Analytical Finance I, `Jessica Radeschnig, et al, 2012 <http://1drv.ms/1lHY5Pn>`_ See example on p.9
 
 
         Examples
@@ -176,7 +174,6 @@ class Bermudan(European):
         self.px_spec.add(nsteps=knsteps * self.px_spec.nsteps)
 
         return getattr(self, '_calc_' + self.px_spec.method.upper())()
-
 
     def _calc_BS(self):
         """ Internal function for option valuation.        """

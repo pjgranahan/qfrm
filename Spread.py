@@ -113,7 +113,7 @@ class Spread(European):
         """
         _ = self;               T, K, rf_r, net_r, sCP = _.T, _.K, _.rf_r, _.net_r, _.signCP
         _ = self.ref;           S, vol, q = _.S0, _.vol, _.q
-        _ = self.px_spec;       keep_hist, rho = _.keep_hist, _.rho
+        _ = self.px_spec;       rho = _.rho
         _ = self.px_spec.ref2;  S2, vol2, q2 = _.S0, _.vol, _.q
 
         vol = math.sqrt(vol**2 - 2 * rho * vol * vol2 + vol2**2)

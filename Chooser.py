@@ -38,10 +38,10 @@ class Chooser(European):
 
         *References:*
 
-        - `Chooser option, (Lecture 4 Notes) MFE5010 Exotic Options, Lim Tiong Wee, <http://1drv.ms/1TA5oUm>`_
-        - Chooser Options (Ch.26-8), OFOD, J.C.Hull, 9ed, pp.603-604
-        - `Binomial Tree pricing for Compound, Chooser, Shout. Excel Spreadsheet <http://goo.gl/AdgcqY>`_
-        - `Pricing Simple and Complex Chooser Options with Excel <http://investexcel.net/pricing-chooser-options-excel/>`_
+        - Chooser Options (Ch.26-8), `OFOD <http://www-2.rotman.utoronto.ca/~hull/ofod/index.html>`_, J.C.Hull, 9ed, pp.603-604
+        - Chooser option, `(Lecture 4 Notes) MFE5010 Exotic Options, Lim Tiong Wee, <http://1drv.ms/1TA5oUm>`_
+        - Binomial Tree pricing for Compound, Chooser, Shout. `Excel tool. <http://goo.gl/AdgcqY>`_
+        - Pricing Simple and Complex Chooser Options with Excel `Excel tool. Samir Khan. <http://investexcel.net/pricing-chooser-options-excel/>`_
 
         **FD**
 

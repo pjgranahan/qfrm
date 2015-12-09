@@ -591,7 +591,7 @@ class OptionValuation(OptionSeries):
 
     The class inherits from a simpler class that describes an option.
     """
-    def __init__(self, rf_r=None, frf_r=0, seed0=None, *args, **kwargs):
+    def __init__(self, rf_r=None, frf_r=0, *args, **kwargs):
         """ Constructor saves all identified arguments and passes others to the base (parent) class, OptionSeries.
 
         It also calculates net_r, the rate used in computing growth factor a (p.452) for options
@@ -604,8 +604,8 @@ class OptionValuation(OptionSeries):
                 number in (0,1) interval
         frf_r : float, optional
             foreign risk free rate.
-        seed0 : int, None, optional
-            None or positive integer to seed random number generator (rng).
+        # seed0 : int, None, optional
+        #     None or positive integer to seed random number generator (rng).
         precision : {None, int}, optional
             indicates desired floating number precision of calculated prices.
             Assists with doctesting due to rounding errors near digits in 10^-12 placements
@@ -635,7 +635,7 @@ class OptionValuation(OptionSeries):
 
         """
         # Todo: OptionValuation.__init__(print_precision=4) doesn't work.
-        self.rf_r, self.frf_r, self.seed0 = rf_r, frf_r, seed0
+        self.rf_r, self.frf_r = rf_r, frf_r
         super().__init__(*args, **kwargs)  # pass remaining arguments to base (parent) class
         self.reset()
 
@@ -817,13 +817,13 @@ class OptionValuation(OptionSeries):
         >>> o = OptionValuation(rf_r=0.05); pprint(vars(o))
         {'frf_r': 0, 'px_spec': PriceSpec{}, 'rf_r': 0.05, 'seed0': None}
 
-        >>> o.update(rf_r=0.04)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.update(rf_r=0.04)  # doctest: +ELLIPSIS
         OptionValuation...frf_r: 0...rf_r: 0.04...
 
-        >>> o.update(ref=Stock(q=0.01))  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.update(ref=Stock(q=0.01))  # doctest: +ELLIPSIS
         OptionValuation...frf_r: 0...q: 0.01...rf_r: 0.04...
 
-        >>> o.net_r   # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.net_r   # doctest: +ELLIPSIS
         0.03
 
         """

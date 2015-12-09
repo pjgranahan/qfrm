@@ -37,11 +37,11 @@ class Shout(European):
         -----
         Verification of Shout option:
 
-        - Options, Futures and Other Derivatives (OFOD), J.C. Hull, 9ed, 2014. Prentice Hall, p609.
-        - `Shout Options, (Lecture 4, MFE5010 at NUS), Lim Tiong Wee, 2001 <http://1drv.ms/1RDA4pm>`_
-        - `Shout Options - Introduction and Spreadsheet. Samir Khan <http://investexcel.net/shout-options-excel/>`_
-        - `Binomial Tree pricing for Compound, Chooser, Shout. Excel Spreadsheet <http://goo.gl/AdgcqY>`_
-        - `Numerical Pricing of Shout Options, Lisa Yudaken, 2010 <http://1drv.ms/1M3j0lm>`_
+        - Options, Futures and Other Derivatives, `OFOD <http://www-2.rotman.utoronto.ca/~hull/ofod/index.html>`_, J.C. Hull, 9ed, 2014. Prentice Hall, p609.
+        - Shout Options, (Lecture 4, MFE5010 at NUS), `Lim Tiong Wee, 2001 <http://1drv.ms/1RDA4pm>`_
+        - Shout Options - Introduction and Spreadsheet. `Samir Khan <http://investexcel.net/shout-options-excel/>`_
+        - Binomial Tree pricing for Compound, Chooser, Shout. `Excel Tool <http://goo.gl/AdgcqY>`_
+        - Numerical Pricing of Shout Options, `Lisa Yudaken, 2010 <http://1drv.ms/1M3j0lm>`_
 
 
         Examples

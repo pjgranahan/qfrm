@@ -44,8 +44,8 @@ class Quanto(European):
 
         *References:*
 
-        - Options, Futures, and Other Derivatives, J.C.Hull, 9ed, 2014, pp.699-702
-        - `Quanto Options – Guide and Spreadsheet. Samir Khan <http://investexcel.net/quanto-options/>`_
+        - Options, Futures, and Other Derivatives, `OFOD <http://www-2.rotman.utoronto.ca/~hull/ofod/index.html>`_, J.C.Hull, 9ed, 2014, pp.699-702
+        - Quanto Options - Guide and Spreadsheet. `Excel tool. Samir Khan <http://investexcel.net/quanto-options/>`_
 
         Examples
         --------

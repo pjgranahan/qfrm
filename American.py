@@ -6,7 +6,14 @@ except:   from European import *  # development: if not installed and running fr
 
 
 class American(European):
-    """ Financial option derivative of `American <https://en.wikipedia.org/wiki/Option_style>`_ style."""
+    """A tool to price `American <https://en.wikipedia.org/wiki/Option_style>`_ options.
+
+    Most calculations in ``qfrm`` package are based on research publications, online tools (to verify our calculations)
+    and the following popular texts:
+
+    - *Options, Futures and Other Derivatives* `(OFOD) <http://www-2.rotman.utoronto.ca/~hull/>`_, `John C. Hull <https://en.wikipedia.org/wiki/John_C._Hull>`_, 9ed, 2014, ISBN `0133456315 <http://amzn.com/0133456315>`_
+
+    """
 
     def calc_px(self, deg=5, **kwargs):
         """ Wrapper function that calls appropriate valuation method.
@@ -36,14 +43,15 @@ class American(European):
 
         *References:*
 
-        - Options, Futures and Other Derivatives (OFOD), John C. Hull, 9ed, 2014, ISBN `0133456315 <http://amzn.com/0133456315>`_
-        - Black's Approximation, OFOD, J.C.Hull, 9ed, 2014, p.346
-        - Control Variate Techniques, OFOD, J.C.Hull, 9ed, 2014, pp.463-465
-        - `The Use of Control Variate Technique in Option-Pricing, J.C.Hull & A.D.White, 2001 <http://1drv.ms/1XR2rQw>`_
-        - `The Closed-form Solution for Pricing American Options, Wang Xiaodong, 2006 <http://1drv.ms/1NaB3rI>`_
-        - `Closed-Form American Call Option Pricing (Teaching notes), Roll-Geske-Whaley, 2008 <http://1drv.ms/1NFtRrh>`_
-        - `Black's approximation (Wikipedia) <https://en.wikipedia.org/wiki/Black%27s_approximation>`_ (dividend call)
-        - `Roll-Geske-Whaley Method to Price American Options, Samir Khan. <http://investexcel.net/roll-geske-whaley-american-options>`_
+        - Black's Approximation, `OFOD <http://www-2.rotman.utoronto.ca/~hull/ofod/index.html>`_, John C. Hull, 9ed, 2014, p.346
+        - Control Variate Techniques, `OFOD <http://www-2.rotman.utoronto.ca/~hull/ofod/index.html>`_, John C. Hull, 9ed, 2014, pp.463-465
+        - Exact Procedure for Valuing American Calls on Stocks Paying a Single Dividend, `Technical Note #5, J.C.Hull <http://www-2.rotman.utoronto.ca/~hull/technicalnotes/TechnicalNote4.pdf>`_
+        - Analytic Approximation for Valuing American Options, `Technical Note #8, J.C.Hull <http://www-2.rotman.utoronto.ca/~hull/technicalnotes/TechnicalNote8.pdf>`_
+        - The Use of Control Variate Technique in Option-Pricing, `J.C.Hull & A.D.White, 2001 <http://1drv.ms/1XR2rQw>`_
+        - The Closed-form Solution for Pricing American Options, `Wang Xiaodong, 2006 <http://1drv.ms/1NaB3rI>`_
+        - Closed-Form American Call Option Pricing (Teaching notes), `Roll-Geske-Whaley, 2008 <http://1drv.ms/1NFtRrh>`_
+        - Black's approximation `Wikipedia <https://en.wikipedia.org/wiki/Black%27s_approximation>`_
+        - Roll-Geske-Whaley Method to Price American Options. Excel Tool `Samir Khan. <http://investexcel.net/roll-geske-whaley-american-options>`_
 
 
         **Lattice Tree (LT)**, i.e. binomial or binary (recombining) tree pricing.
@@ -53,8 +61,7 @@ class American(European):
         OFOD textbook by John C. Hull has an excellent overview of this method with many examples and exercises.
 
         *References:*
-
-        - Binomial Trees, Ch.13, OFOD, J.C.Hull, 9ed, 2014, p.274
+        Binomial Trees, Ch.13, OFOD, J.C.Hull, 9ed, 2014, p.274
 
         **Monte Carlo simulation (MC)**.
         A naive approach is to simulate stock prices, according to Geometric Brownian motion (GBM) model.
@@ -73,13 +80,13 @@ class American(European):
 
         *References:*
 
-        - Monte Carlo Simulation and American Options (Ch.27), OFOD, J.C.Hull, 9ed, 2014, pp.646-649
-        - `Valuing American Options by Simulation. A Simple Least-Squares Approach, F.A.Longstaff & E.S.Schwartz, 2001 <http://1drv.ms/1IMLUX0>`_
-        - `Pricing American Options. A Comparison of Monte Carlo Simulation Approaches, M.C.Fu, et al, 1999 <http://1drv.ms/1Q7kItH>`_
-        - `Derivatives Analytics with Python & Numpy, Y.J.Hilpisch, 2011  <http://1drv.ms/21Fuoj6>`_
-        - `Pricing American Options using Monte Carlo Methods, Quiya Jia, 2009. <http://1drv.ms/21FuvLr>`_
-        - `Monte Carlo Simulations for American Options, Russel E. Caflisch, 2005. <http://1drv.ms/1lF24fF>`_
-        - `Pricing options using Monte Carlo simulations, 2013. <http://1drv.ms/1OakkEL>`_
+        - Monte Carlo Simulation and American Options (Ch.27), `OFOD <http://www-2.rotman.utoronto.ca/~hull/ofod/index.html>`_, J.C.Hull, 9ed, 2014, pp.646-649
+        - Valuing American Options by Simulation. A Simple Least-Squares Approach, `F.A.Longstaff & E.S.Schwartz, 2001 <http://1drv.ms/1IMLUX0>`_
+        - Pricing American Options. A Comparison of Monte Carlo Simulation Approaches, `M.C.Fu, et al, 1999 <http://1drv.ms/1Q7kItH>`_
+        - Derivatives Analytics with Python & Numpy, `Y.J.Hilpisch, 2011  <http://1drv.ms/21Fuoj6>`_
+        - Pricing American Options using Monte Carlo Methods, `Quiya Jia, 2009. <http://1drv.ms/21FuvLr>`_
+        - Monte Carlo Simulations for American Options, `Russel E. Caflisch, 2005. <http://1drv.ms/1lF24fF>`_
+        - Pricing options using Monte Carlo simulations, `2013. <http://1drv.ms/1OakkEL>`_
 
 
         Examples
@@ -87,7 +94,7 @@ class American(European):
 
         **BS:**
         *Verifiable example:*
-        See `Hull and White paper <http://1drv.ms/1XR2rQw>`_:
+        See `Hull and White <http://1drv.ms/1XR2rQw>`_:
         2nd example in list, on p.246; bottom-right option price of 0.4326 in Table 1,
         since we use control variate for ``n = 100`` (herein ``nsteps = 100``).
 
