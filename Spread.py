@@ -68,19 +68,19 @@ class Spread(European):
         >>> s1 = Stock(S0=30, q=0, vol=.2)
         >>> s2 = Stock(S0=31, q=0, vol=.3)
         >>> o = Spread(ref=s1, rf_r=.05, right='call', K=0, T=2)
-        >>> o.pxMC(ref2=s2, rho=.4, nsteps=10, npaths=10, rng_seed=0); o # doctest: +ELLIPSIS
-        9.006641533...
+        >>> o.pxMC(ref2=s2, rho=.4, nsteps=100, npaths=1000, rng_seed=0); o # doctest: +ELLIPSIS
+        5.996962262...
 
         >>> s1 = Stock(S0=30, q=0, vol=.2)
         >>> s2 = Stock(S0=31, q=0, vol=.3)
         >>> o = Spread(ref = s1, rf_r = .05, right='put', K=2, T=2)
-        >>> o.pxMC(ref2=s2, rho=.4, nsteps=10, npaths=10, rng_seed=0); o # doctest: +ELLIPSIS
-        3.476538946...
+        >>> o.pxMC(ref2=s2, rho=.4, nsteps=100, npaths=1000, rng_seed=0); o # doctest: +ELLIPSIS
+        5.130287061...
 
         >>> s1 = Stock(S0=30, q=0, vol=.2)
         >>> s2 = Stock(S0=30, q=0, vol=.2)
         >>> o = Spread(ref=s1, rf_r=.05, right='put', K=1, T=2, desc='Perfectly correlated -- present value of 1')
-        >>> o.pxMC(ref2=s2, rho=1, nsteps=10, npaths=10, rng_seed=2); o   # doctest: +ELLIPSIS
+        >>> o.pxMC(ref2=s2, rho=1, nsteps=100, npaths=1000, rng_seed=2); o   # doctest: +ELLIPSIS
         0.904837418...
 
 
@@ -88,9 +88,9 @@ class Spread(European):
         >>> s1 = Stock(S0=30, q=0, vol=.2)
         >>> s2 = Stock(S0=31, q=0, vol=.3)
         >>> o = Spread(ref=s1, rf_r=.05, right='put', K=2, T=2)
-        >>> from pandas import Series;  exps = range(1,10)
+        >>> from pandas import Series;  exps = range(1,51)
         >>> O = Series([o.update(T=t).pxMC(ref2=s2, rho=.4, nsteps = 100, npaths=100, rng_seed=0) for t in exps], exps)
-        >>> O.plot(grid=1, title='Price vs Time to Expiry') # doctest: +ELLIPSIS
+        >>> O.plot(grid=1, title='Spread MC price vs time to expiry (years)' + o.specs) # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
 
         :Authors:
@@ -124,7 +124,6 @@ class Spread(European):
         p = p - S * math.exp(-q * T) * Util.norm_cdf(d2)
 
         self.px_spec.add(px=float(p))
-
         return self
 
 
@@ -140,12 +139,6 @@ class Spread(European):
         _ = self.px_spec.ref2;  S2, vol2, q2 = _.S0, _.vol, _.q
         _ = self._LT_specs();   u, d, p, df, dt = _['u'], _['d'], _['p'], _['df_dt'], _['dt']
 
-        # _ = self.px_spec
-        # npaths = getattr(_, 'npaths', 3)
-        # nsteps = getattr(_, 'nsteps', 3)
-
-        # __ = self.LT_specs(npaths)
-
         px = list()
         numpy.random.seed(rng_seed)
 
@@ -159,16 +152,13 @@ class Spread(European):
             v = v * math.sqrt(dt)
 
             ## Simulate the paths
-            S = [S]
-            S2 = [S2]
-            mu_1 = (rf_r - q)*dt
-            mu_2 = (rf_r - q2)*dt
+            s1, s2, mu1, mu2 = [S], [S2], (rf_r - q)*dt, (rf_r - q2)*dt
 
             for t in range(0, len(u)):
-                S.append(S[-1] * (mu_1 + vol * u[t]) + S[-1])
-                S2.append(S2[-1] * (mu_2 + vol2 * v[t]) + S2[-1])
+                s1.append(s1[-1] * (mu1 + vol * u[t]) + s1[-1])
+                s2.append(s2[-1] * (mu2 + vol2 * v[t]) + s2[-1])
 
-            val = np.maximum(sCP * (S2[-1] - S[-1] - K), 0) * math.exp(-rf_r * T)  # Calculate the Payoff
+            val = np.maximum(sCP * (s2[-1] - s1[-1] - K), 0) * math.exp(-rf_r * T)  # Calculate the Payoff
             px.append((val))
 
         self.px_spec.add(px=float(np.mean(px)))
