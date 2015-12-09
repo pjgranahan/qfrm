@@ -11,7 +11,7 @@ class Basket(European):
     Inherits all methods and properties of OptionValuation class.
     """
 
-    def calc_px(self, mu = (0.1,0.2,0.5), weight = (0.5,0.3,0.2), corr = [[1,0,0],[0,1,0],[0,0,1]], **kwargs):
+    def calc_px(self, mu=(0.1,0.2,0.5), weight=(0.5,0.3,0.2), corr=[[1,0,0],[0,1,0],[0,0,1]], **kwargs):
         """ Wrapper function that calls appropriate valuation method.
 
         Parameters

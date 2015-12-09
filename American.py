@@ -178,7 +178,7 @@ class American(European):
         0  0.432627  0.571782  0.804060
         1  0.432627  0.437243  0.556852
         ...
-        >>> d.plot(grid=1, title='Compare price convergence (versus scaled iterations)')  # doctest: +ELLIPSIS
+        >>> d.plot(grid=1, title='Price of American vs scaled iterations (3 methods)')  # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot...>
 
 

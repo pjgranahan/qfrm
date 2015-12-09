@@ -104,7 +104,7 @@ class Binary(European):
         ...     s = Stock(S0=S0, vol=.3)
         ...     return Binary(ref=s, right='call', K=50, T=T, rf_r=.05).pxBS(payout_type="asset-or-nothing")
         >>> px_grid = [[px(S0=S0, T=T) for S0 in S0s] for T in Ts]
-        >>> DataFrame(px_grid, columns=S0s).plot(grid=1, title='BS Price vs expiry at varying S0, for ' + o.specs)  # doctest: +ELLIPSIS
+        >>> DataFrame(px_grid, columns=S0s).plot(grid=1, title='BS Price vs expiry at varying S0')  # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at 0x...>
 
         Next example shows option price sensitivity to expiry and volatility.
@@ -116,7 +116,7 @@ class Binary(European):
         ...     s = Stock(S0=50, vol=vol)
         ...     return Binary(ref=s, right='call', K=50, T=T, rf_r=.05).pxBS(payout_type="asset-or-nothing")
         >>> px_grid = [[px(vol=vol, T=T) for vol in vols] for T in Ts]
-        >>> DataFrame(px_grid, columns=vols).plot(grid=1, title='BS Price vs expiry at varying vol, for ' + o.specs)  # doctest: +ELLIPSIS
+        >>> DataFrame(px_grid, columns=vols).plot(grid=1, title='BS Price vs expiry at varying volatilities.')  # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at 0x...>
 
         **LT**
