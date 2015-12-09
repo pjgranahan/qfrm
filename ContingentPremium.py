@@ -35,10 +35,10 @@ class ContingentPremium(European):
 
         *References:*
 
-        - See OFOD, J.C.Hull, 9ed, 2014, pp.598-599 for explanation.
-        - `Slide 4 <http://business.missouri.edu/stansfieldjj/457/PPT/Chpt019.ppt>`_
-        - `<http://www.risklatte.com/Articles/QuantitativeFinance/QF50.php>`_
-        - `Contingent Premium Options <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L2contingent.pdf>`_
+        - See `OFOD <http://www-2.rotman.utoronto.ca/~hull/ofod/index.html>`_, J.C.Hull, 9ed, 2014, pp.598-599
+        - Exotic Options, Ch.19, Slide 4, `missouri.edu <http://business.missouri.edu/stansfieldjj/457/PPT/Chpt019.ppt>`_
+        - Pay Later Option – A very simple Structured Product `Team Latte, 2007 <http://www.risklatte.com/Articles/QuantitativeFinance/QF50.php>`_
+        - Contingent Premium Options (Lecture 2, MFE5010 at NUS), `Lim Tiong Wee, 2001 <http://1drv.ms/1YZEDwg>`_
         Last link has has an incorrectly computed example. They had a d_1 value of .4771
         when it was actually supposed to be .422092. You can check this on your own and recalculate the option
         price that they give. It should be roughly .00095 instead of .01146

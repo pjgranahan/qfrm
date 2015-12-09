@@ -45,12 +45,13 @@ class Asian(European):
 
         *References:*
 
-        - `Verification of First and Second Examples. Samir Khan <http://investexcel.net/asian-options-excel>`_
+        - Calculation of Moments for Valuing Asian Options, `Technical Note #27, J.C.Hull <http://www-2.rotman.utoronto.ca/~hull/technicalnotes/TechnicalNote27.pdf>`_
         - The referenced MC example is found in Lars Nielsen's 2001 paper, in section 4.3.
           `Pricing Asian Options, Lars B. Nielsen, 2001 <http://1drv.ms/1Ohf56n>`_.
           The results emulate the ``sigma`` = {0.05; 0.15; 0.45} elements of the third (C-hat) column of table
           4.1 on p.23. The computed MC prices for these simulations all fall within 2 standard errors of C-hat.
-        - `Asian option with continuous arithmetical mean. Online option pricer <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=asiat_trapeze.html>`_
+        - Asian Options - Tutorial and Excel Spreadsheet. `Excel tool. Samir Khan <http://investexcel.net/asian-options-excel>`_
+        - Asian option with continuous arithmetical mean. `Online option pricer <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=asiat_trapeze.html>`_
 
 
         Examples

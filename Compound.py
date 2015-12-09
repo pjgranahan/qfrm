@@ -38,17 +38,18 @@ class Compound(European):
 
         *References:*
 
-        - `Finite-Difference Methods for One-Factor Models (Ch.28) <http://www.wiley.com/legacy/wileychi/pwiqf2/supp/c28.pdf>`_ (SEE PROBLEM 4)
-        - `Finite Difference Methods (Ch.5 slides) <http://www.math.yorku.ca/~hmzhu/Math-6911/lectures/Lecture5/5_BlkSch_FDM.pdf>`_
-        - `Finite Difference Approach to Option Pricing (CS522 Lab Note), 1998 <http://www.cs.cornell.edu/info/courses/spring-98/cs522/content/lab4.pdf>`_
-        - `Compound Options (Lecture 4, MFE5010 at NUS), Lim Tiong Wee, 2001 <http://1drv.ms/1NFtSeL>`_
-        - `Binomial Tree pricing for Compound, Chooser, Shout. Excel Spreadsheet <http://goo.gl/AdgcqY>`_
-        - `Compound Options - Introduction and Pricing Spreadsheet. Samir Kahn <http://investexcel.net/compound-options-excel>`_
+        - Compound Options (Lecture 4, MFE5010 at NUS), `Lim Tiong Wee, 2001 <http://1drv.ms/1NFtSeL>`_
+        - Binomial Tree pricing for Compound, Chooser, Shout. `Excel Tool <http://goo.gl/AdgcqY>`_
+        - Compound Options - Introduction and Pricing Spreadsheet. `Excel Tool. Samir Kahn <http://investexcel.net/compound-options-excel>`_
+        - Calculation of Cumulative Probability in Bivariate Normal Distribution, `Technical Note #5, J.C.Hull <http://www-2.rotman.utoronto.ca/~hull/technicalnotes/TechnicalNote5.pdf>`_
+        - Finite-Difference Methods for One-Factor Models `(Ch.28) <http://www.wiley.com/legacy/wileychi/pwiqf2/supp/c28.pdf>`_ (see problem 4)
+        - Finite Difference Methods, (Ch.5 slides, Math-6911, York University), `Hongmei Zhu <http://www.math.yorku.ca/~hmzhu/Math-6911/lectures/Lecture5/5_BlkSch_FDM.pdf>`_
+        - Finite Difference Approach to Option Pricing (Lab 4, CS522 Lab Note, Cornell University), `T.Coleman and R.Jarrow, 1998 <http://1drv.ms/1NVS3rh>`_
+        - Finite Difference Approach to Option Pricing (Lab5, CS522 Lab Note, Cornell University), `T.Coleman and R.Jarrow, 1998 <http://1drv.ms/1NVS5zD>`_
 
 
         Examples
         --------
-        - `Compound Options Introduction and Pricing Spreadsheet <http://investexcel.net/compound-options-excel>`_
 
         **FD**
         Method is approximate and extremely unstable.

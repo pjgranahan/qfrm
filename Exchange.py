@@ -48,10 +48,10 @@ class Exchange(European):
 
         *References:*
 
-        - `Exchange Options, Lim Tiong Wee, p.4 <http://1drv.ms/1SNuK0X>`_
-        - `The Value of an Option to Exchange One Asset for Another, William Margrabe, 1978 <http://1drv.ms/1SNuQFX>`_
-        - `Exchange Options – Introduction and Pricing Spreadsheet. Samir Khan <http://investexcel.net/exchange-options-excel/>`_
-        - `Evaluation of Exchange Options. Online option pricer <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=echange.html>`_
+        - Exchange Options, `Lim Tiong Wee, p.4 <http://1drv.ms/1SNuK0X>`_
+        - The Value of an Option to Exchange One Asset for Another, `William Margrabe, 1978 <http://1drv.ms/1SNuQFX>`_
+        - Exchange Options – Introduction and Pricing Spreadsheet. `Excel tool. Samir Khan <http://investexcel.net/exchange-options-excel/>`_
+        - Evaluation of Exchange Options. `Online option pricer <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=echange.html>`_
 
 
         Examples

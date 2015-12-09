@@ -34,9 +34,9 @@ class Boston(European):
 
         *References:*
 
-        - `Exotic Options (Ch.19 Lecture Slides), slide 4, John J. Stansfield, 2002 <http://1drv.ms/1NEhkjz>`_
-        - `Pay Later Option – A very simple Structured Product, Team Latte, 2007 <http://1drv.ms/1NEgVxi>`_
-        - pp.589-599, OFOD, J.C.Hull, 9ed, 2014
+        - Exotic Options (Ch.19 Lecture Slides), `John J. Stansfield, 2002 <http://1drv.ms/1NEhkjz>`_, see slide 4
+        - Pay Later Option - A very simple Structured Product, `Team Latte, 2007 <http://1drv.ms/1NEgVxi>`_
+        - pp.589-599 in `OFOD <http://www-2.rotman.utoronto.ca/~hull/ofod/index.html>`_, J.C.Hull, 9ed, 2014
 
 
         Examples

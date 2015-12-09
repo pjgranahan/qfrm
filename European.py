@@ -54,8 +54,9 @@ class European(OptionValuation):
         The computation is well-studied and covered by J.C.Hull (with numerous examples).
 
         *References:*
-        The Black-Scholes-Merton Model (Ch.15), OFOD, J.C.Hull, 9ed, 2014, p.346
 
+        - The Black-Scholes-Merton Model (Ch.15), `OFOD <http://www-2.rotman.utoronto.ca/~hull/ofod/index.html>`_, J.C.Hull, 9ed, 2014, p.346
+        - Generalized Tree Building Procedure, `Technical Note #9, J.C.Hull <http://www-2.rotman.utoronto.ca/~hull/technicalnotes/TechnicalNote9.pdf>`_
 
         **Lattice Tree (LT)**, i.e. binomial or binary (recombining) tree pricing.
         Binomial tree is used to (discretely) grow the underlying stock price.
@@ -63,7 +64,7 @@ class European(OptionValuation):
         while averaged at each prior node (as part of computing discounted expected value of an option).
 
         *References:*
-        Binomial Trees (Ch.13), OFOD, J.C.Hull, 9ed, 2014, p.274
+        Binomial Trees (Ch.13), `OFOD <http://www-2.rotman.utoronto.ca/~hull/ofod/index.html>`_, J.C.Hull, 9ed, 2014, p.274
 
         **Monte Carlo simulation (MC)**.
         First, simulate stock prices, according to Geometric Brownian motion (GBM) model.
@@ -71,7 +72,7 @@ class European(OptionValuation):
         Averaged present value is the desired option price.
 
         *References:*
-        Monte Carlo Simulation (Ch.21-6), OFOD, J.C.Hull, 9ed, 2014, pp.469-475
+        Monte Carlo Simulation (Ch.21-6), `OFOD <http://www-2.rotman.utoronto.ca/~hull/ofod/index.html>`_, J.C.Hull, 9ed, 2014, pp.469-475
 
 
         Examples
@@ -180,7 +181,7 @@ class European(OptionValuation):
         assert getattr(self, 'rf_r') is not None, 'Ooops. Please supply risk free rate `rf_r`'
         assert getattr(self, 'K') is not None, 'Ooops. Please supply strike `K`'
         assert getattr(self, 'T') is not None, 'Ooops. Please supply time to expiry (in years) `T`'
-        assert getattr(self, '_signCP') is not None, 'Ooops. Please supply option right: call, put, ...'
+        # assert getattr(self, '_signCP') is not None, 'Ooops. Please supply option right: call, put, ...'  # VarianceSwap
 
         if method in ('LT', 'MC', 'FD'):
             self.px_spec.add_verify(nsteps=nsteps, dtype=int, min=1, max=float("inf"), dflt=3)
@@ -192,9 +193,7 @@ class European(OptionValuation):
             self.px_spec.add_verify(rng_seed=rng_seed, dtype=int, min=0, max=float("inf"), dflt=None)
 
     def _calc_BS(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
+        """ Internal function for option valuation.        See ``calc_px()`` for complete documentation.
 
         :Authors:
             Oleg Melnikov <xisreal@gmail.com>
@@ -217,9 +216,7 @@ class European(OptionValuation):
         return self
 
     def _calc_LT(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
+        """ Internal function for option valuation.        See ``calc_px()`` for complete documentation.
 
         :Authors:
             Oleg Melnikov <xisreal@gmail.com>

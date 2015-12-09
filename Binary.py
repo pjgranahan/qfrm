@@ -43,10 +43,11 @@ class Binary(European):
 
         *References:*
 
-        - `Variable Time-Stepping Hybrid Finite Differences Methods for Pricing Binary Options, Hongjoong Kim and Kyoung-Sook Moon, 2011 <http://1drv.ms/1ORS1xF>`_
-        - `Digital Options (Lecture 2, MFE5010 at NUS), Lim Tiong Wee, 2001 <http://1drv.ms/1TA5dbz>`_
-        - `Excel Spreadsheets for Binary Options <http://investexcel.net/excel-binary-options/>`_
-        - `Pricing of binary options. Online option pricer. <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=binaire.html>`_
+        - Variable Time-Stepping Hybrid Finite Differences Methods for Pricing Binary Options, `Hongjoong Kim and Kyoung-Sook Moon, 2011 <http://1drv.ms/1ORS1xF>`_
+        - Digital Options (Lecture 2, MFE5010 at NUS), `Lim Tiong Wee, 2001 <http://1drv.ms/1TA5dbz>`_
+        - Excel Spreadsheets for Binary Options, `Excel tool. Samir Khan <http://investexcel.net/excel-binary-options/>`_
+        - Pricing of binary options. `Online option pricer. <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=binaire.html>`_
+        - Extending [MC] model to price binary options, `2013. <http://www.codeandfinance.com/extending-price-binary-options.html>`_
 
         Examples
         ------------

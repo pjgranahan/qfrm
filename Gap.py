@@ -38,8 +38,8 @@ class Gap(European):
 
         *References:*
 
-        - `Review Note Sample Excerpt. Exotic Options. (Ch.14) <http://1drv.ms/1ONq7D1>`_
-        - `More Exotic Options (lecture slides), Milica Cudina <http://1drv.ms/1ONpYiT>`_
+        - Review Note Sample Excerpt. `Exotic Options. (Ch.14) <http://1drv.ms/1ONq7D1>`_
+        - More Exotic Options (lecture slides), `Milica Cudina <http://1drv.ms/1ONpYiT>`_
 
         Examples
         --------
@@ -158,10 +158,6 @@ class Gap(European):
             Mengyan Xie <xiemengy@gmail.com>,
             Runmin Zhang <z.runmin@gmail.com>
         """
-        # self.on = on
-        # self.K2 = float(K2)
-        # self.seed0 = seed
-        # return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
         self.save2px_spec(on=on, K2=K2, **kwargs)
         return getattr(self, '_calc_' + self.px_spec.method.upper())()
 

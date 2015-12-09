@@ -29,8 +29,8 @@ class LowExercisePrice(European):
         Notes
         -----
 
-        - `Wikipedia: Low Exercise Price Option <https://en.wikipedia.org/wiki/Low_Exercise_Price_Option>`_
-        - `LEPOs. Low Exercise Price Options. Explanatory Booklet <http://1drv.ms/1TN3qRk>`_
+        - Low Exercise Price Option, `Wikipedia <https://en.wikipedia.org/wiki/Low_Exercise_Price_Option>`_
+        - LEPOs. Low Exercise Price Options. `Explanatory Booklet <http://1drv.ms/1TN3qRk>`_
 
         Examples
         --------

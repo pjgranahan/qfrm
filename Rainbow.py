@@ -32,9 +32,8 @@ class Rainbow(European):
 
         Notes
         -----
-        The examples can be verified with
-        `Monte Carlo Simulation in the Pricing of Derivatives, Cara M.Marshall, 2008, p.23 <http://1drv.ms/1m4HPsj>`_
-        To improve accuracy, raise iterations (``npaths`` and ``nsteps``).
+        *References:*
+        Monte Carlo Simulation in the Pricing of Derivatives, `Cara M.Marshall, 2008, p.23 <http://1drv.ms/1m4HPsj>`_.
 
         Examples
         --------

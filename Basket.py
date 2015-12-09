@@ -37,9 +37,10 @@ class Basket(European):
 
         *References:*
 
-        - `Basket Options (Lecture 3, MFE5010 at NUS), Lim Tiong Wee, 2001 <http://1drv.ms/1NFu0uR>`_
+        - Basket Options (Lecture 3, MFE5010 at NUS), `Lim Tiong Wee, 2001 <http://1drv.ms/1NFu0uR>`_
+        - Calculation of Moments for Valuing Basket Options, `Technical Note #28, J.C.Hull <http://www-2.rotman.utoronto.ca/~hull/technicalnotes/TechnicalNote28.pdf>`_
         - Verify examples with `Online option pricer <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=panier.html>`_.
-        - `Pricing of basket options. Online option pricer. <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=panier.html>`_
+        - Pricing of basket options. `Online tool. <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=panier.html>`_
 
         Examples
         -------

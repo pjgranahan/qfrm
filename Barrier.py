@@ -45,12 +45,11 @@ class Barrier(European):
 
         *References:*
 
-        - Verify examples with a `barrier Option Calculator
-          <http://www.fintools.com/resources/online-calculators/exotics-calculators/exoticscalc-barrier>`_
-        -  DerivaGem software (accompanies J.C.Hull's OFOD textbook)
+        - Barrier Option Calculator. `FinTools.com <http://www.fintools.com/resources/online-calculators/exotics-calculators/exoticscalc-barrier>`_
+        -  DerivaGem software (accompanies J.C.Hull's `OFOD <http://www-2.rotman.utoronto.ca/~hull/ofod/index.html>`_ textbook)
         - See OFOD, J.C.Hull, 9ed, 2014, pp.604-606, pp.640-643.
-        - `Barrier Option Pricing. CoggIt.com, Free Tools. <http://www.coggit.com/freetools>`_
-        - `Valuation of Up-In and Up-Out barrier options. Online option pricer. <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=barriereUp.html>`_
+        - Barrier Option Pricing. `CoggIt.com, Free Tools. <http://www.coggit.com/freetools>`_
+        - Valuation of Up-In and Up-Out barrier options. `Online option pricer. <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=barriereUp.html>`_
 
         Examples
         ---------

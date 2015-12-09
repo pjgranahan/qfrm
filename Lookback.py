@@ -37,11 +37,11 @@ class Lookback(European):
 
         *Verification of Examples:*
 
-        - `Asian options tutorial and Excel spreadsheet. Samir Khan <http://investexcel.net/asian-options-excel>`_
-        - John C. Hull, 9ed, 2015, ISBN `0133456315 <http://amzn.com/0133456315>`_  pp.607-608
-        - DerivaGem software that accompanies OFOD (2014) textbook by J.C.Hull
-        - `Implementing Binomial Trees, Manfred Gilli and Enrico Schumann, 2009   <http://1drv.ms/1NF8w13>`_
-        - `Valuation of lookback options. Online option pricer <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=lookback.html>`_
+        - Asian options tutorial and Excel spreadsheet. `Excel Tool. Samir Khan <http://investexcel.net/asian-options-excel>`_
+        - `OFOD <http://www-2.rotman.utoronto.ca/~hull/ofod/index.html>`_, John C. Hull, 9ed, 2015, ISBN `0133456315 <http://amzn.com/0133456315>`_  pp.607-608
+        - DerivaGem software that accompanies `OFOD <http://www-2.rotman.utoronto.ca/~hull/ofod/index.html>`_ (2014) textbook by J.C.Hull
+        - Implementing Binomial Trees, `Manfred Gilli and Enrico Schumann, 2009   <http://1drv.ms/1NF8w13>`_
+        - Valuation of lookback options. `Online tool <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=lookback.html>`_
 
         Examples
         --------

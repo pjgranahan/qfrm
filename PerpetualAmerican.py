@@ -31,7 +31,7 @@ class PerpetualAmerican(European):
         *References:*
 
         - Examples can be verified with `Coggit Free tool: <http://www.coggit.com/freetools>`_
-        - See p.599 in Options, Futures and Other Derivatives (OFOD), John C. Hull, 9ed, 2014, ISBN `0133456315 <http://amzn.com/0133456315>`_
+        - See p.599 in Options, Futures and Other Derivatives, `OFOD <http://www-2.rotman.utoronto.ca/~hull/ofod/index.html>`_, John C. Hull, 9ed, 2014, ISBN `0133456315 <http://amzn.com/0133456315>`_
 
         Examples
         ------------

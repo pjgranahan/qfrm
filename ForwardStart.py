@@ -36,10 +36,10 @@ class ForwardStart(European):
 
         *References:*
 
-        - `Wikipedia: Forward start option <https://en.wikipedia.org/wiki/Forward_start_option>`_
+        - Forward start option, `Wikipedia <https://en.wikipedia.org/wiki/Forward_start_option>`_
         - Verify example 1 with `Forward start options (Lecture 4, MFE5010 at NUS), Lim Tiong Wee, 2001 <http://1drv.ms/1XS4R1e>`_
         - Verify example 4 with `Forward Start Options, from GlobalRiskGuard.com. <http://1drv.ms/1R2gFiw>`_
-        - `Forward Start Options - Introduction and Spreadsheet. Samir Khan <http://investexcel.net/forward-start-options>`_
+        - Forward Start Options - Introduction and Spreadsheet. `Excel tool. Samir Khan <http://investexcel.net/forward-start-options>`_
 
 
         Examples
