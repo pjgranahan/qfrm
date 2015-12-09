@@ -1,16 +1,15 @@
 import numpy as np
 
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+try: from qfrm.European import *  # production:  if qfrm package is installed
+except:   from European import *  # development: if not installed and running from source
 
 
-class PerpetualAmerican(OptionValuation):
-    """ perpetual American option class.
-
-    Inherits all methods and properties of ``OptionValuation`` class.
+class PerpetualAmerican(European):
+    """ Perpetual American option class.
+    A perpetual American is an American option without determined maturity date.
     """
 
-    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False):
+    def calc_px(self, **kwargs):
         """ Wrapper function that calls appropriate valuation method.
 
         Parameters
@@ -18,7 +17,7 @@ class PerpetualAmerican(OptionValuation):
         kwargs : dict
             Keyword arguments (``method``, ``nsteps``, ``npaths``, ``keep_hist``, ``rng_seed``, ...)
             are passed to the parent. See ``European.calc_px()`` for details.
-
+            Parameter ``T`` (years to expiry) is not used, since perpetual American does not expire.
 
         Returns
         ----------
@@ -26,185 +25,121 @@ class PerpetualAmerican(OptionValuation):
             Returned object contains specifications and calculated price in  ``px_spec`` variable (``PriceSpec`` object).
 
 
-
         Notes
         ---------
-        In finance, a perpetual American option is a special type of American option which does not have a
-        maturity date.
-
-        **Black-Scholes Merton (BS)**, i.e. exact solution pricing.
-        This pricing method uses Black Scholes Merton differential equation to price the perpetual American option.
-        *Important*:
-
-        - This perpetual American option has no expiry data. Hence, the parameter ``T`` is not used.
-        - For computation to be possible, please use non-zero annualized dividend yield, ``q``.
 
         *References:*
 
-        - Perpetual American, OFOD, J.C.Hull, 9ed, 2014, P.599
+        - Examples can be verified with `Coggit Free tool: <http://www.coggit.com/freetools>`_
+        - See p.599 in Options, Futures and Other Derivatives (OFOD), John C. Hull, 9ed, 2014, ISBN `0133456315 <http://amzn.com/0133456315>`_
 
         Examples
         ------------
 
-        **BS:**
-        *Verifiable example:*
-
-        - `All the examples below can be verified by this online tools: <http://www.coggit.com/freetools>`_
-
-
-
-
-        This examples below can be verified with
-        `Coggit's Perpetual Option Pricing tool <http://www.coggit.com/freetools>`_
+        **BS**
+        Notice the ignored expiry parameter ``T``.
 
         >>> s = Stock(S0=50, vol=.3, q=0.01)
-        >>> o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.08, \
-        desc='call @37.19, put @8.68. See www.coggit.com/freetools')
+        >>> o = PerpetualAmerican(ref=s, right='call', K=50, rf_r=0.08, desc='CoggIt.com: call @37.19, put @8.68')
         >>> o.pxBS()
         37.190676834
 
-        >>> o.calc_px(method="BS").px_spec  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.calc_px(method="BS").px_spec  # doctest: +ELLIPSIS
         PriceSpec...px: 37.190676834...
 
-        >>> o.calc_px(method='BS')  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.calc_px(method='BS')  # doctest: +ELLIPSIS
         PerpetualAmerican...px: 37.190676834...
 
+        Change the option's right from call to put.
 
-        `Change the option to a put, can verified by this online tools: <http://www.coggit.com/freetools>`_
-
-        >>> o.update(right='put').calc_px().px_spec.px # doctest: +ELLIPSIS
+        >>> o.update(right='put').calc_px().px_spec.px  # doctest: +ELLIPSIS
         8.676279289...
 
-        >>> o.update(right='put').calc_px() # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.update(right='put').calc_px()  # doctest: +ELLIPSIS
         PerpetualAmerican...px: 8.67627929...
 
-
-        Another example with different dividend and risk free interest rate
-        `This examples below can be verified by this online tools: <http://www.coggit.com/freetools>`_
+        Another example with different dividend and risk free interest rate.
 
         >>> s = Stock(S0=50, vol=.3, q=0.02)
-        >>> o = PerpetualAmerican(ref=s, right='call', T=1, K=50, rf_r=0.05, \
-        desc='call @27.47, put @13.43. See www.coggit.com/freetools')
+        >>> o = PerpetualAmerican(ref=s, right='call', K=50, rf_r=0.05, desc='CoggIt.com: call @27.47, put @13.43')
         >>> o.pxBS()
         27.465595637
 
-        `Change the option to a put, can be verified by this online tools: <http://www.coggit.com/freetools>`_
+        Change to a put.
 
-        >>> o.update(right='put').calc_px().px_spec.px# doctest: +ELLIPSIS
-        13.427262534...
+        >>> o.update(right='put').pxBS()  # doctest: +ELLIPSIS
+        13.427262535
 
-        >>> o.update(right='put').calc_px()# doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.update(right='put').calc_px()  # doctest: +ELLIPSIS
         PerpetualAmerican...px: 13.427262535...
 
-
-
-
-        # Example of option price development (BS method) with increasing maturities \
+        Example of option price development (BS method) with increasing maturities
         (This would give a horizontal line because this perpetual American option does not have an expiry)
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
         >>> O = Series([o.update(T=t).calc_px(method='BS').px_spec.px for t in expiries], expiries)
-        >>> O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
+        >>> O.plot(grid=1, title='Perpetual American (BS) price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
 
         :Authors:
             Tianyi Yao <ty13@rice.edu>
-
         """
+        # Check the validity of value of dividend
+        assert self.ref.q > 0, 'q should be >0, q=0 will give an alpha1 of infinity'
 
-        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
-
-
-
+        self.T = float('inf')
+        self.save2px_spec(**kwargs)
+        return getattr(self, '_calc_' + self.px_spec.method.upper())()
 
     def _calc_BS(self):
-
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
+        """ Internal function for option valuation.        See ``calc_px()`` for complete documentation.
 
         :Authors:
             Tianyi Yao <ty13@rice.edu>
         """
+        _ = self.ref;       S0, vol, q = _.S0, _.vol, _.q
+        _ = self;           T, K, rf_r, net_r, sCP = _.T, _.K, _.rf_r, _.net_r, _.signCP
 
-        #Get parameters
-        _ = self
+        # Compute parameters and barrier threshold (same notation as Hull P.599)
+        w = rf_r - q - ((vol ** 2) / 2.)
+        alpha1 = (-w + np.sqrt((w ** 2) + 2 * (vol ** 2) * rf_r)) / (vol ** 2)
+        H1 = K * (alpha1 / (alpha1 - 1))
+        alpha2 = (w + np.sqrt((w ** 2) + 2 * (vol ** 2) * rf_r)) / (vol ** 2)
+        H2 = K * (alpha2 / (alpha2 + 1))
 
-        #Make sure no time to maturity is specified as this option has no expiry
-        try:
-            _.T == None
-        except TypeError:
-            _.T = None
-
-        #Check the validity of value of dividend
-        assert _.ref.q > 0, 'q should be >0, q=0 will give an alpha1 of infinity'
-
-
-
-
-        #Compute parameters and barrier threshold (same notation as Hull P.599)
-        w = _.rf_r - _.ref.q - ((_.ref.vol ** 2) / 2.)
-        alpha1 = (-w + np.sqrt((w ** 2) + 2 * (_.ref.vol ** 2) * _.rf_r)) / (_.ref.vol ** 2)
-        H1 = _.K * (alpha1 / (alpha1 - 1))
-        alpha2 = (w + np.sqrt((w ** 2) + 2 * (_.ref.vol ** 2) * _.rf_r)) / (_.ref.vol ** 2)
-        H2 = _.K * (alpha2 / (alpha2 + 1))
-
-        #price the perpetual American call option
-        if _.signCP == 1:
-            if _.ref.S0 < H1:
-                out = (_.K / (alpha1 - 1)) * ((((alpha1 - 1) / alpha1) * (_.ref.S0 / _.K)) ** alpha1)
-            elif _.ref.S0 > H1:
-                out = _.ref.S0 - _.K
+        # price the perpetual American call option
+        if sCP == 1:
+            if S0 < H1:
+                out = (K / (alpha1 - 1)) * ((((alpha1 - 1) / alpha1) * (S0 / K)) ** alpha1)
+            elif S0 > H1:
+                out = S0 - K
             else:
                 print('The option cannot be priced due to unknown threshold condition')
-        #price the perpetual American put option
+        # price the perpetual American put option
         else:
-            if _.ref.S0 > H2:
-                out = (_.K / (alpha2 + 1)) * ((((alpha2 + 1) / alpha2) * (_.ref.S0 / _.K)) ** ( -alpha2 ))
-            elif _.ref.S0 < H2:
-                out = _.K - _.ref.S0
+            if S0 > H2:
+                out = (K / (alpha2 + 1)) * ((((alpha2 + 1) / alpha2) * (S0 / K)) ** ( -alpha2 ))
+            elif S0 < H2:
+                out = K - S0
             else:
                 print('The option cannot be priced due to unknown threshold condition')
 
         self.px_spec.add(px=float(out))
-
-
-
         return self
 
     def _calc_LT(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
-
-        :Authors:
-
-        """
-
+        """ Internal function for option valuation.        See ``calc_px()`` for complete documentation.        """
         return self
 
     def _calc_MC(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
-
-        :Authors:
-
-        """
+        """ Internal function for option valuation.        See ``calc_px()`` for complete documentation.        """
         return self
 
     def _calc_FD(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
-
-        :Authors:
-
-        """
-
+        """ Internal function for option valuation.        See ``calc_px()`` for complete documentation.        """
         return self
 
 
