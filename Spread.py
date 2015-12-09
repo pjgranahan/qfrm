@@ -2,27 +2,25 @@ import math
 import numpy.random
 import numpy as np
 
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+try: from qfrm.European import *  # production:  if qfrm package is installed
+except:   from European import *  # development: if not installed and running from source
 
 
 
-class Spread(OptionValuation):
+class Spread(European):
     """ Spread option class.
 
-    Inherits all methods and properties of OptionValuation class.
     """
 
-
-    def calc_px(self, method='BS', S2 = None, rho = .5, nsteps=None, npaths=None, keep_hist=False):
+    def calc_px(self, ref2 = None, rho=.5, **kwargs):
         """ Wrapper function that calls appropriate valuation method.
 
         Parameters
         ----------
-        S2 : Stock
+        ref2 : Stock
                 Required. Indicated the second stock used in the spread option
         rho : float
-                The correlation between the reference stock and S2
+                The correlation between the reference stock and ref2
         kwargs : dict
             Keyword arguments (``method``, ``nsteps``, ``npaths``, ``keep_hist``, ``rng_seed``, ...)
             are passed to the parent. See ``European.calc_px()`` for details.
@@ -36,6 +34,11 @@ class Spread(OptionValuation):
 
         Notes
         ---------
+        **BS** analytical solution is not exact and is only
+        valid when ``K = 0``. Thus, ``K`` is ignored and this pricing method should only be used to price
+        spreads with ``K = 0``.
+
+        **MC** computes correlated paths and computes the average present value of the spread at expiry.
 
         *References:*
 
@@ -46,165 +49,119 @@ class Spread(OptionValuation):
         Examples
         ------------
 
-        >>> s1 = Stock(S0=30.,q=0.,vol=.2)
-        >>> s2 = Stock(S0=31.,q=0.,vol=.3)
-        >>> o = Spread(ref = s1, rf_r = .05, right='call', K=0., T=2., seed0 = 0)
-        >>> o.calc_px(method='BS',S2 = s2,rho=.4).px_spec.px
-        5.409907579760095
+        >>> s1 = Stock(S0=30, q=0, vol=.2)
+        >>> s2 = Stock(S0=31, q=0, vol=.3)
+        >>> o = Spread(ref=s1, rf_r=.05, right='call', K=0, T=2)
+        >>> o.pxBS(ref2=s2, rho=.4); o   # doctest: +ELLIPSIS
+        5.40990758...
 
-        >>> s1 = Stock(S0=30.,q=0.,vol=.2)
-        >>> s2 = Stock(S0=31.,q=0.,vol=.3)
-        >>> o = Spread(ref = s1, rf_r = .05, right='put', K=0., T=2., seed0 = 0)
+        >>> s1 = Stock(S0=30, q=0, vol=.2)
+        >>> s2 = Stock(S0=31, q=0, vol=.3)
+        >>> o = Spread(ref = s1, rf_r=.05, right='put', K=0, T=2)
         >>> from pandas import Series;  exps = range(1,10)
-        >>> O = Series([o.update(T=t).calc_px(method='BS',S2=s2, rho=.4, nsteps = 100, npaths=100).px_spec.px \
-        for t in exps], exps)
+        >>> O = Series([o.update(T=t).pxBS(ref2=s2, rho=.4, nsteps=100, npaths=100) for t in exps], exps)
         >>> O.plot(grid=1, title='Price vs Time to Expiry') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
-        >>> # import matplotlib.pyplot as plt
-        >>> # plt.show() # run last two lines to show plot
 
+        **MC**
 
-        **MC EXAMPLES**
-        RUN MC EXAMPLES WITH NSTEPS = 1000 and NPATHS = 1000 for accurate results (these are way off, but quick)
-        LINK TO VERIFY EXAMPLES IS IN THE NOTES
-        >>> s1 = Stock(S0=30.,q=0.,vol=.2)
-        >>> s2 = Stock(S0=31.,q=0.,vol=.3)
-        >>> o = Spread(ref = s1, rf_r = .05, right='call', K=0., T=2., seed0 = 0)
-        >>> o.calc_px(method='MC',S2 = s2,rho=.4,nsteps=10,npaths=10).px_spec.px # doctest: +ELLIPSIS
-        9.006641533...
+        >>> s1 = Stock(S0=30, q=0, vol=.2)
+        >>> s2 = Stock(S0=31, q=0, vol=.3)
+        >>> o = Spread(ref=s1, rf_r=.05, right='call', K=0, T=2)
+        >>> o.pxMC(ref2=s2, rho=.4, nsteps=100, npaths=1000, rng_seed=0); o # doctest: +ELLIPSIS
+        5.996962262...
 
-        >>> s1 = Stock(S0=30.,q=0.,vol=.2)
-        >>> s2 = Stock(S0=31.,q=0.,vol=.3)
-        >>> o = Spread(ref = s1, rf_r = .05, right='put', K=2., T=2., seed0 = 0)
-        >>> o.calc_px(method='MC',S2 = s2,rho=.4,nsteps=10,npaths=10).px_spec.px # doctest: +ELLIPSIS
-        3.476538946...
+        >>> s1 = Stock(S0=30, q=0, vol=.2)
+        >>> s2 = Stock(S0=31, q=0, vol=.3)
+        >>> o = Spread(ref = s1, rf_r = .05, right='put', K=2, T=2)
+        >>> o.pxMC(ref2=s2, rho=.4, nsteps=100, npaths=1000, rng_seed=0); o # doctest: +ELLIPSIS
+        5.130287061...
 
-        >>> s1 = Stock(S0=30.,q=0.,vol=.2)
-        >>> s2 = Stock(S0=30.,q=0.,vol=.2)
-        >>> o = Spread(ref = s1, rf_r = .05, right='put', K=1., T=2., seed0 = 2, \
-        desc = 'Perfectly correlated -- present value of 1')
-        >>> o.calc_px(method='MC',S2 = s2,rho=1.,nsteps=10,npaths=10).px_spec
-        PriceSpec
-        keep_hist: false
-        method: MC
-        npaths: 10
-        nsteps: 10
-        px: 0.904837418
+        >>> s1 = Stock(S0=30, q=0, vol=.2)
+        >>> s2 = Stock(S0=30, q=0, vol=.2)
+        >>> o = Spread(ref=s1, rf_r=.05, right='put', K=1, T=2, desc='Perfectly correlated -- present value of 1')
+        >>> o.pxMC(ref2=s2, rho=1, nsteps=100, npaths=1000, rng_seed=2); o   # doctest: +ELLIPSIS
+        0.904837418...
 
 
 
-        >>> s1 = Stock(S0=30.,q=0.,vol=.2)
-        >>> s2 = Stock(S0=31.,q=0.,vol=.3)
-        >>> o = Spread(ref = s1, rf_r = .05, right='put', K=2., T=2., seed0 = 0)
-        >>> from pandas import Series;  exps = range(1,10)
-        >>> O = Series([o.update(T=t).calc_px(method='MC',S2=s2, rho=.4, nsteps = 100, npaths=100).px_spec.px \
-        for t in exps], exps)
-        >>> O.plot(grid=1, title='Price vs Time to Expiry') # doctest: +ELLIPSIS
+        >>> s1 = Stock(S0=30, q=0, vol=.2)
+        >>> s2 = Stock(S0=31, q=0, vol=.3)
+        >>> o = Spread(ref=s1, rf_r=.05, right='put', K=2, T=2)
+        >>> from pandas import Series;  exps = range(1,51)
+        >>> O = Series([o.update(T=t).pxMC(ref2=s2, rho=.4, nsteps = 100, npaths=100, rng_seed=0) for t in exps], exps)
+        >>> O.plot(grid=1, title='Spread MC price vs time to expiry (years)' + o.specs) # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
 
         :Authors:
             Scott Morgan
        """
-
-        self.px_spec = PriceSpec(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
-        self.rho = rho
-        self.S2 = S2
-        return getattr(self, '_calc_' + method.upper())()
+        assert type(ref2).__name__ == 'Stock', 'ref2 parameter must be another Stock() object'
+        assert abs(rho) <= 1
+        self.save2px_spec(rho=rho, ref2=ref2, **kwargs)
+        return getattr(self, '_calc_' + self.px_spec.method.upper())()
 
     def _calc_LT(self):
-        """ Internal function for option valuation.
-
-
-        """
-
+        """ Internal function for option valuation.        """
         return self
-
 
     def _calc_BS(self):
         """ Internal function for option valuation using the Black-Scholes Method
 
-        _calc_BS uses a Black-Scholes based analytical solution, but it is not exact and is only
-        valid when K = 0. Thus, it does not even factor in K at all and should only be used to price
-        spreads with K = 0.
-
-        Notes
-        -----
-
-        HUGE NOTE: Black-Scholes Method only works when K = 0
-
         :Authors:
             Scott Morgan
-
         """
+        _ = self;               T, K, rf_r, net_r, sCP = _.T, _.K, _.rf_r, _.net_r, _.signCP
+        _ = self.ref;           S, vol, q = _.S0, _.vol, _.q
+        _ = self.px_spec;       keep_hist, rho = _.keep_hist, _.rho
+        _ = self.px_spec.ref2;  S2, vol2, q2 = _.S0, _.vol, _.q
 
+        vol = math.sqrt(vol**2 - 2 * rho * vol * vol2 + vol2**2)
+        d1 = (1./(vol * math.sqrt(T)))*math.log((S2 * math.exp(-q2 * T))/(S * math.exp(-q * T)))
+        d2 = d1 - (vol * math.sqrt(T)/2.)
+        d1 = d1 + (vol * math.sqrt(T)/2.)
+        p = S2 * math.exp(-q2 * T) * Util.norm_cdf(d1)
+        p = p - S * math.exp(-q * T) * Util.norm_cdf(d2)
 
-        vol = math.sqrt(self.ref.vol**2 - 2*self.rho*self.ref.vol*self.S2.vol + self.S2.vol**2)
-        d1 = (1./(vol*math.sqrt(self.T)))*math.log((self.S2.S0*math.exp(-self.S2.q*self.T))/(self.ref.S0*math.exp(-self.ref.q*self.T)))
-        d2 = d1 - (vol*math.sqrt(self.T)/2.)
-        d1 = d1 + (vol*math.sqrt(self.T)/2.)
-        p = self.S2.S0*math.exp(-self.S2.q*self.T) * Util.norm_cdf(d1)
-        p = p - self.ref.S0*math.exp(-self.ref.q*self.T) * Util.norm_cdf(d2)
-
-        self.px_spec.add(px=float(p), method='BS')
-
+        self.px_spec.add(px=float(p))
         return self
 
 
     def _calc_MC(self):
         """ Internal function for option valuation using Monte-Carlo simulation
 
-
-        _calc_MC uses Monte-Carlo simulation to price European Spread Options
-        It computes correlated paths and computes the average present value of
-        the spread at expiry
-
-        Returns
-        -------
-        self: Spread
-
-        .. sectionauthor:: Scott Morgan
-
-        Note
-        ----
-
+        :Authors:
+            Scott Morgan
         """
+        _ = self;               T, K, rf_r, net_r, sCP = _.T, _.K, _.rf_r, _.net_r, _.signCP
+        _ = self.ref;           S, vol, q = _.S0, _.vol, _.q
+        _ = self.px_spec;       n, m, keep_hist, rng_seed, rho = _.nsteps, _.npaths, _.keep_hist, _.rng_seed, _.rho
+        _ = self.px_spec.ref2;  S2, vol2, q2 = _.S0, _.vol, _.q
+        _ = self._LT_specs();   u, d, p, df, dt = _['u'], _['d'], _['p'], _['df_dt'], _['dt']
 
-        _ = self.px_spec
-        npaths = getattr(_, 'npaths', 3)
-        nsteps = getattr(_, 'nsteps', 3)
+        px = list()
+        numpy.random.seed(rng_seed)
 
-        __ = self.LT_specs(npaths)
-
-        opt_vals = list()
-
-        if self.seed0 is not None:
-            numpy.random.seed(self.seed0)
-
-
-        for path in range(0,npaths):
+        for path in range(0,m):
 
             ## Generate correlated Wiener Processes
-            u = numpy.random.normal(size=nsteps)
-            v = numpy.random.normal(size=nsteps)
-            v = self.rho*u + math.sqrt(1-self.rho**2)*v
-            u = u*math.sqrt(__['dt'])
-            v = v*math.sqrt(__['dt'])
+            u = numpy.random.normal(size=n)
+            v = numpy.random.normal(size=n)
+            v = rho * u + math.sqrt(1 - rho**2) * v
+            u = u * math.sqrt(dt)
+            v = v * math.sqrt(dt)
 
             ## Simulate the paths
-            S1 = [self.ref.S0]
-            S2 = [self.S2.S0]
-            mu_1 = (self.rf_r-self.ref.q)*__['dt']
-            mu_2 = (self.rf_r-self.S2.q)*__['dt']
+            s1, s2, mu1, mu2 = [S], [S2], (rf_r - q)*dt, (rf_r - q2)*dt
 
-            for t in range(0,len(u)):
-                S1.append(S1[-1]*(mu_1 + self.ref.vol*u[t]) + S1[-1])
-                S2.append(S2[-1]*(mu_2 + self.S2.vol*v[t]) + S2[-1])
+            for t in range(0, len(u)):
+                s1.append(s1[-1] * (mu1 + vol * u[t]) + s1[-1])
+                s2.append(s2[-1] * (mu2 + vol2 * v[t]) + s2[-1])
 
-            ## Calculate the Payoff
-            val = np.maximum(self.signCP*(S2[-1] - S1[-1] - self.K),0.0)*math.exp(-self.rf_r*self.T)
-            opt_vals.append((val))
+            val = np.maximum(sCP * (s2[-1] - s1[-1] - K), 0) * math.exp(-rf_r * T)  # Calculate the Payoff
+            px.append((val))
 
-        self.px_spec.add(px=float(np.mean(opt_vals)), method='MC')
+        self.px_spec.add(px=float(np.mean(px)))
 
         return self
 
