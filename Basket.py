@@ -34,11 +34,12 @@ class Basket(European):
 
         Notes
         -----
-        The examples can be verified with `Online option pricer
-        <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=panier.html>`_.
-        The results might differ a little due to the simulations.
-        Since it takes time to run more paths and steps, the number of simulations is not very large in examples.
-        To improve accuracy, please improve the ``npaths`` and ``nsteps``.
+
+        *References:*
+
+        - `Basket Options (Lecture 3, MFE5010 at NUS), Lim Tiong Wee, 2001 <http://1drv.ms/1NFu0uR>`_
+        - Verify examples with `Online option pricer <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=panier.html>`_.
+        - `Pricing of basket options. Online option pricer. <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=panier.html>`_
 
         Examples
         -------

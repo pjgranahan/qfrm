@@ -41,23 +41,20 @@ class Asian(European):
 
         Notes
         -----
-        **BS and LT Notes**
-        ------------
-        `Verification of First and Second Examples <http://investexcel.net/asian-options-excel>`_
+        Use resources below to examine formulas and verify calculations.
 
-        **MC Notes**
-        --------
-        The referenced example is found in Lars Nielsen's 2001 paper,
-        `Pricing Asian Options
-        <quantlabs.net/academy/download/free_quant_instituitional_books_/[Nielsen] Pricing Asian Options.pdf>`_
-        in section 4.3.
-        The results emulate the ``sigma`` = {0.05; 0.15; 0.45} elements of the third (C-hat) column of table
-        4.1 on p.23. The computed MC prices for these simulations all fall within 2 standard errors of C-hat.
+        *References:*
+
+        - `Verification of First and Second Examples. Samir Khan <http://investexcel.net/asian-options-excel>`_
+        - The referenced MC example is found in Lars Nielsen's 2001 paper, in section 4.3.
+          `Pricing Asian Options, Lars B. Nielsen, 2001 <http://1drv.ms/1Ohf56n>`_.
+          The results emulate the ``sigma`` = {0.05; 0.15; 0.45} elements of the third (C-hat) column of table
+          4.1 on p.23. The computed MC prices for these simulations all fall within 2 standard errors of C-hat.
+        - `Asian option with continuous arithmetical mean. Online option pricer <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=asiat_trapeze.html>`_
+
 
         Examples
         --------
-        The examples can be verified with
-        `Asian Options - Tutorial and Excel Spreadsheet, Samir Khan <http://investexcel.net/asian-options-excel>`_
 
         SEE NOTES to verify first two examples
 
@@ -163,14 +160,6 @@ class Asian(European):
 
 
         **FD**
-
-        *Verifiable Example*:
-        `Online option pricer <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=asiat_trapeze.html>`_
-
-        Note that for FD method, the result can be quite volatile
-        This is because the choice of ``nsteps`` / ``npaths``,
-        and the choice of ``Smax`` / ``Smin`` can affect the result a lot
-        Also, it will be more accurate to increase ``npaths`` and ``nsteps``
 
         >>> s = Stock(S0=0.5, vol=.01, q=.0)
         >>> o = Asian(ref=s, right='call', K=0.45, T=0.5, rf_r=.001)
