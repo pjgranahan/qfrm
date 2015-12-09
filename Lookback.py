@@ -37,10 +37,11 @@ class Lookback(European):
 
         *Verification of Examples:*
 
-        - `Asian options tutorial and Excel spreadsheet <http://investexcel.net/asian-options-excel>`_
+        - `Asian options tutorial and Excel spreadsheet. Samir Khan <http://investexcel.net/asian-options-excel>`_
         - John C. Hull, 9ed, 2015, ISBN `0133456315 <http://amzn.com/0133456315>`_  pp.607-608
         - DerivaGem software that accompanies OFOD (2014) textbook by J.C.Hull
         - `Implementing Binomial Trees, Manfred Gilli and Enrico Schumann, 2009   <http://1drv.ms/1NF8w13>`_
+        - `Valuation of lookback options. Online option pricer <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=lookback.html>`_
 
         Examples
         --------
@@ -52,7 +53,7 @@ class Lookback(European):
         >>> o.pxBS(Sfl = 50.0)
         8.03712014
 
-        >>> o.calc_px(method = 'BS', Sfl = 50.0) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.calc_px(method = 'BS', Sfl = 50.0) # doctest: +ELLIPSIS
         Lookback...px: 8.03712014...
 
         >>> s = Stock(S0=50, vol=.4, q=.0)
@@ -60,7 +61,7 @@ class Lookback(European):
         >>> o.pxBS(Sfl = 50.0)
         7.79021926
 
-        >>> o.px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.px_spec # doctest: +ELLIPSIS
         PriceSpec...px: 7.79021926...
 
         >>> from pandas import Series;  expiries = range(1,11)
@@ -76,7 +77,7 @@ class Lookback(European):
         >>> o.pxLT(nsteps=100, Sfl = 50.0)
         1.829899147
 
-        >>> o.px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.px_spec # doctest: +ELLIPSIS
         PriceSpec...px: 1.829899147...
 
         >>> s = Stock(S0=50., vol=.4, q=.0)

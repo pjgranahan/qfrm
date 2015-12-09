@@ -17,13 +17,13 @@ class Shout(OptionValuation):
     pricing American options.
     """
 
-    def calc_px(self, method='LT', nsteps=None, npaths=None, keep_hist=False, seed=None, deg=0):
+    def calc_px(self, deg, **kwargs):
         """ Wrapper function that calls appropriate valuation method.
 
         Parameters
         ----------
         deg : int
-                degree of polynomial fit in MC
+            degree of polynomial fit in MC. Usually, around 5.
         kwargs : dict
             Keyword arguments (``method``, ``nsteps``, ``npaths``, ``keep_hist``, ``rng_seed``, ...)
             are passed to the parent. See ``European.calc_px()`` for details.
@@ -37,11 +37,11 @@ class Shout(OptionValuation):
         Notes
         -----
         Verification of Shout option:
-        [1] Options, Futures and Other Derivatives, Hull, 2014, p.609
-        [2] `<http://goo.gl/02jISW>`_
-        This two excel spreadsheet price shout option.
-        [3] `<http://goo.gl/1rrTCG>`_
-        [4] `<http://goo.gl/AdgcqY>`_
+
+        - Options, Futures and Other Derivatives, Hull, 2014, p.609
+        - `Shout Options, (Lecture 4, MFE5010 at NUS), Lim Tiong Wee, 2001 <http://1drv.ms/1RDA4pm>`_
+        - `Shout Options - Introduction and Spreadsheet. Samir Khan <http://investexcel.net/shout-options-excel/>`_
+        - `Binomial Tree pricing for Compound, Chooser, Shout. Excel Spreadsheet <http://goo.gl/AdgcqY>`_
 
         Examples
         --------
@@ -97,10 +97,11 @@ class Shout(OptionValuation):
             Yen-fei Chen <yensfly@gmail.com>
 
        """
-        self.deg = deg
-        self.seed = seed
-        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
-
+        # self.deg = deg
+        # self.seed = seed
+        # return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
+        self.save2px_spec(deg=deg, **kwargs)
+        return getattr(self, '_calc_' + self.px_spec.method.upper())()
 
     def _calc_LT(self):
         """ Internal function for option valuation.

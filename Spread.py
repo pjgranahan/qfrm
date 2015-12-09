@@ -36,7 +36,11 @@ class Spread(OptionValuation):
 
         Notes
         ---------
-        `Verify Examples: <http://www.fintools.com/resources/online-calculators/exotics-calculators/spread/>_`
+
+        *References:*
+
+        - `Verify Examples: <http://www.fintools.com/resources/online-calculators/exotics-calculators/spread/>_`
+        - `Spread Options (Lecture 3, MFE5010 at NUS), Lim Tiong Wee, 2001 <http://1drv.ms/1NUwPtZ>`_
 
 
         Examples

@@ -33,7 +33,6 @@ class Exchange(European):
 
         *Important:*
 
-
         - In my implementation of all the pricers of exhange option, I assume that this is an option to exchange
         the first asset for the second. The payoff profile is ``max{S0_2(T)-S0_1(T),0}`` where ``S0_2(T)`` \
         is the price of asset 2 at maturity and ``S0_1(T)`` is the price of asset 1 at maturity. \
@@ -46,6 +45,14 @@ class Exchange(European):
         converge, when you set ``npaths`` which determines the delta_s, \
         please make sure ``S0_1``, namely ``S0[0]`` is a multiple of delta_s, namely the interval between\
         consecutive prices.
+
+        *References:*
+
+        - `Exchange Options, Lim Tiong Wee, p.4 <http://1drv.ms/1SNuK0X>`_
+        - `The Value of an Option to Exchange One Asset for Another, William Margrabe, 1978 <http://1drv.ms/1SNuQFX>`_
+        - `Exchange Options – Introduction and Pricing Spreadsheet. Samir Khan <http://investexcel.net/exchange-options-excel/>`_
+        - `Evaluation of Exchange Options. Online option pricer <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=echange.html>`_
+
 
         Examples
         --------

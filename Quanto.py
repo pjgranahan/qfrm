@@ -45,6 +45,7 @@ class Quanto(European):
         *References:*
 
         - Options, Futures, and Other Derivatives, J.C.Hull, 9ed, 2014, pp.699-702
+        - `Quanto Options – Guide and Spreadsheet. Samir Khan <http://investexcel.net/quanto-options/>`_
 
         Examples
         --------
@@ -124,19 +125,7 @@ class Quanto(European):
         return getattr(self, '_calc_' + self.px_spec.method.upper())()
 
     def _calc_BS(self):
-        """ Internal function for option valuation.
-
-        Returns
-        -------
-        self: Quanto
-
-        .. sectionauthor::
-
-        Note
-        ----
-
-
-        """
+        """ Internal function for option valuation.        """
 
         return self
 

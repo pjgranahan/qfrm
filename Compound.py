@@ -41,6 +41,9 @@ class Compound(European):
         - `Finite-Difference Methods for One-Factor Models (Ch.28) <http://www.wiley.com/legacy/wileychi/pwiqf2/supp/c28.pdf>`_ (SEE PROBLEM 4)
         - `Finite Difference Methods (Ch.5 slides) <http://www.math.yorku.ca/~hmzhu/Math-6911/lectures/Lecture5/5_BlkSch_FDM.pdf>`_
         - `Finite Difference Approach to Option Pricing (CS522 Lab Note), 1998 <http://www.cs.cornell.edu/info/courses/spring-98/cs522/content/lab4.pdf>`_
+        - `Compound Options (Lecture 4, MFE5010 at NUS), Lim Tiong Wee, 2001 <http://1drv.ms/1NFtSeL>`_
+        - `Binomial Tree pricing for Compound, Chooser, Shout. Excel Spreadsheet <http://goo.gl/AdgcqY>`_
+        - `Compound Options - Introduction and Pricing Spreadsheet. Samir Kahn <http://investexcel.net/compound-options-excel>`_
 
 
         Examples

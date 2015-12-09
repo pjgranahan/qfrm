@@ -41,8 +41,9 @@ class American(European):
         - Control Variate Techniques, OFOD, J.C.Hull, 9ed, 2014, pp.463-465
         - `The Use of Control Variate Technique in Option-Pricing, J.C.Hull & A.D.White, 2001 <http://1drv.ms/1XR2rQw>`_
         - `The Closed-form Solution for Pricing American Options, Wang Xiaodong, 2006 <http://1drv.ms/1NaB3rI>`_
-        - `Closed-Form American Call Option Pricing (Teaching notes), Roll-Geske-Whaley, 2008 <http://1drv.ms/1NaB3rI>`_
+        - `Closed-Form American Call Option Pricing (Teaching notes), Roll-Geske-Whaley, 2008 <http://1drv.ms/1NFtRrh>`_
         - `Black's approximation (Wikipedia) <https://en.wikipedia.org/wiki/Black%27s_approximation>`_ (dividend call)
+        - `Roll-Geske-Whaley Method to Price American Options, Samir Khan. <http://investexcel.net/roll-geske-whaley-american-options>`_
 
 
         **Lattice Tree (LT)**, i.e. binomial or binary (recombining) tree pricing.
