@@ -41,15 +41,15 @@ class Rainbow(European):
 
         **MC**
 
-        >>> s = Stock(S0=(100,50), vol=(.25, .45))
+        >>> s = Stock(S0=(100, 50), vol=(.25, .45))
         >>> o = Rainbow(ref=s, right='call', K=40, T=.25, rf_r=.05, desc="See p.23 of Marshall's paper")
-        >>> o.calc_px(method='MC', corr=0.65, nsteps=1, npaths=100, rng_seed=0) # doctest: +ELLIPSIS
+        >>> o.calc_px(method='MC', corr=0.65, nsteps=100, npaths=1000, rng_seed=0)  # doctest: +ELLIPSIS
         Rainbow...px: 14.908873539...
 
 
-        >>> s = Stock(S0=(100,50), vol=(.25, .45))
+        >>> s = Stock(S0=(100, 50), vol=(.25, .45))
         >>> o = Rainbow(ref=s, right='put', K=55, T=0.25, rf_r=.05, desc='Hull p.612')
-        >>> o.pxMC(corr=0.65, nsteps=1, npaths=100, rng_seed=2)
+        >>> o.pxMC(corr=0.65, nsteps=100, npaths=5000, rng_seed=2)
         13.91461925
 
         >>> from pandas import Series
@@ -64,11 +64,6 @@ class Rainbow(European):
         :Authors:
           Mengyan Xie <xiemengy@gmail.com>
         """
-        # self.corr = corr
-        # self.npaths = npaths
-        # self.nsteps = nsteps
-        # self.seed0 = seed0
-        # return super().calc_px(method=method,corr = corr, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
         assert Util.is_number(corr) and abs(corr) <= 1, 'Correlation is number between -1 and 1, inclusive.'
         self.save2px_spec(corr=corr, **kwargs)
         return getattr(self, '_calc_' + self.px_spec.method.upper())()
@@ -96,7 +91,7 @@ class Rainbow(European):
         np.random.seed(rng_seed)
         h = list()
 
-        for path in range(0, n):
+        for path in range(0, m):
             # Generate correlated Wiener Processes
             # Compute random variables with correlation
             z1 = np.random.normal(loc=0.0, scale=1.0, size=n)
