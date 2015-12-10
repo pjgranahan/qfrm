@@ -42,19 +42,18 @@ class Rainbow(European):
 
         >>> s = Stock(S0=(100, 50), vol=(.25, .45))
         >>> o = Rainbow(ref=s, right='call', K=40, T=.25, rf_r=.05, desc="See p.23 of Marshall's paper")
-        >>> o.calc_px(method='MC', corr=0.65, nsteps=100, npaths=1000, rng_seed=0)  # doctest: +ELLIPSIS
-        Rainbow...px: 14.908873539...
-
+        >>> o.pxMC(corr=0.65, nsteps=100, npaths=1000, rng_seed=0); o  # doctest: +ELLIPSIS
+        7.576492715...
 
         >>> s = Stock(S0=(100, 50), vol=(.25, .45))
         >>> o = Rainbow(ref=s, right='put', K=55, T=0.25, rf_r=.05, desc='Hull p.612')
-        >>> o.pxMC(corr=0.65, nsteps=100, npaths=5000, rng_seed=2)
-        13.91461925
+        >>> o.pxMC(corr=0.65, nsteps=100, npaths=1000, rng_seed=2)
+        6.180473873
 
         >>> from pandas import Series
-        >>> Ts = range(1,11)   # expiries, in years
-        >>> O = Series([o.update(T=t).pxMC(corr=0.65, npaths=2, nsteps=3) for t in Ts], Ts)
-        >>> O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
+        >>> Ts = range(1, 21)   # expiries, in years
+        >>> O = Series([o.update(T=t).pxMC(corr=0.65, nsteps=100, npaths=1000) for t in Ts], Ts)
+        >>> O.plot(grid=1, title='MC price vs time to expiry (in years) for ' + o.specs) # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
@@ -86,7 +85,7 @@ class Rainbow(European):
         _ = self;           T, K, rf_r, net_r, sCP = _.T, _.K, _.rf_r, _.net_r, _.signCP
 
         dt = T / n
-        df = math.exp(-rf_r * dt)
+        df = math.exp(-rf_r * T)
         np.random.seed(rng_seed)
         h = list()
 
@@ -95,8 +94,8 @@ class Rainbow(European):
             # Compute random variables with correlation
             z1 = np.random.normal(loc=0.0, scale=1.0, size=n)
             z2 = np.random.normal(loc=0.0, scale=1.0, size=n)
-            r1 = z1
-            r2 = corr * z1 + math.sqrt(1 - corr ** 2) * z2
+            r1 = z1 * math.sqrt(dt)
+            r2 = (corr * z1 + math.sqrt(1 - corr ** 2) * z2) * math.sqrt(dt)
 
             # Simulate the paths
             S1 = [S0[0]]
@@ -104,7 +103,7 @@ class Rainbow(European):
             mu = net_r * dt
 
             # Compute stock price
-            for t in range(0, n):
+            for t in range(0, len(z1)):
                 S1.append(S1[-1] * (mu + vol[0] * r1[t]) + S1[-1])
                 S2.append(S2[-1] * (mu + vol[1] * r2[t]) + S2[-1])
 
