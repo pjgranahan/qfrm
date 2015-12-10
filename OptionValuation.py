@@ -1,4 +1,5 @@
 import math
+import re
 import warnings
 import itertools
 import pandas as pd
@@ -9,9 +10,45 @@ except:   from Util import *  # development: if not installed and running from s
 
 
 class PriceSpec(SpecPrinter):
-    """ Object for storing calculated price and related intermediate parameters.
+    """ PriceSpec verifies and saves calculated price and intermediate calculations.
 
     Use this object to store the price, sub/method and any intermediate results in your option object.
+
+    A typical structure for option with price computed by **LT** method:
+
+    .. code::
+
+          LT_specs:
+            a: 1.025315121
+            d: 0.904837418
+            df_T: 0.951229425
+            df_dt: 0.975309912
+            dt: 0.25
+            p: 0.601385702
+            u: 1.105170918
+          keep_hist: false
+          method: LT
+          nsteps: 2
+          px: 4.799241115
+          sub_method: binary tree; Hull p.135
+
+    A typical structure for option with price computed by **BS** method:
+
+    .. code::
+
+          BS_specs:
+            N_d1: 0.220868709
+            N_d2: 0.265053963
+            Nd1: 0.779131291
+            Nd2: 0.734946037
+            d1: 0.769262628
+            d2: 0.627841272
+          keep_hist: false
+          method: BS
+          px: 4.759422393
+          px_call: 4.759422393
+          px_put: 0.808599373
+          sub_method: standard; Hull p.335
 
     :Authors:
         Oleg Melnikov <xisreal@gmail.com>
@@ -39,41 +76,94 @@ class PriceSpec(SpecPrinter):
         --------
 
         Default ``print_precision = 9`` is used
-
-        >>> PriceSpec(price=1/7)
-        PriceSpec
-        price: 0.142857143
-
-        >>> PriceSpec(price=1/7, print_precision=4)
-        PriceSpec
-        price: 0.1429
         """
-
-        # super().__init__(kwargs)
-        # if 'print_precision' in kwargs:
-        #     super().__init__(print_precision=kwargs['print_precision'])
-        #     del kwargs['print_precision']
-        # super().__init__(print_precision=print_precision)
         SpecPrinter.print_precision = print_precision
         self.add(**kwargs)
 
-    # @property
-    # def px(self):
-    #     """Getter method for price variable.
-    #
-    #     Getter and setter allow access to price and use of user-defined rounding of price value.
-    #
-    #     Returns
-    #     -------
-    #     None or float
-    #         Properly rounded price value (if exists)
-    #
-    #     """
-    #     try: return self.print_value(self._px)
-    #     except: return None
-    #
-    # @px.setter
-    # def px(self, px): self._px = px
+    def add_verify(self, dtype=None, min=None, max=None, dflt=None, **kwargs):
+        """ Asserts the type and range of passed ``kwargs`` parameter *key*=*value*.
+
+        Use this function to validate and save user's input.
+        If assertion fails, default value is used and message is saved into PriceSpec variable as ``[key]_warning``.
+        Only the first kwargs argument will be saved.
+        Use this method once for each *key*=*value* pair.
+
+        Parameters
+        ----------
+        dtype : {None, int, long, ...}
+            Specifies the type of the input variable
+
+            ``None`` results in no constraint on type of *value*
+        min : {None, number}
+            Specifies the minimum of the range for the *value*. min must work with operator >=
+
+            ``None`` results in no constraint on minimum of *value*
+        max : {None, number}
+            Specifies the maximum of the range for the *value*. min must work with operator >=
+
+            ``None`` results in no constraint on maximum of *value*
+        dflt : object
+            If range/type assertions failed, this (default) value will be used.
+        kwargs :
+            A single *key*=*value* pair that needs to be validated and stored.
+
+        Returns
+        -------
+
+
+        Examples
+        --------
+
+        Here we add ``nsteps=5`` assuring that 1 < 5 and 5 is of type ``int``.
+        Conditions are satisfied and value is added to ``PriceSpec`` object.
+
+        >>> ps = PriceSpec()
+        >>> ps.add_verify(dtype=int, min=1, max=None, dflt=3, nsteps=5); ps
+        PriceSpec
+        nsteps: 5
+
+        >>> ps.add_verify(dtype=int, min=1, max=10, dflt=3, nsteps=11); ps
+        PriceSpec
+        nsteps: 3
+        nsteps_warning: bad spec nsteps=11. Must be 1 <= int <= 10. Using default 3
+
+        >>> ps.add_verify(dtype=float, min=1, max=float("inf"), dflt=3, nsteps=11); ps
+        PriceSpec
+        nsteps: 3
+        nsteps_warning: bad spec nsteps=11. Must be 1 <= float <= inf. Using default 3
+
+        >>> ps.add_verify(dtype=float, min=float("-inf"), max=float("inf"), dflt=5, nsteps='bla'); ps
+        PriceSpec
+        nsteps: 5
+        nsteps_warning: bad spec nsteps=bla. Must be -inf <= float <= inf. Using default 5
+
+        >>> ps.add_verify(dtype=float, min=float("-inf"), max=float("inf"), dflt=5, nsteps=None); ps
+        PriceSpec
+        nsteps: 5
+        nsteps_warning: bad spec nsteps=None. Must be -inf <= float <= inf. Using default 5
+        """
+        k, v = tuple(kwargs.keys())[0], tuple(kwargs.values())[0]
+
+        use_default = v is None
+        if not (use_default or dtype is None):
+            if not isinstance(v, dtype): use_default = True
+        if not (use_default or min is None):
+            if v < min: use_default = True
+        if not (use_default or max is None):
+            if v > max: use_default = True
+
+        if use_default:
+            msg = 'bad spec ' + k + '=' + str(v) \
+                + '. Must be ' + str(min) + ' <= ' + dtype().__class__.__name__ + ' <= ' + str(max)\
+                + '. Using default ' + str(dflt)
+            # msg = '\nOooops! PriceSpec.add_verify() says: \n\tinput ' + k + '=' + str(v) + ' must be of type ' + str(dtype) \
+            #     + ' with min=' + str(min) + ', max=' + str(max) + ', default=' + str(dflt) \
+            #     + '. Using default.'
+            # warnings.warn(msg, UserWarning)
+            v = dflt
+            setattr(self, k + '_warning', msg)
+
+        setattr(self, k, v)
 
     def add(self, **kwargs):
         """ Adds all key/value input arguments as class variables
@@ -282,7 +372,7 @@ class OptionSeries(SpecPrinter):
 
         # First, clone an object, then update remaining parameters
         if 'clone' in kwargs:
-            self.clone = kwargs['clone']
+            if kwargs['clone'] is not None: self.clone = kwargs['clone']
             del kwargs['clone']
 
         for K, v in kwargs.items():
@@ -357,7 +447,7 @@ class OptionSeries(SpecPrinter):
 
         Returns
         -------
-        str, None
+        str, ''
             Option style for objects inheriting OptionValuation
 
         Examples
@@ -369,12 +459,15 @@ class OptionSeries(SpecPrinter):
         >>> from qfrm import *; European().style
         'European'
 
-        >>> OptionSeries().style  # returns None
+        >>> OptionSeries().style
+        ''
         """
-        if any('OptionValuation' == i.__name__ for i in self.__class__.__bases__):
-            return type(self).__name__
-        else:
-            return None
+
+        return type(self).__name__.replace('OptionValuation', '').replace('OptionSeries', '')
+        # if any('European' == i.__name__ for i in self.__class__.__bases__):
+        #     return type(self).__name__
+        # else:
+        #     return None
 
     @property
     def series(self):
@@ -404,14 +497,22 @@ class OptionSeries(SpecPrinter):
 
         """
         try: tkr = self.ref.tkr + ' '
-        except: tkr=''
+        except: tkr = ''
 
-        K = '' if getattr(self, 'K', None) is None else str(self.K) + ' '
+        K = str(getattr(self, 'K', '')) + ' '
         T = '' if getattr(self, 'T', None) is None else str(self.T) + 'yr '
-        style = '' if self.style is None else self.style + ' '
-        right = '' if getattr(self, 'right', None) is None else str(self.right) + ' '
+        style = self.style + ' '
+        right = str(getattr(self, 'right', '')) + ' '
 
-        return (tkr + K + T + style + str(right)).rstrip()  # strip trailing spaces
+
+        # K = '' if getattr(self, 'K', None) is None else str(self.K) + ' '
+        # T = '' if getattr(self, 'T', None) is None else str(self.T) + 'yr '
+        # style = '' if self.style is None else self.style + ' '
+        # right = '' if getattr(self, 'right', None) is None else str(self.right) + ' '
+        # s = re.sub(r'(\s){2,}', repl=' ', string=s)  # replace multiple blanks with one
+
+
+        return re.sub(r'(\s){2,}', ' ', (tkr + K + T + style + str(right)).strip()) # remove extra spaces
 
     @property
     def specs(self):
@@ -490,7 +591,7 @@ class OptionValuation(OptionSeries):
 
     The class inherits from a simpler class that describes an option.
     """
-    def __init__(self, rf_r=None, frf_r=0, seed0=None, *args, **kwargs):
+    def __init__(self, rf_r=None, frf_r=0, *args, **kwargs):
         """ Constructor saves all identified arguments and passes others to the base (parent) class, OptionSeries.
 
         It also calculates net_r, the rate used in computing growth factor a (p.452) for options
@@ -503,8 +604,8 @@ class OptionValuation(OptionSeries):
                 number in (0,1) interval
         frf_r : float, optional
             foreign risk free rate.
-        seed0 : int, None, optional
-            None or positive integer to seed random number generator (rng).
+        # seed0 : int, None, optional
+        #     None or positive integer to seed random number generator (rng).
         precision : {None, int}, optional
             indicates desired floating number precision of calculated prices.
             Assists with doctesting due to rounding errors near digits in 10^-12 placements
@@ -534,58 +635,9 @@ class OptionValuation(OptionSeries):
 
         """
         # Todo: OptionValuation.__init__(print_precision=4) doesn't work.
-        self.rf_r, self.frf_r, self.seed0 = rf_r, frf_r, seed0
+        self.rf_r, self.frf_r = rf_r, frf_r
         super().__init__(*args, **kwargs)  # pass remaining arguments to base (parent) class
         self.reset()
-
-    def LT_specs(self, nsteps=2):
-        """ Calculates a collection of specs/parameters needed for lattice tree pricing.
-
-        parameters returned:
-            dt: time interval between consequtive two time steps
-            u: Stock price up move factor
-            d: Stock price down move factor
-            a: growth factor, p.452
-            p: probability of up move over one time interval dt
-            df_T: discount factor over full time interval dt, i.e. per life of an option
-            df_dt: discount factor over one time interval dt, i.e. per step
-
-        Parameters
-        ----------
-        nsteps : int
-            number of steps in a tree, positive number. required.
-
-        Returns
-        -------
-        dict
-            A dictionary of parameters required for lattice tree pricing.
-
-        Examples
-        --------
-        >>> from pprint import pprint
-        >>> pprint(OptionValuation(ref=Stock(S0=42, vol=.2), right='call', K=40, T=.5, rf_r=.1).LT_specs(2))
-        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        {'a': 1.025315120...'d': 0.904837418...'df_T': 0.951229424...
-         'df_dt': 0.975309912...'dt': 0.25, 'p': 0.601385701...'u': 1.105170918...}
-
-        >>> s = Stock(S0=50, vol=.3)
-        >>> pprint(OptionValuation(ref=s,right='put', K=52, T=2, rf_r=.05, desc={'See Hull p.288'}).LT_specs(3))
-        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        {'a': 1.033895113...'d': 0.782744477...'df_T': 0.904837418...
-         'df_dt': 0.967216100...'dt': 0.666...'p': 0.507568158...'u': 1.277556123...}
-
-         """
-        assert isinstance(nsteps, int), 'nsteps must be an integer, >2'
-
-        sp = {'dt': self.T / nsteps}
-        sp['u'] = math.exp(self.ref.vol * math.sqrt(sp['dt']))
-        sp['d'] = 1 / sp['u']
-        sp['a'] = math.exp(self.net_r * sp['dt'])   # growth factor, p.452
-        sp['p'] = (sp['a'] - sp['d']) / (sp['u'] - sp['d'])
-        sp['df_T'] = math.exp(-self.rf_r * self.T)
-        sp['df_dt'] = math.exp(-self.rf_r * sp['dt'])
-
-        return sp
 
     def plot_bt(self, bt=None, ax=None, title=''):
         """ Plots recombining binary tree
@@ -765,13 +817,13 @@ class OptionValuation(OptionSeries):
         >>> o = OptionValuation(rf_r=0.05); pprint(vars(o))
         {'frf_r': 0, 'px_spec': PriceSpec{}, 'rf_r': 0.05, 'seed0': None}
 
-        >>> o.update(rf_r=0.04)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.update(rf_r=0.04)  # doctest: +ELLIPSIS
         OptionValuation...frf_r: 0...rf_r: 0.04...
 
-        >>> o.update(ref=Stock(q=0.01))  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.update(ref=Stock(q=0.01))  # doctest: +ELLIPSIS
         OptionValuation...frf_r: 0...q: 0.01...rf_r: 0.04...
 
-        >>> o.net_r   # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.net_r   # doctest: +ELLIPSIS
         0.03
 
         """
@@ -783,150 +835,7 @@ class OptionValuation(OptionSeries):
 
         return rf_r - q - frf_r   # calculate RFR net of yield and foreign RFR
 
-    def calc_px(self, **kwargs):
-        """ Wrapper pricing function.
-
-        Each exotic option overloads `calc_px()` to accept exotic-specific parameters from user.
-        Then child's `calc_px()` calls `OptionValuation.calc_px()` to check basic pricing parameters
-        and to call the appropriate pricing method.
-
-        Returns
-        -------
-        self, None
-            Returns None, if called on OptionValuation object.
-            Returns self (sub-class), if called on class that inherited OptionValuation (these are exotic classes)
-
-        Examples
-        --------
-
-        >>> OptionValuation().calc_px()  # prints a UserWarning and returns None
-        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE, +IGNORE_EXCEPTION_DETAIL
-
-        >>> from qfrm import *; European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5).calc_px()
-        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        Traceback (most recent call last):
-        ...
-            assert getattr(self, '_signCP') is not None, 'Ooops. Please supply option right: call, put, ...'
-        AttributeError: 'European' object has no attribute '_signCP'
-
-        >>> from qfrm import *; European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').calc_px()
-        ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        European ... px: 3.444364289 ...
-
-        """
-        if self.style is None:
-            warnings.warn('Assure that calc_px() is overloaded by exotic option class.', UserWarning)
-            return None
-
-        else:
-            self.px_spec = PriceSpec(**kwargs)
-            assert getattr(self, 'ref') is not None, 'Ooops. Please supply referenced (underlying) asset, `ref`'
-            assert getattr(self, 'rf_r') is not None, 'Ooops. Please supply risk free rate `rf_r`'
-            assert getattr(self, 'K') is not None, 'Ooops. Please supply strike `K`'
-            assert getattr(self, 'T') is not None, 'Ooops. Please supply time to expiry (in years) `T`'
-            assert getattr(self, '_signCP') is not None, 'Ooops. Please supply option right: call, put, ...'
-
-            return getattr(self, '_calc_' + self.px_spec.method.upper())()
-
-        return None
-
-    def pxBS(self, **kwargs):
-        """ Calls exotic pricing method `calc_px()`
-
-        This property calls `calc_px()` method which should be overloaded
-        by each exotic option class (inheriting OptionValuation)
-
-        Parameters
-        ----------
-        kwargs
-            Pricing parameters required to price this exotic option. See `calc_px()` for specifics and examples.
-
-        Returns
-        -------
-        float
-            price of the exotic option
-
-        Examples
-        --------
-        >>> from qfrm import *
-        >>> European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').pxBS()
-        3.444364289
-
-        """
-        return self.print_value(self.calc_px(method='BS', **kwargs).px_spec.px)
-
-    def pxLT(self, **kwargs):
-        """ Calls exotic pricing method `calc_px()`
-
-        This property calls `calc_px()` method which should be overloaded
-        by each exotic option class (inheriting OptionValuation)
-
-        Parameters
-        ----------
-        kwargs
-            Pricing parameters required to price this exotic option. See `calc_px()` for specifics and examples.
-
-        Returns
-        -------
-        float
-            price of the exotic option
-
-        Examples
-        --------
-        >>> from qfrm import *
-        >>> European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').pxLT()
-        3.669370702
-
-        """
-        return self.print_value(self.calc_px(method='LT', **kwargs).px_spec.px)
-
-    def pxMC(self, **kwargs):
-        """ Calls exotic pricing method `calc_px()`
-
-        This property calls `calc_px()` method which should be overloaded
-        by each exotic option class (inheriting OptionValuation)
-
-        Parameters
-        ----------
-        kwargs
-            Pricing parameters required to price this exotic option. See `calc_px()` for specifics and examples.
-
-        Returns
-        -------
-        float
-            price of the exotic option
-
-        Examples
-        --------
-        >>> from qfrm import *
-        >>> European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').pxMC()
-
-        """
-        return self.print_value(self.calc_px(method='MC', **kwargs).px_spec.px)
-
-    def pxFD(self, **kwargs):
-        """ Calls exotic pricing method `calc_px()`
-
-        This property calls `calc_px()` method which should be overloaded
-        by each exotic option class (inheriting OptionValuation)
-
-        Parameters
-        ----------
-        kwargs
-            Pricing parameters required to price this exotic option. See `calc_px()` for specifics and examples.
-
-        Returns
-        -------
-        float
-            price of the exotic option
 
 
-        Examples
-        --------
-        >>> from qfrm import *
-        >>> European(ref=Stock(S0=50, vol=.2), rf_r=.05, K=50, T=0.5, right='call').pxFD()
-
-        """
-        return self.print_value(self.calc_px(method='FD', **kwargs).px_spec.px)
 
 

@@ -1,56 +1,31 @@
 import numpy as np
-# from pandas import DataFrame
-# import matplotlib.pyplot as plt
-
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
 
 try: from qfrm.European import *  # production:  if qfrm package is installed
 except:   from European import *  # development: if not installed and running from source
 
 
 
-class American(OptionValuation):
-    """ American option class.
+class American(European):
+    """A tool to price `American <https://en.wikipedia.org/wiki/Option_style>`_ options.
 
-    Inherits all methods and properties of ``OptionValuation`` class.
+    Most calculations in ``qfrm`` package are based on research publications, online tools (to verify our calculations)
+    and the following popular texts:
+
+    - *Options, Futures and Other Derivatives* `(OFOD) <http://www-2.rotman.utoronto.ca/~hull/>`_, `John C. Hull <https://en.wikipedia.org/wiki/John_C._Hull>`_, 9ed, 2014, ISBN `0133456315 <http://amzn.com/0133456315>`_
+
     """
 
-    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, rng_seed=0, deg=5):
+    def calc_px(self, deg=5, **kwargs):
         """ Wrapper function that calls appropriate valuation method.
 
-        All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
-        specific pricing method (``_calc_BS()``,...) is called.
-        An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
-        is calculating price via a shorter method wrapper ``.pxBS(...)``.
-        The same works for all methods (BS, LT, MC, FD).
-
-
         Parameters
-        -------------
-        method : str
-            Required. Indicates a valuation method to be used:
-
-            ``BS`` -- Black-Scholes Merton calculation
-
-            ``LT`` -- Lattice tree (such as binary tree or binomial tree)
-
-            ``MC`` -- Monte Carlo simulation methods
-
-            ``FD`` -- finite differencing methods
-        nsteps : int
-            LT, MC, FD methods require number of times steps
-        npaths : int
-            MC, FD methods require number of simulation paths
-        keep_hist : bool
-            If ``True``, historical information (trees, simulations, grid) are saved in ``self.px_spec`` object.
-        rng_seed : int, None
-            (non-negative) integer used to seed random number generator (RNG) for MC pricing.
-
-            ``None`` -- no seeding; generates random sequence for MC
+        ----------
         deg : int
             Degree of polynomial used for least Squares Monte Carlo (LSM) method (in MC pricing).
             Normally, ``deg=5`` is used to fit 5th degree polynomial to payouts at each step in backward induction.
+        kwargs : dict
+            Keyword arguments (``method``, ``nsteps``, ``npaths``, ``keep_hist``, ``rng_seed``, ...)
+            are passed to the parent. See ``European.calc_px()`` for details.
 
         Returns
         -------
@@ -68,12 +43,15 @@ class American(OptionValuation):
 
         *References:*
 
-        - Black's Approximation, OFOD, J.C.Hull, 9ed, 2014, p.346
-        - Control Variate Techniques, OFOD, J.C.Hull, 9ed, 2014, pp.463-465
-        - `The Use of Control Variate Technique in Option-Pricing, J.C.Hull & A.D.White, 2001 <http://1drv.ms/1XR2rQw>`_
-        - `The Closed-form Solution for Pricing American Options, Wang Xiaodong, 2006 <http://1drv.ms/1NaB3rI>`_
-        - `Closed-Form American Call Option Pricing (Teaching notes), Roll-Geske-Whaley, 2008 <http://1drv.ms/1NaB3rI>`_
-        - `Black's approximation (Wikipedia) <https://en.wikipedia.org/wiki/Black%27s_approximation>`_ (dividend call)
+        - Black's Approximation, `OFOD <http://www-2.rotman.utoronto.ca/~hull/ofod/index.html>`_, John C. Hull, 9ed, 2014, p.346
+        - Control Variate Techniques, `OFOD <http://www-2.rotman.utoronto.ca/~hull/ofod/index.html>`_, John C. Hull, 9ed, 2014, pp.463-465
+        - Exact Procedure for Valuing American Calls on Stocks Paying a Single Dividend, `Technical Note #5, J.C.Hull <http://www-2.rotman.utoronto.ca/~hull/technicalnotes/TechnicalNote4.pdf>`_
+        - Analytic Approximation for Valuing American Options, `Technical Note #8, J.C.Hull <http://www-2.rotman.utoronto.ca/~hull/technicalnotes/TechnicalNote8.pdf>`_
+        - The Use of Control Variate Technique in Option-Pricing, `J.C.Hull & A.D.White, 2001 <http://1drv.ms/1XR2rQw>`_
+        - The Closed-form Solution for Pricing American Options, `Wang Xiaodong, 2006 <http://1drv.ms/1NaB3rI>`_
+        - Closed-Form American Call Option Pricing (Teaching notes), `Roll-Geske-Whaley, 2008 <http://1drv.ms/1NFtRrh>`_
+        - Black's approximation `Wikipedia <https://en.wikipedia.org/wiki/Black%27s_approximation>`_
+        - Roll-Geske-Whaley Method to Price American Options. Excel Tool `Samir Khan. <http://investexcel.net/roll-geske-whaley-american-options>`_
 
 
         **Lattice Tree (LT)**, i.e. binomial or binary (recombining) tree pricing.
@@ -83,8 +61,7 @@ class American(OptionValuation):
         OFOD textbook by John C. Hull has an excellent overview of this method with many examples and exercises.
 
         *References:*
-
-        - Binomial Trees, Ch.13, OFOD, J.C.Hull, 9ed, 2014, p.274
+        Binomial Trees, Ch.13, OFOD, J.C.Hull, 9ed, 2014, p.274
 
         **Monte Carlo simulation (MC)**.
         A naive approach is to simulate stock prices, according to Geometric Brownian motion (GBM) model.
@@ -103,13 +80,13 @@ class American(OptionValuation):
 
         *References:*
 
-        - Monte Carlo Simulation and American Options (Ch.27), OFOD, J.C.Hull, 9ed, 2014, pp.646-649
-        - `Valuing American Options by Simulation. A Simple Least-Squares Approach, F.A.Longstaff & E.S.Schwartz, 2001 <http://1drv.ms/1IMLUX0>`_
-        - `Pricing American Options. A Comparison of Monte Carlo Simulation Approaches, M.C.Fu, et al, 1999 <http://1drv.ms/1Q7kItH>`_
-        - `Derivatives Analytics with Python & Numpy, Y.J.Hilpisch, 2011  <http://1drv.ms/21Fuoj6>`_
-        - `Pricing American Options using Monte Carlo Methods, Quiya Jia, 2009. <http://1drv.ms/21FuvLr>`_
-        - `Monte Carlo Simulations for American Options, Russel E. Caflisch, 2005. <http://1drv.ms/1lF24fF>`_
-        - `Pricing options using Monte Carlo simulations, 2013. <http://1drv.ms/1OakkEL>`_
+        - Monte Carlo Simulation and American Options (Ch.27), `OFOD <http://www-2.rotman.utoronto.ca/~hull/ofod/index.html>`_, J.C.Hull, 9ed, 2014, pp.646-649
+        - Valuing American Options by Simulation. A Simple Least-Squares Approach, `F.A.Longstaff & E.S.Schwartz, 2001 <http://1drv.ms/1IMLUX0>`_
+        - Pricing American Options. A Comparison of Monte Carlo Simulation Approaches, `M.C.Fu, et al, 1999 <http://1drv.ms/1Q7kItH>`_
+        - Derivatives Analytics with Python & Numpy, `Y.J.Hilpisch, 2011  <http://1drv.ms/21Fuoj6>`_
+        - Pricing American Options using Monte Carlo Methods, `Quiya Jia, 2009. <http://1drv.ms/21FuvLr>`_
+        - Monte Carlo Simulations for American Options, `Russel E. Caflisch, 2005. <http://1drv.ms/1lF24fF>`_
+        - Pricing options using Monte Carlo simulations, `2013. <http://1drv.ms/1OakkEL>`_
 
 
         Examples
@@ -117,7 +94,7 @@ class American(OptionValuation):
 
         **BS:**
         *Verifiable example:*
-        See `Hull and White paper <http://1drv.ms/1XR2rQw>`_:
+        See `Hull and White <http://1drv.ms/1XR2rQw>`_:
         2nd example in list, on p.246; bottom-right option price of 0.4326 in Table 1,
         since we use control variate for ``n = 100`` (herein ``nsteps = 100``).
 
@@ -181,48 +158,48 @@ class American(OptionValuation):
         **MC:**
 
         >>> s = Stock(S0=50, vol=.3)
-        >>> American(ref=s, right='put', K=52, T=2, rf_r=.05, desc='').pxMC(nsteps=10, npaths=10)
+        >>> American(ref=s, right='put', K=52, T=2, rf_r=.05, desc='').pxMC(nsteps=10, npaths=10, rng_seed=0)
         8.3915333010000008
+
+
+        **Compare:**
+
+        The following compares all available pricing methods for an American option.
+        MC method appears off, but try larger simulations, ``nsteps=10000`` and ``npaths=10000``.
+        Calculation may take a 1-3 minutes.
+
+        >>> s = Stock(S0=40, vol=.2)
+        >>> o = American(ref=s, right='put', K=35, T=.5833, rf_r=.0488, desc='Example From Hull and White 2001')
+        >>> (o.pxBS(), o.pxLT(nsteps=100), o.pxMC(nsteps=100, npaths=1000, rng_seed=0, deg=5))
+        (0.432627059, 0.434706028, 0.41384716900000001)
+
+        Next, we visually compare the convergence performance of 3 methods.
+        Notice the scale on counters ``nsteps`` and ``npaths``.,
+        i.e. plotted horizontal axis has different units for LT and MC methods.
+
+        >>> I = range(1, 11)
+        >>> dBS = [o.pxBS() for i in I]
+        >>> dLT = [o.pxLT(nsteps=2*i) for i in I]
+        >>> dMC = [o.pxMC(nsteps=100, npaths=100*i, rng_seed=0, deg=5) for i in I]
+        >>> from pandas import DataFrame
+        >>> d = DataFrame({'BS': dBS, 'LT': dLT, 'MC': dMC});  d   # doctest: +ELLIPSIS
+                 BS        LT        MC
+        0  0.432627  0.571782  0.804060
+        1  0.432627  0.437243  0.556852
+        ...
+        >>> d.plot(grid=1, title='Price of American vs scaled iterations (3 methods)')  # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot...>
+
 
         :Authors:
             Oleg Melnikov <xisreal@gmail.com>, Andrew Weatherly <andrewweatherly1@gmail.com>
         """
 
-        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, rng_seed=rng_seed, deg=deg)
-
-    def _calc_LT(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
-
-        :Authors:
-            Oleg Melnikov <xisreal@gmail.com>
-        """
-        # from numpy import arange, maximum, log, exp, sqrt
-
-        keep_hist = getattr(self.px_spec, 'keep_hist', False)
-        n = getattr(self.px_spec, 'nsteps', 3)
-        _ = self.LT_specs(n)
-
-        S = Vec(_['d']) ** Util.arange(n, -1, -1) * Vec(_['u']) ** Util.arange(0, n + 1) * self.ref.S0  # terminal stock prices
-        O = Vec(Util.maximum((S - self.K) * self.signCP, 0))          # terminal option payouts
-        S_tree, O_tree  = (tuple(S),), (tuple(O),)      # use tuples of floats (instead of numpy.float)
-
-        for i in range(n, 0, -1):
-            O = (O[:i] * (1 - _['p']) + O[1:] * _['p']) * _['df_dt']  #prior option prices (@time step=i-1)
-            S = S[1:i+1] * _['d']                   # prior stock prices (@time step=i-1)
-            Payout = ((S - self.K) * self.signCP).max(0)   # payout at time step i-1 (moving backward in time)
-            O = O.max(Payout)  #Util.maximum(O, Payout)
-            S_tree, O_tree = (tuple(S),) + S_tree, (tuple(O),) + O_tree
-
-        self.px_spec.add(px=float(Util.demote(O)), method='LT', sub_method='binomial tree; Hull Ch.13',
-                        LT_specs=_, ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
-
-        return self
+        self.save2px_spec(deg=deg, **kwargs)
+        return getattr(self, '_calc_' + self.px_spec.method.upper())()
 
     def _calc_BS(self):
-        """ Internal function for option valuation.
-        See ``calc_px()`` for complete documentation.
+        """ Internal function for option valuation.  See ``calc_px()`` for complete documentation.
 
         :Authors:
             Student name <email...>
@@ -285,22 +262,44 @@ class American(OptionValuation):
             self.px_spec.add(px=float(f_a + (f_bsm - f_e)), method='BSM', sub_method='Control Variate')
         return self
 
+    def _calc_LT(self):
+        """ Internal function for option valuation. See ``calc_px()`` for complete documentation.
+
+        :Authors:
+            Oleg Melnikov <xisreal@gmail.com>
+        """
+        n, keep_hist = self.px_spec.nsteps, self.px_spec.keep_hist
+        _ = self._LT_specs()
+
+        S = Vec(_['d']) ** Util.arange(n, -1, -1) * Vec(_['u']) ** Util.arange(0, n + 1) * self.ref.S0  # terminal stock prices
+        O = Vec(Util.maximum((S - self.K) * self.signCP, 0))          # terminal option payouts
+        S_tree, O_tree  = (tuple(S),), (tuple(O),)      # use tuples of floats (instead of numpy.float)
+
+        for i in range(n, 0, -1):
+            O = (O[:i] * (1 - _['p']) + O[1:] * _['p']) * _['df_dt']  #prior option prices (@time step=i-1)
+            S = S[1:i+1] * _['d']                   # prior stock prices (@time step=i-1)
+            Payout = ((S - self.K) * self.signCP).max(0)   # payout at time step i-1 (moving backward in time)
+            O = O.max(Payout)
+            S_tree, O_tree = (tuple(S),) + S_tree, (tuple(O),) + O_tree
+
+        self.px_spec.add(px=float(Util.demote(O)), sub_method='binomial tree; Hull Ch.13',
+                         ref_tree = S_tree if keep_hist else None, opt_tree = O_tree if keep_hist else None)
+        return self
+
     def _calc_MC(self):
         """ Internal function for option valuation. See ``calc_px()`` for complete documentation.
 
         :Authors:
             Oleg Melnikov <xisreal@gmail.com>
         """
+        rng_seed, deg, n, m = self.px_spec.rng_seed, self.px_spec.deg, self.px_spec.nsteps, self.px_spec.npaths
+        sp = self._LT_specs()
+        dt, df = sp['dt'], sp['df_dt']
 
-        n = getattr(self.px_spec, 'nsteps', 3)
-        m = getattr(self.px_spec, 'npaths', 3)
-        Seed, deg = self.px_spec.rng_seed, self.px_spec.deg
-
-        dt, df = self.LT_specs(n)['dt'], self.LT_specs(n)['df_dt']
         S0, vol = self.ref.S0, self.ref.vol
         K, r, signCP = self.K, self.rf_r, self._signCP
 
-        np.random.seed(Seed)
+        np.random.seed(rng_seed)
         norm_mtx = np.random.normal((r - 0.5 * vol ** 2) * dt, vol * math.sqrt(dt), (n + 1, m))
         S = S0 * np.exp(np.cumsum(norm_mtx, axis=0))
         S[0] = S0
@@ -321,9 +320,7 @@ class American(OptionValuation):
 
     def _calc_FD(self):
         """ Internal function for option valuation. See ``calc_px()`` for complete documentation.
-
-        :Authors:
-            Oleg Melnikov <xisreal@gmail.com>
         """
 
         return self
+

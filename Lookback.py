@@ -1,45 +1,29 @@
 import math
 import numpy as np
 
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+try: from qfrm.European import *  # production:  if qfrm package is installed
+except:   from European import *  # development: if not installed and running from source
 
 
-class Lookback(OptionValuation):
-    """ Lookback option class.
+class Lookback(European):
+    """ `Lookback <https://en.wikipedia.org/wiki/Lookback_option>`_ exotic option class.
 
-    Inherits all methods and properties of OptionValuation class.
     """
 
-    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, Sfl = 50.0):
+    def calc_px(self, Sfl = 50, **kwargs):
         """ Wrapper function that calls appropriate valuation method.
-
-        All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
-        specific pricing method (``_calc_BS()``,...) is called.
-        An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
-        is calculating price via a shorter method wrapper ``.pxBS(...)``.
-        The same works for all methods (BS, LT, MC, FD).
 
         Parameters
         ----------
-        method : str
-            Required. Indicates a valuation method to be used:
-            ``BS``: Black-Scholes Merton calculation
-            ``LT``: Lattice tree (such as binary tree)
-            ``MC``: Monte Carlo simulation methods
-            ``FD``: finite differencing methods
-        nsteps : int
-            LT, MC, FD methods require number of times steps
-        npaths : int
-            MC, FD methods require number of simulation paths
-        keep_hist : bool
-            If ``True``, historical information (trees, simulations, grid) are saved in ``self.px_spec`` object.
         Sfl : float
             Asset floating price.
-            If call option, ``Sfl`` is minimum asset price achieved to date.(If the look back has
-            just been originated, ``Smin = S0``.)
-            If put option, Sfl is maximum asset price achieved to date. (If the look back has just been originated,
-            ``Smax = S0``.)
+            If call option, ``Sfl`` is minimum asset price achieved to date.
+            (If the look back has just been originated, ``Smin = S0``.)
+            If put option, Sfl is maximum asset price achieved to date.
+            (If the look back has just been originated, ``Smax = S0``.)
+        kwargs : dict
+            Keyword arguments (``method``, ``nsteps``, ``npaths``, ``keep_hist``, ``rng_seed``, ...)
+            are passed to the parent. See ``European.calc_px()`` for details.
 
 
         Returns
@@ -51,14 +35,13 @@ class Lookback(OptionValuation):
         Notes
         -----
 
-        Verification of Example:
+        *Verification of Examples:*
 
-        - `Asian options tutorial and Excel spreadsheet <http://investexcel.net/asian-options-excel>`_
-        - John C. Hull, 9ed, 2015, ISBN `0133456315 <http://amzn.com/0133456315>`_  p.608
-        - DerivaGem software that accompanies the textbook
-
-        The LT method might not generate the same result with BS
-        To improve the accuracy, the number of steps can be added
+        - Asian options tutorial and Excel spreadsheet. `Excel Tool. Samir Khan <http://investexcel.net/asian-options-excel>`_
+        - `OFOD <http://www-2.rotman.utoronto.ca/~hull/ofod/index.html>`_, John C. Hull, 9ed, 2015, ISBN `0133456315 <http://amzn.com/0133456315>`_  pp.607-608
+        - DerivaGem software that accompanies `OFOD <http://www-2.rotman.utoronto.ca/~hull/ofod/index.html>`_ (2014) textbook by J.C.Hull
+        - Implementing Binomial Trees, `Manfred Gilli and Enrico Schumann, 2009   <http://1drv.ms/1NF8w13>`_
+        - Valuation of lookback options. `Online tool <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=lookback.html>`_
 
         Examples
         --------
@@ -70,7 +53,7 @@ class Lookback(OptionValuation):
         >>> o.pxBS(Sfl = 50.0)
         8.03712014
 
-        >>> o.calc_px(method = 'BS', Sfl = 50.0) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.calc_px(method = 'BS', Sfl = 50.0) # doctest: +ELLIPSIS
         Lookback...px: 8.03712014...
 
         >>> s = Stock(S0=50, vol=.4, q=.0)
@@ -78,49 +61,46 @@ class Lookback(OptionValuation):
         >>> o.pxBS(Sfl = 50.0)
         7.79021926
 
-        >>> o.px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        >>> o.px_spec # doctest: +ELLIPSIS
         PriceSpec...px: 7.79021926...
 
         >>> from pandas import Series;  expiries = range(1,11)
         >>> O = Series([o.update(T=t).calc_px(method='BS').px_spec.px for t in expiries], expiries)
         >>> O.plot(grid=1, title='BS Price vs expiry (in years)')  # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
-        >>> import matplotlib.pyplot as plt
-        >>> plt.show()
 
 
         **LT**
 
-        >>> s = Stock(S0=25., vol=.2, q=.00)
-        >>> o = Lookback(ref=s, right='call', K=30, T=0.25, rf_r=.01)
-        >>> o.pxLT(nsteps=100,keep_hist=False)
-        1.929364513
+        >>> s = Stock(S0=35., vol=.05, q=.00)
+        >>> o = Lookback(ref=s, right='call', K=30, T=0.25, rf_r=.1, desc='Hull p607')
+        >>> o.pxLT(nsteps=100, Sfl = 50.0)
+        1.829899147
 
-        >>> o.px_spec # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-        PriceSpec...px: 1.929364513...
+        >>> o.px_spec # doctest: +ELLIPSIS
+        PriceSpec...px: 1.829899147...
 
-        >>> s = Stock(S0=30., vol=.25, q=.0)
-        >>> o = Lookback(ref=s, right='call', T=0.5, K=30, rf_r=.01)
-        >>> o.pxLT(nsteps=100,keep_hist=False)
-        3.929525986
+        >>> s = Stock(S0=50., vol=.4, q=.0)
+        >>> o = Lookback(ref=s, right='call', T=3/12, K=30, rf_r=.1, desc='Hull p607')
+        >>> o.pxLT(nsteps=1000,keep_hist=False, Sfl = 50.0)
+        8.135758904
 
 
-        >>> s = Stock(S0=5., vol=.1, q=.0)
-        >>> o = Lookback(ref=s, right='put', T=0.5, K=30, rf_r=.02)
-        >>> o.pxLT(nsteps=100,keep_hist=False, Sfl = 50.0)
-        0.243407268
+        >>> s = Stock(S0=100., vol=.02, q=.0)
+        >>> o = Lookback(ref=s, right='call', T=3, K=30, rf_r=.01, desc='Hull p607')
+        >>> o.pxLT(nsteps=50,keep_hist=False, Sfl = 50.0)
+        6.436996103
 
         >>> from pandas import Series
         >>> expiries = range(1,11)
         >>> O = Series([o.update(T=t).calc_px(method='LT', nsteps=5).px_spec.px for t in expiries], expiries)
         >>> O.plot(grid=1, title='Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
-        >>> import matplotlib.pyplot as plt
-        >>> plt.show()
+
 
         **FD**
         Note: FD price is sensitive to nsteps. Since computation time is short for nsteps>10, an optimal nsteps=19
-+        is given in examples.
+        is given in examples.
 
         >>> s = Stock(S0=50, vol=.4, q=.0)
         >>> o = Lookback(ref=s, right='put', K=50, T=0.25, rf_r=.1, desc='Example from Hull Ch.26 Example 26.2 (p608)')
@@ -137,38 +117,27 @@ class Lookback(OptionValuation):
         >>> O = Series([o.update(T=t).pxFD(Sfl = 50.0, nsteps=3, npaths=19) for t in expiries], expiries)
         >>> O.plot(grid=1, title='FD Price vs expiry (in years)') # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
-        >>> import matplotlib.pyplot as plt
-        >>> plt.show()
+
 
         :Authors:
             Mengyan Xie <xiemengy@gmail.com>,
             Hanting Li <hl45@rice.edu>,
             Yen-fei Chen <yensfly@gmail.com>
        """
-        self.Sfl = Sfl
-        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, Sfl = Sfl)
+        self.save2px_spec(Sfl=Sfl, **kwargs)
+        return getattr(self, '_calc_' + self.px_spec.method.upper())()
+
 
     def _calc_LT(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
-
-
-        Notes
-        -----
-        Implementing Binomial Trees   `<http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181>`_
-        John C. Hull, 9ed, 2014, ISBN 0133456315 `<http://amzn.com/0133456315>`_  p.607
+        """ Internal function for option valuation.        See ``calc_px()`` for complete documentation.
 
         :Authors:
             Hanting Li <hl45@rice.edu>
-
         """
-
-
 
         keep_hist = getattr(self.px_spec, 'keep_hist', False)
         n = getattr(self.px_spec, 'nsteps', 3)
-        _ = self.LT_specs(n)
+        _ = self._LT_specs()
 
         # Get the Price based on Binomial Tree
         S = (self.ref.S0,)
@@ -205,14 +174,7 @@ class Lookback(OptionValuation):
         return self
 
     def _calc_BS(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
-
-        Notes
-        -----
-        John C. Hull, 9ed, 2014, ISBN 0133456315 `<http://amzn.com/0133456315>`_  p.607
-        Lookback option on Wikipedia `<https://goo.gl/euwJeE>`_
+        """ Internal function for option valuation.        See ``calc_px()`` for complete documentation.
 
         :Authors:
             Mengyan Xie <xiemengy@gmail.com>
@@ -264,16 +226,12 @@ class Lookback(OptionValuation):
         return self
 
     def _calc_MC(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
+        """ Internal function for option valuation.        See ``calc_px()`` for complete documentation.
         """
         return self
 
     def _calc_FD(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
+        """ Internal function for option valuation.        See ``calc_px()`` for complete documentation.
 
         :Authors:
             Yen-fei Chen <yensfly@gmail.com>
@@ -294,16 +252,16 @@ class Lookback(OptionValuation):
 
         # set up boundary condition
         p = np.zeros((N+1, M+1)) # FD option price storage
-        p[-1,:] = np.array(np.maximum(_.signCP*(S-_.Sfl), [0]*(M+1))) # option price when t=T
-        p[:,-1] = np.array( [np.maximum(_.signCP*(Smax-_.Sfl), 0)]*(N+1) ) # option price when S=Smax
-        p[:,0] = np.array( [np.maximum(_.signCP*(0-_.Sfl), 0)]*(N+1) ) # option price when S=0
+        p[-1,:] = np.array(np.maximum(_.signCP*(S-_.px_spec.Sfl), [0]*(M+1))) # option price when t=T
+        p[:,-1] = np.array( [np.maximum(_.signCP*(Smax-_.px_spec.Sfl), 0)]*(N+1) ) # option price when S=Smax
+        p[:,0] = np.array( [np.maximum(_.signCP*(0-_.px_spec.Sfl), 0)]*(N+1) ) # option price when S=0
 
         for i in range(N,0,-1):
             y = np.zeros(M-1)
             y[0] = a[0]*p[i,0]
             y[-1] = c[-1]*p[i,-1]
             p[i-1,1:M] = np.dot(p[i,1:M],A)+y
-            p[i-1,:] = np.maximum(_.signCP*(S-_.Sfl), p[i-1,:])
+            p[i-1,:] = np.maximum(_.signCP*(S-_.px_spec.Sfl), p[i-1,:])
 
 
         if _.signCP==1:

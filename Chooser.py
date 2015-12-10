@@ -3,11 +3,11 @@ import numpy as np
 import scipy.linalg as la
 import matplotlib.pyplot as plt
 
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+try: from qfrm.European import *  # production:  if qfrm package is installed
+except:   from European import *  # development: if not installed and running from source
 
 
-class Chooser(OptionValuation):
+class Chooser(European):
     """ Chooser option class.
 
     Inherits all methods and properties of OptionValuation class.
@@ -16,31 +16,16 @@ class Chooser(OptionValuation):
     date regardless of what decision the holder ultimately makes.
     """
 
-    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, tau=None):
+    def calc_px(self, tau=None, **kwargs):
         """ Wrapper function that calls appropriate valuation method.
-
-        All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
-        specific pricing method (``_calc_BS()``,...) is called.
-        An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
-        is calculating price via a shorter method wrapper ``.pxBS(...)``.
-        The same works for all methods (BS, LT, MC, FD).
 
         Parameters
         ----------
-        method : str
-                Required. Indicates a valuation method to be used:
-                ``BS``: Black-Scholes Merton calculation
-                ``LT``: Lattice tree (such as binary tree)
-                ``MC``: Monte Carlo simulation methods
-                ``FD``: finite differencing methods
-        nsteps : int
-                LT, MC, FD methods require number of times steps
-        npaths : int
-                MC, FD methods require number of simulation paths
-        keep_hist : bool
-                If True, historical information (trees, simulations, grid) are saved in self.px_spec object.
         tau : float
                 Time to choose whether this option is a call or put.
+        kwargs : dict
+            Keyword arguments (``method``, ``nsteps``, ``npaths``, ``keep_hist``, ``rng_seed``, ...)
+            are passed to the parent. See ``European.calc_px()`` for details.
 
         Returns
         -------
@@ -51,18 +36,25 @@ class Chooser(OptionValuation):
         Notes
         ------
 
+        *References:*
 
-        **FD Notes**
+        - Chooser Options (Ch.26-8), `OFOD <http://www-2.rotman.utoronto.ca/~hull/ofod/index.html>`_, J.C.Hull, 9ed, pp.603-604
+        - Chooser option, `(Lecture 4 Notes) MFE5010 Exotic Options, Lim Tiong Wee, <http://1drv.ms/1TA5oUm>`_
+        - Binomial Tree pricing for Compound, Chooser, Shout. `Excel tool. <http://goo.gl/AdgcqY>`_
+        - Pricing Simple and Complex Chooser Options with Excel `Excel tool. Samir Khan. <http://investexcel.net/pricing-chooser-options-excel/>`_
+
+        **FD**
 
         Mathworks Chooser BSM result gives a price of 8.9308 for the first FD example, below.
         See: `MathWorks chooserbybls() documentation
         <http://www.mathworks.com/help/fininst/chooserbybls.html>`_. The difference between the
         BSM result and the FD result is a discretization error.
 
+
         Examples
         --------
 
-        **BS Examples**
+        **BS**
         Verify resource: `EXOTIC OPTIONS: A CHOOSER OPTION AND ITS PRICING, Raimonda, 2012, <https://goo.gl/2KR3QX>`_
 
         >>> s = Stock(S0=50, vol=0.2, q=0.05)
@@ -80,7 +72,7 @@ class Chooser(OptionValuation):
         >>> o.pxBS(tau=3/12)
         5.777578344
 
-        **LT Examples**
+        **LT**
         Verify resource: `EXOTIC OPTIONS: A CHOOSER OPTION AND ITS PRICING, Raimonda, 2012, <https://goo.gl/2KR3QX>`_
 
         >>> s = Stock(S0=50, vol=0.2, q=0.05)
@@ -104,8 +96,8 @@ class Chooser(OptionValuation):
         <matplotlib.axes._subplots.AxesSubplot object at ...>
         >>> import matplotlib.pyplot as plt
         >>> plt.show()
-        
-        **FD Examples**
+
+        **FD**
 
         First example: see referenced result for comparison
 
@@ -113,57 +105,48 @@ class Chooser(OptionValuation):
         >>> o = Chooser(ref=s, right='put', K=60, T=6/12, rf_r=.1, desc= 'Mathworks example')
         >>> o.pxFD(tau=3/12,nsteps=100,npaths=100) # doctest: +ELLIPSIS
         8.94395152...
-        
+
         Second example: coarsen the grid to increase deviation from the BSM price
 
         >>> s = Stock(S0=50, vol=0.2, q=0.05)
         >>> o = Chooser(ref=s, right='put', K=60, T=6/12, rf_r=.1, desc= 'Mathworks example')
         >>> o.pxFD(tau=3/12,nsteps=10,npaths=10) # doctest: +ELLIPSIS
         9.49812976...
-        
+
         Third example: Change the maturity
 
         >>> s = Stock(S0=50, vol=0.2, q=0.05)
         >>> o = Chooser(ref=s, right='put', K=60, T=12/12, rf_r=.1, desc= 'Mathworks example')
         >>> o.pxFD(tau=3/12,nsteps=100,npaths=100) # doctest: +ELLIPSIS
         8.49747834...
-        
+
         Fourth example: make choice at t=0: price collapses to a European call.
 
         >>> s = Stock(S0=50, vol=0.2, q=0.05)
         >>> o = Chooser(ref=s, right='put', K=60, T=12/12, rf_r=.1, desc= 'Mathworks example')
         >>> o.pxFD(tau=0/12,nsteps=100,npaths=100) # doctest: +ELLIPSIS
         8.27396786...
-        
+
         Vectorization example with plot: exploration of tau-space.
 
         >>> tarr = np.linspace(0,12/12,11)
         >>> px = tuple(map(lambda i: Chooser(ref=s, right='put', K=60, T=12/12, rf_r=.1).pxFD(tau=tarr[i],nsteps=100,
         ... npaths=100), range(tarr.shape[0])))
         >>> fig = plt.figure()
-        >>> ax = fig.add_subplot(111) 
+        >>> ax = fig.add_subplot(111)
         >>> ax.plot(tarr,px,label='Chooser') # doctest: +ELLIPSIS
         [<...>]
         >>> ax.set_title('Price of Chooser vs tau') # doctest: +ELLIPSIS
         <...>
         >>> ax.set_ylabel('Px') # doctest: +ELLIPSIS
         <...>
-        >>> ax.set_xlabel('tau') # doctest: +ELLIPSIS 
+        >>> ax.set_xlabel('tau') # doctest: +ELLIPSIS
         <...>
         >>> ax.grid()
         >>> ax.legend() # doctest: +ELLIPSIS
         <...>
         >>> plt.show()
-        
 
-        See Also
-        ---------
-        `Options, Futures and Other Derivatives, Hull, 2014, <http://www-2.rotman.utoronto.ca/~hull/ofod/index.html>`_
-
-        `Option Pricing Formulas, Huang Espen, <http://down.cenet.org.cn/upfile/10/20083212958160.pdf>`_
-
-        `MFE5010 Exotic Options,Notes for Lecture 4 Chooser option, Wee, Lim Tiong,
-        <http://www.stat.nus.edu.sg/~stalimtw/MFE5010/PDF/L4chooser.pdf>`_
 
         :Authors:
             Thawda Aung,
@@ -171,8 +154,12 @@ class Chooser(OptionValuation):
             Andy Liao <Andy.Liao@rice.edu>
 
         """
-        self.tau = float(tau)
-        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
+        self.save2px_spec(tau=tau, **kwargs)
+
+        return getattr(self, '_calc_' + self.px_spec.method.upper())()
+
+        # self.tau = float(tau)
+        # return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
 
     def _calc_BS(self):
         """ Internal function for option valuation.
@@ -184,13 +171,14 @@ class Chooser(OptionValuation):
         """
 
         _ = self
+        tau = self.px_spec.tau
         N = Util.norm_cdf
 
         d2 = (math.log(_.ref.S0/_.K) + ((_.rf_r - _.ref.q  - _.ref.vol**2/2)*_.T) ) / ( _.ref.vol * math.sqrt(_.T))
         d1 =  d2 + _.ref.vol * math.sqrt(_.T)
 
-        d2n = (math.log(_.ref.S0/_.K)+(_.rf_r - _.ref.q)*_.T-_.ref.vol**2*_.tau /2) / ( _.ref.vol * math.sqrt(_.tau))
-        d1n = d2n + _.ref.vol * math.sqrt(_.tau)
+        d2n = (math.log(_.ref.S0/_.K)+(_.rf_r - _.ref.q)*_.T-_.ref.vol**2*tau /2) / ( _.ref.vol * math.sqrt(tau))
+        d1n = d2n + _.ref.vol * math.sqrt(tau)
 
         px = _.ref.S0 * math.exp(-_.ref.q * _.T) * N(d1) - _.K* math.exp(-_.rf_r * _.T ) * N(d2) +\
              _.K* math.exp(-_.rf_r * _.T ) * N(-d2n)  - _.ref.S0* math.exp(-_.ref.q * _.T) * N(-d1n)
@@ -206,8 +194,8 @@ class Chooser(OptionValuation):
         :Authors:
             Yen-fei Chen <yensfly@gmail.com>
         """
-        n = getattr(self.px_spec, 'nsteps', 3)
-        _ = self.LT_specs(n)
+        n = self.px_spec.nsteps
+        _ = self._LT_specs()
 
         S = self.ref.S0 * _['d'] ** np.arange(n, -1, -1) * _['u'] ** np.arange(0, n + 1)
         O = np.maximum(np.maximum((S - self.K), 0), np.maximum(-1*(S - self.K), 0))
@@ -258,30 +246,30 @@ class Chooser(OptionValuation):
 
         #List all the parameters used in calculation
         _ = self
-        
+
         S0 = _.ref.S0
         vol = _.ref.vol
         q = _.ref.q
         r = _.rf_r
         K = _.K
-        tau = _.tau
+        tau = _.px_spec.tau
         T = _.T
         N = _.px_spec.nsteps
         M = _.px_spec.npaths
-        
+
         #Grid parameters
         Smax = 2*K
         dt = T/float(N)
         dS = Smax/float(M)
         ival = np.arange(M)
         jval = np.arange(N)
-        
+
         #Set up grid
         grid = np.zeros(shape=(M+1,N+1))
         bcs = np.linspace(0,Smax,M+1)
-        
+
         #Calculation as given in Hull 9e. section 26.8, page 604.
-        #We use the Crank-Nicholson method to:        
+        #We use the Crank-Nicholson method to:
         #Compute the price of a European call with maturity T and strike K
         #Set up BC's
         grid[:,-1] = np.maximum(bcs-K,0)
@@ -299,7 +287,7 @@ class Chooser(OptionValuation):
             x2 = la.solve(U, x1)
             grid[1:M,j] = x2
         cpx = np.interp(S0,bcs,grid[:,0])
-        
+
         #Compute the price of a European put with maturity tau and strike K*exp(-(r-q)*(T-tau))
         grid = np.zeros(shape=(M+1,N+1))
         Kau = K*np.exp(-r*(T-tau))
@@ -322,9 +310,9 @@ class Chooser(OptionValuation):
             x1 = la.solve(L, np.dot(M2,grid[1:M,j+1]))
             x2 = la.solve(U, x1)
             grid[1:M,j] = x2
-        ppx = np.interp(S1,bcs,grid[:,0])        
+        ppx = np.interp(S1,bcs,grid[:,0])
 
-        #Sum of above call and put prices is the Chooser price.        
+        #Sum of above call and put prices is the Chooser price.
         _.px_spec.add(px=cpx+ppx)
 
         return self

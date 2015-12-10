@@ -2,41 +2,26 @@ import math
 import numpy as np
 import scipy
 
-try: from qfrm.OptionValuation import *  # production:  if qfrm package is installed
-except:   from OptionValuation import *  # development: if not installed and running from source
+try: from qfrm.European import *  # production:  if qfrm package is installed
+except:   from European import *  # development: if not installed and running from source
 
 
-class Exchange(OptionValuation):
+class Exchange(European):
     """ Exchange option class.
 
     Inherits all methods and properties of OptionValuation class.
     """
 
-    def calc_px(self, method='BS', nsteps=None, npaths=None, keep_hist=False, cor=0.1):
+    def calc_px(self, cor=0.1, **kwargs):
         """ Wrapper function that calls appropriate valuation method.
-
-        All parameters of ``calc_px`` are saved to local ``px_spec`` variable of class ``PriceSpec`` before
-        specific pricing method (``_calc_BS()``,...) is called.
-        An alternative to price calculation method ``.calc_px(method='BS',...).px_spec.px``
-        is calculating price via a shorter method wrapper ``.pxBS(...)``.
-        The same works for all methods (BS, LT, MC, FD).
 
         Parameters
         ----------
-        method : str
-                Required. Indicates a valuation method to be used:
-                ``BS``: Black-Scholes Merton calculation
-                ``LT``: Lattice tree (such as binary tree)
-                ``MC``: Monte Carlo simulation methods
-                ``FD``: finite differencing methods
-        nsteps : int
-                LT, MC, FD methods require number of times steps
-        npaths : int
-                MC, FD methods require number of simulation paths
-        keep_hist : bool
-                If ``True``, historical information (trees, simulations, grid) are saved in ``self.px_spec`` object.
         cor: float, between 0 and 1
                 Required. This specifies the correlation between the two assets of interest.
+        kwargs : dict
+            Keyword arguments (``method``, ``nsteps``, ``npaths``, ``keep_hist``, ``rng_seed``, ...)
+            are passed to the parent. See ``European.calc_px()`` for details.
 
         Returns
         -------
@@ -47,7 +32,6 @@ class Exchange(OptionValuation):
         -----
 
         *Important:*
-
 
         - In my implementation of all the pricers of exhange option, I assume that this is an option to exchange
         the first asset for the second. The payoff profile is ``max{S0_2(T)-S0_1(T),0}`` where ``S0_2(T)`` \
@@ -61,6 +45,14 @@ class Exchange(OptionValuation):
         converge, when you set ``npaths`` which determines the delta_s, \
         please make sure ``S0_1``, namely ``S0[0]`` is a multiple of delta_s, namely the interval between\
         consecutive prices.
+
+        *References:*
+
+        - Exchange Options, `Lim Tiong Wee, p.4 <http://1drv.ms/1SNuK0X>`_
+        - The Value of an Option to Exchange One Asset for Another, `William Margrabe, 1978 <http://1drv.ms/1SNuQFX>`_
+        - Exchange Options – Introduction and Pricing Spreadsheet. `Excel tool. Samir Khan <http://investexcel.net/exchange-options-excel/>`_
+        - Evaluation of Exchange Options. `Online option pricer <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=echange.html>`_
+
 
         Examples
         --------
@@ -132,7 +124,7 @@ class Exchange(OptionValuation):
         PriceSpec...px: 3.993309432...
 
         >>> (o.px_spec.px, o.px_spec.method)  # alternative attribute access
-        (3.993309432456476, 'FD')
+        (3.993309432456474, 'FD')
 
         >>> Exchange(clone=o).pxFD(cor=0.75, nsteps=10, npaths=9)
         3.993309432
@@ -159,13 +151,12 @@ class Exchange(OptionValuation):
         :Authors:
             Tianyi Yao <ty13@rice.edu>
         """
-        self.cor = cor
-        return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist, cor=cor)
+
+        self.save2px_spec(cor=cor, **kwargs)
+        return getattr(self, '_calc_' + self.px_spec.method.upper())()
 
     def _calc_BS(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
+        """ Internal function for option valuation.   See ``calc_px()`` for complete documentation.
 
         :Authors:
             Tianyi Yao <ty13@rice.edu>
@@ -183,8 +174,9 @@ class Exchange(OptionValuation):
         q = _.ref.q
         q_1 = q[0] #annualized dividend yield of asset 1
         q_2 = q[1] #annualized dividend yield of asset 2
-        cor = _.cor #correlation coefficient between the two assets
+        cor = _.px_spec.cor #correlation coefficient between the two assets
         T = _.T
+        N = Util.norm_cdf
 
 
         #compute necessary parameters
@@ -192,41 +184,28 @@ class Exchange(OptionValuation):
         d1 = (np.log(S0_2 / S0_1) + ((q_1 - q_2 + (vol_a / 2)) * T)) / (np.sqrt(vol_a) * np.sqrt(T))
         d2 = d1 - np.sqrt(vol_a) * np.sqrt(T)
 
-        px = (S0_2 * np.exp(-q_2 * T) * Util.norm_cdf(d1) - S0_1 * np.exp(-q_1 * T) * Util.norm_cdf(d2))
+        px = (S0_2 * np.exp(-q_2 * T) * N(d1) - S0_1 * np.exp(-q_1 * T) * N(d2))
 
         self.px_spec.add(px=float(px), sub_method=None, d1=d1, d2=d2)
 
         return self
 
     def _calc_LT(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
-
-        :Authors:
-
+        """ Internal function for option valuation.        See ``calc_px()`` for complete documentation.
         """
 
         return self
 
     def _calc_MC(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
-
-        :Authors:
-
+        """ Internal function for option valuation.        See ``calc_px()`` for complete documentation.
         """
         return self
 
     def _calc_FD(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
+        """ Internal function for option valuation.        See ``calc_px()`` for complete documentation.
 
         :Authors:
             Tianyi Yao <ty13@rice.edu>
-
         """
 
         # Get parameters
@@ -251,7 +230,7 @@ class Exchange(OptionValuation):
         r = _.rf_r
         _.K = S0_2 * np.exp((r - q_2) * ttm)
         K = _.K
-        cor = _.cor
+        cor = _.px_spec.cor
         #compute exchange option specific parameters
         vol_a = np.sqrt((vol_1 ** 2) + (vol_2 ** 2) - 2 * cor * vol_1 * vol_2)
 
