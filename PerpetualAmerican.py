@@ -73,16 +73,20 @@ class PerpetualAmerican(European):
         >>> o.update(right='put').calc_px()  # doctest: +ELLIPSIS
         PerpetualAmerican...px: 13.427262535...
 
-        Example of option price development (BS method) with increasing maturities
-        (This would give a horizontal line because this perpetual American option does not have an expiry)
 
-        >>> from pandas import Series
-        >>> expiries = range(1,11)
-        >>> O = Series([o.update(T=t).calc_px(method='BS').px_spec.px for t in expiries], expiries)
-        >>> O.plot(grid=1, title='Perpetual American (BS) price vs expiry (in years)') # doctest: +ELLIPSIS
-        <matplotlib.axes._subplots.AxesSubplot object at ...>
-        >>> import matplotlib.pyplot as plt
-        >>> plt.show()
+        Next example shows sensitivity of perpetual American option's price to changes in volatility and strike.
+
+        >>> from pandas import DataFrame
+        >>> Ks = [30 + 4 * i for i in range(11)];   # a range of strikes
+        >>> Ts = tuple(range(1, 101)) # a range of expiries
+        >>> vols = [.05 + .025 * i for i in range(11)];   # a range of strikes
+        >>> def px(vol, K):
+        ...     s = Stock(S0=50, vol=vol, q=0.02)
+        ...     return PerpetualAmerican(ref=s, right='call', K=K, rf_r=.05).pxBS()
+        >>> px_grid = [[px(vol=vol, K=K) for vol in vols] for K in Ks]
+        >>> DataFrame(px_grid, columns=Ks).plot(grid=1, title='BS strike vs vol at varying strikes, for ' + o.specs)  # doctest: +ELLIPSIS
+        <matplotlib.axes._subplots.AxesSubplot object at 0x...>
+
 
         :Authors:
             Tianyi Yao <ty13@rice.edu>
