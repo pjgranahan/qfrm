@@ -162,9 +162,7 @@ class Chooser(European):
         # return super().calc_px(method=method, nsteps=nsteps, npaths=npaths, keep_hist=keep_hist)
 
     def _calc_BS(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
+        """ Internal function for option valuation.     See ``calc_px()`` for complete documentation.
 
         :Authors:
             Thawda Aung
@@ -187,9 +185,7 @@ class Chooser(European):
         return self
 
     def _calc_LT(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
+        """ Internal function for option valuation.        See ``calc_px()`` for complete documentation.
 
         :Authors:
             Yen-fei Chen <yensfly@gmail.com>
@@ -224,9 +220,7 @@ class Chooser(European):
         return self
 
     def _calc_MC(self, nsteps=3, npaths=4, keep_hist=False):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
+        """ Internal function for option valuation.        See ``calc_px()`` for complete documentation.
 
         :Authors:
             Andrew Weatherly <amw13@rice.edu>

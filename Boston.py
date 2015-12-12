@@ -76,7 +76,7 @@ class Boston(European):
         # return getattr(self, '_calc_' + method.upper())()
 
     def _calc_LT(self):
-        """ Internal function for option valuation.
+        """ Internal function for option valuation. See ``calc_px()`` for complete documentation.
 
         :Authors:
             Andrew Weatherly

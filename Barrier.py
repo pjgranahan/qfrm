@@ -50,6 +50,8 @@ class Barrier(European):
         - See OFOD, J.C.Hull, 9ed, 2014, pp.604-606, pp.640-643.
         - Barrier Option Pricing. `CoggIt.com, Free Tools. <http://www.coggit.com/freetools>`_
         - Valuation of Up-In and Up-Out barrier options. `Online option pricer. <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=barriereUp.html>`_
+        - Binomial Trees for Barrier Options (Ch.8, FCFE Course, NTU) `Jr-Yan Wang, 2015 <http://goo.gl/zcPhJe>`_
+        - `In-Out Parity <http://www.iam.uni-bonn.de/people/ankirchner/lectures/OP_WS1314/OP_chap_nine.pdf>`_
 
         Examples
         ---------
@@ -271,13 +273,6 @@ class Barrier(European):
 
     def _calc_LT(self):
         """ Internal function for option valuation.  See ``calc_px()`` for complete documentation.
-
-        Notes
-        -----
-        - `Binomial Trees for Barrier Options:   <http://goo.gl/zcPhJe>`_
-        - `In-Out Parity <http://www.iam.uni-bonn.de/people/ankirchner/lectures/OP_WS1314/OP_chap_nine.pdf>`_
-        - `Verify Examples
-          <http://www.fintools.com/resources/online-calculators/exotics-calculators/exoticscalc-barrier>`_
 
         :Authors:
             Scott Morgan

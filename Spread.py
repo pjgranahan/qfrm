@@ -166,19 +166,7 @@ class Spread(European):
         return self
 
     def _calc_FD(self):
-        """ Internal function for option valuation.
-
-        Returns
-        -------
-        self: Spread
-
-        .. sectionauthor::
-
-        Note
-        ----
-
-        """
-
+        """ Internal function for option valuation.        """
         return self
 
 

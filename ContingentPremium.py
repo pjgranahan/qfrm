@@ -100,7 +100,7 @@ class ContingentPremium(European):
         # return getattr(self, '_calc_' + method.upper())()
 
     def _calc_BS(self):
-        """Internal function for option valuation.  Black Scholes Closed Form Solution
+        """Internal function for option valuation.  See ``calc_px()`` for complete documentation.
 
         :Authors:
             Andrew Weatherly
@@ -112,7 +112,7 @@ class ContingentPremium(European):
             Util.norm_cdf(d2) - self.K
 
     def _calc_LT(self):
-        """ Internal function for option valuation.
+        """ Internal function for option valuation. See ``calc_px()`` for complete documentation.
 
         :Authors:
             Andrew Weatherly
@@ -158,7 +158,9 @@ class ContingentPremium(European):
         return self
 
     def _calc_MC(self):
-        """Internal function for option valuation.  Monte Carlo Simulation Numerical Method
+        """Internal function for option valuation. See ``calc_px()`` for complete documentation.
+
+         Monte Carlo Simulation Numerical Method
 
         :Authors:
             Andrew Weatherly

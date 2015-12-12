@@ -42,32 +42,26 @@ class Rainbow(European):
 
         >>> s = Stock(S0=(100, 50), vol=(.25, .45))
         >>> o = Rainbow(ref=s, right='call', K=40, T=.25, rf_r=.05, desc="See p.23 of Marshall's paper")
-<<<<<<< HEAD
-        >>> o.calc_px(method='MC', corr=0.65, nsteps=100, npaths=100000, rng_seed=0)  # doctest: +ELLIPSIS
-        Rainbow...px: 7.483507418...
-
-
-        >>> s = Stock(S0=(100, 50), vol=(.25, .45))
-        >>> o = Rainbow(ref=s, right='put', K=55, T=0.25, rf_r=.05, desc='Hull p.612')
-        >>> o.pxMC(corr=0.65, nsteps=1000, npaths=10000, rng_seed=2)
-        5.999746184
-=======
         >>> o.pxMC(corr=0.65, nsteps=100, npaths=1000, rng_seed=0); o  # doctest: +ELLIPSIS
         7.576492715...
 
         >>> s = Stock(S0=(100, 50), vol=(.25, .45))
         >>> o = Rainbow(ref=s, right='put', K=55, T=0.25, rf_r=.05, desc='Hull p.612')
-        >>> o.pxMC(corr=0.65, nsteps=100, npaths=1000, rng_seed=2)
-        6.180473873
->>>>>>> Oleg_European_parent
+        >>> o.pxMC(corr=0.65, nsteps=100, npaths=1000, rng_seed=2); o   # doctest: +ELLIPSIS
+        6.180473873...
+
+        >>> s = Stock(S0=(100, 50), vol=(.25, .45))
+        >>> o = Rainbow(ref=s, right='put', K=55, T=0.25, rf_r=.05, desc='Hull p.612')
+        >>> o.pxMC(corr=0.65, nsteps=100, npaths=1000, rng_seed=2); o     # doctest: +ELLIPSIS
+        6.180473873...
+
+        Raise iterations for higher precision price.
 
         >>> from pandas import Series
         >>> Ts = range(1, 21)   # expiries, in years
         >>> O = Series([o.update(T=t).pxMC(corr=0.65, nsteps=100, npaths=1000) for t in Ts], Ts)
         >>> O.plot(grid=1, title='MC price vs time to expiry (in years) for ' + o.specs) # doctest: +ELLIPSIS
         <matplotlib.axes._subplots.AxesSubplot object at ...>
-        >>> import matplotlib.pyplot as plt
-        >>> plt.show()
 
 
         :Authors:

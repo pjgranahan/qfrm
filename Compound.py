@@ -107,19 +107,19 @@ class Compound(European):
         return getattr(self, '_calc_' + self.px_spec.method.upper())()
 
     def _calc_LT(self):
-        """ Internal function for option valuation.        """
+        """ Internal function for option valuation.   See ``calc_px()`` for complete documentation.     """
         return self
 
     def _calc_BS(self):
-        """ Internal function for option valuation.       """
+        """ Internal function for option valuation.  See ``calc_px()`` for complete documentation.     """
         return self
 
     def _calc_MC(self):
-        """ Internal function for option valuation.        """
+        """ Internal function for option valuation. See ``calc_px()`` for complete documentation.       """
         return self
 
     def _calc_FD(self):
-        """ Internal function for option valuation.
+        """ Internal function for option valuation. See ``calc_px()`` for complete documentation.
 
         :Authors:
             Scott Morgan

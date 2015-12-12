@@ -48,6 +48,7 @@ class Binary(European):
         - Excel Spreadsheets for Binary Options, `Excel tool. Samir Khan <http://investexcel.net/excel-binary-options/>`_
         - Pricing of binary options. `Online option pricer. <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=binaire.html>`_
         - Extending [MC] model to price binary options, `2013. <http://www.codeandfinance.com/extending-price-binary-options.html>`_
+        - Implementing Binomial Trees, `Manfred Gilli & Enrico Schumann, 2009 <http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181>`_
 
         Examples
         ------------
@@ -303,11 +304,6 @@ class Binary(European):
     def _calc_LT(self):
         """ Internal function for option valuation.        See ``calc_px()`` for complete documentation.
 
-        Notes
-        ------
-        [1] `Implementing Binomial Trees, Manfred Gilli & Enrico Schumann, 2009
-            <http://papers.ssrn.com/sol3/papers.cfm?abstract_id=1341181>`_
-
         :Authors:
             Tianyi Yao <ty13@rice.edu>
         """
@@ -366,11 +362,11 @@ class Binary(European):
         return self
 
     def _calc_MC(self, nsteps=3, npaths=4, keep_hist=False):
-        """ Internal function for option valuation.       """
+        """ Internal function for option valuation.     See ``calc_px()`` for complete documentation.    """
         return self
 
     def _calc_FD(self, nsteps=10, npaths=10, keep_hist=False):
-        """ Internal function for option valuation.
+        """ Internal function for option valuation. See ``calc_px()`` for complete documentation.
 
         :Authors:
             Andrew Weatherly

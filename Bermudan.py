@@ -341,20 +341,15 @@ class Bermudan(European):
         return self
 
     def _calc_FD(self):
-        """ Internal function for option valuation.
-
-        """
-
+        """ Internal function for option valuation. See ``calc_px()`` for complete documentation.        """
         return self
 
     def plot_MC(self):
         """
         Plots the price paths, payout paths, and terminal payout paths of a given Monte Carlo simulation.
 
-        Returns
-        -------
-        None
-            Only shows the plot.
+        :Authors:
+            Patrick Granahan
         """
         # Fetch history from px_spec
         terminal_payouts = self.px_spec.terminal_payouts

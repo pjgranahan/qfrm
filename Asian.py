@@ -52,6 +52,9 @@ class Asian(European):
           4.1 on p.23. The computed MC prices for these simulations all fall within 2 standard errors of C-hat.
         - Asian Options - Tutorial and Excel Spreadsheet. `Excel tool. Samir Khan <http://investexcel.net/asian-options-excel>`_
         - Asian option with continuous arithmetical mean. `Online option pricer <http://www.infres.enst.fr/~decreuse/pricer/en/index.php?page=asiat_trapeze.html>`_
+        - Arithmetic Average Options and Asian Options (Ch.10, FCFE Course, NTU) `Jr-Yan Wang, 2015 <http://1drv.ms/1SUmTyR>`_
+        - An efficient convergent lattice algorithm for European Asian options (NTU.edu.tw), `Tian-Shyr Dai, et al., 2004  <http://www.csie.ntu.edu.tw/~lyuu/works/asian.pdf>`_
+        - Simple, fast and flexible pricing of Asian options (Columbia.edu), `Timothy R. Klassen, <http://phys.columbia.edu/~klassen/asian.pdf>`_
 
 
         Examples
@@ -200,12 +203,7 @@ class Asian(European):
         return getattr(self, '_calc_' + self.px_spec.method.upper())()
 
     def _calc_BS(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
-
-        :Formulae:
-        - `Arithmetic Average Options and Asian Options <goo.gl/Kw4zQ2>`_
+        """ Internal function for option valuation.   See ``calc_px()`` for complete documentation.
 
         :Authors:
             Scott Morgan
@@ -254,19 +252,7 @@ class Asian(European):
         return self
 
     def _calc_LT(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
-
-        Note
-        ----
-
-        :Formulae:
-        - `Arithmetic Average Options and Asian Options <goo.gl/Kw4zQ2>`_
-        - `An efficient convergent lattice algorithm for European Asian options, Tian-Shyr Dai, et al., 2004
-          <http://www.csie.ntu.edu.tw/~lyuu/works/asian.pdf>`_
-        - `Simple, fast and flexible pricing of Asian options, Timothy R. Klassen,
-          <http://phys.columbia.edu/~klassen/asian.pdf>`_
+        """ Internal function for option valuation.      See ``calc_px()`` for complete documentation.
 
         :Authors:
             Andrew Weatherly
@@ -417,9 +403,7 @@ class Asian(European):
         return self
 
     def _calc_MC(self):
-        """ Internal function for option valuation.
-
-        See ``calc_px()`` for complete documentation.
+        """ Internal function for option valuation.        See ``calc_px()`` for complete documentation.
 
         :Authors:
             Andy Liao <Andy.Liao@rice.edu>
@@ -487,7 +471,7 @@ class Asian(European):
         return self
 
     def _calc_FD(self):
-        """ Internal function for option valuation.
+        """ Internal function for option valuation. See ``calc_px()`` for complete documentation.
 
         :Authors:
             Hanting Li <hl45@rice.edu>
