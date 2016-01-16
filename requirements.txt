@@ -2,4 +2,4 @@ matplotlib
 numpy
 pandas
 
-yaml
+pyyaml
