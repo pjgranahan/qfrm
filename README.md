@@ -16,8 +16,8 @@ qfrm can price a variety of vanilla and exotic options using [Black-Scholes], [L
 and [Monte Carlo] models.
 
 | Option Name | Black-Scholes | Lattice | Monte Carlo | Finite Difference |
-|:-----------:|:-------------:|:-------:|:-----------:|:-----_-----------:|
-| *Example* | *:white_check_mark: (supported)* | *:x: (not supported)* | *- (not applicable)* ||
+|:-----------:|:-------------:|:-------:|:-----------:|:-----------------:|
+| *Example* | *:white_check_mark: (supported)* | *:x: (not supported)* | *- (not applicable)* |
 | **American** | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
 | Asian | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | Barrier | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
