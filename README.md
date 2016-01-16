@@ -6,9 +6,7 @@ qfrm
 [![Test Coverage](https://codeclimate.com/github/pjgranahan/qfrm_py/badges/coverage.svg)](https://codeclimate.com/github/pjgranahan/qfrm_py/coverage)
 [![Issue Count](https://codeclimate.com/github/pjgranahan/qfrm_py/badges/issue_count.svg)](https://codeclimate.com/github/pjgranahan/qfrm_py)
 
-qfrm is a set of analytical tools to measure, manage, and visualize identified risks of financial derivatives and portfolios.
-
-QFRM stands for "Quantitative Financial Risk Management".
+Quantitative Financial Risk Management (qfrm) qfrm is a set of analytical tools to measure, manage, and visualize identified risks of financial derivatives and portfolios.
 
 Installation
 ------------
