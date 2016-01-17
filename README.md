@@ -50,8 +50,6 @@ and [Monte Carlo] models.
 
 ## Installation
 
-The qfrm package is hosted on PyPi: https://pypi.python.org/pypi/qfrm
-
 To install [from PyPi] using `pip`:
 ```
 pip install qfrm
