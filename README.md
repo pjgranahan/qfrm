@@ -2,8 +2,9 @@
 
 [![Build Status](https://travis-ci.org/pjgranahan/qfrm_py.svg?branch=master)](https://travis-ci.org/pjgranahan/qfrm_py)
 [![Code Climate](https://codeclimate.com/github/pjgranahan/qfrm_py/badges/gpa.svg)](https://codeclimate.com/github/pjgranahan/qfrm_py)
-[![Test Coverage](https://codeclimate.com/github/pjgranahan/qfrm_py/badges/coverage.svg)](https://codeclimate.com/github/pjgranahan/qfrm_py/coverage)
 [![Issue Count](https://codeclimate.com/github/pjgranahan/qfrm_py/badges/issue_count.svg)](https://codeclimate.com/github/pjgranahan/qfrm_py)
+<!--[![Test Coverage](https://codeclimate.com/github/pjgranahan/qfrm_py/badges/coverage.svg)](https://codeclimate.com/github/pjgranahan/qfrm_py/coverage)-->
+<!--Not included until Code Climate supports code coverage for Python-->
 
 Quantitative Financial Risk Management (qfrm) is a set of analytical tools to measure, manage, and visualize identified 
 risks of financial derivatives and portfolios.
@@ -42,7 +43,6 @@ and [Monte Carlo] models.
 | Spread | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
 | VarianceSwap | :white_check_mark: | :x: | :x: | :x: |
 
-
 [Black-Scholes]: https://en.wikipedia.org/wiki/Black%E2%80%93Scholes_model
 [Lattice]: https://en.wikipedia.org/wiki/Lattice_model_(finance)
 [Finite Difference]: https://en.wikipedia.org/wiki/Finite_difference_methods_for_option_pricing
@@ -52,19 +52,25 @@ and [Monte Carlo] models.
 
 The qfrm package is hosted on PyPi: https://pypi.python.org/pypi/qfrm
 
-To install using `pip`:
+To install [from PyPi] using `pip`:
 ```
 pip install qfrm
 ```
+[from PyPi]: https://pypi.python.org/pypi/qfrm
 
 ## Usage
 
 TODO
 
-## Contributors
+## History
 
-qfrm was originally created by undergraduate and graduate students at [Rice University] for the [QFRM course] taught by Oleg Melnikov.
+This project was created by undergraduate and graduate students at [Rice University] for the [Fall 2015 QFRM course] taught by Oleg Melnikov.
 
+A [QFRM package for R] was also created during the Spring 2015 QFRM course.
+
+The QFRM course is part of Rice University's [Center for Computational Finance and Economic Systems] (CoFES) [Financial Computation and Modeling] (FCAM) Minor for undergraduate study, led by Dr. Katherine Ensor.
+
+Original contributors to this project:
 - [Oleg Melnikov](https://github.com/omelnikov)
 - Thaw Da Aung
 - Yen-Fei Chen
@@ -80,7 +86,10 @@ qfrm was originally created by undergraduate and graduate students at [Rice Univ
 See [contributors] for a full list of contributors. Thank you to all contributors!
 
 [Rice University]: http://www.rice.edu/
-[QFRM course]: http://oleg.rice.edu/stat-449-649-fall-2015/
+[Fall 2015 QFRM course]: http://oleg.rice.edu/stat-449-649-fall-2015/
+[QFRM package for R]: https://cran.r-project.org/web/packages/QFRM/
+[Center for Computational Finance and Economic Systems]: http://www.cofes-rice.org/
+[Financial Computation and Modeling]: http://www.cofes-rice.org/academic-programs/undergraduate/
 [contributors]: https://github.com/thoughtbot/capybara-webkit/graphs/contributors
 
 ## License
