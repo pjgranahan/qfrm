@@ -3,6 +3,13 @@ import re
 import warnings
 import itertools
 import pandas as pd
+
+# TravisCI doesn't have an Xwindows backend, causing tests to fail on plot generation.
+# This forces matplotlib to not use any Xwindows backend.
+# See http://stackoverflow.com/questions/2801882/generating-a-png-with-matplotlib-when-display-is-undefined
+import matplotlib as mpl
+mpl.use('Agg')
+
 import matplotlib.pyplot as plt
 
 try: from qfrm.Util import *  # production:  if qfrm package is installed

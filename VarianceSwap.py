@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import numpy as np
 
 try: from qfrm.European import *  # production:  if qfrm package is installed

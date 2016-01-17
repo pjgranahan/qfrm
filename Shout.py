@@ -1,7 +1,5 @@
-import math
 import numpy as np
 import scipy.stats
-import matplotlib.pyplot as plt
 
 try: from qfrm.European import *  # production:  if qfrm package is installed
 except:   from European import *  # development: if not installed and running from source
