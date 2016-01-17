@@ -50,11 +50,11 @@ and [Monte Carlo] models.
 
 ## Installation
 
-To install [from PyPi] using `pip`:
+To install [from PyPI] using `pip`:
 ```
 pip install qfrm
 ```
-[from PyPi]: https://pypi.python.org/pypi/qfrm
+[from PyPI]: https://pypi.python.org/pypi/qfrm
 
 ## Usage
 
