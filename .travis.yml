@@ -9,6 +9,10 @@ python:
   - "3.5-dev" # 3.5 development branch
   - "nightly" # currently points to 3.6-dev
   
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install python-scipy
+  
 # command to install dependencies
 install: "pip install -r requirements.txt"
 
