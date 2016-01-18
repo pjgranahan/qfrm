@@ -17,4 +17,4 @@ before_install:
 install: "pip install -r requirements.txt"
 
 # command to run tests
-script: python -m doctest -v *.py
+script: python -m doctest *.py # Change to `doctest -v *.py` for more verbose logs
